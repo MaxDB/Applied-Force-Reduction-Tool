@@ -55,6 +55,10 @@ classdef Dynamic_System
             
             
             %----------------------- Environment Setup -------------------%
+            if ~isfolder("data")
+                mkdir("data\logs")
+            end
+
             log_id = fopen("data\logs\log.txt","w");
             fclose(log_id);
             logger(name + ": " + string(datetime),10)
@@ -103,37 +107,15 @@ classdef Dynamic_System
         end
         %-----------------------------------------------------------------%
         function obj = update_static_opts(obj,Static_Opts)
-            % Default static options
-            DEFAULT_STATIC_OPTS = struct( ...
-                "static_solver",[], ... %software/alogrithm for apply static loadcases    
-                "num_loadcases",20, ... %initial target number of loadcases per SEP
-                "maximum_loadcases",30, ... %maxium number of loadcases per SEP
-                "maximum_step_increments",100, ... %maximum number of increments per step (Abaqus)
-                "initial_time_increment",1, ... %initial time increment in static step (Abaqus)
-                "total_step_time",1, ... %Estimated total step time (Abaqus) 
-                "minimum_time_increment",0, ... %minimum time increment in static step (Abaqus)
-                "maximum_time_increment",1, ... %maximum time increment in static step (Abaqus)
-                "num_fe_cpus",1,... %number of cpus available for fe software. Will use more tokens in Abaqus
-                "max_parallel_jobs",1,... %maximum jobs that can be submitted at once. Will use more tokens in Abaqus
-                "minimum_job_loadcases",10,... %minimum number of loadcases per job when submitting in parallel
-                "additional_data", "none", ... %additonal data to extract with each loadcase
-                "num_validation_modes", 10, ... %add the first X modes as validation modes (Perturbation)
-                "perturbation_scale_factor", 1 ... %scale factor for perturbation load (Perturbation) 
-                );
-            
-            obj.Static_Options = update_options(DEFAULT_STATIC_OPTS,obj.Static_Options,Static_Opts);
+            Default_Static_Opts = read_default_options("static");            
+            obj.Static_Options = update_options(Default_Static_Opts,obj.Static_Options,Static_Opts);
         end
         %-----------------------------------------------------------------%
         function obj = update_calibration_opts(obj,Calibration_Opts)
-            % Default static options
-            DEFAULT_CALIBRATION_OPTS = struct( ...
-                "calibration_scale_factor",2, ... %estimated ratio between effective stiffness at energy limit and linear stiffness
-                "energy_overfit",1.1, ... %actual_energy_limit = energy_limit * energy_overfit
-                "force_overcalibration",1.1 ... %actual_calibrated_force = calibrated_force * force_overcalibration
-                );
+            Default_Calibration_Opts = read_default_options("calibration"); 
             
 
-            New_Calibration_Opts = update_options(DEFAULT_CALIBRATION_OPTS,obj.Calibration_Options,Calibration_Opts);
+            New_Calibration_Opts = update_options(Default_Calibration_Opts,obj.Calibration_Options,Calibration_Opts);
             obj.Calibration_Options = New_Calibration_Opts;
             obj.fitting_energy_limit = obj.energy_limit*New_Calibration_Opts.energy_overfit;
         end

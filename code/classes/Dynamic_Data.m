@@ -34,20 +34,8 @@ classdef Dynamic_Data
         end
         %-----------------------------------------------------------------%
         function obj = update_continuation_opts(obj,Continuation_Opts)
-            % Default continuations options
-            DEFAULT_CONTINUATION_OPTS = struct( ...
-                "initial_inc",1e-2,... #initial continuation increment
-                "max_inc",1,... #maximum continaution increment
-                "min_inc",1e-4,... #minimum continaution increment
-                "forward_steps",100,... #number of forward incrementations
-                "backward_steps",0, ... #number of backward incrementations
-                "initial_discretisation_num", 10, ... #intial number of discretisation points
-                "max_discretisation_num", 100, ... #maximum number of discretisation points
-                "min_discretisation_num", 5, ... #minimum number of discretisation points
-                "collation_degree", 4, ... #degree of interpolating polynomial
-                "energy_limit_multiplier", 1 ... #energy_limit = energy_limit * energy_limit_multiplier
-                );
-            obj.Continuation_Options = update_options(DEFAULT_CONTINUATION_OPTS,obj.Continuation_Options,Continuation_Opts);
+            Default_Continuation_Opts = read_default_options("continuation");         
+            obj.Continuation_Options = update_options(Default_Continuation_Opts,obj.Continuation_Options,Continuation_Opts);
         end 
         %-----------------------------------------------------------------%
         

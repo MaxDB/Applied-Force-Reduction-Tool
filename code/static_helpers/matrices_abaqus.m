@@ -1,14 +1,14 @@
 function [M_bc,K_bc,node_map] = matrices_abaqus(system_name)
 
 setup_time_start = tic;
-
+project_path = get_project_path;
 
 G_ID =fopen("geometry\" + system_name+ "\" + system_name + ".inp");
 geometry = textscan(G_ID,'%s','delimiter','\n');
 fclose(G_ID);
 geometry = geometry{1,1};
 
-M_ID =fopen("fe_templates\" + "abaqus\" + "matrix_output.inp");
+M_ID =fopen(project_path + "\fe_templates\abaqus\matrix_output.inp");
 matrix_template = textscan(M_ID,'%s','delimiter','\n');
 fclose(M_ID);
 matrix_template = matrix_template{1,1};

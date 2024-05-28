@@ -192,17 +192,8 @@ classdef Static_Dataset
         %-----------------------------------------------------------------%
         function obj = update_validation_opts(obj,Validation_Opts)
             % Default static options
-            DEFAULT_VALIDATION_OPTS = struct( ...
-                "validation_algorithm","SEP",... #algorithm to converge static dataset
-                "minimum_degree",3, ...  #minimum interpolating polynomial degree
-                "maximum_iterations",3, ... #maximum validation iterations
-                "maximum_interpolation_error",[1e-2,1e-3], ... #maximum error when comparing polynomial interpolation
-                "maximum_fitting_error",1e-3, ... #maximum error when predicting known values
-                "minimum_coupling_rating",1e-4, ...  #minimum relative coupling for coupling polynomial to be validated
-                "num_added_points", 5 ... %maximum number of point added per sep per iteration
-                );
-            
-            obj.Validation_Options = update_options(DEFAULT_VALIDATION_OPTS,obj.Validation_Options,Validation_Opts);
+            Default_Validation_Opts = read_default_options("validation");         
+            obj.Validation_Options = update_options(Default_Validation_Opts,obj.Validation_Options,Validation_Opts);
         end
         %-----------------------------------------------------------------%
         

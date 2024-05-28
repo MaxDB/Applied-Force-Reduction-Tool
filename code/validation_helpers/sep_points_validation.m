@@ -19,7 +19,7 @@ degree_range = [initial_degree,max_degree];
 
 solve_opts = optimoptions('fsolve','SpecifyObjectiveGradient',true,'Display','none');
 
-fitting_energy_limit = Model.fitting_energy_limit;
+% fitting_energy_limit = Model.fitting_energy_limit;
 energy_limit = Model.energy_limit;
 
 found_force_ratios = Static_Data.unit_sep_ratios;
@@ -30,7 +30,7 @@ num_validated_seps = size(unit_force_ratios,2);
 num_original_seps = size(found_force_ratios,2);
 validated_seps = num_original_seps + (1:num_validated_seps);
 
-for iIteration = 1:max_iterations
+for iIteration = 1:(max_iterations+1)
     validation_iteration_start = tic;
 
     V = Static_Data.potential_energy;
@@ -97,7 +97,7 @@ for iIteration = 1:max_iterations
         force_two = evaluate_polynomial(Force_Poly_Two,sep_r);
         zero_map = force_one(:,1) == 0;
         force_error = discrepency_error(force_one(~zero_map,:),force_two(~zero_map,:));
-        norm_force_error = max(force_error,[],1)/max_interpolation_error(1); %#ok<PFBNS>
+        norm_force_error = max(force_error,[],1)/max_interpolation_error(1);
 
         energy_one = evaluate_polynomial(Potential_Poly_One,sep_r);
         in_energy_limit = energy_one < energy_limit;
@@ -126,7 +126,7 @@ for iIteration = 1:max_iterations
         worst_errors = worst_errors(worst_errors ~= 0);
         error_index = ismember(interpolation_error,worst_errors);
         
-        
+
 
         if any(error_index)
             num_extra_points = sum(error_index);
@@ -137,50 +137,51 @@ for iIteration = 1:max_iterations
     end
 
 
+    if all(force_converged == 1)
+        logger("force converged",3)
+    else
+        force_log_message = sprintf("Max force error: %.1f" ,max(max_sep_force_error));
+    end
+
+    if all(disp_converged == 1)
+        logger("displacement converged",3)
+    else
+        disp_log_message = sprintf("Max disp error: %.1f" ,max(max_sep_disp_error));
+
+    end
+
     new_sep_id = [new_sep_id{1,:}];
     new_loads = [new_loads{1,:}];
     num_extra_points = size(new_sep_id,2);
     check_interpolation_time = toc(check_interpolation_start);
-    log_message = sprintf("Interpolation error check: %.1f seconds" ,check_interpolation_time);
-    logger(log_message,3)
-
-    if ~isempty(new_sep_id)
-    [r,theta,f,E,additional_data] = Rom_One.Model.add_point(new_loads,Static_Data.additional_data_type);
-            Static_Data = Static_Data.update_data(r,theta,f,E,new_sep_id-num_original_seps,additional_data);
-    end
+    interpolation_log_message = sprintf("Interpolation error check: %.1f seconds" ,check_interpolation_time);
     
-    if all(force_converged == 1)
-        logger("force converged",2)
-    else
-        log_message = sprintf("Max force error: %.1f" ,max(max_sep_force_error));
+
+    if iIteration < max_iterations + 1
+        logger(force_log_message,3)
+        logger(disp_log_message,3)
+        logger(interpolation_log_message,3)
+
+        if ~isempty(new_sep_id)
+            [r,theta,f,E,additional_data] = Rom_One.Model.add_point(new_loads,Static_Data.additional_data_type);
+            Static_Data = Static_Data.update_data(r,theta,f,E,new_sep_id-num_original_seps,additional_data);
+        end
+
+
+
+        validation_iteration_time = toc(validation_iteration_start);
+        log_message = sprintf("Validation step %i/%i completed: %i points added in %.1f seconds" ,[iIteration,max_iterations,num_extra_points,validation_iteration_time]);
         logger(log_message,2)
-    end
 
-    if all(disp_converged == 1)
-        logger("displacement converged",2)
+        if isempty(new_sep_id)
+            break
+        end
     else
-        log_message = sprintf("Max disp error: %.1f" ,max(max_sep_disp_error));
-        logger(log_message,2)
-    end
-
-    validation_iteration_time = toc(validation_iteration_start);
-    log_message = sprintf("Validation step %i/%i completed: %i points added in %.1f seconds" ,[iIteration,max_iterations,num_extra_points,validation_iteration_time]);
-    logger(log_message,2)
-
-    if isempty(new_sep_id)
-        break
+        logger(force_log_message,2)
+        logger(disp_log_message,2)
+        logger(interpolation_log_message,3)
     end
 end
-
-V = Static_Data.potential_energy;
-validated_points = V < energy_limit;
-
-r = Static_Data.reduced_displacement(:,validated_points);
-f = Static_Data.restoring_force(:,validated_points);
-displacement = Static_Data.condensed_displacement(:,validated_points);
-
-[force_degree,worst_force_index] = minimum_polynomial_degree(Static_Data,"Force",r,f,degree_range); %#ok<ASGLU>
-[disp_degree,worst_disp_index] = minimum_polynomial_degree(Static_Data,"Condensed_Displacement",r,displacement,degree_range);
 
 Static_Data.validated_degree = [force_degree,disp_degree];
 end
