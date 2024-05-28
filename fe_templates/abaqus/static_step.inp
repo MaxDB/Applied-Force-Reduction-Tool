@@ -1,0 +1,18 @@
+** ----------------------------------------------------------------
+** 
+*Step, name=Static_Step-STEP_NUM, nlgeom=YES, extrapolation=NO, inc=INC_HERE
+*Static
+SETTINGS_HERE
+** initial inc, time period, minimum time inc, maximum time inc 
+** 
+*Cload
+LOAD_HERE
+** 
+** OUTPUT REQUESTS
+** 
+*NODE PRINT,SUMMARY=NO,FREQUENCY = INC_HERE
+U
+*ENERGY PRINT, FREQUENCY = INC_HERE
+**RESTART_HERE
+*End Step
+** ----------------------------------------------------------------

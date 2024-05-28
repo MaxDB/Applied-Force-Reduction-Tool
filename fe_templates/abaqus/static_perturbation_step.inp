@@ -1,0 +1,16 @@
+** ----------------------------------------------------------------
+** 
+*Step, PERTURBATION
+*Static
+** 
+*Load Case, Name=
+*Cload
+LOAD_HERE
+*End Load Case
+** 
+** OUTPUT REQUESTS
+** 
+*NODE PRINT,SUMMARY=NO
+U
+*End Step
+** ----------------------------------------------------------------

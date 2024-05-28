@@ -1,0 +1,7 @@
+# ignore all files in any named directory
+temp/
+data/
+
+# ignore all files named
+force_calibration.mat
+matrices.mat

@@ -1,0 +1,5 @@
+** ----------------------------------------------------------------
+*Step,name=export_matrix
+*MATRIX GENERATE ,STIFFNESS,MASS
+*MATRIX OUTPUT,STIFFNESS,MASS,format=coordinate
+*End Step
