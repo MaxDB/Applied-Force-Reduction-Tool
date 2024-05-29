@@ -5,9 +5,9 @@ system_name = "exhaust_17";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %--------- Continuation Settings ---------%
-Continuation_Opts.initial_inc = 5e0;
-Continuation_Opts.max_inc = 5e0;
-Continuation_Opts.min_inc = 5e0;
+Continuation_Opts.initial_inc = 1e-1;
+Continuation_Opts.max_inc = 5e-1;
+Continuation_Opts.min_inc = 1e-2;
 Continuation_Opts.forward_steps = 1500;
 Continuation_Opts.backward_steps = 0;
 Continuation_Opts.initial_discretisation_num = 20;

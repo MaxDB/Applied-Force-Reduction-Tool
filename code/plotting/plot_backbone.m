@@ -6,6 +6,7 @@ LINE_COLOUR = "k";
 BIFURCATION_MARKER = ["o","o","^","x"];
 BIFURCATION_TYPE = ["BP","PD","NS","SN"];
 BIFURCATION_SIZE = [6,6,6,8];
+STABILITY_LIMIT = 1.005;
 
 %-------------------------------------------------------------------------%
 if isstring(Dyn_Data)
@@ -31,9 +32,9 @@ if PLOT_BIFURCATIONS
     num_bifurcation_types = size(bifurcation_types,1);
 
     stability = Dyn_Data.stability{1,solution_num};
-    [index_ranges,range_stability] = get_stability_boundaries(stability,bifurcations);
+    [index_ranges,range_stability] = get_stability_boundaries(stability<STABILITY_LIMIT,bifurcations);
     num_sections = size(range_stability,2);
-    
+
     bifurcation_plot_settings = cell(num_bifurcation_types,1);
     for iType = 1:num_bifurcation_types
         type_plot_settings = {"LineStyle","none","LineWidth",LINE_WIDTH,"Color",LINE_COLOUR,...
@@ -77,6 +78,11 @@ switch type
 
                 data_tip_row = dataTipTextRow("ID",orbit_ids(index_range));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
+
+                data_tip_row = dataTipTextRow("Stability",stability(index_range));
+                p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
             end
 
             for iType = 1:num_bifurcation_types
@@ -91,10 +97,13 @@ switch type
 
                 type_plot_settings = bifurcation_plot_settings{iType,1};
                 p = plot(ax,frequency(bifurcation_index),energy(bifurcation_index),type_plot_settings{:});
-            
+
                 data_tip_row = dataTipTextRow("ID",orbit_ids(bifurcation_index));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
-                
+
+                data_tip_row = dataTipTextRow("Stability",stability(bifurcation_index));
+                p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
                 data_tip_row = dataTipTextRow("Type",repelem(BIFURCATION_TYPE(iType),size(bifurcation_index,1),size(bifurcation_index,2)));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
             end
@@ -106,7 +115,7 @@ switch type
         end
         hold(ax,"off")
 
-        
+
 
         xlabel(ax,"Frequency (rad/s)")
         ylabel(ax,"Energy")
@@ -130,11 +139,11 @@ switch type
                 ax{iMode,2} = r_modes(iMode);
             end
             plotted_modes = r_modes;
-        else 
+        else
             num_axes = size(ax,1);
             %check if all required r_modes are present]
             for iAx = 1:num_axes
-                plotted_modes(iAx,1) = ax{iAx,2}; 
+                plotted_modes(iAx,1) = ax{iAx,2};
             end
 
             neglected_modes = setdiff(r_modes,plotted_modes);
@@ -162,6 +171,11 @@ switch type
 
                     data_tip_row = dataTipTextRow("ID",orbit_ids(index_range));
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                    
+
+                    data_tip_row = dataTipTextRow("Stability",stability(index_range));
+                    p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
                 end
 
                 for iType = 1:num_bifurcation_types
@@ -180,6 +194,9 @@ switch type
                     data_tip_row = dataTipTextRow("ID",orbit_ids(bifurcation_index));
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
+                    data_tip_row = dataTipTextRow("Stability",stability(bifurcation_index));
+                    p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
                     data_tip_row = dataTipTextRow("Type",repelem(BIFURCATION_TYPE(iType),size(bifurcation_index,1),size(bifurcation_index,2)));
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
                 end
@@ -193,7 +210,7 @@ switch type
             xlabel(ax{ax_id,1},"Frequency (rad/s)")
             ylabel(ax{ax_id,1},"R_{" + r_modes(iMode) + "}")
 
-            
+
         end
 end
 end
