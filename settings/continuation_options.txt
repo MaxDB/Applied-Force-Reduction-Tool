@@ -5,9 +5,9 @@
 energy_limit_multiplier, 1, 	#energy_limit = energy_limit * energy_limit_multiplier
 
 ## COCO
-initial_inc, 1e-2,		#initial continuation increment
-max_inc, 1,			#maximum continaution increment
-min_inc, 1e-4,			#minimum continaution increment
+initial_inc, 0.1,		#initial continuation increment
+max_inc, 0.5,			#maximum continaution increment
+min_inc, 0.01,			#minimum continaution increment
 forward_steps, 100,		#number of forward incrementations
 backward_steps, 0, 		#number of backward incrementations
 initial_discretisation_num, 10, #intial number of discretisation points

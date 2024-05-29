@@ -1,5 +1,5 @@
 function [r,theta,f,E,additional_data] = ...
-    add_point_abaqus(applied_force,Static_Opts,max_inc,add_data_type,Model,job_id)
+    add_point_abaqus(applied_force,max_inc,add_data_type,Model,job_id)
 
 JOB_NAME = "static_analysis";
 NUM_DIMENSIONS = 6;
@@ -11,6 +11,7 @@ all_dofs = Model.node_mapping(end,1);
 num_loadcases = size(applied_force,2);
 
 static_settings = zeros(1,4);
+Static_Opts = Model.Static_Options;
 static_settings(1) = Static_Opts.initial_time_increment;
 static_settings(2) = Static_Opts.total_step_time;
 static_settings(3) = Static_Opts.minimum_time_increment;

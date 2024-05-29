@@ -1,6 +1,6 @@
 function Static_Data = sep_points_validation(Static_Data)
-MAXIMUM_DEGREE = [21,15,13,7];
-SEP_DENSITY = 3;
+MAXIMUM_DEGREE = [21,15,9,7];
+SEP_DENSITY_MAX = [inf,251,11,5];
 
 Validation_Opts = Static_Data.Validation_Options;
 max_interpolation_error = Validation_Opts.maximum_interpolation_error;
@@ -11,6 +11,7 @@ Model = Static_Data.Model;
 Static_Opts = Model.Static_Options;
 num_sep_loadcases =Validation_Opts.num_added_points;
 max_sep_loadcases = Static_Opts.maximum_loadcases;
+max_iteration_loadcases = Validation_Opts.max_added_points;
 
 
 num_modes = length(Model.reduced_modes);
@@ -23,15 +24,43 @@ solve_opts = optimoptions('fsolve','SpecifyObjectiveGradient',true,'Display','no
 energy_limit = Model.energy_limit;
 
 found_force_ratios = Static_Data.unit_sep_ratios;
-unit_force_ratios = add_sep_ratios(num_modes,SEP_DENSITY,found_force_ratios);
-scaled_force_ratios = scale_sep_ratios(unit_force_ratios,Static_Data.Model.calibrated_forces);
-
-num_validated_seps = size(unit_force_ratios,2);
 num_original_seps = size(found_force_ratios,2);
-validated_seps = num_original_seps + (1:num_validated_seps);
 
+num_checked_seps = 0;
+sep_density = 3;
+while num_checked_seps < max_iteration_loadcases/num_sep_loadcases
+unit_force_ratios = add_sep_ratios(num_modes,sep_density);
+num_checked_seps = size(unit_force_ratios,2);
+if num_modes == 1
+    break
+end
+sep_density = sep_density + 2;
+if sep_density > 100
+    error("Cannot select sep density")
+end
+end
+
+sep_density = min(sep_density,SEP_DENSITY_MAX(num_modes));
+
+if sep_density > 3
+    sep_density = sep_density - 4;
+end
+
+
+unit_force_ratios = found_force_ratios;
 for iIteration = 1:(max_iterations+1)
+
     validation_iteration_start = tic;
+
+    sep_density = min(sep_density + 2,SEP_DENSITY_MAX(num_modes));
+    new_unit_force_ratios = add_sep_ratios(num_modes,sep_density,found_force_ratios);
+    unit_force_ratios = [unit_force_ratios,new_unit_force_ratios];
+    scaled_force_ratios = scale_sep_ratios(unit_force_ratios,Static_Data.Model.calibrated_forces);
+    found_force_ratios = unit_force_ratios;
+
+    num_validated_seps = size(unit_force_ratios,2);
+    
+    validated_seps = (1:num_validated_seps);
 
     V = Static_Data.potential_energy;
     validated_points = V < energy_limit;
@@ -57,14 +86,16 @@ for iIteration = 1:(max_iterations+1)
     Stiffness_Poly_One = Rom_One.Reduced_Stiffness_Polynomial;
     
     force_equation = @(x,F) static_solution(x,F,Force_Poly_One,Stiffness_Poly_One);
-    % energy_equation = @(x,lambda,F) energy_solution(x,lambda,F,fitting_energy_limit,Potential_Poly_One,Force_Poly_One,Stiffness_Poly_One);
+    % energy_equation = @(x,lambda,F) energy_solution(x,lambda,F,energy_limit,Potential_Poly_One,Force_Poly_One,Stiffness_Poly_One);
     
     Disp_Poly_One = Rom_One.Condensed_Displacement_Polynomial;
     Disp_Poly_Two = Rom_Two.Condensed_Displacement_Polynomial;
-    Force_Poly_Two = Rom_Two.Force_Polynomial;
+    % Force_Poly_Two = Rom_Two.Force_Polynomial;
+    Potential_Poly_Two = Rom_Two.Potential_Polynomial;
 
     new_sep_id = cell(1,num_validated_seps);
     new_loads = cell(1,num_validated_seps);
+    new_error = cell(1,num_validated_seps);
 
     force_converged = zeros(1,num_validated_seps);
     disp_converged = zeros(1,num_validated_seps);
@@ -79,7 +110,9 @@ for iIteration = 1:(max_iterations+1)
         
         [estimated_sep_end,~,exit_flag] = fsolve(@(x)force_equation(x,estimated_end_force),x_0,solve_opts); %#ok<ASGLU>
         
-        % x_0 = [estimated_sep_end;1];
+        % estimated_potential = evaluate_polynomial(Potential_Poly_One,estimated_sep_end);
+        % estimated_lambda = energy_limit/estimated_potential;
+        % x_0 = [estimated_sep_end;estimated_lambda];
         % [sep_end_condition,obj_value,exit_flag,output] = fsolve(@(x)energy_equation(x(1:num_modes,:),x(num_modes+1,:),estimated_end_force),x_0,solve_opts);
         
         lambda_end = find_sep_end(Potential_Poly_One,energy_limit,estimated_sep_end,estimated_end_force,1,force_equation,solve_opts);
@@ -94,9 +127,14 @@ for iIteration = 1:(max_iterations+1)
             x_0 = sep_r(:,iLoad);
         end
 
-        force_two = evaluate_polynomial(Force_Poly_Two,sep_r);
-        zero_map = force_one(:,1) == 0;
-        force_error = discrepency_error(force_one(~zero_map,:),force_two(~zero_map,:));
+        % force_two = evaluate_polynomial(Force_Poly_Two,sep_r);
+        % zero_map = force_one(:,1) == 0;
+        % force_error = discrepency_error(force_one(~zero_map,:),force_two(~zero_map,:));
+
+        potential_one = evaluate_polynomial(Potential_Poly_One,sep_r);
+        potential_two = evaluate_polynomial(Potential_Poly_Two,sep_r);
+        force_error = discrepency_error(potential_one,potential_two);
+        
         norm_force_error = max(force_error,[],1)/max_interpolation_error(1);
 
         energy_one = evaluate_polynomial(Potential_Poly_One,sep_r);
@@ -132,15 +170,16 @@ for iIteration = 1:(max_iterations+1)
             num_extra_points = sum(error_index);
             new_sep_id{1,iSep} = ones(1,num_extra_points)*validated_seps(iSep);
             new_loads{1,iSep} = force_one(:,error_index);
+            new_error{1,iSep} = interpolation_error(error_index);
         end
 
     end
 
 
     if all(force_converged == 1)
-        logger("force converged",3)
+        logger("energy converged",3)
     else
-        force_log_message = sprintf("Max force error: %.1f" ,max(max_sep_force_error));
+        force_log_message = sprintf("Max energy error: %.1f" ,max(max_sep_force_error));
     end
 
     if all(disp_converged == 1)
@@ -152,7 +191,16 @@ for iIteration = 1:(max_iterations+1)
 
     new_sep_id = [new_sep_id{1,:}];
     new_loads = [new_loads{1,:}];
-    num_extra_points = size(new_sep_id,2);
+    new_error = [new_error{1,:}];
+
+    [~,sort_index] = sort(new_error,"descend");
+    
+    num_extra_points = min(max_iteration_loadcases,size(new_sep_id,2));
+    added_point_index = sort_index(1:num_extra_points);
+    new_loads = new_loads(:,added_point_index);
+    new_sep_id = new_sep_id(:,added_point_index);
+
+
     check_interpolation_time = toc(check_interpolation_start);
     interpolation_log_message = sprintf("Interpolation error check: %.1f seconds" ,check_interpolation_time);
     
@@ -205,6 +253,9 @@ jacobian(1+(1:num_modes),1+num_modes) = -F;
 end
 
 function lambda = find_sep_end(V_Poly,V_lim,sep_end,unit_force,lambda,force_equation,solve_opts)
+lambda_start = lambda;
+sep_end_start = sep_end;
+
 MAX_INC = 100;
 CONVERGENCE_TOL = 0.01;
 NUM_POINTS = 5;
@@ -223,11 +274,14 @@ for iInc = 1:MAX_INC
     if energy_diff < 0.95
         break
     end
-    
-    lambda = lambda*0.95;
-    [sep_end,~,exit_flag] = fsolve(@(x)force_equation(x,unit_force*lambda),zeros(num_modes,1),solve_opts);
-    if exit_flag < 1
-        warning("solver error")
+
+    exit_flag = -1;
+    while exit_flag < 0
+        lambda = lambda*0.95;
+        [sep_end,~,exit_flag] = fsolve(@(x)force_equation(x,unit_force*lambda),zeros(num_modes,1),solve_opts);
+        if lambda < 0.01
+            error("Cannot find SEP solution")
+        end
     end
     sep_energy = V_Poly.evaluate_polynomial(sep_end);
     energy_diff = sep_energy/V_lim;

@@ -442,7 +442,7 @@ classdef Dynamic_System
                         parfor iJob = 1:num_parallel_jobs
                             job_force = force_groups{1,iJob};
                             [job_r,job_theta,job_f,job_E,job_additional_data] = ...
-                                add_point_abaqus(job_force,Static_Opts,max_inc,additional_data_type,obj,iJob);
+                                add_point_abaqus(job_force,max_inc,additional_data_type,obj,iJob);
 
                             reduced_disp_cell{1,iJob} = job_r;
                             condensed_disp_cell{1,iJob} = job_theta;
@@ -465,9 +465,21 @@ classdef Dynamic_System
                     else
 
                         [reduced_disp,condensed_disp,restoring_force,energy,additional_data] = ...
-                            add_point_abaqus(applied_force,Static_Opts,max_inc,additional_data_type,obj,1);
+                            add_point_abaqus(applied_force,max_inc,additional_data_type,obj,1);
                     end
                 case "matlab"
+            end
+        end
+        %-----------------------------------------------------------------%
+        function dynamic_simulation(obj,x_0,x_dot_0,f_r_0,period)
+            
+            Static_Opts = obj.Static_Options;
+            switch Static_Opts.static_solver
+                case "abaqus"
+                    reset_temp_directory()
+                    [x,x_dot] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,obj,1);
+                case "matlab"
+
             end
         end
         %-----------------------------------------------------------------%

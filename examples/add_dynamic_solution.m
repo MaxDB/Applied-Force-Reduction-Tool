@@ -1,6 +1,6 @@
 clear
 % close all
-system_name = "exhaust_17";
+system_name = "exhaust_1";
 
 Dyn_Data = initalise_dynamic_data(system_name);
 

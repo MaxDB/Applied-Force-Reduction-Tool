@@ -15,11 +15,14 @@ classdef Dynamic_Data
         bifurcations
 
         validation_modes
+
         h_amplitude
         corrected_low_modal_amplitude
         low_modal_amplitude
         h_energy
         h_modal_energy_fraction
+
+        periodicity_error
     end
     methods
         function obj = Dynamic_Data(Model,Continuation_Opts)
@@ -153,7 +156,11 @@ classdef Dynamic_Data
              obj.save_solution("h_prediciton");
         end
         %-----------------------------------------------------------------%
-
+        function obj = get_periodicity_error(obj,solution_num,orbit_num)
+            orbit = get_orbit(obj,solution_num,orbit_num);
+            Rom = obj.Dynamic_Model;
+            solution_periodicity_error(orbit,Rom)
+        end
 
         %-----------------------------------------------------------------%
         % Analysis 
@@ -267,7 +274,7 @@ classdef Dynamic_Data
             data_path = obj.Dynamic_Model.data_path;
             orbit_labels = obj.solution_labels{1,solution_num};
 
-            solution_name = data_path + "\dynamic_sol_" + solution_num; 
+            solution_name = data_path + "dynamic_sol_" + solution_num; 
             orbit = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(orbit_num));
         end
         %-----------------------------------------------------------------%
