@@ -195,7 +195,7 @@ classdef Dynamic_Data
             %------------------------%
             % Stability
             eigs = solution_data{1,4};
-            orbit_stability = max(abs(eigs)) < 1.01;
+            orbit_stability = max(abs(eigs),[],1) < 1.005;
             
             %------------------------%
             % Amplitude
