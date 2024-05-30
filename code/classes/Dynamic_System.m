@@ -471,13 +471,13 @@ classdef Dynamic_System
             end
         end
         %-----------------------------------------------------------------%
-        function dynamic_simulation(obj,x_0,x_dot_0,f_r_0,period)
+        function [t,x,x_dot] = dynamic_simulation(obj,x_0,x_dot_0,f_r_0,period,min_incs)
             
             Static_Opts = obj.Static_Options;
             switch Static_Opts.static_solver
                 case "abaqus"
                     reset_temp_directory()
-                    [x,x_dot] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,obj,1);
+                    [t,x,x_dot] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,min_incs,obj,1);
                 case "matlab"
 
             end

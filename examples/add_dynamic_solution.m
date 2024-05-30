@@ -1,6 +1,6 @@
 clear
 % close all
-system_name = "exhaust_17";
+system_name = "exhaust_1";
 
 Dyn_Data = initalise_dynamic_data(system_name);
 
@@ -27,7 +27,7 @@ Dyn_Data = Dyn_Data.add_backbone(1);
 % Continuation_Opts.min_inc = 5e-4;
 % Continuation_Opts.forward_steps = 100;
 % Continuation_Opts.backward_steps = 0;
-% %-----------------------------------------%
+% %-----------------------------------------%D
 % Dyn_Data = Dyn_Data.update_continuation_opts(Continuation_Opts);
  % Dyn_Data = Dyn_Data.restart_backbone(1,41,"po");
 

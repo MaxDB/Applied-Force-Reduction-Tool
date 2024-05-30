@@ -159,7 +159,8 @@ classdef Dynamic_Data
         function obj = get_periodicity_error(obj,solution_num,orbit_num)
             orbit = get_orbit(obj,solution_num,orbit_num);
             Rom = obj.Dynamic_Model;
-            solution_periodicity_error(orbit,Rom)
+            obj.periodicity_error{1,solution_num}(orbit_num) = solution_periodicity_error(orbit,Rom);
+            obj.save_solution("update",solution_num)
         end
 
         %-----------------------------------------------------------------%
@@ -357,6 +358,7 @@ classdef Dynamic_Data
             obj.low_modal_amplitude{1,solution_num} = zeros(num_h_modes,num_orbits);
             obj.h_energy{1,solution_num} = zeros(1,num_orbits);
             obj.h_modal_energy_fraction{1,solution_num} = zeros(num_h_modes,num_orbits);
+            obj.periodicity_error{1,solution_num} = zeros(1,num_orbits);
         end
         %-----------------------------------------------------------------%
 

@@ -1,0 +1,16 @@
+** ----------------------------------------------------------------
+**
+*Step, name=Dynamic, nlgeom=YES, inc= INC_HERE
+*Dynamic
+DYNAMIC_SETTINGS_HERE
+**0.1,1.1,1.2e-05
+*CLOAD, OP=NEW
+** 
+** OUTPUT REQUESTS
+*NODE PRINT,SUMMARY=NO
+U
+*NODE PRINT,SUMMARY=NO
+V
+** 
+*End Step
+** ----------------------------------------------------------------

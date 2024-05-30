@@ -125,7 +125,7 @@ classdef Reduced_System
             num_x = size(r,2);
             theta_dr_prod = zeros(size(Theta_Poly,1),num_x);
             for iX = 1:num_x
-                theta_dr_prod(:,iX) = theta_dr(:,iX)*r_dot(:,iX);
+                theta_dr_prod(:,iX) = theta_dr(:,:,iX)*r_dot(:,iX);
             end
 
             x_dot = r_evec*r_dot + theta_dr_prod;
