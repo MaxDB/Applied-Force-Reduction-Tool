@@ -97,7 +97,7 @@ classdef Reduced_System
             h_stiffness_0 = Static_Data.Dynamic_Validation_Data.h_stiffness_0;
             h_coupling_gradient_0 = Static_Data.Dynamic_Validation_Data.h_coupling_gradient_0;
 
-            H_Stiffness_Poly = Polynomial(r,h_stiffness,h_stiffness_degree,"constraint",{"constant",h_stiffness_0},"shift",SHIFT_ON,"scale",SCALE_ON);
+            H_Stiffness_Poly = Polynomial(r,h_stiffness,h_stiffness_degree,"constraint",{"constant",h_stiffness_0},"coupling","stiffness","shift",SHIFT_ON,"scale",SCALE_ON);
             H_Coupling_Gradient_Poly = Polynomial(r,h_coupling_gradient,h_coupling_gradient_degree,"constraint",{"constant",h_coupling_gradient_0},"shift",SHIFT_ON,"scale",SCALE_ON);
             
             obj.Low_Frequency_Stiffness_Polynomial = H_Stiffness_Poly;
@@ -311,6 +311,7 @@ classdef Reduced_System
                     
                     Eom_Input.H_Stiffness_Poly = obj.Low_Frequency_Stiffness_Polynomial;
                     Eom_Input.Potential = obj.Potential_Polynomial;
+                    Eom_Input.Force = obj.Force_Polynomial;
                    
 
                     Eom_Input.input_order = obj.get_max_input_order;

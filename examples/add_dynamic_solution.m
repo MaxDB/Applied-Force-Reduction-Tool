@@ -1,8 +1,12 @@
 clear
 % close all
 system_name = "exhaust_1";
+Additional_Output.type = "physical displacement";
+Additional_Output.dof = 1563;
+Additional_Output.special_points = [0.25,0.5,0.75,1,1.5,2,3]*1.5e-3;
 
-Dyn_Data = initalise_dynamic_data(system_name);
+%-------------------------------------------------------------------------%
+Dyn_Data = initalise_dynamic_data(system_name,Additional_Output);
 
 %--------- Continuation Settings ---------%
 Continuation_Opts.initial_inc = 1e-1;

@@ -59,6 +59,7 @@ end
 stiffness = Model.stiffness;
 h_perturbation_0 = lambda*(stiffness\(h_disp_transform'));
 h_0 = h_disp_transform*h_perturbation_0;
+h_0 = diag(diag(h_0));
 theta_hat_0 = h_perturbation_0 - h_evec*h_0;
 
 h_coupling_gradient_0 = theta_hat_0/h_0;

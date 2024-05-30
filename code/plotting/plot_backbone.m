@@ -119,8 +119,15 @@ switch type
 
         xlabel(ax,"Frequency (rad/s)")
         ylabel(ax,"Energy")
-    case "amplitude"
-        amplitude = Dyn_Data.amplitude{1,solution_num};
+    case {"amplitude","physical amplitude"}
+        switch type
+            case "amplitude"
+                amplitude = Dyn_Data.amplitude{1,solution_num};
+            case "physical amplitude"
+                amplitude = Dyn_Data.additional_dynamic_output{1,solution_num};
+        end
+
+        
         solution_type = Dyn_Data.solution_types{1,solution_num};
         num_modes = size(amplitude,1);
 

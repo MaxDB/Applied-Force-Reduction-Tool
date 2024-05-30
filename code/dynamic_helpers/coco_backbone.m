@@ -1,4 +1,4 @@
-function coco_backbone(t0,z0,Rom,type,Continuation_Settings,solution_number)
+function coco_backbone(t0,z0,Rom,type,Continuation_Settings,solution_number,Additional_Output)
 %Calculates bb curves using coco.
 ODE_TOLERACE = 1e-9;
 
@@ -68,14 +68,27 @@ switch type
         energy_func = @(prob,data,u) coco_energy(prob,data,u,Eom_Input.Potential_Polynomial,Eom_Input.Disp_Data,Eom_Input.input_order);
     case "fom"
         energy_func = @(prob,data,u) direct_energy(prob,data,u,Eom_Input);
-
 end
 prob = coco_add_func(prob, 'energy_monitor', energy_func, data, 'regular', 'ENERGY', 'uidx', uidx,'remesh',@coco_energy_remesh);
 
 energy_limit = Rom.Model.energy_limit*Continuation_Settings.energy_limit_multiplier;
 prob = coco_add_event(prob, 'VBP', 'boundary','ENERGY',energy_limit);
-
 prob = coco_add_slot(prob, 'energy_slot',@coco_energy_print,data,'cont_print');
+
+% Monitor additional output
+switch Additional_Output.type
+    case "physical displacement"
+        node_map = Rom.Model.node_mapping;
+        r_evec = Rom.Model.reduced_eigenvectors;
+        dof = node_map(Additional_Output.dof,2);
+        Theta_Poly = Rom.Condensed_Displacement_Polynomial;
+
+        displacement_func = @(prob,data,u) coco_displacement(prob,data,u,Theta_Poly,dof,r_evec);
+
+        prob = coco_add_func(prob, 'displacement_monitor', displacement_func, data, 'regular', 'DISP', 'uidx', uidx,'remesh',@coco_energy_remesh);
+        disp_points = Additional_Output.special_points;
+        prob = coco_add_event(prob, 'X', 'special point','DISP',disp_points);
+end
 
 
 %Corrector Settings

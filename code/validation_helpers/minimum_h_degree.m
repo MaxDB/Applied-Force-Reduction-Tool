@@ -4,7 +4,7 @@ MIN_VALIDATION_RATIO = 1e-1;
 num_r_modes = length(Static_Data.Model.reduced_modes);
 switch num_r_modes
     case 1
-        max_degree = 15;
+        max_degree = max(15,max(Static_Data.validated_degree([1,2]))+1);
     otherwise
         max_degree = max(Static_Data.validated_degree([1,2]))+1;
 end

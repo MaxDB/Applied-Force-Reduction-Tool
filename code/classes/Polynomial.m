@@ -51,6 +51,20 @@ classdef Polynomial
             end
             
             %---------------------
+            if coupling_type == "stiffness"
+                
+                output_shape = size(output_data);
+                num_rows = output_shape(1);
+                for iRow = 1:num_rows
+                    for iCol = (iRow+1):num_rows
+                        element_1 = squeeze(output_data(iRow,iCol,:));
+                        element_2 = squeeze(output_data(iCol,iRow,:));
+                        mean_element = (element_1 + element_2)/2;
+                        output_data(iRow,iCol,:) = mean_element;
+                        output_data(iCol,iRow,:) = mean_element;
+                    end
+                end
+            end
             output_reshaped = ndims(output_data) == 3;
             if output_reshaped
                 output_shape = size(output_data);
@@ -102,7 +116,7 @@ classdef Polynomial
             
             %---------------------
             switch coupling_type
-                case "none"
+                case {"stiffness","none"}
                     [coeffs,num_unconstrained_terms] = obj.fit_polynomial(input_data,output_data,Constraint);
                 case "force"
                     Coupling = obj.get_force_coupling;

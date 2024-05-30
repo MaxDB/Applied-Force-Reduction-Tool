@@ -14,6 +14,9 @@ classdef Dynamic_Data
         stability
         bifurcations
 
+        additional_dynamic_output
+        Additional_Output
+
         validation_modes
 
         h_amplitude
@@ -25,8 +28,8 @@ classdef Dynamic_Data
         periodicity_error
     end
     methods
-        function obj = Dynamic_Data(Model,Continuation_Opts)
-            if nargin == 1
+        function obj = Dynamic_Data(Model,Additional_Output,Continuation_Opts)
+            if nargin == 2
                 Continuation_Opts = struct([]);
             end
             obj = obj.update_continuation_opts(Continuation_Opts);
@@ -34,6 +37,8 @@ classdef Dynamic_Data
 
             obj.num_solutions = 0;
             obj.solution_types = {};
+
+            obj.Additional_Output = Additional_Output;
         end
         %-----------------------------------------------------------------%
         function obj = update_continuation_opts(obj,Continuation_Opts)
@@ -55,9 +60,7 @@ classdef Dynamic_Data
             
             [t0,z0] = get_linear_solution(Rom,mode_num,type);
             
-            
-
-            coco_backbone(t0,z0,Rom,type,obj.Continuation_Options,solution_num);
+            coco_backbone(t0,z0,Rom,type,obj.Continuation_Options,solution_num,obj.Additional_Output);
             obj = obj.analyse_solution(solution_num);
             
             solution_type = "backbone";
@@ -205,8 +208,13 @@ classdef Dynamic_Data
             min_disp = solution_data{1,6}(1:num_modes,:);
             max_disp = solution_data{1,7}(1:num_modes,:);
             orbit_amplitude = abs(max_disp - min_disp)/2;
-            
- 
+
+            switch obj.Additional_Output.type
+                case "physical displacement"
+                    physical_amp  = coco_bd_col(bd, "DISP");
+            end
+
+
             %------------------------%
             obj.solution_labels{1,solution_num} = orbit_labels;
             obj.frequency{1,solution_num} = orbit_frequency;
@@ -215,8 +223,12 @@ classdef Dynamic_Data
             obj.stability{1,solution_num} = orbit_stability;
             obj.bifurcations{1,solution_num} = orbit_bifurcation;
 
-            obj.validation_modes{1,solution_num} = [];
+            switch obj.Additional_Output.type
+                case "physical displacement"
+                    obj.additional_dynamic_output{1,solution_num} = physical_amp;
+            end
 
+            obj.validation_modes{1,solution_num} = [];
             obj = obj.pre_allocate_validation_data(solution_num,0);
            
         end
@@ -245,15 +257,29 @@ classdef Dynamic_Data
             %--
             num_points = size(r,2);
             num_h_modes = size(h,1);
-            h_potential = zeros(num_h_modes,num_points);
+            num_r_modes = size(r,1);
+            h_r = h(1:num_r_modes,:);
+            force_tilde = Validation_Analysis_Inputs.Force.evaluate_polynomial(r);
+
+            % h_potential = zeros(num_h_modes,num_points);
+            % for iPoint = 1:num_points
+            %     h_stiffness = Validation_Analysis_Inputs.H_Stiffness_Poly.evaluate_polynomial(r(:,iPoint));
+            %     h_force = h_stiffness*h(:,iPoint);
+            %     h_potential(:,iPoint) = 1/2*(h_force.*h(:,iPoint));
+            %     h_potential(1:num_r_modes,iPoint) = h_potential(1:num_r_modes,iPoint) + force_tilde(:,iPoint).*h_r(:,iPoint);
+            % end
+            % h_potential = sum(h_potential);
+
+            h_potential = zeros(1,num_points);
             for iPoint = 1:num_points
-                 h_stiffness = Validation_Analysis_Inputs.H_Stiffness_Poly.evaluate_polynomial(r(:,iPoint));
-                 h_force = h_stiffness*h(:,iPoint);
-                 h_potential(:,iPoint) = 1/2*(h_force.*h(:,iPoint));
+                h_stiffness = Validation_Analysis_Inputs.H_Stiffness_Poly.evaluate_polynomial(r(:,iPoint));
+                h_force = h_stiffness*h(:,iPoint);
+                h_potential(:,iPoint) = 1/2*(h_force'*h(:,iPoint)) + force_tilde(:,iPoint)'*h_r(:,iPoint);
             end
             
+           
             potential_tilde = Validation_Analysis_Inputs.Potential.evaluate_polynomial(r);
-            potential_hat = potential_tilde + sum(h_potential);
+            potential_hat = potential_tilde + h_potential;
             %--
 
             %--
@@ -261,7 +287,8 @@ classdef Dynamic_Data
             %--
             % energy_test = obj.energy{1,solution_num}(orbit_num);
             % energy_tilde = potential_tilde + sum(ke_mode_tilde) + ke_condensed_tilde;
-            energy_hat =  potential_hat + sum(ke_mode_hat) + ke_condensed_hat;
+            ke_hat =  sum(ke_mode_hat) + ke_condensed_hat;
+            energy_hat =  potential_hat + ke_hat;
             % energy_fraction = (mean(energy_hat)-mean(energy_tilde))/mean(energy_hat);
             %--
             obj.h_amplitude{1,solution_num}(:,orbit_num) = h_amp;
