@@ -59,8 +59,14 @@ end
 
 
 switch type
-    case "energy"
-        energy = Dyn_Data.energy{1,solution_num};
+    case {"energy","physical amplitude"}
+        switch type
+            case "energy"
+                energy = Dyn_Data.energy{1,solution_num};
+            case "physical amplitude"
+                energy = Dyn_Data.additional_dynamic_output{1,solution_num};
+        end
+        
 
         if ~exist("ax","var")
             figure
@@ -118,16 +124,17 @@ switch type
 
 
         xlabel(ax,"Frequency (rad/s)")
-        ylabel(ax,"Energy")
-    case {"amplitude","physical amplitude"}
         switch type
-            case "amplitude"
-                amplitude = Dyn_Data.amplitude{1,solution_num};
+            case "energy"
+                ylabel(ax,"Energy")
             case "physical amplitude"
-                amplitude = Dyn_Data.additional_dynamic_output{1,solution_num};
+                output_dof = Dyn_Data.Additional_Output.dof;
+                ylabel(ax,"X_{" + output_dof + "}");
         end
-
         
+    case "amplitude"
+       
+        amplitude = Dyn_Data.amplitude{1,solution_num};
         solution_type = Dyn_Data.solution_types{1,solution_num};
         num_modes = size(amplitude,1);
 
