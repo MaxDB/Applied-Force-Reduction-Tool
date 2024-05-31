@@ -1,6 +1,4 @@
-function job_force_ratios = split_abaqus_jobs(force_ratios,num_loadcases,Static_Opts)
-max_parallel_jobs = Static_Opts.max_parallel_jobs;
-mininum_job_loadcases = Static_Opts.minimum_job_loadcases;
+function job_force_ratios = split_abaqus_jobs(force_ratios,num_loadcases,max_parallel_jobs,mininum_job_loadcases)
 
 num_seps = size(force_ratios,2);
 maximum_jobs = ceil(num_seps*num_loadcases/mininum_job_loadcases);

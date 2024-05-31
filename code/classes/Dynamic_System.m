@@ -348,7 +348,9 @@ classdef Dynamic_System
                     reset_temp_directory()
                     if Static_Opts.max_parallel_jobs > 1
                         abaqus_start = tic;
-                        force_ratio_groups = split_abaqus_jobs(force_ratio,Static_Opts.num_loadcases,Static_Opts);
+                        max_parallel_jobs = Static_Opts.max_parallel_jobs;
+                        mininum_job_loadcases = Static_Opts.minimum_job_loadcases;
+                        force_ratio_groups = split_abaqus_jobs(force_ratio,Static_Opts.num_loadcases,max_parallel_jobs,mininum_job_loadcases);
                         num_parallel_jobs = size(force_ratio_groups,2);
 
                         log_message = sprintf("%i SEPs over %i jobs" ,[size(force_ratio,2),num_parallel_jobs]);
@@ -426,7 +428,9 @@ classdef Dynamic_System
                     if Static_Opts.max_parallel_jobs > 1
                         
                         abaqus_start = tic;
-                        force_groups = split_abaqus_jobs(applied_force,1,Static_Opts);
+                        max_parallel_jobs = Static_Opts.max_parallel_jobs;
+                        mininum_job_loadcases = Static_Opts.minimum_job_loadcases;
+                        force_groups = split_abaqus_jobs(applied_force,1,max_parallel_jobs,mininum_job_loadcases);
                         num_parallel_jobs = size(force_groups,2);
 
                         log_message = sprintf("%i loadcases over %i jobs" ,[size(applied_force,2),num_parallel_jobs]);
@@ -472,12 +476,40 @@ classdef Dynamic_System
         end
         %-----------------------------------------------------------------%
         function [t,x,x_dot] = dynamic_simulation(obj,x_0,x_dot_0,f_r_0,period,min_incs)
+
             
             Static_Opts = obj.Static_Options;
             switch Static_Opts.static_solver
                 case "abaqus"
                     reset_temp_directory()
-                    [t,x,x_dot] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,min_incs,obj,1);
+
+                    if Static_Opts.max_parallel_jobs > 1
+                        abaqus_start = tic;
+                        num_parallel_jobs = size(f_r_0,2);
+
+                        log_message = sprintf("%i dynamic simulations over %i jobs" ,[size(f_r_0,2),num_parallel_jobs]);
+                        logger(log_message,3)
+                        logger("---",3)
+
+                        t = cell(1,num_parallel_jobs);
+                        x = cell(1,num_parallel_jobs);
+                        x_dot = cell(1,num_parallel_jobs);
+
+                        parfor (iJob = 1:num_parallel_jobs,Static_Opts.max_parallel_jobs)
+                            [t_job,x_job,x_dot_job] = dynamic_simulation_abaqus(x_0(:,iJob),x_dot_0(:,iJob),f_r_0(:,iJob),period(iJob),min_incs(iJob),obj,iJob);
+
+                            t{1,iJob} = t_job;
+                            x{1,iJob} = x_job;
+                            x_dot{1,iJob} = x_dot_job;
+                        end
+
+                        abaqus_time = toc(abaqus_start);
+                        logger("---",3)
+                        log_message = sprintf("Total FE time: %.1f seconds" ,abaqus_time);
+                        logger(log_message,3)
+                    else
+                        [t,x,x_dot] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,min_incs,obj,1);
+                    end
                 case "matlab"
 
             end

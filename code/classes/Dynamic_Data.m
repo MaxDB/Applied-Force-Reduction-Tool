@@ -160,11 +160,23 @@ classdef Dynamic_Data
         end
         %-----------------------------------------------------------------%
         function obj = get_periodicity_error(obj,solution_num,orbit_num)
-            orbit = get_orbit(obj,solution_num,orbit_num);
             Rom = obj.Dynamic_Model;
-            obj.periodicity_error{1,solution_num}(orbit_num) = solution_periodicity_error(orbit,Rom);
+            
+            orbit = get_orbit(obj,solution_num,orbit_num);
+            per_error = solution_periodicity_error(orbit,Rom);
+            obj.periodicity_error{1,solution_num}(orbit_num) = per_error;
             obj.save_solution("update",solution_num)
         end
+        %-----------------------------------------------------------------%
+        function obj = special_point_periodicity_error(obj,solution_num,special_point)
+            data_path = obj.Dynamic_Model.data_path;
+            solution_name = data_path + "dynamic_sol_" + solution_num;
+            bd = coco_bd_read(solution_name);
+            orbit_type = coco_bd_col(bd, "TYPE");
+            point_index = find(orbit_type == special_point);
+            obj = obj.get_periodicity_error(solution_num,point_index);
+        end
+        %-----------------------------------------------------------------%
 
         %-----------------------------------------------------------------%
         % Analysis 
@@ -173,7 +185,7 @@ classdef Dynamic_Data
             solution_name = "temp\dynamic_sol_" + solution_num; 
             bd = coco_bd_read(solution_name);
 
-            solution_data  = coco_bd_col(bd, {"po.period", "LAB", "TYPE", "eigs","ENERGY","MAX(x)","MIN(x)"});
+            
             
             %------------------------%
             % Labels
@@ -303,7 +315,17 @@ classdef Dynamic_Data
             orbit_labels = obj.solution_labels{1,solution_num};
 
             solution_name = data_path + "dynamic_sol_" + solution_num; 
-            orbit = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(orbit_num));
+            
+            
+            if isscalar(orbit_num)
+                orbit = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(orbit_num));
+            else
+                num_orbits = length(orbit_num);
+                orbit = cell(num_orbits,1);
+                for iOrbit = 1:num_orbits
+                    orbit{iOrbit,1} = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(orbit_num(iOrbit)));
+                end
+            end
         end
         %-----------------------------------------------------------------%
 
