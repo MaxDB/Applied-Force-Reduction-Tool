@@ -185,7 +185,7 @@ classdef Dynamic_Data
             solution_name = "temp\dynamic_sol_" + solution_num; 
             bd = coco_bd_read(solution_name);
 
-            
+            solution_data  = coco_bd_col(bd, {"po.period", "LAB", "TYPE", "eigs","ENERGY","MAX(x)","MIN(x)"});
             
             %------------------------%
             % Labels

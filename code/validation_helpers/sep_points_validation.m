@@ -177,13 +177,13 @@ for iIteration = 1:(max_iterations+1)
 
 
     if all(force_converged == 1)
-        logger("energy converged",3)
+        force_log_message = "energy converged";
     else
         force_log_message = sprintf("Max energy error: %.1f" ,max(max_sep_force_error));
     end
 
     if all(disp_converged == 1)
-        logger("displacement converged",3)
+        disp_log_message = "displacement converged";
     else
         disp_log_message = sprintf("Max disp error: %.1f" ,max(max_sep_disp_error));
 
