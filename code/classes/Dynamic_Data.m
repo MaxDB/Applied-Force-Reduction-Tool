@@ -91,7 +91,7 @@ classdef Dynamic_Data
                     t0 = orbit.tbp';
                     z0 = orbit.xbp';
 
-                    coco_backbone(t0,z0,Rom,backbone_type,obj.Continuation_Options,next_solution_num);
+                    coco_backbone(t0,z0,Rom,backbone_type,obj.Continuation_Options,next_solution_num,obj.Additional_Output);
             end
 
             obj = obj.analyse_solution(next_solution_num);

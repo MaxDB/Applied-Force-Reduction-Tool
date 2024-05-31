@@ -23,6 +23,8 @@ num_ranges = num_transitions + 1;
 index_ranges = zeros(num_ranges,2);
 index_ranges(1,1) = 1;
 index_ranges(end,2) = num_orbits;
+range_stability = zeros(1,num_ranges);
+range_stability(1) = stability(1);
 for iTransition = 1:num_transitions
     transition = stability_transition(iTransition,:);
     is_bifurcation = ismember(transition,all_bifurcation_index);
@@ -33,10 +35,6 @@ for iTransition = 1:num_transitions
     end
     index_ranges(iTransition,2) = transition_orbit;
     index_ranges(iTransition+1,1) = transition_orbit;
+    range_stability(iTransition+1) = stability(transition_orbit+1);
 end
-
-
-
-range_stability = ones(1,num_ranges);
-range_stability(2:2:num_ranges) = 0;
 end
