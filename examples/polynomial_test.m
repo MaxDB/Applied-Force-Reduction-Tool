@@ -27,7 +27,7 @@ H_Coupling_Gradient_Poly = Rom.Low_Frequency_Coupling_Gradient_Polynomial;
 % ax = Static_Data.plot_h_coupling_gradient(plot_index);
 % H_Coupling_Gradient_Poly.plot_polynomial(ax,plot_index);
 % 
-plot_index = [2,1];
+plot_index = [2,2];
 ax = Static_Data.plot_h_stiffness(plot_index);
 H_Stiffness_Poly.plot_polynomial(ax,plot_index);
 

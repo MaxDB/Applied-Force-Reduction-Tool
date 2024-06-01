@@ -6,7 +6,7 @@ LINE_WIDTH = 1;
 LINE_COLOUR = "k";
 BIFURCATION_MARKER = ["o","o","^","x"];
 BIFURCATION_TYPE = ["BP","PD","NS","SN"];
-BIFURCATION_SIZE = [6,6,6,8];
+BIFURCATION_SIZE = [6,6,6,0];
 STABILITY_LIMIT = 1.005;
 
 %-------------------------------------------------------------------------%
