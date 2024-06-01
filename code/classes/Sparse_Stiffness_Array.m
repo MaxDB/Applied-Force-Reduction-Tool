@@ -81,6 +81,9 @@ classdef Sparse_Stiffness_Array
         end
         %-----------------------------------------------------------------%
         function obj_1 = cat(dim,obj_1,obj_2)
+            if nargin == 2
+                return
+            end
             if ~isequal(obj_1.nonzero_indicies,obj_2.nonzero_indicies)
                 error("Cannot concatenate: different sparsity patterns")
             end

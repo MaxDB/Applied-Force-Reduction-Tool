@@ -1,5 +1,6 @@
 function ax = plot_backbone(Dyn_Data,type,solution_num,ax)
 PLOT_BIFURCATIONS = 1;
+PLOT_PERIODICITY = 0;
 LINE_STYLE = [":","-"]; %[unstable,stable]
 LINE_WIDTH = 1;
 LINE_COLOUR = "k";
@@ -56,7 +57,10 @@ if PLOT_BIFURCATIONS
     end
 end
 
-
+periodicity_error = Dyn_Data.periodicity_error{1,solution_num};
+if isempty(periodicity_error)
+    PLOT_PERIODICITY = 0;
+end
 
 switch type
     case {"energy","physical amplitude"}
@@ -89,6 +93,11 @@ switch type
                 data_tip_row = dataTipTextRow("Stability",stability(index_range));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
+                if PLOT_PERIODICITY
+                    data_tip_row = dataTipTextRow("Periodicity",periodicity_error(index_range));
+                    p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                end
+
             end
 
             for iType = 1:num_bifurcation_types
@@ -112,12 +121,23 @@ switch type
 
                 data_tip_row = dataTipTextRow("Type",repelem(BIFURCATION_TYPE(iType),size(bifurcation_index,1),size(bifurcation_index,2)));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                
+
+                if PLOT_PERIODICITY
+                    data_tip_row = dataTipTextRow("Periodicity",periodicity_error(bifurcation_index));
+                    p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                end
             end
 
         else
             p = plot(ax,frequency,energy,'LineStyle',LINE_STYLE(2),line_plot_settings{:});
             data_tip_row = dataTipTextRow("ID",orbit_ids);
             p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
+            if PLOT_PERIODICITY
+                data_tip_row = dataTipTextRow("Periodicity",periodicity_error(index_range));
+                p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+            end
         end
         hold(ax,"off")
 
@@ -185,10 +205,15 @@ switch type
 
                     data_tip_row = dataTipTextRow("ID",orbit_ids(index_range));
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
-                    
+
 
                     data_tip_row = dataTipTextRow("Stability",stability(index_range));
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
+                    if PLOT_PERIODICITY
+                        data_tip_row = dataTipTextRow("Periodicity",periodicity_error(index_range));
+                        p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                    end
 
                 end
 
@@ -213,11 +238,21 @@ switch type
 
                     data_tip_row = dataTipTextRow("Type",repelem(BIFURCATION_TYPE(iType),size(bifurcation_index,1),size(bifurcation_index,2)));
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
+                    if PLOT_PERIODICITY
+                        data_tip_row = dataTipTextRow("Periodicity",periodicity_error(bifurcation_index));
+                        p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                    end
                 end
             else
                 p = plot(ax{ax_id,1},frequency,amplitude(iMode,:),'LineStyle',LINE_STYLE(2),line_plot_settings{:});
                 data_tip_row = dataTipTextRow("ID",orbit_ids);
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
+                if PLOT_PERIODICITY
+                    data_tip_row = dataTipTextRow("Periodicity",periodicity_error(index_range));
+                    p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                end
             end
             hold(ax{ax_id,1},"off")
 

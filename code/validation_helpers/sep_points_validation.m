@@ -54,7 +54,7 @@ for iIteration = 1:(max_iterations+1)
 
     sep_density = min(sep_density + 2,SEP_DENSITY_MAX(num_modes));
     new_unit_force_ratios = add_sep_ratios(num_modes,sep_density,found_force_ratios);
-    unit_force_ratios = [unit_force_ratios,new_unit_force_ratios];
+    unit_force_ratios = [unit_force_ratios,new_unit_force_ratios]; %#ok<AGROW>
     scaled_force_ratios = scale_sep_ratios(unit_force_ratios,Static_Data.Model.calibrated_forces);
     found_force_ratios = unit_force_ratios;
 
@@ -275,6 +275,7 @@ for iInc = 1:MAX_INC
         break
     end
 
+
     exit_flag = -1;
     while exit_flag < 0
         lambda = lambda*0.95;
@@ -306,7 +307,7 @@ for iInc = 1:MAX_INC
         break
     end
 
-    if energy_diff<1
+    if energy_diff < 1
         lambda = lambda*1.05;
     else
         lambda = lambda*0.95;
@@ -323,7 +324,9 @@ for iInc = 1:MAX_INC
         if energy_condition(iPoint)*energy_condition(iPoint + 1) < 0
             bound_indices = [iPoint,iPoint + 1];
             if iInc == 1 && any(exit_flag(bound_indices) < 0)
-                error("could not converge on bounding solutions")
+                warning("could not converge on bounding solutions")
+                lambda = lambda_start;
+                return
             end
             break
         end
