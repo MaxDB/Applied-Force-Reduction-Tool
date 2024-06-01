@@ -14,6 +14,7 @@ max_sep_loadcases = Static_Opts.maximum_loadcases;
 max_iteration_loadcases = Validation_Opts.max_added_points;
 
 
+
 num_modes = length(Model.reduced_modes);
 max_degree = MAXIMUM_DEGREE(num_modes);
 degree_range = [initial_degree,max_degree];
@@ -73,7 +74,9 @@ for iIteration = 1:(max_iterations+1)
     [force_degree,worst_force_index] = minimum_polynomial_degree(Static_Data,"Force",r,f,degree_range); %#ok<ASGLU>
     [disp_degree,worst_disp_index] = minimum_polynomial_degree(Static_Data,"Condensed_Displacement",r,displacement,degree_range);
     
-    
+    if num_sep_loadcases == 0
+        continue
+    end
     %find predicted seps and compare
     check_interpolation_start = tic;
 

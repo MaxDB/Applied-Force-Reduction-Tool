@@ -27,9 +27,9 @@ if any(step_type == "perturbation")
     while startsWith(abaqus_data{loadcase_def+counter,1},"*loadcase")
         counter = counter + 1;
     end
-    num_L_modes = counter;
+    num_h_modes = counter;
 
-    additional_data = zeros(num_dofs,num_L_modes,num_static_steps);
+    additional_data = zeros(num_dofs,num_h_modes,num_static_steps);
     additional_data_time = additional_data_time + toc(add_data_step_start);
 else
     additional_data = [];
@@ -88,7 +88,7 @@ for iStep = 1:num_steps
             % Displacement
             output_start_lines = find(startsWith(step_data,node_output_pattern,'IgnoreCase',true));
             output_start_lines(end+1) = length(step_data); %#ok<AGROW>
-            for iMode = 1:num_L_modes
+            for iMode = 1:num_h_modes
                 output_start_line = output_start_lines(iMode);
                 output_end_line = output_start_lines(iMode+1);
                 node_data = step_data(output_start_line:output_end_line,1);

@@ -114,8 +114,10 @@ switch add_data_type
         
         
         L_evecs = Model.low_frequency_eigenvectors;
-        num_L_modes = size(L_evecs,2);
-        validating_force = (Model.mass*L_evecs)*Static_Opts.perturbation_scale_factor;
+        r_evecs = Model.reduced_eigenvectors;
+        h_evecs = [r_evecs,L_evecs];
+        num_h_modes = size(h_evecs,2);
+        validating_force = (Model.mass*h_evecs)*Static_Opts.perturbation_scale_factor;
 end
 
 %-------------------------------------------------------------------------%
@@ -170,12 +172,12 @@ switch add_data_type
 
         %perturbation force template
         physical_perturbation_force_bc = validating_force;
-        physical_perturbation_force = zeros(all_dofs,num_L_modes);
+        physical_perturbation_force = zeros(all_dofs,num_h_modes);
         physical_perturbation_force(Model.node_mapping(:,1),:) = physical_perturbation_force_bc(Model.node_mapping(:,2),:);
         
         perturbation_steps = perturbation_template(1:(loadcase_start_line-1));
-        loadcase_name_line = zeros(num_L_modes,1);
-        for iMode = 1:num_L_modes
+        loadcase_name_line = zeros(num_h_modes,1);
+        for iMode = 1:num_h_modes
             perturbation_force = physical_perturbation_force(:,iMode);
 
             perturbation_force_label = strings(all_dofs,1);
@@ -277,7 +279,7 @@ try
                 case "perturbation"
                     total_step_counter = total_step_counter + 1;
                     perturbation_step = perturbation_steps;
-                    for iMode = 1:num_L_modes
+                    for iMode = 1:num_h_modes
                         name_line = loadcase_name_line(iMode);
                         perturbation_step(name_line) = perturbation_step(name_line) + "step_" +load_step_counter + "-L_" + iMode;
                     end

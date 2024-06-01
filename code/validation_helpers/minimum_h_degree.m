@@ -37,6 +37,9 @@ while h_stiffness_degree  < max_degree
     for iOutput = 1:num_modelled_outputs
         h_stiffness_i = squeeze(h_stiffness(modelled_output_indicies(iOutput,1),modelled_output_indicies(iOutput,2),:))';
         h_stiffness_rom = rom.Low_Frequency_Stiffness_Polynomial.evaluate_polynomial(r,modelled_output_indicies(iOutput,:));
+        if size(h_stiffness_rom,1) ~= 1
+            h_stiffness_rom = h_stiffness_rom';
+        end
         stiffness_error(iOutput) = coeff_of_determination(h_stiffness_i,h_stiffness_rom);
     end
     [max_stiffness_error,max_index] = max(stiffness_error);

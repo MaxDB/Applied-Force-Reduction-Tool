@@ -364,7 +364,7 @@ classdef Dynamic_System
                         additional_data_cell = cell(1,num_parallel_jobs);
                         sep_id_cell = cell(1,num_parallel_jobs);
 
-                        parfor iJob = 1:num_parallel_jobs
+                        for iJob = 1:num_parallel_jobs
                             job_force = force_ratio_groups{1,iJob};
                             [job_r,job_theta,job_f,job_E,job_additional_data,job_sep_id] = ...
                                 add_sep_abaqus(job_force,num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,obj,iJob);
