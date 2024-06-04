@@ -17,12 +17,19 @@ r_transformed = scale_factor.*(r - shift_factor);
 
 num_coeffs = size(Disp_Data.beta_bar,2);
 
-input_order = input_index';
-r_power_products = ones(num_coeffs,1);
+% input_order = input_index';
+% r_power_products = ones(num_coeffs,1);
+% 
+% 
+% for iTerm = 1:num_coeffs
+%     r_power_products(iTerm,1) = prod(r_transformed(:,1).^input_order(:,iTerm));
+% end
 
-for iTerm = 1:num_coeffs
-    r_power_products(iTerm,1) = prod(r_transformed(:,1).^input_order(:,iTerm));
+r_power_products = ones(num_coeffs,1);
+for iMode = 1:num_modes
+    r_power_products = r_power_products.*r_transformed(iMode,1).^input_index(:,iMode);
 end
+
 r_products = r_power_products(1:num_coeffs,:);
 r_dr_products = r_products(Disp_Data.diff_mapping{1,1}).*Disp_Data.diff_scale_factor{1,1};
 kinetic_energy = 0.5*r_dot(:,1)'*r_dr_products'*Disp_Data.beta_bar*r_dr_products*r_dot(:,1) ...

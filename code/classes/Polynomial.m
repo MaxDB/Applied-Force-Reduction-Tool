@@ -270,6 +270,7 @@ classdef Polynomial
                     switch size(output,2)
                         case 1
                             coeff_size = size(coeffs);
+
                             coeffs = reshape(coeffs,coeff_size(1),prod(coeff_size(2:3)));
                             output_data = input_matrix*coeffs(:,output);
                         case 2

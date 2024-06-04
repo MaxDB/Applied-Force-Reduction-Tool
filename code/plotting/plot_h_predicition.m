@@ -1,4 +1,6 @@
 function ax = plot_h_predicition(Dyn_Data,type,solution_num,ax)
+PLOT_BACKBONE = 1;
+
 if isstring(Dyn_Data)
     Dyn_Data = initalise_dynamic_data(Dyn_Data);
 end
@@ -27,8 +29,14 @@ switch type
 
         box(ax,"on")
         hold(ax,"on")
+        
+
+
         p1 = plot(ax,frequency,energy_hat,'r-');
-        p2 = plot(ax,frequency,energy_tilde,'k-');
+        if PLOT_BACKBONE
+            p2 = plot(ax,frequency,energy_tilde,'k-');
+            p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+        end
         hold(ax,"off")
 
         max_e_hat = max(energy_hat);
@@ -38,7 +46,7 @@ switch type
         ylim(ax,[0,y_lim])
 
         p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
-        p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+        
 
         xlabel(ax,"Frequency (rad/s)")
         ylabel(ax,"Energy")

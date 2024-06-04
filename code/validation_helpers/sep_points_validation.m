@@ -27,26 +27,27 @@ energy_limit = Model.energy_limit;
 found_force_ratios = Static_Data.unit_sep_ratios;
 num_original_seps = size(found_force_ratios,2);
 
-num_checked_seps = 0;
-sep_density = 3;
-while num_checked_seps < max_iteration_loadcases/num_sep_loadcases
-unit_force_ratios = add_sep_ratios(num_modes,sep_density);
-num_checked_seps = size(unit_force_ratios,2);
-if num_modes == 1
-    break
-end
-sep_density = sep_density + 2;
-if sep_density > 100
-    error("Cannot select sep density")
-end
-end
+% num_checked_seps = 0;
+% sep_density = 3;
+% while num_checked_seps < max_iteration_loadcases/num_sep_loadcases
+% unit_force_ratios = add_sep_ratios(num_modes,sep_density);
+% num_checked_seps = size(unit_force_ratios,2);
+% if num_modes == 1
+%     break
+% end
+% sep_density = sep_density + 2;
+% if sep_density > 100
+%     error("Cannot select sep density")
+% end
+% end
+% 
+% sep_density = min(sep_density,SEP_DENSITY_MAX(num_modes));
+% 
+% if sep_density > 3
+%     sep_density = sep_density - 4;
+% end
 
-sep_density = min(sep_density,SEP_DENSITY_MAX(num_modes));
-
-if sep_density > 3
-    sep_density = sep_density - 4;
-end
-
+sep_density = 1;
 
 unit_force_ratios = found_force_ratios;
 for iIteration = 1:(max_iterations+1)

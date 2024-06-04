@@ -30,8 +30,7 @@ ke_condensed_tilde = zeros(1,num_x);
 ke_mode_hat = zeros(num_h_modes,num_x);
 ke_condensed_hat = zeros(1,num_x);
 
-input_order = Eom_Input.input_order';
-r_power_products = ones(num_coeffs,1);
+input_order = Eom_Input.input_order;
 for iX = 1:num_x
     r_transformed_i = r_transformed(:,iX);
     r_dot_i = r_dot(:,iX);
@@ -39,8 +38,12 @@ for iX = 1:num_x
     h_i = h(:,iX);
     h_dot_i = h_dot(:,iX);
 
-    for iTerm = 1:num_coeffs
-        r_power_products(iTerm,1) = prod(r_transformed_i.^input_order(:,iTerm));
+    % for iTerm = 1:num_coeffs
+    %     r_power_products(iTerm,1) = prod(r_transformed_i.^input_order(:,iTerm));
+    % end
+    r_power_products = ones(num_coeffs,1);
+    for iMode = 1:num_r_modes
+        r_power_products = r_power_products.*r_transformed_i(iMode).^input_order(:,iMode);
     end
 
     r_products_theta = r_power_products(1:num_coupling_coeffs,:);

@@ -1,6 +1,6 @@
 clear
 
-load("data\exhaust_1\Static_Data.mat");
+load("data\exhaust_157\Static_Data.mat");
 %-------------------------------------------------------------------------%
 % Static_Data = Static_Data.add_validation_data(129);
 

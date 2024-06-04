@@ -9,6 +9,8 @@ plot_h_predicition("exhaust_1","energy",1);
 plot_h_predicition("exhaust_1","amplitude",1);
 compare_solutions("exhaust_17","exhaust_157",2,1,"energy",0)
 
+compare_solutions("exhaust_157","exhaust_157",1,3,"energy",2)
+
 % close all
 % plot_backbone("h_beam_13","amplitude",1);
 % plot_backbone("h_oscillator_1","amplitude",1);
