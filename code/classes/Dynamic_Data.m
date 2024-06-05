@@ -142,7 +142,7 @@ classdef Dynamic_Data
             data_path = obj.Dynamic_Model.data_path;
             load(data_path + "Static_Data.mat","Static_Data")
             Static_Data = Static_Data.add_validation_data(L_modes);
-            save(data_path + "Static_Data.mat","Static_Data","-v7.3")
+            % save(data_path + "Static_Data.mat","Static_Data","-v7.3")
 
             L_modes = Static_Data.Dynamic_Validation_Data.current_L_modes;
             
@@ -267,8 +267,8 @@ classdef Dynamic_Data
             q_amp = get_amplitude(q_l);
 
             %--
-            num_points = size(r,2);
-            num_h_modes = size(h,1);
+            % num_points = size(r,2);
+            % num_h_modes = size(h,1);
             num_r_modes = size(r,1);
             h_r = h(1:num_r_modes,:);
             force_tilde = Validation_Analysis_Inputs.Force.evaluate_polynomial(r);
@@ -281,21 +281,25 @@ classdef Dynamic_Data
             %     h_potential(1:num_r_modes,iPoint) = h_potential(1:num_r_modes,iPoint) + force_tilde(:,iPoint).*h_r(:,iPoint);
             % end
             % h_potential = sum(h_potential);
-
+            
+            point_span = 1:10;
+            num_points = size(point_span,2);
             h_potential = zeros(1,num_points);
             for iPoint = 1:num_points
-                h_stiffness = Validation_Analysis_Inputs.H_Stiffness_Poly.evaluate_polynomial(r(:,iPoint));
-                h_force = h_stiffness*h(:,iPoint);
-                h_potential(:,iPoint) = 1/2*(h_force'*h(:,iPoint)) + force_tilde(:,iPoint)'*h_r(:,iPoint);
+                point = point_span(iPoint);
+                h_stiffness = Validation_Analysis_Inputs.H_Stiffness_Poly.evaluate_polynomial(r(:,point));
+                h_force = h_stiffness*h(:,point);
+                h_potential(:,iPoint) = 1/2*(h_force'*h(:,point)) + force_tilde(:,point)'*h_r(:,point);
             end
             
            
-            potential_tilde = Validation_Analysis_Inputs.Potential.evaluate_polynomial(r);
+            potential_tilde = Validation_Analysis_Inputs.Potential.evaluate_polynomial(r(:,point_span));
             potential_hat = potential_tilde + h_potential;
             %--
 
             %--
-            [ke_mode_tilde,ke_condensed_tilde,ke_mode_hat,ke_condensed_hat] = h_kinetic_energy(r,r_dot,h,h_dot,Validation_Analysis_Inputs);
+            %  r(:,1),r_dot(:,1),h(:,1),h_dot(:,1)
+            [ke_mode_tilde,ke_condensed_tilde,ke_mode_hat,ke_condensed_hat] = h_kinetic_energy(r(:,point_span),r_dot(:,point_span),h(:,point_span),h_dot(:,point_span),Validation_Analysis_Inputs);
             %--
             % energy_test = obj.energy{1,solution_num}(orbit_num);
             % energy_tilde = potential_tilde + sum(ke_mode_tilde) + ke_condensed_tilde;

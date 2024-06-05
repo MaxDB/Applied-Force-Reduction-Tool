@@ -11,11 +11,19 @@ if isstring(solution_num)
     end
 end
 
+
 frequency = Dyn_Data.frequency{1,solution_num};
 num_orbits = size(frequency,2);
+
+
 orbit_labels = 1:num_orbits;
 orbit_ids = "(" + solution_num + "," + orbit_labels + ")";
-data_tip_row = dataTipTextRow("ID",orbit_ids);
+data_tip_row_id = dataTipTextRow("ID",orbit_ids);
+
+validation_modes = Dyn_Data.validation_modes{1,solution_num};
+mode_string = "[" + join(string(validation_modes),", ") + "]";
+data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
+
 
 switch type
     case "energy"
@@ -34,8 +42,9 @@ switch type
 
         p1 = plot(ax,frequency,energy_hat,'r-');
         if PLOT_BACKBONE
-            p2 = plot(ax,frequency,energy_tilde,'k-');
-            p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+            ax = plot_backbone(Dyn_Data,type,solution_num,ax);
+            % p2 = plot(ax,frequency,energy_tilde,'k-');
+            % p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
         end
         hold(ax,"off")
 
@@ -45,8 +54,8 @@ switch type
         y_lim = min(max_e_tilde*3,max_e_hat);
         ylim(ax,[0,y_lim])
 
-        p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
-        
+        p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
+        p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_modes;
 
         xlabel(ax,"Frequency (rad/s)")
         ylabel(ax,"Energy")
@@ -102,8 +111,8 @@ switch type
             y_lim = min(max_g*3,max_q);
             ylim(iAx,[0,y_lim])
 
-            p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
-            p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+            p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
+            p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
 
             xlabel(iAx,"Frequency (rad/s)")
             ylabel(iAx,"Q_{" + h_modes(iMode) + "}")

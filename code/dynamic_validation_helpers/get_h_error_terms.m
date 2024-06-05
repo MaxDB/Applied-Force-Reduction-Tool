@@ -20,10 +20,10 @@ G_theta_beta = Eom_Input.beta_G_theta;
 
 
 
-input_order = Eom_Input.input_order';
+input_order = Eom_Input.input_order;
+num_r_modes = size(input_order,2);
 num_h_modes = size(Eom_Input.H_Stiffness_Data.coeffs,1);
 I_h = eye(num_h_modes);
-r_power_products = ones(num_coeffs,1);
 
 switch num_h_modes
     case 1
@@ -42,8 +42,12 @@ for iX = 1:num_x
     r_transformed_i = r_transformed(:,iX);
 
 
-    for iTerm = 1:num_coeffs
-        r_power_products(iTerm,1) = prod(r_transformed_i.^input_order(:,iTerm));
+    % for iTerm = 1:num_coeffs
+    %     r_power_products(iTerm,1) = prod(r_transformed_i.^input_order(:,iTerm));
+    % end
+    r_power_products = ones(num_coeffs,1);
+    for iMode = 1:num_r_modes
+        r_power_products = r_power_products.*r_transformed_i(iMode).^input_order(:,iMode);
     end
 
     r_force = Eom_Input.Reduced_Force_Data.coeffs*r_power_products(1:num_reduced_force_coeffs,:);
