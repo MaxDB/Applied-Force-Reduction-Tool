@@ -7,7 +7,7 @@ LINE_STYLE = [":","-"]; %[unstable,stable]
 LINE_WIDTH = 1.5;
 BIFURCATION_MARKER = ["o","o","^","x"];
 BIFURCATION_TYPE = ["BP","PD","NS","SN"];
-BIFURCATION_SIZE = [6,6,6,0];
+BIFURCATION_SIZE = [6,0,6,0];
 
 
 %-------------------------------------------------------------------------%
@@ -180,6 +180,7 @@ switch type
                 output_dof = Dyn_Data.Additional_Output.dof;
                 ylabel(ax,"X_{" + output_dof + "}");
         end
+
         
     case "amplitude"
        

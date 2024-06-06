@@ -1,5 +1,5 @@
 function compare_solutions(type,varargin)
-
+PLOT_LEGEND = 1;
 
 %-------------------------------------------------------------------------%
 num_args = length(varargin);
@@ -33,6 +33,8 @@ end
 colour_numbers = 1:num_solutions;
 
 ax = [];
+legend_lines = zeros(1,num_solutions);
+legend_modes = cell(1,num_solutions);
 for iSol = 1:num_solutions
     data_name = dyn_data_names{1,iSol};
     Dyn_Data = initalise_dynamic_data(data_name);
@@ -46,6 +48,25 @@ for iSol = 1:num_solutions
             ax = plot_backbone(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",colour_numbers(iSol));
         end
     end
+    if PLOT_LEGEND
+        hold(ax,"on")
+        line = ax.Children(1);
+        point = [line.XData(1),line.YData(1)];
+        line_width = line.LineWidth;
+        line_colour = get_plot_colours(colour_numbers(iSol));
+        p = plot(ax,point(1),point(2),"-","LineWidth",line_width,"Color",line_colour);
+        hold(ax,"off")
+        legend_lines(iSol) = p;
+        reduced_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
+        legend_modes{1,iSol} = reduced_modes;
+    end
 end
 
+if PLOT_LEGEND
+    
+    legend_names = cellfun(@(x) "\{" + join(string(x),", ") + "\}",legend_modes);
+    legend(legend_lines,legend_names,"Location","best")
 end
+end
+
+
