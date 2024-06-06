@@ -2,7 +2,7 @@ function force_ratios = add_sep_ratios(r_num,density,found_force_ratios)
 
 if r_num == 1
     force_ratios = [1,-1];
-    if nargin == 3
+    if nargin == 3 && ~isempty(found_force_ratios)
         force_ratios = setdiff(force_ratios',found_force_ratios',"rows")';
     end
     return
@@ -47,7 +47,7 @@ force_ratios = round(force_ratios,5);
 
 force_ratios = unique(force_ratios', 'rows')';
 
-if nargin == 3
+if nargin == 3 && ~isempty(found_force_ratios)
     force_ratios = setdiff(force_ratios',found_force_ratios',"rows")';
 end
 end

@@ -8,7 +8,7 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "exhaust";
 energy_limit = 6;
-initial_modes = [1,5,7];
+initial_modes = [1];
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
@@ -34,11 +34,11 @@ Model = Model.update_static_opts(Static_Opts);
 Validation_Opts.validation_algorithm = "sep_points";
 % Validation_Opts.minimum_degree = 3;
 Validation_Opts.minimum_coupling_rating = 1e-2;
-Validation_Opts.maximum_iterations =5;
+Validation_Opts.maximum_iterations = 3;
 Validation_Opts.maximum_interpolation_error = [1e-3,1e-1];
 Validation_Opts.maximum_fitting_error = 1e-3;
 Validation_Opts.num_added_points = 1;
-Validation_Opts.max_added_points = 400;
+Validation_Opts.max_added_points = 800;
 %----------------------------------------------%
 Static_Data = Static_Dataset(Model,Validation_Opts);
 Static_Data.save_data;

@@ -32,15 +32,24 @@ classdef Static_Dataset
 
             obj = update_validation_opts(obj,Validation_Opts);
 
+            obj = obj.create_dataset;
+        
+            
+            rom_data_time = toc(rom_data_time_start);
+            log_message = sprintf("ROM Dataset Created: %.1f seconds" ,rom_data_time);
+            logger(log_message,1)
+        end
+        %-----------------------------------------------------------------%
+        function obj = create_dataset(obj)
             %using hyper sphere but may update
             rom_scaffold_time_start = tic;
 
             obj = obj.create_scaffold(obj.additional_data_type);
-            
+
             rom_scaffold_time = toc(rom_scaffold_time_start);
             log_message = sprintf("Dataset scaffold created: %.1f seconds" ,rom_scaffold_time);
             logger(log_message,2)
-            
+
             %add loadcases until convergence
             validation_time_start = tic;
             switch obj.Validation_Options.validation_algorithm
@@ -57,12 +66,6 @@ classdef Static_Dataset
             % end
             validation_time = toc(validation_time_start);
             log_message = sprintf("ROM Dataset Validated: %.1f seconds" ,validation_time);
-            logger(log_message,1)
-        
-            
-
-            rom_data_time = toc(rom_data_time_start);
-            log_message = sprintf("ROM Dataset Created: %.1f seconds" ,rom_data_time);
             logger(log_message,1)
         end
         %-----------------------------------------------------------------%
@@ -122,12 +125,12 @@ classdef Static_Dataset
                         end
                     end
 
-                    
+
                     [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_perturbation_data(obj,L_modes);
-                    
+
                     obj.low_frequency_stiffness = h_stiffness;
                     obj.low_frequency_coupling_gradient = h_coupling_gradient;
-                    
+
                     obj.Dynamic_Validation_Data.current_L_modes = L_modes;
                     obj.Dynamic_Validation_Data.h_stiffness_0 = h_stiffness_0;
                     obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
@@ -141,27 +144,31 @@ classdef Static_Dataset
 
             r_modes = obj.Model.reduced_modes;
             num_modes = length(r_modes);
-
-            unit_force_ratios = add_sep_ratios(num_modes,1);
+            
+            found_sep_ratios = obj.unit_sep_ratios;
+            unit_force_ratios = add_sep_ratios(num_modes,1,found_sep_ratios);
             scaled_force_ratios = scale_sep_ratios(unit_force_ratios,obj.Model.calibrated_forces);
 
       
-            obj.unit_sep_ratios = unit_force_ratios;
+            
             
             [r,theta,f,E,sep_id,additional_data] = obj.Model.add_sep(scaled_force_ratios,additional_data_type,1);
-
-            obj.reduced_displacement = r;
-            obj.condensed_displacement = theta;
-            obj.restoring_force = f;
-            obj.potential_energy = E;
-            obj.static_equilibrium_path_id = sep_id;
             
-            switch additional_data_type
-                case "stiffness"
-                    obj.tangent_stiffness = additional_data;
-                case "perturbation"
-                    obj.perturbation_displacement = additional_data;
-            end
+            obj = obj.update_data(r,theta,f,E,sep_id,additional_data,unit_force_ratios);
+
+            % obj.unit_sep_ratios = [found_sep_ratios,unit_force_ratios];
+            % obj.reduced_displacement = r;
+            % obj.condensed_displacement = theta;
+            % obj.restoring_force = f;
+            % obj.potential_energy = E;
+            % obj.static_equilibrium_path_id = sep_id;
+            
+            % switch additional_data_type
+            %     case "stiffness"
+            %         obj.tangent_stiffness = additional_data;
+            %     case "perturbation"
+            %         obj.perturbation_displacement = additional_data;
+            % end
             
 
         end
@@ -188,7 +195,44 @@ classdef Static_Dataset
             end
         end
         %-----------------------------------------------------------------%
-        
+        function obj = update_model(obj,added_modes,Calibration_Opts,Static_Opts)
+            system_name = obj.Model.system_name;
+            energy_limit = obj.Model.energy_limit;
+            initial_modes = sort([obj.Model.reduced_modes,added_modes],"ascend");
+            old_mode_map = ismember(initial_modes,obj.Model.reduced_modes);
+           
+            Static_Opts.static_solver = obj.Model.Static_Options.static_solver;
+            Static_Opts.additional_data = obj.Model.Static_Options.additional_data;
+            Static_Opts.num_validation_modes = obj.Model.Static_Options.num_validation_modes;
+
+            obj.Model = Dynamic_System(system_name,energy_limit,initial_modes,Calibration_Opts,Static_Opts);
+
+
+            %-------------------------------------------------%
+            num_modes = size(initial_modes,2);
+            
+
+            old_sep_ratios = obj.unit_sep_ratios;
+            num_seps = size(old_sep_ratios,2);
+            new_sep_ratios = zeros(num_modes,num_seps);
+            new_sep_ratios(old_mode_map,:) = old_sep_ratios;
+            obj.unit_sep_ratios = new_sep_ratios;
+
+            r_evecs = obj.Model.reduced_eigenvectors;
+            mass = obj.Model.mass;
+            obj.reduced_displacement = r_evecs'*mass*obj.condensed_displacement;
+
+            old_force = obj.restoring_force;
+            num_loadcases = size(old_force,2);
+            new_force = zeros(num_modes,num_loadcases);
+            new_force(old_mode_map,:) = old_force;
+            obj.restoring_force = new_force;
+            %-------------------------------------------------%
+           
+        end
+        %-----------------------------------------------------------------%
+
+
         %-----------------------------------------------------------------%
         function obj = update_validation_opts(obj,Validation_Opts)
             % Default static options

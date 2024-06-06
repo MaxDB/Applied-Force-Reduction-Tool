@@ -1,14 +1,36 @@
-function ax = plot_backbone(Dyn_Data,type,solution_num,ax)
+function ax = plot_backbone(Dyn_Data,type,solution_num,varargin)
 PLOT_BIFURCATIONS = 1;
 PLOT_PERIODICITY = 0;
+STABILITY_LIMIT = 1.005;
+
 LINE_STYLE = [":","-"]; %[unstable,stable]
-LINE_WIDTH = 1;
-LINE_COLOUR = "k";
+LINE_WIDTH = 1.5;
 BIFURCATION_MARKER = ["o","o","^","x"];
 BIFURCATION_TYPE = ["BP","PD","NS","SN"];
 BIFURCATION_SIZE = [6,6,6,0];
-STABILITY_LIMIT = 1.005;
 
+
+%-------------------------------------------------------------------------%
+num_args = length(varargin);
+if mod(num_args,2) == 1
+    error("Invalid keyword/argument pairs")
+end
+keyword_args = varargin(1:2:num_args);
+keyword_values = varargin(2:2:num_args);
+
+ax = [];
+colour_num = 1;
+
+for arg_counter = 1:num_args/2
+    switch keyword_args{arg_counter}
+        case "axes"
+            ax = keyword_values{arg_counter};
+        case {"colour","color"}
+            colour_num = keyword_values{arg_counter};
+        otherwise
+            error("Invalid keyword: " + keyword_args{arg_counter})
+    end
+end
 %-------------------------------------------------------------------------%
 if isstring(Dyn_Data)
     Dyn_Data = initalise_dynamic_data(Dyn_Data);
@@ -25,7 +47,8 @@ num_orbits = size(frequency,2);
 orbit_labels = 1:num_orbits;
 orbit_ids = "(" + solution_num + "," + orbit_labels + ")";
 
-line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",LINE_COLOUR};
+line_colour = get_plot_colours(colour_num);
+line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour};
 
 if PLOT_BIFURCATIONS
     bifurcations = Dyn_Data.bifurcations{1,solution_num};
@@ -38,7 +61,7 @@ if PLOT_BIFURCATIONS
 
     bifurcation_plot_settings = cell(num_bifurcation_types,1);
     for iType = 1:num_bifurcation_types
-        type_plot_settings = {"LineStyle","none","LineWidth",LINE_WIDTH,"Color",LINE_COLOUR,...
+        type_plot_settings = {"LineStyle","none","LineWidth",LINE_WIDTH,"Color",line_colour,...
             "Marker",BIFURCATION_MARKER(iType),"MarkerSize",BIFURCATION_SIZE(iType)};
         switch iType
             case 1
@@ -48,7 +71,7 @@ if PLOT_BIFURCATIONS
                 type_plot_settings{end+1} = "MarkerFaceColor";
                 type_plot_settings{end+1} = "w";
                 type_plot_settings{end+1} = "MarkerEdgeColor";
-                type_plot_settings{end+1} = LINE_COLOUR; %#ok<*AGROW>
+                type_plot_settings{end+1} = line_colour; %#ok<*AGROW>
             case 3
                 type_plot_settings{end+1} = "MarkerEdgeColor";
                 type_plot_settings{end+1} = "w";
@@ -57,10 +80,16 @@ if PLOT_BIFURCATIONS
     end
 end
 
-periodicity_error = Dyn_Data.periodicity_error{1,solution_num};
-if isempty(periodicity_error)
+if isempty(Dyn_Data.periodicity_error)
     PLOT_PERIODICITY = 0;
+else
+    periodicity_error = Dyn_Data.periodicity_error{1,solution_num};
+    if isempty(periodicity_error)
+        PLOT_PERIODICITY = 0;
+    end
 end
+
+
 
 switch type
     case {"energy","physical amplitude"}
@@ -72,7 +101,7 @@ switch type
         end
         
 
-        if ~exist("ax","var")
+        if isempty(ax)
             figure
             ax = axes(gcf);
         end
@@ -165,7 +194,7 @@ switch type
         end
 
 
-        if ~exist("ax","var")
+        if isempty(ax)
             figure
             tiledlayout("flow")
             for iMode = 1:num_modes
