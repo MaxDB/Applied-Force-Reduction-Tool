@@ -11,19 +11,33 @@ vel_span = disp_span + num_r_modes;
 num_h_modes = length(Validation_Rom.Dynamic_Validation_Data.current_L_modes) + num_r_modes;
 
 Rom = Dyn_Data.Dynamic_Model;
+Solution_Type = Dyn_Data.solution_types{1,solution_num};
+orbit_type = Solution_Type.orbit_type;
+solution_name = Rom.data_path + "dynamic_sol_" + solution_num;
 %%% Set up h-problem
-Eom_Input = Rom.get_solver_inputs("coco_backbone");
-reduced_eom = @(t,z,zeta) coco_eom(t,z,zeta,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data);
-% 
-Validation_Input = Validation_Rom.get_solver_inputs("h_prediction");
-h_terms = @(r,r_dot,r_ddot) get_h_error_terms(r,r_dot,r_ddot,Validation_Input);
 
-% Validation_Input = Validation_Rom.get_solver_inputs("h_prediction_test");
-% h_terms = @(r,r_dot,r_ddot) get_h_error_terms_test(r,r_dot,r_ddot,Validation_Input);
+switch orbit_type
+    case "free"
+        Eom_Input = Rom.get_solver_inputs("coco_backbone");
+        reduced_eom = @(t,z,zeta) coco_eom(t,z,zeta,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data);
+        %
+        Validation_Input = Validation_Rom.get_solver_inputs("h_prediction");
+        h_terms = @(r,r_dot,r_ddot) get_h_error_terms(r,r_dot,r_ddot,Validation_Input);
+    case "forced"
+        load(solution_name + "\Nonconservative_Inputs.mat","Nonconservative_Inputs")
+        amp = Nonconservative_Inputs.amplitude;
+        Eom_Input = Rom.get_solver_inputs("coco_frf",Nonconservative_Inputs);
+        reduced_eom = @(t,z,T) coco_forced_eom(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data);
+        
+        Validation_Input = Validation_Rom.get_solver_inputs("forced_h_prediction",Nonconservative_Inputs);
+        h_terms = @(t,r,r_dot,r_ddot,period) get_forced_h_error_terms(t,r,r_dot,r_ddot,amp,period,Validation_Input);
+end
+
+
 
 Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("h_analysis");
 
-solution_name = Rom.data_path + "dynamic_sol_" + solution_num;
+
 sol_labels = Dyn_Data.solution_labels{1,solution_num};
 frequency = Dyn_Data.frequency{1,solution_num};
 num_periodic_orbits = length(sol_labels);
@@ -44,10 +58,21 @@ for iOrbit = 1:num_periodic_orbits
     r_dot = x(vel_span,:);
     omega = frequency(1,iOrbit);
 
-    x_dot = reduced_eom(t0,x,zeros(size(t0)));
-    r_ddot  = x_dot(vel_span,:);
+    
+    
 
-    [h_inertia,h_conv,h_stiff,h_force] = h_terms(r,r_dot,r_ddot); %lots of scope to speed up
+    switch orbit_type
+        case "free"
+            x_dot = reduced_eom(t0,x,zeros(size(t0)));
+            r_ddot  = x_dot(vel_span,:);
+            [h_inertia,h_conv,h_stiff,h_force] = h_terms(r,r_dot,r_ddot); %lots of scope to speed up
+        case "forced"
+            
+            period = 2*pi/omega;
+            x_dot = reduced_eom(t0,x,period);
+            r_ddot  = x_dot(vel_span,:);
+            [h_inertia,h_conv,h_stiff,h_force] = h_terms(t0,r,r_dot,r_ddot,period);
+    end
     %h_inertia * h_ddot  +  h_conv * h_dot  +  h_stiff * h  =  h_force
     set_up_h_time = toc(set_up_h_start);
 

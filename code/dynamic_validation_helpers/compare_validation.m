@@ -7,5 +7,5 @@ for iMode = 1:num_L_modes
     Dyn_Data = Dyn_Data.validate_solution(solution_num,L_modes(iMode));
     ax = plot_h_predicition(Dyn_Data,"energy",solution_num,ax);
 end
-plot_backbone(Dyn_Data,"energy",solution_num,ax);
+plot_backbone(Dyn_Data,"energy",solution_num,"axes",ax);
 end

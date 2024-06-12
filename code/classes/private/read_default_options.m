@@ -21,6 +21,11 @@ for iLine = 1:num_lines
     option_value = strip(line_data{2,1});
     if startsWith(option_value,'"')
         option_value = string(strip(option_value,"both",'"'));
+    elseif startsWith(option_value,'[')
+        option_value = strip(option_value,"left",'[');
+        option_value = strip(option_value,"right",']');
+        option_value = split(option_value,";");
+        option_value = str2double(option_value);
     else
         option_value = str2double(option_value);
     end

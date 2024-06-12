@@ -14,3 +14,4 @@ initial_discretisation_num, 10, #intial number of discretisation points
 max_discretisation_num, 100, 	#maximum number of discretisation points
 min_discretisation_num, 5, 	#minimum number of discretisation points
 collation_degree, 4, 		#degree of interpolating polynomial
+parameter_range, [0;1e16],	#allowable range of continuation variable

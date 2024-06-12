@@ -39,7 +39,7 @@ num_loadcases = size(x_perturbation,3);
 
 h_coupling_gradient = zeros(num_dofs,num_h_modes,num_loadcases);
 h_stiffness = zeros(num_h_modes,num_h_modes,num_loadcases);
-for iLoad = 1:num_loadcases
+parfor iLoad = 1:num_loadcases
     % r_i = r(:,iLoad);
     % stiff_i = Stiffness_Poly.evaluate_polynomial(r_i);
     % theta_gradient_i = Theta_Gradient_Poly.evaluate_polynomial(r_i);
@@ -48,15 +48,17 @@ for iLoad = 1:num_loadcases
 
     % L_perturbation_i = x_perturbation(:,:,iLoad);
     % h_perturbation_i = [r_perturbation_i,L_perturbation_i];
+    
 
     h_perturbation_i = x_perturbation(:,:,iLoad);
 
     h_disp = h_disp_transform*h_perturbation_i;
+
     theta_hat = h_perturbation_i - h_evec*h_disp;
-
-
     h_coupling_gradient(:,:,iLoad) = theta_hat/h_disp;
+
     h_stiffness(:,:,iLoad) =  F_h/h_disp;
+
 end
 
 stiffness = Model.stiffness;

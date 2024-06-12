@@ -63,43 +63,75 @@ classdef Dynamic_Data
             coco_backbone(t0,z0,Rom,type,obj.Continuation_Options,solution_num,obj.Additional_Output);
             obj = obj.analyse_solution(solution_num);
             
-            solution_type = "backbone";
-            if type == "fom"
-                solution_type = "fom: " + solution_type;
-            end
+            solution_type.orbit_type = "free";
+            solution_type.model_type = type;
+     
             obj.solution_types{1,solution_num} = solution_type;
             obj.num_solutions = solution_num;
 
             obj.save_solution("coco",solution_num)
         end
         %-----------------------------------------------------------------%
-        function obj = restart_backbone(obj,solution_num,orbit_num,type)
-            next_solution_num = obj.num_solutions + 1;
+        function obj = restart_point(obj,solution_num,orbit_num,type)
             Rom = obj.Dynamic_Model;
-
-            solution_type = obj.solution_types{1,solution_num};
-            switch solution_type
-                case "backbone"
-                    backbone_type = "rom";
-                case "fom: backbone"
-                    backbone_type = "fom";
-            end
-
+            
             switch type
-                case "po"
-                    orbit = obj.get_orbit(solution_num,orbit_num);
-                    t0 = orbit.tbp';
-                    z0 = orbit.xbp';
-
-                    coco_backbone(t0,z0,Rom,backbone_type,obj.Continuation_Options,next_solution_num,obj.Additional_Output);
+                case "IC"
+                    point_index = get_special_point(obj,solution_num,type);
             end
+            if isstring(orbit_num)
+                if orbit_num == "all"
+                    orbit_num = 1:size(point_index,1);
+                end
+            end
+            num_orbits = length(orbit_num);
+            for iOrbit = 1:num_orbits
+                next_solution_num = obj.num_solutions + 1;
 
-            obj = obj.analyse_solution(next_solution_num);
+                solution_type = obj.solution_types{1,solution_num};
+                model_type = solution_type.model_type;
 
-            obj.solution_types{1,next_solution_num} = solution_type;
-            obj.num_solutions = next_solution_num;
+                switch type
+                    case "po"
+                        orbit = obj.get_orbit(solution_num,orbit_num(iOrbit));
+                        t0 = orbit.tbp';
+                        z0 = orbit.xbp';
 
-            obj.save_solution("coco",next_solution_num)
+
+                        coco_backbone(t0,z0,Rom,model_type,obj.Continuation_Options,next_solution_num,obj.Additional_Output);
+                        obj = obj.analyse_solution(next_solution_num);
+
+                        obj.solution_types{1,next_solution_num} = solution_type;
+                        obj.num_solutions = next_solution_num;
+
+                        obj.save_solution("coco",next_solution_num)
+
+                    case "IC"
+                        orbit = obj.get_orbit(solution_num,point_index(orbit_num(iOrbit)));
+
+                        t0 = orbit.tbp';
+                        z0 = orbit.xbp';
+                        p0 = solution_type.frequency;
+
+                        data_path = obj.Dynamic_Model.data_path;
+                        solution_name = data_path + "dynamic_sol_" + solution_num;
+                        load(solution_name + "\Nonconservative_Inputs.mat","Nonconservative_Inputs")
+                        Nonconservative_Inputs.continuation_variable = "frequency";
+                        Nonconservative_Inputs = rmfield(Nonconservative_Inputs,"frequency");
+                        Nonconservative_Inputs.amplitude = orbit.p;
+
+                        coco_forced_response(t0,z0,p0,Rom,model_type,obj.Continuation_Options,next_solution_num,obj.Additional_Output,Nonconservative_Inputs);
+
+                        obj = obj.analyse_solution(next_solution_num);
+
+                        obj.solution_types{1,next_solution_num} = solution_type;
+                        obj.num_solutions = next_solution_num;
+
+                        obj.save_solution("coco_frf",next_solution_num,Nonconservative_Inputs)
+                end
+
+                
+            end
         end
         %-----------------------------------------------------------------%
         function obj = add_full_order_backbone(obj,mode_num)
@@ -110,21 +142,48 @@ classdef Dynamic_Data
             obj = obj.add_backbone(mode_num,"fom");
         end
         %-----------------------------------------------------------------%
-        function obj = add_modal_frf(obj,Force_Data,Damping_Data)
+        function obj = add_forced_response(obj,Force_Data,Damping_Data)
+            TYPE = "rom";
             Rom = obj.Dynamic_Model;
             solution_num = obj.num_solutions + 1;
+
+            continuation_variable = Force_Data.continuation_variable;
+
             switch Damping_Data.damping_type
                 case "rayleigh"
-                    damping = get_rayleigh_damping_matrix(Damping_Data,obj.Dynamic_Model.Model);
+                    damping = get_rayleigh_damping_matrix(Damping_Data,Rom.Model);
                     Nonconservative_Input.damping = damping;
-                    Nonconservative_Input.amplitude = Force_Data.amplitude;
             end
-            Eom_Input = Rom.get_solver_inputs("coco_backbone");
 
-            [t0,z0] = get_forced_response(obj.Dynamic_Model,Eom_Input,Nonconservative_Input);
+            
 
-            coco_frf(t0,z0,Eom_Input,Nonconservative_Input,obj.Continuation_Options,solution_num);
+            switch continuation_variable
+                case "amplitude"
+                    Nonconservative_Input.frequency = Force_Data.frequency;
+                    mode_map = Force_Data.mode_number==Rom.Model.reduced_modes;
+                    Nonconservative_Input.mode_map = mode_map;
+                    Nonconservative_Input.force_type = Force_Data.type;
+                    Nonconservative_Input.force_points = Force_Data.force_points;
 
+                    Nonconservative_Input.continuation_variable = continuation_variable;
+                    [t0,z0,F0] = get_forced_linear_solution(Rom,Nonconservative_Input,continuation_variable);
+                    p0 = F0;
+
+                    solution_type.frequency = Force_Data.frequency;
+                case "frequency"
+
+            end      
+
+            coco_forced_response(t0,z0,p0,Rom,TYPE,obj.Continuation_Options,solution_num,obj.Additional_Output,Nonconservative_Input);
+            obj = obj.analyse_solution(solution_num);
+            
+            solution_type.orbit_type = "forced";
+            solution_type.model_type = TYPE;
+ 
+            obj.solution_types{1,solution_num} = solution_type;
+            obj.num_solutions = solution_num;
+
+            obj.save_solution("coco_frf",solution_num,Nonconservative_Input)
         end
         %-----------------------------------------------------------------%
 
@@ -132,31 +191,51 @@ classdef Dynamic_Data
         % Validation
         %-----------------------------------------------------------------%
         function  obj = validate_solution(obj,solution_num,L_modes)
-             H_ALGORITHM = "time_solution";
-            
+            H_ALGORITHM = "time_solution";
+
+            validation_start = tic;
+            validation_rom_start = tic;
             if isstring(solution_num)
                 if solution_num == "last"
                     solution_num = obj.num_solutions;
                 end
             end
             data_path = obj.Dynamic_Model.data_path;
+
+            load_static_data_start = tic;
             load(data_path + "Static_Data.mat","Static_Data")
+
+            load_static_data_time = toc(load_static_data_start);
+            log_message = sprintf("Static dataset loaded: %.1f seconds" ,load_static_data_time);
+            logger(log_message,3)
+
             Static_Data = Static_Data.add_validation_data(L_modes);
             % save(data_path + "Static_Data.mat","Static_Data","-v7.3")
 
             L_modes = Static_Data.Dynamic_Validation_Data.current_L_modes;
-            
+
             obj.validation_modes{1,solution_num} = L_modes;
             Validation_Rom = Reduced_System(Static_Data);
 
-          
+            validation_rom_time = toc(validation_rom_start);
+            log_message = sprintf("Validation ROM created: %.1f seconds" ,validation_rom_time);
+            logger(log_message,2)
+
+            validation_solution_start = tic;
             switch H_ALGORITHM
                 case "harmonic_balance"
                     obj = h_harmonic_balance(obj,Validation_Rom,solution_num);
                 case "time_solution"
                     obj = h_time_solution(obj,Validation_Rom,solution_num);
             end
-             obj.save_solution("h_prediciton");
+            validation_solution_time = toc(validation_solution_start);
+            log_message = sprintf("Validation equations solved: %.1f seconds" ,validation_solution_time);
+            logger(log_message,2)
+
+            obj.save_solution("h_prediciton");
+            validation_time = toc(validation_start);
+            log_message = sprintf("Solution validated: %.1f seconds" ,validation_time);
+            logger(log_message,1)
         end
         %-----------------------------------------------------------------%
         function obj = get_periodicity_error(obj,solution_num,orbit_num)
@@ -169,11 +248,7 @@ classdef Dynamic_Data
         end
         %-----------------------------------------------------------------%
         function obj = special_point_periodicity_error(obj,solution_num,special_point)
-            data_path = obj.Dynamic_Model.data_path;
-            solution_name = data_path + "dynamic_sol_" + solution_num;
-            bd = coco_bd_read(solution_name);
-            orbit_type = coco_bd_col(bd, "TYPE");
-            point_index = find(orbit_type == special_point);
+            point_index = get_special_point(obj,solution_num,special_point);
             obj = obj.get_periodicity_error(solution_num,point_index);
         end
         %-----------------------------------------------------------------%
@@ -332,16 +407,29 @@ classdef Dynamic_Data
             end
         end
         %-----------------------------------------------------------------%
+        function point_index = get_special_point(obj,solution_num,point_type)
+            data_path = obj.Dynamic_Model.data_path;
+            solution_name = data_path + "dynamic_sol_" + solution_num;
+            bd = coco_bd_read(solution_name);
+            orbit_type = coco_bd_col(bd, "TYPE");
+            point_index = find(orbit_type == point_type);
+        end
+        %-----------------------------------------------------------------%
 
         %-----------------------------------------------------------------%
         % Helpers
         %-----------------------------------------------------------------%
-        function save_solution(Dyn_Data,type,solution_num)
+        function save_solution(Dyn_Data,type,solution_num,varargin)
             data_path = Dyn_Data.Dynamic_Model.data_path;
             switch type
                 case "coco"
                     solution_name = "dynamic_sol_" + solution_num + "\";
                     movefile("data\temp\" + solution_name,data_path + solution_name)
+                case "coco_frf"
+                    solution_name = "dynamic_sol_" + solution_num + "\";
+                    movefile("data\temp\" + solution_name,data_path + solution_name)
+                    Nonconservative_Inputs = varargin{1,1};
+                    save(data_path + solution_name + "Nonconservative_Inputs","Nonconservative_Inputs")
                 case "h_prediction"
 
                 case "update"
@@ -418,8 +506,11 @@ classdef Dynamic_Data
         %-----------------------------------------------------------------%
         % Overloading 
         %-----------------------------------------------------------------%
-        function sz = size(obj)
+        function sz = size(obj,index)
             sz  = [obj.num_solutions,1];
+            if nargin == 2
+                sz = sz(index);
+            end
         end
     end
         

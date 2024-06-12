@@ -70,6 +70,7 @@ classdef Static_Dataset
         end
         %-----------------------------------------------------------------%
         function obj = add_validation_data(obj,L_modes)
+            
             switch obj.additional_data_type
                 case "stiffness"
                     r_modes = obj.Model.reduced_modes;
@@ -125,8 +126,12 @@ classdef Static_Dataset
                         end
                     end
 
-
+                    validation_data_start = tic;
                     [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_perturbation_data(obj,L_modes);
+
+                    validation_data_time = toc(validation_data_start);
+                    log_message = sprintf("Processed validation data: %.1f seconds" ,validation_data_time);
+                    logger(log_message,3)
 
                     obj.low_frequency_stiffness = h_stiffness;
                     obj.low_frequency_coupling_gradient = h_coupling_gradient;
@@ -134,10 +139,16 @@ classdef Static_Dataset
                     obj.Dynamic_Validation_Data.current_L_modes = L_modes;
                     obj.Dynamic_Validation_Data.h_stiffness_0 = h_stiffness_0;
                     obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
-
+                    
+                    minimum_degree_start = tic;
                     obj = minimum_h_degree(obj);
 
+                    minimum_degree_time = toc(minimum_degree_start);
+                    log_message = sprintf("Validating validation polynomials: %.1f seconds" ,minimum_degree_time);
+                    logger(log_message,3)
+
             end
+            
         end
         %-----------------------------------------------------------------%
         function obj = create_scaffold(obj,additional_data_type)

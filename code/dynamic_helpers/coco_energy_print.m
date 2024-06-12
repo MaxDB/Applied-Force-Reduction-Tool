@@ -10,6 +10,13 @@ switch command
                 break
             end
         end
-        coco_print(prob, LogLevel, '% 9.1f',100*E(end)/energy_limit)
+        if isempty(E)
+            energy_percent = "---";
+            coco_print(prob, LogLevel, '%9s',energy_percent)
+        else
+            energy_percent = 100*E(end)/energy_limit;
+            coco_print(prob, LogLevel, '% 9.1f',energy_percent)
+        end
+        
 end
 end

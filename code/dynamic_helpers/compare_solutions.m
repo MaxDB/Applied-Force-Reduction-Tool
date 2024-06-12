@@ -20,6 +20,7 @@ for arg_counter = 1:num_args/2
             system_counter = system_counter + 1;
             dyn_data_names{1,system_counter} = keyword_args{arg_counter};
             solution_index{1,system_counter} = keyword_values{arg_counter};
+            
     end
 end
 %-------------------------------------------------------------------------%
@@ -40,6 +41,9 @@ for iSol = 1:num_solutions
     Dyn_Data = initalise_dynamic_data(data_name);
 
     system_sols = solution_index{1,iSol};
+    if isstring(system_sols) && system_sols == "all"
+        system_sols = 1:size(Dyn_Data,1);
+    end
     num_system_sols = length(system_sols);
     for jSol = 1:num_system_sols
         if validation(num_solutions)

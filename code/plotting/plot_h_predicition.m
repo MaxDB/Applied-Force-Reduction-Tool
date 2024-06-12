@@ -42,7 +42,7 @@ switch type
 
         p1 = plot(ax,frequency,energy_hat,'r-');
         if PLOT_BACKBONE
-            ax = plot_backbone(Dyn_Data,type,solution_num,ax);
+            ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax);
             % p2 = plot(ax,frequency,energy_tilde,'k-');
             % p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
         end

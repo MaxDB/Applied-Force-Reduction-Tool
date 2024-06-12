@@ -26,9 +26,6 @@ switch type
             @(z,zeta) direct_eom_dx(0,z,zeta,Eom_Input.modal_stiffness),...
             @(z,zeta) direct_eom_dzeta(0,z)};
 end
-% funcs = {@(x,zet) ICE_IC(0,x,zet,eps,a,betaBar,QIndex,diffMap_g,diffSF_g), ...
-%     @(x,zet) ICE_IC_dx(x,zet,eps,a,betaBar,QIndex,diffMap_r,diffSF_r,diffMap_g,diffSF_g), ...
-%     @(x,zet) ICE_IC_dzet(x,eps,betaBar,QIndex,diffMap_g,diffSF_g)};
 
 
 % Continuation setup
@@ -44,7 +41,7 @@ prob = coco_set(prob, 'coll', 'NTSTMN',   Continuation_Settings.min_discretisati
 prob = coco_set(prob, 'coll', 'NTSTMX',   Continuation_Settings.max_discretisation_num);    % [100] %max number of discretisation intervals
 
 % cont_args = { 1, {'po.period', 'zet', 'ENERGY'}, [0,inf]};
-cont_args = { 1, {'po.period', 'zet'}, [0,1e16]};
+cont_args = { 1, {'po.period', 'zet'}, Continuation_Settings.parameter_range'};
 
 %ODE Settings
 prob = coco_set(prob, 'ode', 'RelTol', ODE_TOLERACE);

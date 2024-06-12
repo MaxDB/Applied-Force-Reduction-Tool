@@ -17,6 +17,7 @@ classdef Reduced_System
 
         data_path
         reduced_displacement_limits
+
     end
     methods
         function obj = Reduced_System(Static_Data,degree,displacement_mode)
@@ -198,7 +199,7 @@ classdef Reduced_System
             input_index = Polynomial.get_input_index(max_degree,num_modes);
         end
         %-----------------------------------------------------------------%
-        function Eom_Input = get_solver_inputs(obj,type)
+        function Eom_Input = get_solver_inputs(obj,type,varargin)
             switch type
                 case "coco_backbone"
                     input_order = obj.get_max_input_order;
@@ -257,32 +258,6 @@ classdef Reduced_System
 
                     Eom_Input.beta_G_theta = beta_G_theta_H;
 
-                case "h_prediction_test"
-                    r_evecs = obj.Model.reduced_eigenvectors;
-                    L_evecs = obj.get_current_L_eigenvectors;
-                    
-                    Eom_Input.Reduced_Force_Poly = obj.Force_Polynomial;
-                    Eom_Input.H_Stiffness_Poly = obj.Low_Frequency_Stiffness_Polynomial;
-                    
-                    Theta_Poly = obj.Condensed_Displacement_Polynomial;
-                    Theta_dr_Poly = differentiate_polynomial(Theta_Poly);
-                    Theta_dr2_Poly = differentiate_polynomial(Theta_dr_Poly);
-                    Eom_Input.Theta_Poly = Theta_Poly;
-                    Eom_Input.Theta_dr_Poly = Theta_dr_Poly;
-                    Eom_Input.Theta_dr2_Poly = Theta_dr2_Poly;
-                    
-                    H_Coupling_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
-                    H_Coupling_dr_Poly = differentiate_polynomial(H_Coupling_Poly);
-                    H_Coupling_dr2_Poly = differentiate_polynomial(H_Coupling_dr_Poly);
-                    Eom_Input.H_Coupling_Poly = H_Coupling_Poly;
-                    Eom_Input.H_Coupling_dr_Poly = H_Coupling_dr_Poly;
-                    Eom_Input.H_Coupling_dr2_Poly = H_Coupling_dr2_Poly;
-
-                    Eom_Input.r_evecs = r_evecs;
-                    Eom_Input.L_evecs = L_evecs;
-                    Eom_Input.mass = obj.Model.mass;
-                    
-                    
                 case "h_analysis"
                     L_evecs = obj.get_current_L_eigenvectors;
                     mass = obj.Model.mass;
@@ -325,6 +300,73 @@ classdef Reduced_System
                     beta_theta_H_G = obj.get_beta_mode(theta_H_coeff',G_coeffs_T);
                     Eom_Input.beta_G_theta_H = beta_G_theta_H;
                     Eom_Input.beta_theta_H_G = beta_theta_H_G;
+
+                case "coco_frf"
+                    Eom_Input = obj.get_solver_inputs("coco_backbone");
+                    Nc_Inputs = varargin{1,1};
+                    
+                    theta_coeffs = obj.Condensed_Displacement_Polynomial.coefficients';
+                    damping_beta = theta_coeffs'*Nc_Inputs.damping*theta_coeffs;
+                    evec_r = obj.Model.reduced_eigenvectors;
+                    damping_r = evec_r'*Nc_Inputs.damping*evec_r;
+                    Eom_Input.Damping_Data.damping_beta = damping_beta;
+                    Eom_Input.Damping_Data.damping_r = damping_r;
+
+                    switch Nc_Inputs.force_type
+                        case "modal"
+                            Eom_Input.Applied_Force_Data.shape = @(t,amp,T) modal_force(t,amp,T,Nc_Inputs.mode_map);
+                            Eom_Input.Applied_Force_Data.shape_dx = @(t,amp,T) modal_force_dx(t,amp,T,Nc_Inputs.mode_map);
+                            Eom_Input.Applied_Force_Data.shape_dTper = @(t,amp,T) modal_force_dTper(t,amp,T,Nc_Inputs.mode_map);
+                            Eom_Input.Applied_Force_Data.shape_dA = @(t,amp,T) modal_force_dA(t,amp,T,Nc_Inputs.mode_map);
+                            Eom_Input.Applied_Force_Data.shape_dt = @(t,amp,T) modal_force_dt(t,amp,T,Nc_Inputs.mode_map);
+
+                            Eom_Input.Applied_Force_Data.type = Nc_Inputs.force_type;
+                            switch Nc_Inputs.continuation_variable
+                                case "amplitude"
+                                    Eom_Input.Applied_Force_Data.period = 2*pi/Nc_Inputs.frequency;
+                                case "frequency"
+                                    Eom_Input.Applied_Force_Data.amplitude = Nc_Inputs.amplitude;
+                            end
+                    end
+                case "forced_h_prediction"
+                    Eom_Input = obj.get_solver_inputs("h_prediction");
+                    Nc_Inputs = varargin{1,1};
+
+                    damping = Nc_Inputs.damping;
+                    L_evecs = obj.get_current_L_eigenvectors;
+                    theta_coeffs = obj.Condensed_Displacement_Polynomial.coefficients';
+                    G_coeffs = obj.Low_Frequency_Coupling_Gradient_Polynomial.coefficients;
+                    G_coeffs_T = permute(G_coeffs,[2,3,1]);
+
+                    damping_beta = theta_coeffs'*Nc_Inputs.damping*theta_coeffs;
+                    evec_r = obj.Model.reduced_eigenvectors;
+                    damping_r = evec_r'*Nc_Inputs.damping*evec_r;
+                    Eom_Input.Damping_Data.damping_beta = damping_beta;
+                    Eom_Input.Damping_Data.damping_r = damping_r;
+                    
+                    Eom_Input.beta_G_damping_theta = obj.get_beta_mode(G_coeffs,damping*theta_coeffs);
+                    beta_damping_G = tensorprod(full(damping),G_coeffs_T,2,1);
+                    Eom_Input.beta_G_damping_G = obj.get_beta_mode(G_coeffs,beta_damping_G);
+                    Eom_Input.beta_L_damping_theta = obj.get_beta_mode(L_evecs'*damping,theta_coeffs);
+                    Eom_Input.Damping_Data.damping_L = L_evecs'*damping*L_evecs;
+
+
+                    switch Nc_Inputs.force_type
+                        case "modal"
+                            Eom_Input.Applied_Force_Data.shape = @(t,amp,T) modal_force(t,amp,T,Nc_Inputs.mode_map);
+                            Eom_Input.Applied_Force_Data.shape_dx = @(t,amp,T) modal_force_dx(t,amp,T,Nc_Inputs.mode_map);
+                            Eom_Input.Applied_Force_Data.shape_dTper = @(t,amp,T) modal_force_dTper(t,amp,T,Nc_Inputs.mode_map);
+                            Eom_Input.Applied_Force_Data.shape_dA = @(t,amp,T) modal_force_dA(t,amp,T,Nc_Inputs.mode_map);
+                            Eom_Input.Applied_Force_Data.shape_dt = @(t,amp,T) modal_force_dt(t,amp,T,Nc_Inputs.mode_map);
+
+                            Eom_Input.Applied_Force_Data.type = Nc_Inputs.force_type;
+                            switch Nc_Inputs.continuation_variable
+                                case "amplitude"
+                                    Eom_Input.Applied_Force_Data.period = 2*pi/Nc_Inputs.frequency;
+                                case "frequency"
+                                    Eom_Input.Applied_Force_Data.amplitude = Nc_Inputs.amplitude;
+                            end
+                    end
             end
         end
         %-----------------------------------------------------------------%
