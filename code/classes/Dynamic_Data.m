@@ -357,7 +357,7 @@ classdef Dynamic_Data
             % end
             % h_potential = sum(h_potential);
             
-            point_span = 1:10;
+            point_span = 1:121;
             num_points = size(point_span,2);
             h_potential = zeros(1,num_points);
             for iPoint = 1:num_points
@@ -387,6 +387,8 @@ classdef Dynamic_Data
             obj.low_modal_amplitude{1,solution_num}(:,orbit_num) = q_amp;
             obj.h_energy{1,solution_num}(1,orbit_num) = mean(energy_hat);
             % obj.h_modal_energy_fraction{1,solution_num}(:,orbit_num) = max(ke_mode_fraction,[],2);
+
+
         end
         %-----------------------------------------------------------------%
         function orbit = get_orbit(obj,solution_num,orbit_num)

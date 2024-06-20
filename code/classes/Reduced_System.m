@@ -108,28 +108,67 @@ classdef Reduced_System
 
 
         %-----------------------------------------------------------------%
-        function x = expand(obj,r)
+        function x = expand(obj,r,varargin)
             r_evec = obj.Model.reduced_eigenvectors;
             Theta_Poly = obj.Condensed_Displacement_Polynomial;
             x = r_evec*r + Theta_Poly.evaluate_polynomial(r);
+            
+            if nargin == 2
+                return
+            end
+            h = varargin{1,1};
 
-            %still need to add boundary conditions
+            L_evec = obj.get_current_L_eigenvectors;
+            h_evec = [r_evec,L_evec];
+
+            Theta_Hat_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
+
+            num_x = size(r,2);
+            num_dof = size(h_evec,1);
+            h_coupling = zeros(num_dof,num_x);
+            for iX = 1:num_x   
+                h_coupling(:,iX) = Theta_Hat_Poly.evaluate_polynomial(r(:,iX))*h(:,iX);
+            end
+            x = x + h_evec*h + h_coupling;
         end
         %-----------------------------------------------------------------%
-        function x_dot = expand_velocity(obj,r,r_dot)
+        function x_dot = expand_velocity(obj,r,r_dot,varargin)
             r_evec = obj.Model.reduced_eigenvectors;
             Theta_Poly = obj.Condensed_Displacement_Polynomial;
             Theta_dr_Poly = differentiate_polynomial(Theta_Poly);
             
-            theta_dr = Theta_dr_Poly.evaluate_polynomial(r);
+ 
 
             num_x = size(r,2);
+            num_modes = size(r,1);
             theta_dr_prod = zeros(size(Theta_Poly,1),num_x);
             for iX = 1:num_x
-                theta_dr_prod(:,iX) = theta_dr(:,:,iX)*r_dot(:,iX);
+                theta_dr_prod(:,iX) = Theta_dr_Poly.evaluate_polynomial(r(:,iX))*r_dot(:,iX);
             end
 
             x_dot = r_evec*r_dot + theta_dr_prod;
+
+            if nargin == 3
+                return
+            end
+            h = varargin{1};
+            h_dot = varargin{2};
+
+            L_evec = obj.get_current_L_eigenvectors;
+            h_evec = [r_evec,L_evec];
+
+            G_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
+            Gdr_Poly = G_Poly.differentiate_polynomial;
+
+            num_x = size(r,2);
+            num_dof = size(h_evec,1);
+            G_h_dot_prod = zeros(num_dof,num_x);
+            G_dr_r_dot_h_prod = zeros(num_dof,num_x);
+            for iX = 1:num_x   
+                G_h_dot_prod(:,iX) = G_Poly.evaluate_polynomial(r(:,iX))*h_dot(:,iX);
+                G_dr_r_dot_h_prod(:,iX) = tensorprod(Gdr_Poly.evaluate_polynomial(r(:,iX)),r_dot(:,iX),3,1)*h(:,iX);
+            end
+            x_dot = x_dot + h_evec*h_dot + G_h_dot_prod + G_dr_r_dot_h_prod;
         end
         %-----------------------------------------------------------------%
         function Displacement_Poly = get_theta_poly(obj,Displacement_Poly)
@@ -367,6 +406,10 @@ classdef Reduced_System
                                     Eom_Input.Applied_Force_Data.amplitude = Nc_Inputs.amplitude;
                             end
                     end
+                case "forced_h_analysis"
+                    Eom_Input = obj.get_solver_inputs("h_analysis");
+                    Nc_Inputs = varargin{1,1};
+                   
             end
         end
         %-----------------------------------------------------------------%

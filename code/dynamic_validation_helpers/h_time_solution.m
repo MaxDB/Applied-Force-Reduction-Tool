@@ -23,6 +23,8 @@ switch orbit_type
         %
         Validation_Input = Validation_Rom.get_solver_inputs("h_prediction");
         h_terms = @(r,r_dot,r_ddot) get_h_error_terms(r,r_dot,r_ddot,Validation_Input);
+
+        Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("h_analysis");
     case "forced"
         load(solution_name + "\Nonconservative_Inputs.mat","Nonconservative_Inputs")
         amp = Nonconservative_Inputs.amplitude;
@@ -31,11 +33,13 @@ switch orbit_type
         
         Validation_Input = Validation_Rom.get_solver_inputs("forced_h_prediction",Nonconservative_Inputs);
         h_terms = @(t,r,r_dot,r_ddot,period) get_forced_h_error_terms(t,r,r_dot,r_ddot,amp,period,Validation_Input);
+
+        Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("forced_h_analysis",Nonconservative_Inputs);
 end
 
 
 
-Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("h_analysis");
+
 
 
 sol_labels = Dyn_Data.solution_labels{1,solution_num};
@@ -184,7 +188,12 @@ for iOrbit = 1:num_periodic_orbits
 
 
     end
-    
+    mass = Validation_Rom.Model.mass;
+    x_dot = Validation_Rom.expand_velocity(r,r_dot,h,h_dot);
+    ke = zeros(1,num_time_points);
+    for iPoint = 1:num_time_points
+        ke(iPoint) = 0.5*x_dot(:,iPoint)'*mass*x_dot(:,iPoint);
+    end
 
     h_analysis_start = tic;
     Dyn_Data = Dyn_Data.analyse_h_solution(r,r_dot,h,h_dot,Validation_Analysis_Inputs,solution_num,iOrbit);

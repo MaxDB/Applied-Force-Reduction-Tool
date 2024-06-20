@@ -281,7 +281,12 @@ classdef Polynomial
 
             
             if size(output_data,1) ~= obj.output_dimension(1)
-                output_data = output_data';
+                switch ndims(output_data)
+                    case 2
+                        output_data = output_data';
+                    case 3
+                      
+                end
             end
 
         end
