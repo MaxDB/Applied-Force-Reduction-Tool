@@ -57,6 +57,8 @@ classdef Static_Dataset
                     obj = sep_validation(obj);
                 case "sep_points"
                     obj = sep_points_validation(obj);
+                case "sep_points_new"
+                    obj = sep_points_validation_new(obj);
                 case "grid"
                     obj = grid_validation(obj);
             end

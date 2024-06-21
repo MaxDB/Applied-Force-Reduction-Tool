@@ -10,6 +10,8 @@ compare_solutions("physical amplitude","exhaust_1",1,"exhaust_1",4)
 
 compare_solutions("physical amplitude","exhaust_1","all")
 
+plot_h_predicition("exhaust_1567","energy",1);
+
 % close all
 % plot_backbone("h_beam_13","amplitude",1);
 % plot_backbone("h_oscillator_1","amplitude",1);
