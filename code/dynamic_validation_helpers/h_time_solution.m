@@ -1,4 +1,5 @@
 function Dyn_Data = h_time_solution(Dyn_Data,Validation_Rom,solution_num)
+GET_STABILITY = 1;
 INITIAL_NUM_HARMONICS = 5;
 MINIMUM_H_FORCE = 1e-6;
 MAX_CONVERGENCE_ERROR = 1e-4;
@@ -9,6 +10,8 @@ disp_span = 1:num_r_modes;
 vel_span = disp_span + num_r_modes;
 
 num_h_modes = length(Validation_Rom.Dynamic_Validation_Data.current_L_modes) + num_r_modes;
+h_disp_span = 1:num_h_modes;
+h_vel_span = h_disp_span + num_h_modes;
 
 Rom = Dyn_Data.Dynamic_Model;
 Solution_Type = Dyn_Data.solution_types{1,solution_num};
@@ -188,15 +191,34 @@ for iOrbit = 1:num_periodic_orbits
 
 
     end
-    mass = Validation_Rom.Model.mass;
-    x_dot = Validation_Rom.expand_velocity(r,r_dot,h,h_dot);
-    ke = zeros(1,num_time_points);
-    for iPoint = 1:num_time_points
-        ke(iPoint) = 0.5*x_dot(:,iPoint)'*mass*x_dot(:,iPoint);
+    % mass = Validation_Rom.Model.mass;
+    % x_dot = Validation_Rom.expand_velocity(r,r_dot,h,h_dot);
+    % ke = zeros(1,num_time_points);
+    % for iPoint = 1:num_time_points
+    %     ke(iPoint) = 0.5*x_dot(:,iPoint)'*mass*x_dot(:,iPoint);
+    % end
+    h_analysis_start = tic;
+
+    if GET_STABILITY
+        orbit_jacobian = zeros(2*num_h_modes,2*num_h_modes,num_time_points);
+        for iTime = 1:(num_time_points)
+            % orbit_jacobian = zeros(2*num_h_modes,2*num_h_modes);
+            orbit_jacobian(h_disp_span,h_vel_span,iTime) = eye(num_h_modes);
+            orbit_jacobian(h_vel_span,h_disp_span,iTime) = -h_inertia(:,:,iTime)\h_stiff(:,:,iTime);
+            orbit_jacobian(h_vel_span,h_vel_span,iTime) = -h_inertia(:,:,iTime)\h_conv(:,:,iTime);
+        end
+
+        fundamental_eq = @(t,z) oribit_jacobian_func(t,z,t0,orbit_jacobian);
+        [~,fundamental_mat] = ode45(fundamental_eq,[0,t0(end)],eye(2*num_h_modes));
+
+        monodromy_mat = reshape(fundamental_mat(end,:)',2*num_h_modes,2*num_h_modes);
+        orbit_evals = eig(monodromy_mat);
+        orbit_stab = max(abs(orbit_evals));
+    else
+        orbit_stab = 1; %#ok<*UNRCH>
     end
 
-    h_analysis_start = tic;
-    Dyn_Data = Dyn_Data.analyse_h_solution(r,r_dot,h,h_dot,Validation_Analysis_Inputs,solution_num,iOrbit);
+    Dyn_Data = Dyn_Data.analyse_h_solution(r,r_dot,h,h_dot,orbit_stab,Validation_Analysis_Inputs,solution_num,iOrbit);
     h_analysis_time = toc(h_analysis_start);
 
     fprintf("%i / %i. data: %.3f, setup: %.3f, solution: %.3f, analysis: %.3f. N_h = %i \n",...
@@ -243,4 +265,15 @@ x_dt_coeffs(:,sin_span) = -harmonic_mulitplier.*x_coeffs(:,cos_span);
 x_dt_coeffs(:,cos_span) = harmonic_mulitplier.*x_coeffs(:,sin_span);
 end
 %-------------------------------------------------------------------------%
+function dz = oribit_jacobian_func(t,z,t0,orbit_jacobian)
+num_h_modes = size(orbit_jacobian,1)/2;
+approx_jacobian = zeros(2*num_h_modes);
+for iRow = 1:(2*num_h_modes)
+    for iCol = 1:(2*num_h_modes)
+        approx_jacobian(iRow,iCol) = interp1(t0,squeeze(orbit_jacobian(iRow,iCol,:)),t);
+    end
+end
 
+dz = approx_jacobian*reshape(z,2*num_h_modes,2*num_h_modes);
+dz = reshape(dz,4*num_h_modes^2,1);
+end

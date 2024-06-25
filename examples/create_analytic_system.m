@@ -1,26 +1,23 @@
 clear
 % M*x_ddot + C*x_dot + K*x + f(x) = F 
-system_name = "h_oscillator";
+system_name = "beam_oscillator";
 %%Parameters
-m = 1;
-k1 = 1000;
-k2 = 10;
-k3 = 1000;
-k4 = 1;
-k5 = 21.2;
-L0 = 1;
+omega_nr = pi^2;
+omega_ns = 4*pi^2;
+psi_3_1 = 0;
+psi_1_3 = 0;
+psi_2_2 = 2*pi^4;
+psi_4_0 = pi^4/2;
+psi_0_4 = 8*pi^4;
 
 %%linear mass
-eom.M = eye(4);
+eom.M = eye(2);
 
 %%linear stiffness
-eom.K = [k4,0,0,0;
-         0,k5,0,0;
-         0,0,k1+k2,-k2;
-         0,0,-k2,k2+k3];
+eom.K = [omega_nr^2,0;0,omega_ns^2];
 
 %%nonlinear restoring force
-eom.f = @(x) nonlinear_restoring_force(x,k1,k2,k3,k4,k5,L0);
+eom.f = @(x) nonlinear_restoring_force(x,psi_3_1,psi_1_3,psi_2_2,psi_4_0,psi_0_4);
 
 %%linear damping
 % EoM.C
@@ -29,34 +26,21 @@ eom.f = @(x) nonlinear_restoring_force(x,k1,k2,k3,k4,k5,L0);
 % EoM.F
 
 %%potential energy
-eom.V = @(x) potential_energy(x,k1,k2,k3,k4,k5,L0);
+eom.V = @(x) potential_energy(x,omega_nr,omega_ns,psi_3_1,psi_1_3,psi_2_2,psi_4_0,psi_0_4);
 
 %% 
 analytic_EoM = Analytic_System(system_name,eom,"save","geometry\" + system_name);
 
 
 %-------------------------------------------------------------------------%
-function fnx = nonlinear_restoring_force(x,k1,k2,k3,k4,k5,L0)
-d1 = sqrt(x(1).^2+(L0+x(3)).^2);
-d2 = sqrt((x(1)-x(2)).^2+(L0-x(3)+x(4)).^2);
-d3 = sqrt(x(2).^2+(L0-x(4)).^2);
-d4 = sqrt((L0+x(1)).^2+x(3).^2);
-d5 = sqrt((L0+x(2)).^2+x(4).^2);
+function fnx = nonlinear_restoring_force(x,psi_3_1,psi_1_3,psi_2_2,psi_4_0,psi_0_4)
+f_r = psi_4_0*x(1).^3 + 3*psi_3_1*x(1).^2.*x(2) + psi_2_2*x(1).*x(2).^2 + psi_1_3*x(2).^3;
+f_s = psi_3_1*x(1).^3 + psi_2_2*x(1).^2.*x(2) + 3*psi_1_3*x(1).*x(2).^2 + psi_0_4*x(2).^3;
 
-fy1 = -(k4*L0*(L0+x(1)))/d4 - (k1*x(1)*(L0-d1))/d1 - (k2*(x(1)-x(2))*(L0-d2))/d2 + k4*L0;
-fy2 = -(k5*L0*(L0+x(2)))/d5 - (k3*x(2)*(L0-d3))/d3 - (k2*(x(2)-x(1))*(L0-d2))/d2 + k5*L0;
-fx1 = -(k4*x(3)*(L0-d4))/d4 - (k1*L0*(L0+x(3)))/d1 - (k2*L0*(x(3)-x(4)-L0))/d2 + (k1-k2)*L0;
-fx2 = -(k5*x(4)*(L0-d5))/d5 - (k3*L0*(x(4)-L0))/d3 - (k2*L0*(L0+x(4)-x(3)))/d2 + (k2-k3)*L0;
-
-fnx = [fy1;fy2;fx1;fx2];
+fnx = [f_r;f_s];
 end
 
-function V = potential_energy(x,k1,k2,k3,k4,k5,L0)
-dL1 = sqrt((L0 + x(3)).^2 + x(1).^2) - L0;
-dL2 = sqrt((L0 + x(4) - x(3)).^2 + (x(2)-x(1)).^2) - L0;
-dL3 = sqrt((L0 - x(4)).^2 + x(2).^2) - L0;
-dL4 = sqrt(x(3).^2 + (L0 + x(1)).^2) - L0;
-dL5 = sqrt(x(4).^2 + (L0 + x(2)).^2) - L0;
-
-V = 0.5*(k1*dL1.^2 + k2*dL2.^2 + k3*dL3.^2 + k4*dL4.^2 + k5*dL5.^2);
+function V = potential_energy(x,omega_nr,omega_ns,psi_3_1,psi_1_3,psi_2_2,psi_4_0,psi_0_4)
+V = 0.5*omega_nr^2*x(1).^2 + 0.5*omega_ns^2*x(2).^2 + 0.25*psi_4_0*x(1).^4  ...
++ psi_3_1*x(1).^3.*x(2) + 0.5*psi_2_2*x(1).^2.*x(2).^2 + psi_1_3*x(1).*x(2).^3 + 0.25*psi_0_4*x(2).^4;
 end

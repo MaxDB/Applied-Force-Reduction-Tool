@@ -74,6 +74,9 @@ modelled_output_indicies = [row,col];
 
 h_coupling_gradient_degree = Static_Data.validated_degree(2);
 while h_coupling_gradient_degree  < max_degree
+    if isempty(modelled_output_indicies)
+        break
+    end
     rom = Reduced_System(Static_Data,[1,1,1,h_coupling_gradient_degree]);
     
     h_coupling_gradient_rom = rom.Low_Frequency_Coupling_Gradient_Polynomial.evaluate_polynomial(r,lin_index);

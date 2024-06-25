@@ -7,7 +7,7 @@ LINE_STYLE = [":","-"]; %[unstable,stable]
 LINE_WIDTH = 1.5;
 BIFURCATION_MARKER = ["o","o","^","x"];
 BIFURCATION_TYPE = ["BP","PD","NS","SN"];
-BIFURCATION_SIZE = [6,0,6,0];
+BIFURCATION_SIZE = [6,6,6,0];
 
 
 %-------------------------------------------------------------------------%
@@ -41,6 +41,7 @@ if isstring(solution_num)
         solution_num = Dyn_Data.num_solutions;
     end
 end
+%-------------------------------------------------------------------------%
 
 frequency = Dyn_Data.frequency{1,solution_num};
 num_orbits = size(frequency,2);
@@ -67,6 +68,8 @@ if PLOT_BIFURCATIONS
             case 1
                 type_plot_settings{end+1} = "MarkerEdgeColor";
                 type_plot_settings{end+1} = "w";
+                type_plot_settings{end+1} = "MarkerFaceColor";
+                type_plot_settings{end+1} = line_colour;
             case 2
                 type_plot_settings{end+1} = "MarkerFaceColor";
                 type_plot_settings{end+1} = "w";
@@ -185,10 +188,10 @@ switch type
     case "amplitude"
        
         amplitude = Dyn_Data.amplitude{1,solution_num};
-        solution_type = Dyn_Data.solution_types{1,solution_num};
+        Solution_Type = Dyn_Data.solution_types{1,solution_num};
         num_modes = size(amplitude,1);
 
-        if solution_type == "fom: backbone"
+        if Solution_Type.model_type == "fom"
             r_modes = 1:num_modes;
         else
             r_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;

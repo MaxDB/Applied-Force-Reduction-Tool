@@ -24,21 +24,21 @@ classdef Dynamic_Data
         low_modal_amplitude
         h_energy
         h_modal_energy_fraction
+        h_stability
 
         periodicity_error
     end
     methods
-        function obj = Dynamic_Data(Model,Additional_Output,Continuation_Opts)
-            if nargin == 2
+        function obj = Dynamic_Data(Model,Continuation_Opts)
+            if nargin == 1
                 Continuation_Opts = struct([]);
             end
             obj = obj.update_continuation_opts(Continuation_Opts);
             obj.Dynamic_Model = Model;
 
+            obj.Additional_Output.type = "none";
             obj.num_solutions = 0;
             obj.solution_types = {};
-
-            obj.Additional_Output = Additional_Output;
         end
         %-----------------------------------------------------------------%
         function obj = update_continuation_opts(obj,Continuation_Opts)
@@ -46,7 +46,11 @@ classdef Dynamic_Data
             obj.Continuation_Options = update_options(Default_Continuation_Opts,obj.Continuation_Options,Continuation_Opts);
         end 
         %-----------------------------------------------------------------%
-        
+        function obj = add_additional_output(obj,Additional_Output)
+            obj.Additional_Output = Additional_Output;
+        end
+        %-----------------------------------------------------------------%
+
         %-----------------------------------------------------------------%
         % Creation
         %-----------------------------------------------------------------%
@@ -320,7 +324,7 @@ classdef Dynamic_Data
            
         end
         %-----------------------------------------------------------------%
-        function obj = analyse_h_solution(obj,r,r_dot,h,h_dot,Validation_Analysis_Inputs,solution_num,orbit_num)
+        function obj = analyse_h_solution(obj,r,r_dot,h,h_dot,orbit_stability,Validation_Analysis_Inputs,solution_num,orbit_num)
             
             
             get_amplitude = @(x) (max(x,[],2) - min(x,[],2))/2;
@@ -357,7 +361,7 @@ classdef Dynamic_Data
             % end
             % h_potential = sum(h_potential);
             
-            point_span = 1:121;
+            point_span = size(h,2);
             num_points = size(point_span,2);
             h_potential = zeros(1,num_points);
             for iPoint = 1:num_points
@@ -382,10 +386,18 @@ classdef Dynamic_Data
             energy_hat =  potential_hat + ke_hat;
             % energy_fraction = (mean(energy_hat)-mean(energy_tilde))/mean(energy_hat);
             %--
+
+            %--
+            num_h_modes = size(h,1);
+            
+
+
+            %--
             obj.h_amplitude{1,solution_num}(:,orbit_num) = h_amp;
             obj.corrected_low_modal_amplitude{1,solution_num}(:,orbit_num) = g_amp;
             obj.low_modal_amplitude{1,solution_num}(:,orbit_num) = q_amp;
             obj.h_energy{1,solution_num}(1,orbit_num) = mean(energy_hat);
+            obj.h_stability{1,solution_num}(1,orbit_num) = orbit_stability;
             % obj.h_modal_energy_fraction{1,solution_num}(:,orbit_num) = max(ke_mode_fraction,[],2);
 
 
@@ -501,6 +513,7 @@ classdef Dynamic_Data
             obj.low_modal_amplitude{1,solution_num} = zeros(num_h_modes,num_orbits);
             obj.h_energy{1,solution_num} = zeros(1,num_orbits);
             obj.h_modal_energy_fraction{1,solution_num} = zeros(num_h_modes,num_orbits);
+            obj.h_stability{1,solution_num} = zeros(1,num_orbits);
             obj.periodicity_error{1,solution_num} = zeros(1,num_orbits);
         end
         %-----------------------------------------------------------------%

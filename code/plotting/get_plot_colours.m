@@ -20,5 +20,10 @@ if nargin == 0
     return
 end
 
+if colour_range == 0
+    colours = [0,0,0];
+    return
+end
+
 colours = COLOURS(colour_range,:);
 end

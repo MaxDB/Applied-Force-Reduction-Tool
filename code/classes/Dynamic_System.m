@@ -472,6 +472,8 @@ classdef Dynamic_System
                             add_point_abaqus(applied_force,max_inc,additional_data_type,obj,1);
                     end
                 case "matlab"
+                    [reduced_disp,condensed_disp,restoring_force,energy,additional_data] = ...
+                        add_point_matlab(applied_force,additional_data_type,obj);
             end
         end
         %-----------------------------------------------------------------%

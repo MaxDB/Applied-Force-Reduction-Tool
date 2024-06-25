@@ -78,17 +78,10 @@ classdef Static_Dataset
                     r_modes = obj.Model.reduced_modes;
                     L_modes(ismember(L_modes,r_modes)) = [];
 
-                    Validation_Data = obj.Dynamic_Validation_Data;
-                    calc_eigenproblem = isempty(Validation_Data);
-                    if ~calc_eigenproblem
-                        if isequal(Validation_Data.current_L_modes,L_modes)
-                            return
-                        end
+                    found_L_modes = obj.Model.low_frequency_modes;
+                    unknown_L_modes = setdiff(L_modes,found_L_modes);
+                    calc_eigenproblem = ~isempty(unknown_L_modes);
 
-                        if Validation_Data.largest_L_mode < max(L_modes)
-                            calc_eigenproblem = 1;
-                        end
-                    end
                     if calc_eigenproblem
                         mass = obj.Model.mass;
                         stiffness = obj.Model.stiffness;
@@ -96,19 +89,21 @@ classdef Static_Dataset
                         [full_evecs,full_evals] = eigs(stiffness,mass,max(L_modes),"smallestabs");
                         full_evals = diag(full_evals);
 
+                        new_L_modes = 1:max(L_modes);
+                        new_L_modes(ismember(new_L_modes,r_modes)) = [];
+                        
+                        obj.Model.low_frequency_modes = new_L_modes;
+                        obj.Model.low_frequency_eigenvalues = full_evals(new_L_modes);
+                        obj.Model.low_frequency_eigenvectors = full_evecs(:,new_L_modes);
 
-                        obj.Dynamic_Validation_Data.full_eigenvectors = full_evecs;
-                        obj.Dynamic_Validation_Data.full_eigenvalues = full_evals;
-                        obj.Dynamic_Validation_Data.largest_L_mode = max(L_modes);
                     end
-                    obj.Dynamic_Validation_Data.current_L_modes = L_modes;
-                    L_evecs = obj.Dynamic_Validation_Data.full_eigenvectors(:,L_modes);
 
-                    [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_h_error_data(obj,L_evecs);
 
+                    [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_h_error_data(obj,L_modes);
                     obj.low_frequency_stiffness = h_stiffness;
                     obj.low_frequency_coupling_gradient = h_coupling_gradient;
 
+                    obj.Dynamic_Validation_Data.current_L_modes = L_modes;
                     obj.Dynamic_Validation_Data.h_stiffness_0 = h_stiffness_0;
                     obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
 

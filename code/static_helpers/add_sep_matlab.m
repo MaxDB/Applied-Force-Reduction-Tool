@@ -25,6 +25,10 @@ switch add_data_type
         additional_data = [];
     case "stiffness"
         additional_data = zeros(Model.num_dof,Model.num_dof,total_static_steps);
+    case "perturbation"
+        error("Not implemented yet for direct systems")
+    otherwise
+        error("additional data type not recognised")
 end
 
 %solver settings
@@ -82,5 +86,6 @@ end
 
 disp_transform = force_transform';
 r = disp_transform*displacement;
-theta = displacement - Model.reduced_eigenvectors*r;
+% theta = displacement - Model.reduced_eigenvectors*r;
+theta = displacement;
 end

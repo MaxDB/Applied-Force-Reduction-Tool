@@ -1,6 +1,34 @@
-function ax = plot_h_predicition(Dyn_Data,type,solution_num,ax)
+function ax = plot_h_predicition(Dyn_Data,type,solution_num,varargin)
 PLOT_BACKBONE = 1;
+PLOT_STABILITY = 1;
+STABILITY_LIMIT = 1.005;
 
+LINE_STYLE = [":","-"]; %[unstable,stable]
+LINE_WIDTH = 1.5;
+
+
+%-------------------------------------------------------------------------%
+num_args = length(varargin);
+if mod(num_args,2) == 1
+    error("Invalid keyword/argument pairs")
+end
+keyword_args = varargin(1:2:num_args);
+keyword_values = varargin(2:2:num_args);
+
+ax = [];
+colour_num = 1;
+
+for arg_counter = 1:num_args/2
+    switch keyword_args{arg_counter}
+        case "axes"
+            ax = keyword_values{arg_counter};
+        case {"colour","color"}
+            colour_num = keyword_values{arg_counter};
+        otherwise
+            error("Invalid keyword: " + keyword_args{arg_counter})
+    end
+end
+%-------------------------------------------------------------------------%
 if isstring(Dyn_Data)
     Dyn_Data = initalise_dynamic_data(Dyn_Data);
 end
@@ -10,7 +38,7 @@ if isstring(solution_num)
         solution_num = Dyn_Data.num_solutions;
     end
 end
-
+%-------------------------------------------------------------------------%
 
 frequency = Dyn_Data.frequency{1,solution_num};
 num_orbits = size(frequency,2);
@@ -18,34 +46,68 @@ num_orbits = size(frequency,2);
 
 orbit_labels = 1:num_orbits;
 orbit_ids = "(" + solution_num + "," + orbit_labels + ")";
-data_tip_row_id = dataTipTextRow("ID",orbit_ids);
 
 validation_modes = Dyn_Data.validation_modes{1,solution_num};
 mode_string = "[" + join(string(validation_modes),", ") + "]";
-data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
 
+line_colour = get_plot_colours(colour_num);
+line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour};
+
+if PLOT_STABILITY
+    stability = Dyn_Data.h_stability{1,solution_num};
+    [index_ranges,range_stability] = get_stability_boundaries(stability<STABILITY_LIMIT);
+    num_sections = size(range_stability,2);
+
+    bb_stability = Dyn_Data.stability{1,solution_num};
+    [bb_index_ranges,bb_range_stability] = get_stability_boundaries(bb_stability<STABILITY_LIMIT);
+    bb_num_sections = size(bb_range_stability,2);
+
+end
 
 switch type
     case "energy"
         energy_tilde = Dyn_Data.energy{1,solution_num};
         energy_hat = Dyn_Data.h_energy{1,solution_num};
         
-        if ~exist("ax","var")
+        if isempty(ax)
             figure
             ax = axes(gcf);
         end
-
+        
+        if PLOT_BACKBONE
+            ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0);
+        end
+        
         box(ax,"on")
         hold(ax,"on")
         
+        if PLOT_STABILITY
+            for iSection = 1:num_sections
+                stab = range_stability(iSection);
+                index_range = index_ranges(iSection,1):index_ranges(iSection,2);
+                p1 = plot(ax,frequency(index_range),energy_hat(index_range),'LineStyle',LINE_STYLE(stab+1),line_plot_settings{:});
 
+                data_tip_row_id = dataTipTextRow("ID",orbit_ids(index_range));
+                p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
 
-        p1 = plot(ax,frequency,energy_hat,'r-');
-        if PLOT_BACKBONE
-            ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax);
-            % p2 = plot(ax,frequency,energy_tilde,'k-');
-            % p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
+                p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_modes;
+
+                data_tip_row_stab = dataTipTextRow("Stability",stability(index_range));
+                p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_stab;
+            end
+        else
+            p1 = plot(ax,frequency,energy_hat,'LineStyle',LINE_STYLE(stab+1),line_plot_settings{:}); %#ok<UNRCH>
+            data_tip_row = dataTipTextRow("ID",orbit_ids(index_range));
+            p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
+            data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
+            p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
         end
+
+        
+
+        
         hold(ax,"off")
 
         max_e_hat = max(energy_hat);
@@ -54,9 +116,6 @@ switch type
         y_lim = min(max_e_tilde*3,max_e_hat);
         ylim(ax,[0,y_lim])
 
-        p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
-        p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_modes;
-
         xlabel(ax,"Frequency (rad/s)")
         ylabel(ax,"Energy")
 
@@ -64,17 +123,18 @@ switch type
         r_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
         L_modes = Dyn_Data.validation_modes{1,solution_num};
         h_modes = [r_modes,L_modes];
+
         num_h_modes = length(h_modes);
         
         g_amp = Dyn_Data.corrected_low_modal_amplitude{1,solution_num};
         q_amp = Dyn_Data.low_modal_amplitude{1,solution_num};
         
-        if ~exist("ax","var")
+        if isempty(ax)
             figure
             tiledlayout("flow")
             for iMode = 1:num_h_modes
-                ax{iMode,1} = nexttile;
-                ax{iMode,2} = h_modes(iMode);
+                ax{iMode,1} = nexttile; %#ok<AGROW>
+                ax{iMode,2} = h_modes(iMode); %#ok<AGROW>
             end
             plotted_modes = h_modes;
         else 
@@ -87,8 +147,8 @@ switch type
             neglected_modes = setdiff(h_modes,plotted_modes);
             num_neglected_modes = length(neglected_modes);
             for iMode = 1:num_neglected_modes
-                ax{num_axes+iMode,1} = nexttile;
-                ax{num_axes+iMode,2} = neglected_modes(iMode);
+                ax{num_axes+iMode,1} = nexttile; %#ok<AGROW>
+                ax{num_axes+iMode,2} = neglected_modes(iMode); %#ok<AGROW>
                 plotted_modes(num_axes+iMode) = neglected_modes(iMode);
             end
         end
@@ -99,23 +159,76 @@ switch type
             iAx = ax{ax_id,1};
             
             box(iAx,"on")
-            
+
             hold(iAx,"on")
-            p1 = plot(iAx,frequency,q_amp(iMode,:),'r-');
-            p2 = plot(iAx,frequency,g_amp(iMode,:),'k-');
+            if PLOT_BACKBONE
+                if PLOT_STABILITY
+                    for iSection = 1:bb_num_sections
+                        stab = bb_range_stability(iSection);
+                        index_range = bb_index_ranges(iSection,1):bb_index_ranges(iSection,2);
+                        p2 = plot(iAx,frequency(index_range),g_amp(iMode,index_range),"color",[0,0,0],'LineStyle',LINE_STYLE(stab+1),line_plot_settings{1:2});
+
+                        data_tip_row_id = dataTipTextRow("ID",orbit_ids(index_range));
+                        p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
+
+                        data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
+                        p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_modes;
+
+                        data_tip_row_stab = dataTipTextRow("Stability",stability(index_range));
+                        p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_stab;
+                    end
+                else
+                    p2 = plot(iAx,frequency,g_amp(iMode,:),'k-',line_plot_settings{1:2}); %#ok<UNRCH>
+
+                    data_tip_row = dataTipTextRow("ID",orbit_ids(index_range));
+                    p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
+                    data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
+                    p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                end
+            end
+
+            if PLOT_STABILITY
+                for iSection = 1:num_sections
+                    stab = range_stability(iSection);
+                    index_range = index_ranges(iSection,1):index_ranges(iSection,2);
+                    p1 = plot(iAx,frequency(index_range),q_amp(iMode,index_range),'LineStyle',LINE_STYLE(stab+1),line_plot_settings{:});
+
+                    data_tip_row_id = dataTipTextRow("ID",orbit_ids(index_range));
+                    p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
+
+                    data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
+                    p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_modes;
+
+                    data_tip_row_stab = dataTipTextRow("Stability",stability(index_range));
+                    p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_stab;
+                end
+            else
+                p1 = plot(iAx,frequency,q_amp(iMode,:),line_plot_settings{:}); %#ok<UNRCH>
+
+                data_tip_row = dataTipTextRow("ID",orbit_ids(index_range));
+                p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
+                data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
+                p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+            end
+
+
+
             hold(iAx,"off")
 
             max_q = max(q_amp(iMode,:));
             max_g = max(g_amp(iMode,:));
             
             y_lim = min(max_g*3,max_q);
-            ylim(iAx,[0,y_lim])
-
-            p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
-            p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
+            if y_lim ~= 0
+                ylim(iAx,[0,y_lim])
+            end
 
             xlabel(iAx,"Frequency (rad/s)")
             ylabel(iAx,"Q_{" + h_modes(iMode) + "}")
         end
+
+        
 end
 end

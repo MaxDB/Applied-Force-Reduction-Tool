@@ -1,15 +1,26 @@
-function [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] =  parse_h_error_data(Static_Data,L_eigenvectors)
-num_dofs = Static_Data.Model.num_dof;
+function [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] =  parse_h_error_data(Static_Data,L_modes)
 
-r_eigenvectors = Static_Data.Model.reduced_eigenvectors;
-h_eigenvectors = [r_eigenvectors,L_eigenvectors]; 
-num_h_modes = size(h_eigenvectors,2);
+Model = Static_Data.Model;
+r_modes = Model.reduced_modes;
+num_r_modes = size(r_modes,2);
+r_evec = Model.reduced_eigenvectors;
+
+all_L_modes = Model.low_frequency_modes;
+[~,L_map] = ismember(L_modes,all_L_modes);
+L_evec = Model.low_frequency_eigenvectors(:,L_map);
+
+h_modes = [r_modes,L_modes];
+num_h_modes = size(h_modes,2);
+h_evec = [r_evec,L_evec];
+% h_map = [1:num_r_modes,L_map+num_r_modes];
+
+num_dofs = Model.num_dof;
 
 K_array = Static_Data.tangent_stiffness;
 is_fe_system = ~isnumeric(K_array);
 num_loadcases = size(K_array,3);
 mass = Static_Data.Model.mass;
-mass_product = mass*h_eigenvectors;
+mass_product = mass*h_evec;
 
 I_h = eye(num_h_modes);
 
@@ -24,7 +35,7 @@ for iLoad = 1:num_loadcases
 
     perturbation = K_i\mass_product;
     h_i = mass_product'*perturbation;
-    theta_hat_i = perturbation - h_eigenvectors*h_i;
+    theta_hat_i = perturbation - h_evec*h_i;
 
     h_coupling_gradient(:,:,iLoad) = theta_hat_i/h_i;
     h_stiffness(:,:,iLoad) =  I_h/h_i;
@@ -33,7 +44,7 @@ end
 stiffness = Static_Data.Model.stiffness;
 perturbation_0 = stiffness\mass_product;
 h_0 = mass_product'*perturbation_0;
-theta_0 = perturbation_0 - h_eigenvectors*h_0;
+theta_0 = perturbation_0 - h_evec*h_0;
 
 h_coupling_gradient_0 = theta_0/h_0;
 h_stiffness_0 =  I_h/h_0;

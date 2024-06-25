@@ -53,13 +53,18 @@ for iSol = 1:num_solutions
         end
     end
     if PLOT_LEGEND
-        hold(ax,"on")
-        line = ax.Children(1);
+        if iscell(ax)
+            ax_legend = ax{1,1};
+        else
+            ax_legend = ax;
+        end
+        hold(ax_legend,"on")
+        line = ax_legend.Children(1);
         point = [line.XData(1),line.YData(1)];
         line_width = line.LineWidth;
         line_colour = get_plot_colours(colour_numbers(iSol));
-        p = plot(ax,point(1),point(2),"-","LineWidth",line_width,"Color",line_colour);
-        hold(ax,"off")
+        p = plot(ax_legend,point(1),point(2),"-","LineWidth",line_width,"Color",line_colour);
+        hold(ax_legend,"off")
         legend_lines(iSol) = p;
         reduced_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
         legend_modes{1,iSol} = reduced_modes;

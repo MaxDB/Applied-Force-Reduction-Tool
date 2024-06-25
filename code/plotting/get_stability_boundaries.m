@@ -6,6 +6,8 @@ for iOrbit = 1:(num_orbits-1)
         stability_transition = [stability_transition;[iOrbit,iOrbit+1]]; %#ok<AGROW>
     end
 end
+
+if nargin == 2
 bifurcation_types = fields(bifurcations);
 num_bifurcation_types = size(bifurcation_types,1);
 all_bifurcation_index = [];
@@ -16,6 +18,9 @@ for iType = 1:num_bifurcation_types
         continue
     end
     all_bifurcation_index = [all_bifurcation_index;bifurcation_index]; %#ok<AGROW>
+end
+else
+    all_bifurcation_index = [];
 end
 
 num_transitions = size(stability_transition,1);
