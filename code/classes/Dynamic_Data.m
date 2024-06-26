@@ -83,6 +83,7 @@ classdef Dynamic_Data
                 case "IC"
                     point_index = get_special_point(obj,solution_num,type);
             end
+
             if isstring(orbit_num)
                 if orbit_num == "all"
                     orbit_num = 1:size(point_index,1);
@@ -109,6 +110,7 @@ classdef Dynamic_Data
                         obj.num_solutions = next_solution_num;
 
                         obj.save_solution("coco",next_solution_num)
+                    case "bp"
 
                     case "IC"
                         orbit = obj.get_orbit(solution_num,point_index(orbit_num(iOrbit)));

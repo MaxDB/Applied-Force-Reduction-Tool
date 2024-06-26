@@ -2,13 +2,21 @@ clear
 % M*x_ddot + C*x_dot + K*x + f(x) = F 
 system_name = "beam_oscillator";
 %%Parameters
-omega_nr = pi^2;
-omega_ns = 4*pi^2;
-psi_3_1 = 0;
+% omega_nr = pi^2;
+% omega_ns = 4*pi^2;
+% psi_3_1 = 0.35;
+% psi_1_3 = 0.35;
+% psi_2_2 = 2*pi^4;
+% psi_4_0 = pi^4/2;
+% psi_0_4 = 8*pi^4;
+
+omega_nr = 1;
+omega_ns = 4;
+psi_3_1 = 0.35;
 psi_1_3 = 0;
-psi_2_2 = 2*pi^4;
-psi_4_0 = pi^4/2;
-psi_0_4 = 8*pi^4;
+psi_2_2 = 2;
+psi_4_0 = 1/2;
+psi_0_4 = 8;
 
 %%linear mass
 eom.M = eye(2);
