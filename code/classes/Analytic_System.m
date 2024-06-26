@@ -33,8 +33,7 @@ classdef Analytic_System
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
                     case "save"
-                        save_system = true;
-                        save_path = keyword_values{arg_counter};
+                        save_system = keyword_values{arg_counter};
                         continue
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
@@ -74,16 +73,12 @@ classdef Analytic_System
             obj.modal_potential_energy = obj.get_modal_potential_energy;
 
             if save_system
-                obj.save_class_instance(save_path)
+                obj.save_class_instance
             end
         end
         %-----------------------------------------------------------------%
-        function save_class_instance(analytic_eom,save_path)
-            if isfolder(save_path)
-                rmdir(save_path,"s")
-            end
-            mkdir(save_path)
-            save(save_path + "\" + analytic_eom.system_name,"analytic_eom")
+        function save_class_instance(analytic_eom)
+            save(analytic_eom.system_name,"analytic_eom")
         end
         %-----------------------------------------------------------------%
 

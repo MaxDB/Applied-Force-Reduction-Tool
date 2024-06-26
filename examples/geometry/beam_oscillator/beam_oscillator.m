@@ -1,6 +1,4 @@
-clear
 % M*x_ddot + C*x_dot + K*x + f(x) = F 
-system_name = "beam_oscillator";
 %%Parameters
 % omega_nr = pi^2;
 % omega_ns = 4*pi^2;
@@ -37,7 +35,8 @@ eom.f = @(x) nonlinear_restoring_force(x,psi_3_1,psi_1_3,psi_2_2,psi_4_0,psi_0_4
 eom.V = @(x) potential_energy(x,omega_nr,omega_ns,psi_3_1,psi_1_3,psi_2_2,psi_4_0,psi_0_4);
 
 %% 
-analytic_EoM = Analytic_System(system_name,eom,"save","geometry\" + system_name);
+system_name = mfilename;
+Analytic_Eom = Analytic_System(system_name,eom);
 
 
 %-------------------------------------------------------------------------%

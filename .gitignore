@@ -1,7 +1,10 @@
-# ignore all files in any named directory
+# ignore all files in directories named
 temp/
 data/
 
 # ignore all files named
 force_calibration.mat
 matrices.mat
+
+# ignore all files with extension
+*.asv

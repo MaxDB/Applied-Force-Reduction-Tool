@@ -4,9 +4,9 @@ function [r,theta,f,E,additional_data,sep_id] = ...
 num_seps = size(force_ratio,2);
 num_r_modes = length(Model.reduced_modes);
 %load system
-load("geometry\" + Model.system_name+ "\" + Model.system_name + ".mat","analytic_eom");
-static_equation = analytic_eom.get_static_equation;
-potential_equation = analytic_eom.get_potential_equation;
+Analytic_Eom = load_analytic_system("geometry\" + Model.system_name+ "\" + Model.system_name);
+static_equation = Analytic_Eom.get_static_equation;
+potential_equation = Analytic_Eom.get_potential_equation;
 linear_stiffness = Model.stiffness;
 
 %define force

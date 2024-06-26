@@ -72,7 +72,7 @@ classdef Dynamic_System
             GEOMETRY_FILE_PATH = "geometry\" + obj.system_name + "\" + obj.system_name;
             if isfile(GEOMETRY_FILE_PATH + ".inp")
                 obj.system_type = "indirect";
-            elseif isfile(GEOMETRY_FILE_PATH + ".mat")
+            elseif isfile(GEOMETRY_FILE_PATH + ".m")
                 obj.system_type = "direct";
             end
 
@@ -95,7 +95,9 @@ classdef Dynamic_System
 
             %Find single modal forcing required to reach energy limit
             calibration_time_start = tic;
+            obj = obj.update_static_opts(Calibration_Opts.Static_Opts);
             obj = obj.calibrate_mode(modes);
+            obj = obj.update_static_opts(Static_Opts);
             calibration_time = toc(calibration_time_start);
             log_message = sprintf("Mode Calibration: %.1f seconds" ,calibration_time);
             logger(log_message,2)
@@ -138,9 +140,9 @@ classdef Dynamic_System
                     end
 
                 case "matlab"
-                    load(GEOMETRY_PATH + obj.system_name,"analytic_eom")
-                    M = analytic_eom.linear_mass;
-                    K = analytic_eom.linear_stiffness;
+                    Analytic_Eom = load_analytic_system(GEOMETRY_PATH + obj.system_name);
+                    M = Analytic_Eom.linear_mass;
+                    K = Analytic_Eom.linear_stiffness;
 
                     dofs = length(M);
                     node_map = [(1:dofs)',(1:dofs)'];
