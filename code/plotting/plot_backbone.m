@@ -1,5 +1,6 @@
 function ax = plot_backbone(Dyn_Data,type,solution_num,varargin)
 PLOT_BIFURCATIONS = 1;
+PLOT_SPECIAL_POINT = 1;
 PLOT_PERIODICITY = 1;
 STABILITY_LIMIT = 1.005;
 
@@ -80,6 +81,27 @@ if PLOT_BIFURCATIONS
                 type_plot_settings{end+1} = "w";
         end
         bifurcation_plot_settings{iType,1} =  type_plot_settings;
+    end
+end
+
+if PLOT_SPECIAL_POINT
+    point_index = Dyn_Data.get_special_point(solution_num,"X");
+    special_point_plot_settings = bifurcation_plot_settings{1,1}; 
+    num_settings = size(special_point_plot_settings,2);
+    for iSetting = 1:num_settings
+        setting = special_point_plot_settings{1,iSetting};
+        if ~isstring(setting)
+            continue
+        end
+        if any(setting == ["Color","MarkerFaceColor"])
+            special_point_plot_settings{1,iSetting+1} = get_plot_colours(3);
+        end
+        if setting == "MarkerSize"
+            special_point_plot_settings{1,iSetting+1} = special_point_plot_settings{1,iSetting+1};
+        end
+        if setting == "LineWidth"
+            special_point_plot_settings{1,iSetting+1} = special_point_plot_settings{1,iSetting+1}-0.5;
+        end
     end
 end
 
@@ -170,6 +192,10 @@ switch type
                 data_tip_row = dataTipTextRow("Periodicity",periodicity_error(index_range));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
             end
+        end
+
+        if PLOT_SPECIAL_POINT
+            p = plot(ax,frequency(point_index),energy(point_index),special_point_plot_settings{:});
         end
         hold(ax,"off")
 

@@ -1,6 +1,6 @@
 function ax = plot_h_predicition(Dyn_Data,type,solution_num,varargin)
 PLOT_BACKBONE = 1;
-PLOT_STABILITY = 1;
+PLOT_STABILITY = 0;
 STABILITY_LIMIT = 1.005;
 
 LINE_STYLE = [":","-"]; %[unstable,stable]
@@ -74,9 +74,7 @@ switch type
             ax = axes(gcf);
         end
         
-        if PLOT_BACKBONE
-            ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0);
-        end
+        
         
         box(ax,"on")
         hold(ax,"on")
@@ -97,15 +95,17 @@ switch type
                 p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_stab;
             end
         else
-            p1 = plot(ax,frequency,energy_hat,'LineStyle',LINE_STYLE(stab+1),line_plot_settings{:}); %#ok<UNRCH>
-            data_tip_row = dataTipTextRow("ID",orbit_ids(index_range));
+            p1 = plot(ax,frequency,energy_hat,'LineStyle',LINE_STYLE(2),line_plot_settings{:}); %#ok<UNRCH>
+            data_tip_row = dataTipTextRow("ID",orbit_ids);
             p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
             data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
             p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
         end
 
-        
+        if PLOT_BACKBONE
+            ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0);
+        end
 
         
         hold(ax,"off")
@@ -161,32 +161,7 @@ switch type
             box(iAx,"on")
 
             hold(iAx,"on")
-            if PLOT_BACKBONE
-                if PLOT_STABILITY
-                    for iSection = 1:bb_num_sections
-                        stab = bb_range_stability(iSection);
-                        index_range = bb_index_ranges(iSection,1):bb_index_ranges(iSection,2);
-                        p2 = plot(iAx,frequency(index_range),g_amp(iMode,index_range),"color",[0,0,0],'LineStyle',LINE_STYLE(stab+1),line_plot_settings{1:2});
-
-                        data_tip_row_id = dataTipTextRow("ID",orbit_ids(index_range));
-                        p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
-
-                        data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
-                        p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_modes;
-
-                        data_tip_row_stab = dataTipTextRow("Stability",stability(index_range));
-                        p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_stab;
-                    end
-                else
-                    p2 = plot(iAx,frequency,g_amp(iMode,:),'k-',line_plot_settings{1:2}); %#ok<UNRCH>
-
-                    data_tip_row = dataTipTextRow("ID",orbit_ids(index_range));
-                    p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
-
-                    data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
-                    p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
-                end
-            end
+            
 
             if PLOT_STABILITY
                 for iSection = 1:num_sections
@@ -206,14 +181,39 @@ switch type
             else
                 p1 = plot(iAx,frequency,q_amp(iMode,:),line_plot_settings{:}); %#ok<UNRCH>
 
-                data_tip_row = dataTipTextRow("ID",orbit_ids(index_range));
-                p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                data_tip_row_id = dataTipTextRow("ID",orbit_ids);
+                p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
 
                 data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
-                p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_modes;
             end
 
+            if PLOT_BACKBONE
+                if PLOT_STABILITY
+                    for iSection = 1:bb_num_sections
+                        stab = bb_range_stability(iSection);
+                        index_range = bb_index_ranges(iSection,1):bb_index_ranges(iSection,2);
+                        p2 = plot(iAx,frequency(index_range),g_amp(iMode,index_range),"color",[0,0,0],'LineStyle',LINE_STYLE(stab+1),line_plot_settings{1:2});
 
+                        data_tip_row_id = dataTipTextRow("ID",orbit_ids(index_range));
+                        p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
+
+                        data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
+                        p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_modes;
+
+                        data_tip_row_stab = dataTipTextRow("Stability",stability(index_range));
+                        p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_stab;
+                    end
+                else
+                    p2 = plot(iAx,frequency,g_amp(iMode,:),'k-',line_plot_settings{1:2}); %#ok<UNRCH>
+
+                    data_tip_row_id = dataTipTextRow("ID",orbit_ids);
+                    p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
+
+                    data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
+                    p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_modes;
+                end
+            end
 
             hold(iAx,"off")
 

@@ -31,8 +31,11 @@ elseif isscalar(validation)
     validation = validation * ones(1,num_solutions);
 end
 
-colour_numbers = 1:num_solutions;
-
+if num_solutions == 1
+    colour_numbers = 0;
+else
+    colour_numbers = 1:num_solutions;
+end
 ax = [];
 legend_lines = zeros(1,num_solutions);
 legend_modes = cell(1,num_solutions);

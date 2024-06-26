@@ -245,6 +245,11 @@ classdef Dynamic_Data
         end
         %-----------------------------------------------------------------%
         function obj = get_periodicity_error(obj,solution_num,orbit_num)
+            if isstring(orbit_num)
+                if orbit_num == "all"
+                    orbit_num = 1:length(obj.frequency{1,solution_num});
+                end
+            end
             Rom = obj.Dynamic_Model;
             
             orbit = get_orbit(obj,solution_num,orbit_num);
