@@ -17,6 +17,7 @@ classdef Static_Dataset
         low_frequency_coupling_gradient
         Dynamic_Validation_Data
 
+        scaffold_points
         static_equilibrium_path_id
         unit_sep_ratios
 
@@ -25,23 +26,18 @@ classdef Static_Dataset
     end
     methods
         function obj = Static_Dataset(Model,Validation_Opts)
-            rom_data_time_start = tic;
+            
             obj.Model = Model;
             obj.additional_data_type = Model.Static_Options.additional_data;
             obj.perturbation_scale_factor = Model.Static_Options.perturbation_scale_factor;
 
             obj = update_validation_opts(obj,Validation_Opts);
 
-            obj = obj.create_dataset;
-        
-            
-            rom_data_time = toc(rom_data_time_start);
-            log_message = sprintf("ROM Dataset Created: %.1f seconds" ,rom_data_time);
-            logger(log_message,1)
+            obj = obj.create_dataset;            
         end
         %-----------------------------------------------------------------%
         function obj = create_dataset(obj)
-            %using hyper sphere but may update
+            rom_data_time_start = tic;
             rom_scaffold_time_start = tic;
 
             obj = obj.create_scaffold(obj.additional_data_type);
@@ -68,6 +64,9 @@ classdef Static_Dataset
             % end
             validation_time = toc(validation_time_start);
             log_message = sprintf("ROM Dataset Validated: %.1f seconds" ,validation_time);
+            logger(log_message,1)
+            rom_data_time = toc(rom_data_time_start);
+            log_message = sprintf("ROM Dataset Created: %.1f seconds" ,rom_data_time);
             logger(log_message,1)
         end
         %-----------------------------------------------------------------%
@@ -153,30 +152,21 @@ classdef Static_Dataset
             r_modes = obj.Model.reduced_modes;
             num_modes = length(r_modes);
             
+            full_unit_force_ratios = add_sep_ratios(num_modes,1);
+
             found_sep_ratios = obj.unit_sep_ratios;
             unit_force_ratios = add_sep_ratios(num_modes,1,found_sep_ratios);
+            
+            member_map = ismembertol(full_unit_force_ratios',unit_force_ratios',"ByRows",true)';
+            sep_map = [find(~member_map),find(member_map)];
+
             scaled_force_ratios = scale_sep_ratios(unit_force_ratios,obj.Model.calibrated_forces);
 
-      
-            
-            
             [r,theta,f,E,sep_id,additional_data] = obj.Model.add_sep(scaled_force_ratios,additional_data_type,1);
             
             obj = obj.update_data(r,theta,f,E,sep_id,additional_data,unit_force_ratios);
-
-            % obj.unit_sep_ratios = [found_sep_ratios,unit_force_ratios];
-            % obj.reduced_displacement = r;
-            % obj.condensed_displacement = theta;
-            % obj.restoring_force = f;
-            % obj.potential_energy = E;
-            % obj.static_equilibrium_path_id = sep_id;
-            
-            % switch additional_data_type
-            %     case "stiffness"
-            %         obj.tangent_stiffness = additional_data;
-            %     case "perturbation"
-            %         obj.perturbation_displacement = additional_data;
-            % end
+            obj.static_equilibrium_path_id = sep_map(obj.static_equilibrium_path_id);
+            obj.unit_sep_ratios(:,sep_map) = obj.unit_sep_ratios;
             
 
         end
@@ -191,8 +181,12 @@ classdef Static_Dataset
             % sep_id_shift = max(obj.static_equilibrium_path_id);
             obj.static_equilibrium_path_id = [obj.static_equilibrium_path_id,sep_id+sep_id_shift];
 
+            num_points = size(V,2);
             if nargin == 8
                 obj.unit_sep_ratios = [obj.unit_sep_ratios,found_force_ratios];
+                obj.scaffold_points = [obj.scaffold_points,true(1,num_points)];
+            else
+                obj.scaffold_points = [obj.scaffold_points,false(1,num_points)];
             end
 
             switch obj.additional_data_type
@@ -203,15 +197,23 @@ classdef Static_Dataset
             end
         end
         %-----------------------------------------------------------------%
-        function obj = update_model(obj,added_modes,Calibration_Opts,Static_Opts)
+        function obj = update_model(obj,added_modes,Static_Opts,Calibration_Opts)
             system_name = obj.Model.system_name;
             energy_limit = obj.Model.energy_limit;
             initial_modes = sort([obj.Model.reduced_modes,added_modes],"ascend");
             old_mode_map = ismember(initial_modes,obj.Model.reduced_modes);
-           
-            Static_Opts.static_solver = obj.Model.Static_Options.static_solver;
-            Static_Opts.additional_data = obj.Model.Static_Options.additional_data;
-            Static_Opts.num_validation_modes = obj.Model.Static_Options.num_validation_modes;
+
+            if nargin > 2
+                Static_Opts.static_solver = obj.Model.Static_Options.static_solver;
+                Static_Opts.additional_data = obj.Model.Static_Options.additional_data;
+                Static_Opts.num_validation_modes = obj.Model.Static_Options.num_validation_modes;
+            else
+                Static_Opts = obj.Model.Static_Options;
+            end
+
+            if nargin < 3
+                Calibration_Opts = obj.Model.Calibration_Options;
+            end
 
             obj.Model = Dynamic_System(system_name,energy_limit,initial_modes,Calibration_Opts,Static_Opts);
 
@@ -254,7 +256,7 @@ classdef Static_Dataset
         %-----------------------------------------------------------------%
         %-----------------------------------------------------------------%
         function sz = size(obj)
-            sz = length(obj.potential_energy);
+            sz = size(obj.restoring_force);
         end
         %-----------------------------------------------------------------%
         
@@ -303,6 +305,93 @@ classdef Static_Dataset
             r_modes = obj.Model.reduced_modes;
             mode_id = join(string(r_modes),"");
             data_path = "data\" + obj.Model.system_name + "_" + mode_id + "\";
+        end
+        %-----------------------------------------------------------------%
+        function[Static_Data,Static_Data_Removed] = remove_loadcases(Static_Data,removal_index)
+            Static_Data_Removed = Static_Data;
+
+            Static_Data_Removed.reduced_displacement = Static_Data_Removed.reduced_displacement(:,removal_index);
+            Static_Data_Removed.condensed_displacement = Static_Data_Removed.condensed_displacement(:,removal_index);
+            Static_Data_Removed.potential_energy = Static_Data_Removed.potential_energy(:,removal_index);
+            Static_Data_Removed.restoring_force = Static_Data_Removed.restoring_force(:,removal_index);
+            
+            Static_Data_Removed.scaffold_points = Static_Data_Removed.scaffold_points(:,removal_index);
+            Static_Data_Removed.static_equilibrium_path_id = Static_Data_Removed.static_equilibrium_path_id(:,removal_index);
+
+            switch Static_Data_Removed.additional_data_type
+                case "stiffness"
+                    Static_Data_Removed.tangent_stiffness = Static_Data_Removed.tangent_stiffness(:,:,removal_index);
+                case "perturbation"
+                    Static_Data_Removed.perturbation_displacement = Static_Data_Removed.perturbation_displacement(:,removal_index);
+            end
+            %---------------------------------------------------------------------------------------%
+            Static_Data.reduced_displacement = Static_Data.reduced_displacement(:,~removal_index);
+            Static_Data.condensed_displacement = Static_Data.condensed_displacement(:,~removal_index);
+            Static_Data.potential_energy = Static_Data.potential_energy(:,~removal_index);
+            Static_Data.restoring_force = Static_Data.restoring_force(:,~removal_index);
+            
+            Static_Data.scaffold_points = Static_Data.scaffold_points(:,~removal_index);
+            Static_Data.static_equilibrium_path_id = Static_Data.static_equilibrium_path_id(:,~removal_index);
+
+            switch Static_Data.additional_data_type
+                case "stiffness"
+                    Static_Data.tangent_stiffness = Static_Data.tangent_stiffness(:,:,~removal_index);
+                case "perturbation"
+                    Static_Data.perturbation_displacement = Static_Data.perturbation_displacement(:,~removal_index);
+            end
+        end
+        %-----------------------------------------------------------------%
+        function [loadcases_found,r,theta,f,E,additional_data] = contains_loadcase(obj,loadcases)
+            MAX_DIFF = 0.05;
+            
+            found_force = obj.restoring_force;
+            num_r_modes = size(found_force,1);
+            num_dofs = obj.Model.num_dof;
+            num_checked_loadcases = size(loadcases,2);
+            loadcases_found = false(1,num_checked_loadcases);
+            
+            matched_counter = 0;
+            r = zeros(num_r_modes,0);
+            theta = zeros(num_dofs,0);
+            f = zeros(num_r_modes,0);
+            E = zeros(1,0);
+            switch obj.additional_data_type
+                case "stiffness"
+                    if issparse(obj.tangent_stiffness)
+                        additional_data = sparse(num_dofs,num_dofs,0);
+                    else
+                        additional_data = zeros(num_dofs,num_dofs,0);
+                    end
+                case "perturbation"
+                    num_h_modes = size(obj.perturbation_displacement,1);
+                    additional_data = zeros(num_h_modes,0);
+            end
+
+            for iLoad = 1:num_checked_loadcases
+                loadcase = loadcases(:,iLoad);
+                bounds = abs(found_force./loadcase - 1);
+                bounds(isnan(bounds)) = 0;
+                matching_index = all(bounds < MAX_DIFF,1);
+                if any(matching_index)
+                    matched_counter = matched_counter + 1;
+                    loadcases_found(iLoad) = true;
+                    loadcase_index = find(matching_index); %problematic if two are detected, should pick closest (but also bad if happens)
+                    
+                    r(:,matched_counter) = obj.reduced_displacement(:,loadcase_index);
+                    theta(:,matched_counter) = obj.condensed_displacement(:,loadcase_index);
+                    f(:,matched_counter) = obj.restoring_force(:,loadcase_index);
+                    E(:,matched_counter) = obj.potential_energy(:,loadcase_index);
+
+                    switch obj.additional_data_type
+                        case "stiffness"
+                            additional_data(:,:,matched_counter) = obj.tangent_stiffness(:,:,loadcase_index);
+                        case "perturbation"
+                            additional_data(:,matched_counter) = obj.perturbation_displacement(:,loadcase_index);
+                    end
+
+                end
+            end
+
         end
         %-----------------------------------------------------------------%
 

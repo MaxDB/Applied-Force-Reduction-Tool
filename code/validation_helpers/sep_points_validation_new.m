@@ -10,7 +10,7 @@ max_iterations = Validation_Opts.maximum_iterations;
 Model = Static_Data.Model;
 linear_mass = Model.mass;
 Static_Opts = Model.Static_Options;
-num_sep_loadcases =Validation_Opts.num_added_points;
+num_sep_loadcases = Validation_Opts.num_added_points;
 max_sep_loadcases = Static_Opts.maximum_loadcases;
 max_iteration_loadcases = Validation_Opts.max_added_points;
 
@@ -31,6 +31,14 @@ num_original_seps = size(found_force_ratios,2);
 
 sep_density = 1;
 unit_force_ratios = found_force_ratios;
+
+scaffold_points = Static_Data.scaffold_points;
+data_available = any(scaffold_points == 0);
+if data_available
+    added_data = ~scaffold_points;
+    [Static_Data,Static_Data_Added] = Static_Data.remove_loadcases(added_data);
+end
+
 for iIteration = 1:(max_iterations+1)
 
     validation_iteration_start = tic;
@@ -44,6 +52,8 @@ for iIteration = 1:(max_iterations+1)
     num_validated_seps = size(unit_force_ratios,2);
     
     validated_seps = (1:num_validated_seps);
+    
+    
 
     V = Static_Data.potential_energy;
     validated_points = V < energy_limit;
@@ -100,7 +110,6 @@ for iIteration = 1:(max_iterations+1)
     max_sep_disp_error = zeros(1,num_validated_seps);
 
 
-    
     for iSep = 1:num_validated_seps %parallelise 
         estimated_end_force = scaled_force_ratios(:,iSep);
         x_0 = zeros(num_modes,1);
@@ -248,7 +257,34 @@ for iIteration = 1:(max_iterations+1)
         logger(interpolation_log_message,3)
 
         if ~isempty(new_sep_id)
+            if data_available
+                [found_loadcases,found_r,found_theta,found_f,found_E,found_additional_data] = Static_Data_Added.contains_loadcase(new_loads);
+                new_loads = new_loads(:,~found_loadcases);
+            end
             [r,theta,f,E,additional_data] = Rom_One.Model.add_point(new_loads,Static_Data.additional_data_type);
+            if data_available
+                r(:,~found_loadcases) = r;
+                r(:,found_loadcases) = found_r;
+
+                theta(:,~found_loadcases) = theta;
+                theta(:,found_loadcases) = found_theta;
+
+                f(:,~found_loadcases) = f;
+                f(:,found_loadcases) = found_f;
+
+                E(:,~found_loadcases) = E;
+                E(:,found_loadcases) = found_E;
+
+                switch Static_Data.additional_data_type
+                    case "stiffness"
+                        additional_data(:,:,~found_loadcases) = additional_data;
+                        additional_data(:,:,found_loadcases) = found_additional_data;
+                    case "perturbation"
+                        additional_data(:,~found_loadcases) = additional_data;
+                        additional_data(:,found_loadcases) = found_additional_data;
+                end
+
+            end
             Static_Data = Static_Data.update_data(r,theta,f,E,new_sep_id-num_original_seps,additional_data);
         end
 

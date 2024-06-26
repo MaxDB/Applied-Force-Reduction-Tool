@@ -17,7 +17,7 @@ Static_Opts.additional_data = "stiffness";
 Static_Opts.num_validation_modes = 2;
 Static_Opts.max_parallel_jobs = 4; %be careful!
 Static_Opts.num_loadcases = 10;
-Static_Opts.maximum_loadcases = 10;
+Static_Opts.maximum_loadcases = 15;
 %------------------------------------------%
 
 %--------- Calibration Settings ---------%
