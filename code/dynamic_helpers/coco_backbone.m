@@ -19,8 +19,8 @@ switch type
             @(z,zeta) coco_eom_dzeta(0,z)};
     case "fom"
         Model = Rom.Model;
-        load("geometry\" + Model.system_name+ "\" + Model.system_name + ".mat","analytic_eom");
-        Eom_Input = analytic_eom.get_solver_inputs("free");
+        Analytic_Eom = load_analytic_system("geometry\" + Model.system_name+ "\" + Model.system_name);
+        Eom_Input = Analytic_Eom.get_solver_inputs("free");
 
         funcs = {@(z,zeta) direct_eom(0,z,zeta,Eom_Input.modal_restoring_force),...
             @(z,zeta) direct_eom_dx(0,z,zeta,Eom_Input.modal_stiffness),...

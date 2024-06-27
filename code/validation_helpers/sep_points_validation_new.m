@@ -174,7 +174,7 @@ for iIteration = 1:(max_iterations+1)
         if all(norm_force_error(in_energy_limit) < 1)
             force_converged(1,iSep) = 1;
         end
-        max_sep_force_error(1,iSep) = max(norm_force_error(in_energy_limit));
+        max_sep_force_error(1,iSep) = max([0,norm_force_error(in_energy_limit)]);
         
 
         disp_prod_one = zeros(1,num_sep_points);
@@ -200,7 +200,7 @@ for iIteration = 1:(max_iterations+1)
         if all(norm_disp_error(in_energy_limit) < 1)
             disp_converged(1,iSep) = 1;
         end
-        max_sep_disp_error(1,iSep) = max(norm_disp_error(in_energy_limit));
+        max_sep_disp_error(1,iSep) = max([0,norm_disp_error(in_energy_limit)]);
 
         interpolation_error = max(norm_force_error,norm_disp_error);
         interpolation_error(interpolation_error < 1) = 0;

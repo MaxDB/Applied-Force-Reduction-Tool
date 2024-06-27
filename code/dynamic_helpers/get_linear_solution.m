@@ -39,7 +39,7 @@ switch type
 
         eom = @(z) coco_eom(t,z,zeta,input_order,Force_Data,Disp_Data);
     case "fom"
-        load("geometry\" + Model.system_name+ "\" + Model.system_name + ".mat","analytic_eom");
+        Analytic_Eom = load_analytic_system("geometry\" + Model.system_name+ "\" + Model.system_name);
         num_modes = Model.num_dof;
         y = zeros(2*num_modes,TIME_RESOLUTION);
         y(backbone_num,:) = sin(natural_freq*t);
@@ -47,7 +47,7 @@ switch type
         x_ddot = -natural_freq^2*sin(natural_freq*t);
         x_ddot(abs(x_ddot) < 1e-10) = 0;
         
-        Eom_Input = analytic_eom.get_solver_inputs("free");
+        Eom_Input = Analytic_Eom.get_solver_inputs("free");
         eom = @(z) direct_eom(0,z,zeta,Eom_Input.modal_restoring_force);
 end
 

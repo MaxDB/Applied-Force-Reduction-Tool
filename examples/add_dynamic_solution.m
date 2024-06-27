@@ -1,6 +1,6 @@
 clear
 % close all
-system_name = "beam_oscillator_1";
+system_name = "h_oscillator_12";
 
 Dyn_Data = initalise_dynamic_data(system_name);
 %-------------------------------------------------------------------------%
@@ -23,6 +23,7 @@ Continuation_Opts.initial_discretisation_num = 20;
 Continuation_Opts.max_discretisation_num = 250;
 Continuation_Opts.min_discretisation_num = 20;
 Continuation_Opts.collation_degree = 6;
+% Continuation_Opts.energy_limit_multiplier = 2;
 %-----------------------------------------%
 Dyn_Data = Dyn_Data.update_continuation_opts(Continuation_Opts);
 % 
@@ -35,17 +36,17 @@ Dyn_Data = Dyn_Data.add_full_order_backbone(1);
 % Dyn_Data = get_periodicity_error(Dyn_Data,2,1:587)
 
 
-%--------- Continuation Settings ---------%
-Continuation_Opts.initial_inc = 1e-2;
-Continuation_Opts.max_inc = 1e-2;
-Continuation_Opts.min_inc = 1e-3;
-Continuation_Opts.forward_steps = 300;
-Continuation_Opts.backward_steps = 0;
-% Continuation_Opts.parameter_range = [-10,10];
-%-----------------------------------------%D
-Dyn_Data = Dyn_Data.update_continuation_opts(Continuation_Opts);
- Dyn_Data = Dyn_Data.restart_point(1,199,"po");
-plot_backbone(system_name,"amplitude","last");
+% %--------- Continuation Settings ---------%
+% Continuation_Opts.initial_inc = 1e-2;
+% Continuation_Opts.max_inc = 1e-2;
+% Continuation_Opts.min_inc = 1e-3;
+% Continuation_Opts.forward_steps = 300;
+% Continuation_Opts.backward_steps = 0;
+% % Continuation_Opts.parameter_range = [-10,10];
+% %-----------------------------------------%D
+% Dyn_Data = Dyn_Data.update_continuation_opts(Continuation_Opts);
+%  Dyn_Data = Dyn_Data.restart_point(1,199,"po");
+% plot_backbone(system_name,"amplitude","last");
 
 
 
