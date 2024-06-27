@@ -276,12 +276,9 @@ for iIteration = 1:(max_iterations+1)
                 E(:,found_loadcases) = found_E;
 
                 switch Static_Data.additional_data_type
-                    case "stiffness"
+                    case {"stiffness","perturbation"}
                         additional_data(:,:,~found_loadcases) = additional_data;
                         additional_data(:,:,found_loadcases) = found_additional_data;
-                    case "perturbation"
-                        additional_data(:,~found_loadcases) = additional_data;
-                        additional_data(:,found_loadcases) = found_additional_data;
                     case "none"
                 end
 

@@ -323,7 +323,7 @@ classdef Static_Dataset
                 case "stiffness"
                     Static_Data_Removed.tangent_stiffness = Static_Data_Removed.tangent_stiffness(:,:,removal_index);
                 case "perturbation"
-                    Static_Data_Removed.perturbation_displacement = Static_Data_Removed.perturbation_displacement(:,removal_index);
+                    Static_Data_Removed.perturbation_displacement = Static_Data_Removed.perturbation_displacement(:,:,removal_index);
             end
             %---------------------------------------------------------------------------------------%
             Static_Data.reduced_displacement = Static_Data.reduced_displacement(:,~removal_index);
@@ -338,7 +338,7 @@ classdef Static_Dataset
                 case "stiffness"
                     Static_Data.tangent_stiffness = Static_Data.tangent_stiffness(:,:,~removal_index);
                 case "perturbation"
-                    Static_Data.perturbation_displacement = Static_Data.perturbation_displacement(:,~removal_index);
+                    Static_Data.perturbation_displacement = Static_Data.perturbation_displacement(:,:,~removal_index);
             end
         end
         %-----------------------------------------------------------------%
@@ -364,8 +364,8 @@ classdef Static_Dataset
                         additional_data = zeros(num_dofs,num_dofs,0);
                     end
                 case "perturbation"
-                    num_h_modes = size(obj.perturbation_displacement,1);
-                    additional_data = zeros(num_h_modes,0);
+                    num_h_modes = size(obj.perturbation_displacement,2);
+                    additional_data = zeros(num_dofs,num_h_modes,0);
             end
 
             for iLoad = 1:num_checked_loadcases
@@ -390,7 +390,7 @@ classdef Static_Dataset
                         case "stiffness"
                             additional_data(:,:,matched_counter) = obj.tangent_stiffness(:,:,loadcase_index);
                         case "perturbation"
-                            additional_data(:,matched_counter) = obj.perturbation_displacement(:,loadcase_index);
+                            additional_data(:,:,matched_counter) = obj.perturbation_displacement(:,:,loadcase_index);
                         case "none"
                             additional_data = [];
                     end
