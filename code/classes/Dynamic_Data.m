@@ -129,7 +129,9 @@ classdef Dynamic_Data
                         coco_forced_response(t0,z0,p0,Rom,model_type,obj.Continuation_Options,next_solution_num,obj.Additional_Output,Nonconservative_Inputs);
 
                         obj = obj.analyse_solution(next_solution_num);
-
+                        
+                        solution_type = rmfield(solution_type,"frequency");
+                        solution_type.amplitude = orbit.p;
                         obj.solution_types{1,next_solution_num} = solution_type;
                         obj.num_solutions = next_solution_num;
 
@@ -478,10 +480,10 @@ classdef Dynamic_Data
                 sol_path = data_path + "dynamic_sol_" + solution_num(iSol);
                 if ~isfolder(sol_path)
                     warning("Solution cannot be removed as it does not exist")
-                    return
+                else
+                    rmdir(sol_path,'s')
                 end
-                rmdir(sol_path,'s')
-
+                
                 %------
                 num_sols = obj.num_solutions;
                 old_sol_names = (solution_num(iSol)+1) : num_sols;

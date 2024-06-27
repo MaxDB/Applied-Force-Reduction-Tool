@@ -49,8 +49,34 @@ for iSol = 1:num_solutions
     end
     num_system_sols = length(system_sols);
     for jSol = 1:num_system_sols
+        sol_type = Dyn_Data.solution_types{1,jSol};
+        switch sol_type.orbit_type
+            case "forced"
+                
+                if isfield(sol_type,"amplitude")
+                    amplitude = sol_type.amplitude;
+                    if ~exist("amplitude_map","var")
+                        amplitude_map = dictionary;
+                        amplitude_map(amplitude) = 1;
+                    else
+                       if ~isKey(amplitude_map,amplitude)
+                            amplitude_map(amplitude) = numEntries(amplitude_map) + 1;
+                       end
+                    end
+                    colour_numbers = amplitude_map(amplitude);
+                else
+                    colour_numbers = "grey";
+                end
+        end
+
+
         if validation(num_solutions)
-            ax = plot_h_predicition(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",colour_numbers(iSol));
+            if colour_numbers(iSol) == 0
+                h_colour_number = 1;
+            else
+                h_colour_number = colour_numbers(iSol);
+            end
+            ax = plot_h_predicition(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",h_colour_number);
         else
             ax = plot_backbone(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",colour_numbers(iSol));
         end

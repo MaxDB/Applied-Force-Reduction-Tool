@@ -15,13 +15,23 @@ COLOURS = [
 1,                 0.929411764705882, 0.435294117647059
 ];
 
+BLACK = [0,0,0];
+GREY = [217,217,217]/256;
+
 if nargin == 0
     colours = COLOURS;
     return
 end
 
+if isstring(colour_range)
+    if any(colour_range == ["grey","gray"])
+        colours = GREY;
+        return
+    end
+end
+
 if colour_range == 0
-    colours = [0,0,0];
+    colours = BLACK;
     return
 end
 

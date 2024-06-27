@@ -1,6 +1,8 @@
 function ax = plot_backbone(Dyn_Data,type,solution_num,varargin)
 PLOT_BIFURCATIONS = 1;
 PLOT_SPECIAL_POINT = 1;
+PLOT_BB_SN = 0;
+
 PLOT_PERIODICITY = 1;
 STABILITY_LIMIT = 1.005;
 
@@ -8,7 +10,7 @@ LINE_STYLE = [":","-"]; %[unstable,stable]
 LINE_WIDTH = 1.5;
 BIFURCATION_MARKER = ["o","o","^","x"];
 BIFURCATION_TYPE = ["BP","PD","NS","SN"];
-BIFURCATION_SIZE = [6,6,6,0];
+BIFURCATION_SIZE = [6,6,6,6];
 
 
 %-------------------------------------------------------------------------%
@@ -53,6 +55,12 @@ line_colour = get_plot_colours(colour_num);
 line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour};
 
 if PLOT_BIFURCATIONS
+    if Dyn_Data.solution_types{1,solution_num}.orbit_type == "free"
+        if ~PLOT_BB_SN
+            BIFURCATION_SIZE(4) = 0;
+        end
+    end
+
     bifurcations = Dyn_Data.bifurcations{1,solution_num};
     bifurcation_types = fields(bifurcations);
     num_bifurcation_types = size(bifurcation_types,1);
@@ -79,6 +87,8 @@ if PLOT_BIFURCATIONS
             case 3
                 type_plot_settings{end+1} = "MarkerEdgeColor";
                 type_plot_settings{end+1} = "w";
+                type_plot_settings{end+1} = "MarkerFaceColor";
+                type_plot_settings{end+1} = line_colour;
         end
         bifurcation_plot_settings{iType,1} =  type_plot_settings;
     end
@@ -196,6 +206,17 @@ switch type
 
         if PLOT_SPECIAL_POINT
             p = plot(ax,frequency(point_index),energy(point_index),special_point_plot_settings{:});
+
+            data_tip_row_id = dataTipTextRow("ID",orbit_ids(point_index));
+            p.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
+
+            data_tip_row_stab = dataTipTextRow("Stability",stability(point_index));
+            p.DataTipTemplate.DataTipRows(end+1) = data_tip_row_stab;
+
+            if PLOT_PERIODICITY
+                data_tip_row = dataTipTextRow("Periodicity",periodicity_error(point_index));
+                p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+            end
         end
         hold(ax,"off")
 

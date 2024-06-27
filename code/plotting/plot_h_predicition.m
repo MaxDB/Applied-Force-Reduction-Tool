@@ -54,7 +54,7 @@ line_colour = get_plot_colours(colour_num);
 line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour};
 
 if PLOT_STABILITY
-    stability = Dyn_Data.h_stability{1,solution_num};
+    stability = Dyn_Data.h_stability{1,solution_num}; %#ok<*UNRCH>
     [index_ranges,range_stability] = get_stability_boundaries(stability<STABILITY_LIMIT);
     num_sections = size(range_stability,2);
 
@@ -95,12 +95,12 @@ switch type
                 p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_stab;
             end
         else
-            p1 = plot(ax,frequency,energy_hat,'LineStyle',LINE_STYLE(2),line_plot_settings{:}); %#ok<UNRCH>
+            p1 = plot(ax,frequency,energy_hat,'LineStyle',LINE_STYLE(2),line_plot_settings{:});
             data_tip_row = dataTipTextRow("ID",orbit_ids);
             p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
             data_tip_row_modes = dataTipTextRow("Modes",repelem(mode_string,1,num_orbits));
-            p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+            p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_modes;
         end
 
         if PLOT_BACKBONE
@@ -179,7 +179,7 @@ switch type
                     p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_stab;
                 end
             else
-                p1 = plot(iAx,frequency,q_amp(iMode,:),line_plot_settings{:}); %#ok<UNRCH>
+                p1 = plot(iAx,frequency,q_amp(iMode,:),line_plot_settings{:}); 
 
                 data_tip_row_id = dataTipTextRow("ID",orbit_ids);
                 p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
@@ -205,7 +205,7 @@ switch type
                         p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_stab;
                     end
                 else
-                    p2 = plot(iAx,frequency,g_amp(iMode,:),'k-',line_plot_settings{1:2}); %#ok<UNRCH>
+                    p2 = plot(iAx,frequency,g_amp(iMode,:),'k-',line_plot_settings{1:2}); 
 
                     data_tip_row_id = dataTipTextRow("ID",orbit_ids);
                     p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
