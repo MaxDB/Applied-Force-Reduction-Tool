@@ -282,6 +282,7 @@ for iIteration = 1:(max_iterations+1)
                     case "perturbation"
                         additional_data(:,~found_loadcases) = additional_data;
                         additional_data(:,found_loadcases) = found_additional_data;
+                    case "none"
                 end
 
             end

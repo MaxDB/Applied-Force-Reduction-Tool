@@ -165,7 +165,8 @@ classdef Static_Dataset
             [r,theta,f,E,sep_id,additional_data] = obj.Model.add_sep(scaled_force_ratios,additional_data_type,1);
             
             obj = obj.update_data(r,theta,f,E,sep_id,additional_data,unit_force_ratios);
-            obj.static_equilibrium_path_id = sep_map(obj.static_equilibrium_path_id);
+            scaf_points = obj.scaffold_points == 1;
+            obj.static_equilibrium_path_id(scaf_points) = sep_map(obj.static_equilibrium_path_id(scaf_points));
             obj.unit_sep_ratios(:,sep_map) = obj.unit_sep_ratios;
             
 
@@ -207,11 +208,11 @@ classdef Static_Dataset
                 Static_Opts.static_solver = obj.Model.Static_Options.static_solver;
                 Static_Opts.additional_data = obj.Model.Static_Options.additional_data;
                 Static_Opts.num_validation_modes = obj.Model.Static_Options.num_validation_modes;
-            else
-                Static_Opts = obj.Model.Static_Options;
+                obj.Model = obj.Model.update_static_opts(Static_Opts);
             end
+            Static_Opts = obj.Model.Static_Options;
 
-            if nargin < 3
+            if nargin < 4
                 Calibration_Opts = obj.Model.Calibration_Options;
             end
 
@@ -376,7 +377,10 @@ classdef Static_Dataset
                     matched_counter = matched_counter + 1;
                     loadcases_found(iLoad) = true;
                     loadcase_index = find(matching_index); %problematic if two are detected, should pick closest (but also bad if happens)
-                    
+                    if size(loadcase_index,2) > 1
+                        [~,min_index] = min(sqrt(sum((found_force(:,loadcase_index)-loadcase).^2,1)));
+                        loadcase_index = loadcase_index(min_index);
+                    end
                     r(:,matched_counter) = obj.reduced_displacement(:,loadcase_index);
                     theta(:,matched_counter) = obj.condensed_displacement(:,loadcase_index);
                     f(:,matched_counter) = obj.restoring_force(:,loadcase_index);
@@ -387,6 +391,8 @@ classdef Static_Dataset
                             additional_data(:,:,matched_counter) = obj.tangent_stiffness(:,:,loadcase_index);
                         case "perturbation"
                             additional_data(:,matched_counter) = obj.perturbation_displacement(:,loadcase_index);
+                        case "none"
+                            additional_data = [];
                     end
 
                 end
