@@ -87,7 +87,7 @@ while h_coupling_gradient_degree  < max_degree
     if max_coupling_gradient_error < max_fitting_error
         break
     end
-    modelled_output_indicies(coupling_gradient_error < max_fitting_error,:) = [];
+    % modelled_output_indicies(coupling_gradient_error < max_fitting_error,:) = [];
     h_coupling_gradient_degree = h_coupling_gradient_degree + 2;
 end
 if h_coupling_gradient_degree >= max_degree
