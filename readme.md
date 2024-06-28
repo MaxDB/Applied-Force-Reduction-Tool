@@ -7,13 +7,13 @@
 - Download and extract or clone the repository.
 - The directory containing the repository can be renamed and placed anywhere.
 - Open the project file: `AFR_tool.prj` in MATLAB. This will temporarily add all the required directories to the path.
-- The project file needs to be open for the tool to run, but once open, can be used from any directory.
+- The project file needs to be open for the tool to run, but once open, it can be used from any directory.
 
 ## Required and Recommended Dependencies
 ### MATLAB Toolboxes
 - Optimization Toolbox: required
-- Symbolic Toolbox: required for analytically defined models
-- Parallel Toolbox: recommended for increased performance
+- Symbolic Math Toolbox: required for analytically defined models
+- Parallel Computing Toolbox: recommended for increased performance
 
 One of each of the following dynamic and FE solvers is also required
 ### Supported Dynamic Solvers
