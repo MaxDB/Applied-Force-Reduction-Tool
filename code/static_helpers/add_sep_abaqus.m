@@ -121,10 +121,7 @@ switch add_data_type
 end
 
 %-------------------------------------------------------------------------%
-G_ID =fopen("geometry\" + Model.system_name+ "\" + Model.system_name + ".inp");
-geometry = textscan(G_ID,'%s','delimiter','\n');
-fclose(G_ID);
-geometry = geometry{1,1};
+geometry = load_geometry(Model);
 
 for iLine = 1:length(geometry)
     if strfind(geometry{iLine,1},"*Instance, name=")

@@ -519,5 +519,20 @@ classdef Dynamic_System
             end
         end
         %-----------------------------------------------------------------%
+    
+        %-----------------------------------------------------------------%
+        %%% Helpers %%%
+        %-----------------------------------------------------------------%
+        function geometry = load_geometry(obj)
+            switch obj.system_type
+                case "indirect"
+                    G_ID =fopen("geometry\" + obj.system_name+ "\" + obj.system_name + ".inp");
+                    geometry = textscan(G_ID,'%s','delimiter','\n');
+                    fclose(G_ID);
+                    geometry = geometry{1,1};
+                case "direct"
+
+            end
+        end
     end
 end

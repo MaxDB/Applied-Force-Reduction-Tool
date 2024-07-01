@@ -1,6 +1,7 @@
 function Static_Data = sep_points_validation_new(Static_Data)
 MAXIMUM_DEGREE = [11,11,9,7];
 SEP_DENSITY_MAX = [inf,251,11,5];
+DISTANCE_WEIGHT = 1.5;
 
 Validation_Opts = Static_Data.Validation_Options;
 max_interpolation_error = Validation_Opts.maximum_interpolation_error;
@@ -174,6 +175,7 @@ for iIteration = 1:(max_iterations+1)
         if all(norm_force_error(in_energy_limit) < 1)
             force_converged(1,iSep) = 1;
         end
+        norm_force_error = norm_force_error .* linspace(1,DISTANCE_WEIGHT,size(norm_force_error,2));
         max_sep_force_error(1,iSep) = max([0,norm_force_error(in_energy_limit)]);
         
 
@@ -200,6 +202,7 @@ for iIteration = 1:(max_iterations+1)
         if all(norm_disp_error(in_energy_limit) < 1)
             disp_converged(1,iSep) = 1;
         end
+        norm_disp_error = norm_disp_error .* linspace(1,DISTANCE_WEIGHT,size(norm_force_error,2));
         max_sep_disp_error(1,iSep) = max([0,norm_disp_error(in_energy_limit)]);
 
         interpolation_error = max(norm_force_error,norm_disp_error);

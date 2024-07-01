@@ -116,6 +116,16 @@ classdef Reduced_System
             if nargin == 2
                 return
             end
+            
+            %needs to be cleaned up
+            if isstring(varargin{1,1}) && varargin{1,1} == "full"
+                node_map = obj.Model.node_mapping;
+                dof_bc = max(node_map(:,1));
+                x_bc = zeros(dof_bc,size(x,2));
+                x_bc(node_map(:,1),:) = x(node_map(:,2),:);
+                x = x_bc;
+                return
+            end
             h = varargin{1,1};
 
             L_evec = obj.get_current_L_eigenvectors;

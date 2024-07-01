@@ -13,5 +13,7 @@ LOAD_HERE
 ** OUTPUT REQUESTS
 *NODE PRINT,SUMMARY=NO,FREQUENCY = INC_HERE
 U
+** *EL PRINT,SUMMARY=NO, FREQUENCY = 100, POSITION=AVERAGED AT NODES
+** S
 *End Step
 ** ----------------------------------------------------------------

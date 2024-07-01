@@ -77,7 +77,7 @@ switch Additional_Output.type
     case "physical displacement"
         node_map = Rom.Model.node_mapping;
         r_evec = Rom.Model.reduced_eigenvectors;
-        dof = node_map(Additional_Output.dof,2);
+        dof = node_map(node_map(:,1) == Additional_Output.dof,2);
         Theta_Poly = Rom.Condensed_Displacement_Polynomial;
 
         displacement_func = @(prob,data,u) coco_displacement(prob,data,u,Theta_Poly,dof,r_evec);

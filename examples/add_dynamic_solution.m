@@ -1,13 +1,13 @@
 clear
 % close all
-system_name = "h_oscillator_12";
+system_name = "exhaust_17";
 
 Dyn_Data = initalise_dynamic_data(system_name);
 %-------------------------------------------------------------------------%
-% Additional_Output.type = "physical displacement";
-% Additional_Output.dof = 1563;
-% Additional_Output.special_points = [0.25,0.5,0.75,1,1.5,2,3]*1.5e-3;
-% Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
+Additional_Output.type = "physical displacement";
+Additional_Output.dof = 1563;
+Additional_Output.special_points = [0.25,0.5,0.75,1,1.5,2,3]*1.5e-3;
+Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
 %-------------------------------------------------------------------------%
 
 % --------- Continuation Settings ---------%
@@ -32,7 +32,7 @@ plot_backbone(system_name,"amplitude","last");
 % compare_validation(Dyn_Data,1,2:18)
 % Dyn_Data = Dyn_Data.validate_solution(1,2);
 %plot_h_predicition(system_name,"amplitude",1);
-Dyn_Data = Dyn_Data.add_full_order_backbone(1);
+% Dyn_Data = Dyn_Data.add_full_order_backbone(1);
 % Dyn_Data = get_periodicity_error(Dyn_Data,2,1:587)
 
 
