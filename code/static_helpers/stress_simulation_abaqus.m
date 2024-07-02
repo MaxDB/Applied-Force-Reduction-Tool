@@ -1,14 +1,12 @@
-function [time,x,x_dot] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,Model,job_id)
-JOB_NAME = "dynamic_analysis";
+function [stress,stress_labels,section_points] = stress_simulation_abaqus(x_0,x_dot_0,f_r_0,Model,job_id)
+JOB_NAME = "stress_analysis";
 NUM_DIMENSIONS = 6;
-MAX_DYNAMIC_INC = 1e6;
 project_path = get_project_path;
 
 
 setup_time_start = tic;
 
 all_dofs = Model.node_mapping(end,1);
-num_dofs = Model.num_dof;
 
 static_settings = zeros(1,4);
 Static_Opts = Model.Static_Options;
@@ -53,29 +51,12 @@ for iLine = 1:length(static_template)
     end
 
     if strfind(static_template{iLine,1},'*NODE PRINT,SUMMARY=NO,FREQUENCY = INC_HERE')
-        static_template{iLine,1} = "*NODE PRINT,SUMMARY=NO,FREQUENCY = " + max_static_inc;
+        static_template{iLine,1} = "*EL PRINT,SUMMARY=NO, FREQUENCY = " +  max_static_inc + ", POSITION=AVERAGED AT NODES";
+        static_template{iLine+1,1} = "S";
     end
 
 end
 %-------------------------------------------------------------------------%
-
-%-------------------------------------------------------------------------%
-%Open Template
-t_id = fopen(project_path + "\fe_templates\abaqus\dynamic_step.inp");
-dynamic_template=textscan(t_id,'%s','delimiter','\n');
-fclose(t_id);
-dynamic_template = dynamic_template{1,1};
-
-
-for iLine = 1:length(dynamic_template)
-    if strfind(dynamic_template{iLine,1},'*Step, name=Dynamic, nlgeom=YES, inc= INC_HERE')
-        dynamic_template{iLine,1} = "*Step, name=Dynamic, nlgeom=YES, inc= " + MAX_DYNAMIC_INC;
-    end
-
-    if strfind(dynamic_template{iLine,1},'DYNAMIC_SETTINGS_HERE')
-        dynamic_template{iLine,1} = period/1000 + "," + period + "," + period/MAX_DYNAMIC_INC + "," + period/min_incs;
-    end
-end
 
 
 %-------------------------------------------------------------------------%
@@ -108,7 +89,6 @@ end
 force_transform = Model.mass*Model.reduced_eigenvectors;
 coordinate_index = ((1:num_nodes)-1)*NUM_DIMENSIONS;
 
-
 %-------------------------------------------------------------------------%
 input_id = fopen("temp\" + new_job + ".inp","w");
 fprintf(input_id,'%s\r\n',geometry{:,1});
@@ -140,10 +120,7 @@ fprintf(input_id,'%s\r\n',static_step{(velocity_def_line+1):(load_def_line-1),1}
 fprintf(input_id,'%s\r\n',step_force_label(:));
 fprintf(input_id,'%s\r\n',static_step{(load_def_line+1):end,1});
 
-%-------------------------------------------------------------------------%
-dynamic_step = dynamic_template;
 
-fprintf(input_id,'%s\r\n',dynamic_step{1:end});
 %-------------------------------------------------------------------------%
 fclose(input_id);
 
@@ -171,11 +148,7 @@ abaqus_time = toc(abaqus_time_start);
 log_message = sprintf("job " + job_id + ": Abaqus dynamic analysis complete: %.1f seconds" ,abaqus_time);
 logger(log_message,3)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-step_start_pattern = "STEP" + whitespacePattern + digitsPattern + whitespacePattern + "INCREMENT" + whitespacePattern + "1";
-increment_start_pattern = "INCREMENT" + whitespacePattern + digitsPattern + whitespacePattern + "SUMMARY";
-disp_table_pattern = "NODE FOOT-" + whitespacePattern +  "U1";
-vel_table_pattern = "NODE FOOT-" + whitespacePattern +  "V1";
-increment_time_pattern = "TIME INCREMENT COMPLETED";
+element_table_pattern = "THE FOLLOWING TABLE IS PRINTED FOR ALL ELEMENTS WITH TYPE " + alphanumericsPattern + " AVERAGED AT THE NODES";
 
 
 
@@ -185,75 +158,54 @@ abaqus_data = textscan(dat_ID,'%s','delimiter','\n');
 fclose(dat_ID);
 abaqus_data = abaqus_data{1,1};
 %------------------------------------------------------------------------%
-step_start_lines = [find(matches(abaqus_data,step_start_pattern,'IgnoreCase',true),2);length(abaqus_data)];
-inc_start_lines = [find(matches(abaqus_data,increment_start_pattern,'IgnoreCase',true));length(abaqus_data)];
+table_lines = find(matches(abaqus_data,element_table_pattern,'IgnoreCase',true));
+num_tables = size(table_lines,1);
 
-%Initial displacement
-step_span = step_start_lines(1):(step_start_lines(2)-1);
-step_data = abaqus_data(step_span,1);
-disp_table_start = find(startsWith(step_data,disp_table_pattern,'IgnoreCase',true),1);
-disp_table_span = disp_table_start:size(step_span,2);
-disp_table_data = step_data(disp_table_span,1);
-disp_0 = read_abaqus_table(disp_table_data,num_nodes,NUM_DIMENSIONS);
-disp_0_bc = disp_0(Model.node_mapping(:,1),:);
-
-
-%Dynamic increments
-num_increments = size(inc_start_lines,1) - 2;
-time = zeros(1,num_increments+1);
-displacement = zeros(num_dofs,num_increments);
-velocity = zeros(num_dofs,num_increments);
-
-for iInc = 1:num_increments
-    inc_span = inc_start_lines(iInc+1):(inc_start_lines(iInc+2)-1);
-    inc_data = abaqus_data(inc_span,1);
-    increment_time_line = find(startsWith(inc_data,increment_time_pattern,'IgnoreCase',true),1);
-    disp_table_start = find(startsWith(inc_data,disp_table_pattern,'IgnoreCase',true),1);
-    vel_table_start = find(startsWith(inc_data,vel_table_pattern,'IgnoreCase',true),1);
-     
-    increment_time_line_data = textscan(inc_data{increment_time_line},"%s %s %s %f");
-    time(iInc+1) = increment_time_line_data{1,4} + time(iInc);
-
-    disp_table_span = disp_table_start:(vel_table_start-3);
-    disp_table_data = inc_data(disp_table_span,1);
-    disp_pre_bc = read_abaqus_table(disp_table_data,num_nodes,NUM_DIMENSIONS);
-    displacement(:,iInc) = disp_pre_bc(Model.node_mapping(:,1),:);
-
-    vel_table_span = vel_table_start:size(inc_span,2);
-    vel_table_data = inc_data(vel_table_span,1);
-    vel_pre_bc = read_abaqus_table(vel_table_data,num_nodes,NUM_DIMENSIONS);
-    velocity(:,iInc) = vel_pre_bc(Model.node_mapping(:,1),:);
-
-end
-
-
-x = [disp_0_bc,displacement];
-x_dot = [x_dot_0,velocity];
-end
-
-
-
-function step_displacement = read_abaqus_table(table_data,num_nodes,num_dimensions)
-% node_output_pattern = "N O D E   O U T P U T";
-% output_start_line = find(startsWith(table_data,node_output_pattern,'IgnoreCase',true),1);
-% node_data = table_data(output_start_line:end,1);
-
-step_displacement = zeros(num_nodes,num_dimensions);
-for iLine = 1:length(table_data)
-    line = table_data{iLine,1};
-    if isempty(line)
+for iTable = 1:num_tables
+    table_def_line = abaqus_data{table_lines(iTable),1};
+    if contains(table_def_line,"SPRING","IgnoreCase",true)
         continue
     end
 
-    line_data = textscan(line,"%u %f %f %f %f %f %f");
-    if isempty(line_data{1,7})
-        continue
+    table_range = [0;0];
+    table_lines_max = (length(abaqus_data)-table_lines(iTable));
+    for iLine = 1:table_lines_max
+        line = abaqus_data{table_lines(iTable)+iLine,1};
+        if isempty(line) || startsWith(line,lettersPattern)
+            if table_range(1) && ~table_range(2)
+                table_range(2) = table_lines(iTable)+(iLine-1);
+            end
+            continue
+        end
+        if ~table_range(1)
+            table_range(1) = table_lines(iTable)+iLine;
+        end
     end
 
-    node_num = line_data{1,1};
-    step_displacement(node_num,:) = [line_data{1,2:end}];
+    stress_table = abaqus_data(table_range(1):table_range(2));
+    stress_cell = cellfun(@(line) textscan(line,"%f"),stress_table);
+    first_node = stress_cell{1,1}(1);
+    section_point_lines = startsWith(stress_table,string(first_node) + whitespacePattern);
+    section_points = cellfun(@(line) line(2), stress_cell(section_point_lines))';
+    num_section_points = size(section_points,1);
+
+    output_line = split(abaqus_data(table_range(1)-3));
+    stress_label_indices = matches(output_line,"S" + digitsPattern);
+    stress_labels = output_line(stress_label_indices);
+    stress_labels = cellfun(@(line) string(line),stress_labels)';
+    num_stress_outputs = size(stress_labels,2);
+
+    num_rows = size(stress_table,1);
+    stress = zeros(num_nodes,num_stress_outputs,num_section_points);
+    for iRow = 1:num_rows
+        line = stress_cell{iRow,1};
+        node = line(1);
+        section_point = line(2);
+        principal_stress = line(3:end);
+        stress(node,:,section_point == section_points) = principal_stress;
+    end
+    
+
 end
 
-num_dofs = num_nodes*num_dimensions;
-step_displacement = reshape(step_displacement',num_dofs,1);
 end

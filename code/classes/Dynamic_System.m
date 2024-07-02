@@ -122,6 +122,10 @@ classdef Dynamic_System
             obj.fitting_energy_limit = obj.energy_limit*New_Calibration_Opts.energy_overfit;
         end
         %-----------------------------------------------------------------%
+        
+        %-----------------------------------------------------------------%
+        %%% Setup
+        %-----------------------------------------------------------------%
         function obj = eigenanalysis(obj,load_cache)
             %extract mass and stiffness matricies and solve generalised
             %eigenvalue problem
@@ -182,7 +186,6 @@ classdef Dynamic_System
             obj.reduced_eigenvalues = eVal_r;
             obj.reduced_eigenvectors = eVec_r;
         end
-
         %-----------------------------------------------------------------%
         function obj = calibrate_mode(obj,modes)
             %finds static forces that reach the potential energy limit
@@ -327,6 +330,10 @@ classdef Dynamic_System
             end
             
         end
+        %-----------------------------------------------------------------%
+        
+        %-----------------------------------------------------------------%
+        %%% Simulation
         %-----------------------------------------------------------------%
         function [reduced_disp,condensed_disp,restoring_force,energy,sep_id,additional_data] = ...
                 add_sep(obj,force_ratio,additional_data_type,clean_data)
@@ -515,6 +522,45 @@ classdef Dynamic_System
                         [t,x,x_dot] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,min_incs,obj,1);
                     end
                 case "matlab"
+
+            end
+        end
+        %-----------------------------------------------------------------%
+        function [stress,stress_labels,section_points] = stress_simulation(obj,x_0,x_dot_0,f_r_0)
+            
+            Static_Opts = obj.Static_Options;
+            % Static_Opts.max_parallel_jobs = 1;
+            switch Static_Opts.static_solver
+                case "abaqus"
+                    reset_temp_directory()
+
+                    if Static_Opts.max_parallel_jobs > 1
+                        abaqus_start = tic;
+                        num_parallel_jobs = size(f_r_0,2);
+
+                        log_message = sprintf("%i stress simulations over %i jobs" ,[size(f_r_0,2),num_parallel_jobs]);
+                        logger(log_message,3)
+                        logger("---",3)
+
+                        stress = cell(1,num_parallel_jobs);
+                        section_points = cell(1,num_parallel_jobs);
+                        stress_labels = cell(1,num_parallel_jobs);
+                        parfor (iJob = 1:num_parallel_jobs,Static_Opts.max_parallel_jobs)
+                            [stress_job,stress_labels_job,section_points_job] = stress_simulation_abaqus(x_0(:,iJob),x_dot_0(:,iJob),f_r_0(:,iJob),obj,iJob);
+                            stress{1,iJob} = stress_job;
+                            stress_labels{1,iJob} = stress_labels_job;
+                            section_points{1,iJob} = section_points_job;
+                        end
+                        
+                        abaqus_time = toc(abaqus_start);
+                        logger("---",3)
+                        log_message = sprintf("Total FE time: %.1f seconds" ,abaqus_time);
+                        logger(log_message,3)
+                    else
+                        [stress,stress_labels,section_points] = stress_simulation_abaqus(x_0,x_dot_0,f_r_0,obj,1);
+                    end
+                case "matlab"
+                    
 
             end
         end

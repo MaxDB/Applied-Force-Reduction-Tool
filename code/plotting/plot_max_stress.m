@@ -1,4 +1,4 @@
-function plot_max_displacement(Dyn_Data,solution_num,orbit_num,dof)
+function plot_max_stress(Dyn_Data,solution_num,orbit_num,dof)
 NUM_DIMENSIONS = 6;
 
 Rom = Dyn_Data.Dynamic_Model;
@@ -11,7 +11,6 @@ if nargin == 3
     % dof = node_map(node_map(:,1) == Dyn_Data.Additional_Output.dof,2);
     dof = Dyn_Data.Additional_Output.dof;
 end
-dof_type = mod(dof,NUM_DIMENSIONS);
 
 orbit = Dyn_Data.get_orbit(solution_num,orbit_num);
 
@@ -24,7 +23,7 @@ x_dof = x(dof,:);
 x_max = x(:,max_index);
 
 node_disp = reshape(x_max,NUM_DIMENSIONS,num_nodes)';
-colour_map = node_disp(:,dof_type);
+colour_map = Dyn_Data.max_displacement_stress{1,solution_num}(:,orbit_num);
 
 plot_fe_mesh(Model,node_disp,colour_map)
 end

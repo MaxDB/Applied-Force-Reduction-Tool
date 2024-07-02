@@ -27,6 +27,7 @@ classdef Dynamic_Data
         h_stability
 
         periodicity_error
+        max_displacement_stress
     end
     methods
         function obj = Dynamic_Data(Model,Continuation_Opts)
@@ -256,6 +257,8 @@ classdef Dynamic_Data
             
             orbit = get_orbit(obj,solution_num,orbit_num);
             per_error = solution_periodicity_error(orbit,Rom);
+            num_orbits = size(obj.frequency{1,solution_num},2);
+            obj.periodicity_error{1,solution_num} = nan(1,num_orbits);
             obj.periodicity_error{1,solution_num}(orbit_num) = per_error;
             obj.save_solution("update",solution_num)
         end
@@ -265,6 +268,26 @@ classdef Dynamic_Data
             obj = obj.get_periodicity_error(solution_num,point_index);
         end
         %-----------------------------------------------------------------%
+        function obj = get_max_disp_stress(obj,solution_num,orbit_num)
+            NUM_DIMENSIONS = 6;
+
+            if isstring(orbit_num)
+                if orbit_num == "all"
+                    orbit_num = 1:length(obj.frequency{1,solution_num});
+                end
+            end
+            Rom = obj.Dynamic_Model;
+            orbit = get_orbit(obj,solution_num,orbit_num);
+            Add_Output = obj.Additional_Output;
+            stress = solution_max_disp_stress(orbit,Rom,Add_Output);
+            
+            num_orbits = size(obj.frequency{1,solution_num},2);
+            num_nodes = max(obj.Dynamic_Model.Model.node_mapping(:,1))/NUM_DIMENSIONS;
+            obj.max_displacement_stress{1,solution_num} = nan(num_nodes,num_orbits);
+            obj.max_displacement_stress{1,solution_num}(:,orbit_num) = stress;
+            obj.save_solution("update",solution_num)
+        end
+
 
         %-----------------------------------------------------------------%
         % Analysis 
@@ -328,9 +351,11 @@ classdef Dynamic_Data
                     obj.additional_dynamic_output{1,solution_num} = physical_amp;
             end
 
+
             obj.validation_modes{1,solution_num} = [];
             obj = obj.pre_allocate_validation_data(solution_num,0);
-           
+            obj.periodicity_error{1,solution_num} = [];
+            obj.max_displacement_stress{1,solution_num} = [];
         end
         %-----------------------------------------------------------------%
         function obj = analyse_h_solution(obj,r,r_dot,h,h_dot,orbit_stability,Validation_Analysis_Inputs,solution_num,orbit_num)
@@ -515,17 +540,17 @@ classdef Dynamic_Data
         %-----------------------------------------------------------------%
         function obj = pre_allocate_validation_data(obj,solution_num,num_orbits)
             num_r_modes = length(obj.Dynamic_Model.Model.reduced_modes);
+            
             L_modes = obj.validation_modes{1,solution_num};
             num_h_modes = length(L_modes) + num_r_modes;
+
             obj.h_amplitude{1,solution_num} = zeros(num_h_modes,num_orbits);
             obj.corrected_low_modal_amplitude{1,solution_num} = zeros(num_h_modes,num_orbits);
             obj.low_modal_amplitude{1,solution_num} = zeros(num_h_modes,num_orbits);
             obj.h_energy{1,solution_num} = zeros(1,num_orbits);
             obj.h_modal_energy_fraction{1,solution_num} = zeros(num_h_modes,num_orbits);
             obj.h_stability{1,solution_num} = zeros(1,num_orbits);
-            obj.periodicity_error{1,solution_num} = zeros(1,num_orbits);
         end
-        %-----------------------------------------------------------------%
 
         %-----------------------------------------------------------------%
         % Overloading 
