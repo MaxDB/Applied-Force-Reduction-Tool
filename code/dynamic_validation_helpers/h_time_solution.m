@@ -1,5 +1,5 @@
 function Dyn_Data = h_time_solution(Dyn_Data,Validation_Rom,solution_num)
-GET_STABILITY = 1;
+GET_STABILITY = 0;
 INITIAL_NUM_HARMONICS = 5;
 MINIMUM_H_FORCE = 1e-6;
 MAX_CONVERGENCE_ERROR = 1e-4;
@@ -207,7 +207,6 @@ for iOrbit = 1:num_periodic_orbits
             orbit_jacobian(h_vel_span,h_disp_span,iTime) = -h_inertia(:,:,iTime)\h_stiff(:,:,iTime);
             orbit_jacobian(h_vel_span,h_vel_span,iTime) = -h_inertia(:,:,iTime)\h_conv(:,:,iTime);
         end
-
         fundamental_eq = @(t,z) oribit_jacobian_func(t,z,t0,orbit_jacobian);
         [~,fundamental_mat] = ode45(fundamental_eq,[0,t0(end)],eye(2*num_h_modes));
 

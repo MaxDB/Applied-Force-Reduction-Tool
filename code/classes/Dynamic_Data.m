@@ -258,7 +258,10 @@ classdef Dynamic_Data
             orbit = get_orbit(obj,solution_num,orbit_num);
             per_error = solution_periodicity_error(orbit,Rom);
             num_orbits = size(obj.frequency{1,solution_num},2);
-            obj.periodicity_error{1,solution_num} = nan(1,num_orbits);
+            if isempty(obj.periodicity_error{1,solution_num})
+                obj.periodicity_error{1,solution_num} = nan(1,num_orbits);
+            end
+            
             obj.periodicity_error{1,solution_num}(orbit_num) = per_error;
             obj.save_solution("update",solution_num)
         end
@@ -283,7 +286,9 @@ classdef Dynamic_Data
             
             num_orbits = size(obj.frequency{1,solution_num},2);
             num_nodes = max(obj.Dynamic_Model.Model.node_mapping(:,1))/NUM_DIMENSIONS;
-            obj.max_displacement_stress{1,solution_num} = nan(num_nodes,num_orbits);
+            if isempty(obj.max_displacement_stress{1,solution_num})
+                obj.max_displacement_stress{1,solution_num} = nan(num_nodes,num_orbits);
+            end
             obj.max_displacement_stress{1,solution_num}(:,orbit_num) = stress;
             obj.save_solution("update",solution_num)
         end

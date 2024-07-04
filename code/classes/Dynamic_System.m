@@ -507,6 +507,7 @@ classdef Dynamic_System
                         x_dot = cell(1,num_parallel_jobs);
 
                         parfor (iJob = 1:num_parallel_jobs,Static_Opts.max_parallel_jobs)
+                        % for iJob = 1:num_parallel_jobs
                             [t_job,x_job,x_dot_job] = dynamic_simulation_abaqus(x_0(:,iJob),x_dot_0(:,iJob),f_r_0(:,iJob),period(iJob),min_incs(iJob),obj,iJob);
 
                             t{1,iJob} = t_job;

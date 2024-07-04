@@ -1,5 +1,4 @@
 function ax = plot_h_predicition(Dyn_Data,type,solution_num,varargin)
-PLOT_BACKBONE = 1;
 PLOT_STABILITY = 0;
 STABILITY_LIMIT = 1.005;
 
@@ -17,6 +16,7 @@ keyword_values = varargin(2:2:num_args);
 
 ax = [];
 colour_num = 1;
+add_backbone = 1;
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
@@ -24,6 +24,8 @@ for arg_counter = 1:num_args/2
             ax = keyword_values{arg_counter};
         case {"colour","color"}
             colour_num = keyword_values{arg_counter};
+        case {"backbone"}
+            add_backbone = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -103,7 +105,7 @@ switch type
             p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_modes;
         end
 
-        if PLOT_BACKBONE
+        if add_backbone
             ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0);
         end
 
@@ -188,7 +190,7 @@ switch type
                 p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_modes;
             end
 
-            if PLOT_BACKBONE
+            if add_backbone
                 if PLOT_STABILITY
                     for iSection = 1:bb_num_sections
                         stab = bb_range_stability(iSection);

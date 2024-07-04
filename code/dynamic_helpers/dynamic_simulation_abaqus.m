@@ -1,4 +1,4 @@
-function [time,x,x_dot] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,Model,job_id)
+function [time,x,x_dot] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,min_incs,Model,job_id)
 JOB_NAME = "dynamic_analysis";
 NUM_DIMENSIONS = 6;
 MAX_DYNAMIC_INC = 1e6;

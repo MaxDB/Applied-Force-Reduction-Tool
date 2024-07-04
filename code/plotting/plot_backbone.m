@@ -1,6 +1,6 @@
 function ax = plot_backbone(Dyn_Data,type,solution_num,varargin)
 PLOT_BIFURCATIONS = 1;
-PLOT_SPECIAL_POINT = 0;
+PLOT_SPECIAL_POINT = 1;
 PLOT_BB_SN = 0;
 
 PLOT_PERIODICITY = 1;
