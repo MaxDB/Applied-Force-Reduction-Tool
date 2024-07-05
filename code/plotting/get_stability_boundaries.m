@@ -38,8 +38,8 @@ for iTransition = 1:num_transitions
     else
         transition_orbit = transition(is_bifurcation);
     end
-    index_ranges(iTransition,2) = transition_orbit;
-    index_ranges(iTransition+1,1) = transition_orbit;
-    range_stability(iTransition+1) = stability(transition_orbit+1);
+    index_ranges(iTransition,2) = transition_orbit(1);
+    index_ranges(iTransition+1,1) = transition_orbit(1);
+    range_stability(iTransition+1) = stability(transition_orbit(1)+1);
 end
 end
