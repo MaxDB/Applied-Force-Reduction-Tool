@@ -1,5 +1,5 @@
 function ax = plot_h_predicition(Dyn_Data,type,solution_num,varargin)
-PLOT_STABILITY = 0;
+PLOT_STABILITY = 1;
 STABILITY_LIMIT = 1.005;
 
 LINE_STYLE = [":","-"]; %[unstable,stable]
@@ -80,6 +80,10 @@ switch type
         
         box(ax,"on")
         hold(ax,"on")
+
+        % if add_backbone
+        %     ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0);
+        % end
         
         if PLOT_STABILITY
             for iSection = 1:num_sections
@@ -105,9 +109,7 @@ switch type
             p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_modes;
         end
 
-        if add_backbone
-            ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0);
-        end
+       
 
         
         hold(ax,"off")

@@ -1,5 +1,5 @@
 function Dyn_Data = h_time_solution(Dyn_Data,Validation_Rom,solution_num)
-GET_STABILITY = 0;
+GET_STABILITY = 1;
 INITIAL_NUM_HARMONICS = 5;
 MINIMUM_H_FORCE = 1e-6;
 MAX_CONVERGENCE_ERROR = 1e-4;

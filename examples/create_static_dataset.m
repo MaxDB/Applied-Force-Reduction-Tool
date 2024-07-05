@@ -6,17 +6,17 @@ set_visualisation_level(3)
 %-------------------------------------%
 
 %--------- System Settings ---------%
-system_name = "exhaust";
-energy_limit = 6;
-initial_modes = [1,7];
+system_name = "beam_oscillator";
+energy_limit = 100;
+initial_modes = [1];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.static_solver = "abaqus";
-Static_Opts.additional_data = "none";
+Static_Opts.static_solver = "matlab";
+Static_Opts.additional_data = "stiffness";
 Static_Opts.num_validation_modes = 18;
 Static_Opts.max_parallel_jobs = 4; %be careful!
-Static_Opts.num_loadcases = 5;
+Static_Opts.num_loadcases = 15;
 Static_Opts.maximum_loadcases = 20;
 %------------------------------------------%
 

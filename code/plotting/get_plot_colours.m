@@ -15,6 +15,18 @@ COLOURS = [
 1,                 0.929411764705882, 0.435294117647059
 ];
 
+COLOUR_MAP = [
+    255,247,251;
+    236,231,242;
+    208,209,230;
+    166,189,219;
+    116,169,207;
+    54,144,192;
+    5,112,176;
+    4,90,141;
+    2,56,88
+    ]/256;
+
 BLACK = [0,0,0];
 GREY = [217,217,217]/256;
 
@@ -26,6 +38,11 @@ end
 if isstring(colour_range)
     if any(colour_range == ["grey","gray"])
         colours = GREY;
+        return
+    end
+
+    if colour_range == "map"
+        colours = COLOUR_MAP;
         return
     end
 end
