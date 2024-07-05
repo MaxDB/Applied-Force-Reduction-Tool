@@ -57,13 +57,13 @@ for iSol = 1:num_solutions
                     amplitude = sol_type.amplitude;
                     if ~exist("amplitude_map","var")
                         amplitude_map = dictionary;
-                        amplitude_map(amplitude) = 1;
+                        amplitude_map(round(amplitude)) = 1;
                     else
-                       if ~isKey(amplitude_map,amplitude)
-                            amplitude_map(amplitude) = numEntries(amplitude_map) + 1;
+                       if ~isKey(amplitude_map,round(amplitude))
+                            amplitude_map(round(amplitude)) = numEntries(amplitude_map) + 1;
                        end
                     end
-                    colour_numbers = amplitude_map(amplitude);
+                    colour_numbers = amplitude_map(round(amplitude));
                 else
                     colour_numbers = "grey";
                 end

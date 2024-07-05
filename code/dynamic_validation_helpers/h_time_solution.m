@@ -1,6 +1,7 @@
 function Dyn_Data = h_time_solution(Dyn_Data,Validation_Rom,solution_num)
 GET_STABILITY = 1;
 INITIAL_NUM_HARMONICS = 5;
+MAX_HARMONIC = 50;
 MINIMUM_H_FORCE = 1e-6;
 MAX_CONVERGENCE_ERROR = 1e-4;
 
@@ -165,12 +166,19 @@ for iOrbit = 1:num_periodic_orbits
                         break
                     else
                         h_n = h_n_plus_two;
+                        if num_harmonics > MAX_HARMONIC
+                            warning("Number of harmonics exceeded maximum")
+                            solution_converged = 1;
+                            break
+                        end
                     end
                 end
             end
     
         end
         converged_harmonics = max(iHarmonic,INITIAL_NUM_HARMONICS);
+        
+        
 
         if solution_converged
             converged_harmonic_span = 2:(converged_harmonics+1);
@@ -187,6 +195,7 @@ for iOrbit = 1:num_periodic_orbits
             fprintf("%i / %i. solution: %.3f. Max error = %3.2e. N_h = %i \n",...
                 iOrbit,num_periodic_orbits,solve_h_time,max_error,num_harmonics);
             num_harmonics = num_harmonics + 2;
+            
         end
 
 

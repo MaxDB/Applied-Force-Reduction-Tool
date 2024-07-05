@@ -10,7 +10,7 @@ LINE_STYLE = [":","-"]; %[unstable,stable]
 LINE_WIDTH = 1.5;
 BIFURCATION_MARKER = ["o","o","^","x"];
 BIFURCATION_TYPE = ["BP","PD","NS","SN"];
-BIFURCATION_SIZE = [6,6,6,6];
+BIFURCATION_SIZE = [6,0,6,6];
 
 
 %-------------------------------------------------------------------------%

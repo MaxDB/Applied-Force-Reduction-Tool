@@ -252,6 +252,9 @@ classdef Dynamic_Data
                 if orbit_num == "all"
                     orbit_num = 1:length(obj.frequency{1,solution_num});
                 end
+                if orbit_num == "X"
+                    orbit_num = get_special_point(obj,solution_num,orbit_num);
+                end
             end
             Rom = obj.Dynamic_Model;
             
@@ -264,11 +267,6 @@ classdef Dynamic_Data
             
             obj.periodicity_error{1,solution_num}(orbit_num) = per_error;
             obj.save_solution("update",solution_num)
-        end
-        %-----------------------------------------------------------------%
-        function obj = special_point_periodicity_error(obj,solution_num,special_point)
-            point_index = get_special_point(obj,solution_num,special_point);
-            obj = obj.get_periodicity_error(solution_num,point_index);
         end
         %-----------------------------------------------------------------%
         function obj = get_max_disp_stress(obj,solution_num,orbit_num)
