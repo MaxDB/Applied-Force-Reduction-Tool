@@ -10,11 +10,11 @@
 
 omega_nr = 1;
 omega_ns = 4;
-psi_3_1 = 0.35;
-psi_1_3 = 0;
-psi_2_2 = 2;
-psi_4_0 = 1/2;
-psi_0_4 = 8;
+psi_3_1 = 0.35; %a2
+psi_1_3 = 0;    %a4
+psi_2_2 = 2;    %a3
+psi_4_0 = 1/2;  %a1
+psi_0_4 = 8;    %a5
 
 %%linear mass
 eom.M = eye(2);

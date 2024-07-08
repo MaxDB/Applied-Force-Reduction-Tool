@@ -49,7 +49,10 @@ for iSol = 1:num_solutions
     end
     num_system_sols = length(system_sols);
     for jSol = 1:num_system_sols
-        sol_type = Dyn_Data.solution_types{1,jSol};
+        sol_type = Dyn_Data.solution_types{1,system_sols(jSol)};
+        if isempty(Dyn_Data.h_amplitude{1,system_sols(jSol)})
+            validation(iSol) = 0;
+        end
         switch sol_type.orbit_type
             case "forced"
                 
@@ -70,12 +73,13 @@ for iSol = 1:num_solutions
         end
 
 
-        if validation(num_solutions)
+        if validation(iSol)
             if colour_numbers(iSol) == 0
                 h_colour_number = 1;
             else
                 h_colour_number = colour_numbers(iSol);
             end
+
             ax = plot_h_predicition(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",h_colour_number);
         else
             ax = plot_backbone(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",colour_numbers(iSol));
