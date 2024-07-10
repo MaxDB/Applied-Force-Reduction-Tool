@@ -1,8 +1,8 @@
 % clear
 % close all
 %--------- System Settings ---------%
-system_name = "h_oscillator_1";
-added_modes = 2;
+system_name = "exhaust_1";
+added_modes = 7;
 %-----------------------------------%
 
 load("data\" + system_name + "\" + "Static_Data.mat","Static_Data");

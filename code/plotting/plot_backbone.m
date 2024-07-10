@@ -10,7 +10,7 @@ LINE_STYLE = [":","-"]; %[unstable,stable]
 LINE_WIDTH = 1.5;
 BIFURCATION_MARKER = ["o","o","^","x"];
 BIFURCATION_TYPE = ["BP","PD","NS","SN"];
-BIFURCATION_SIZE = [6,0,6,6];
+BIFURCATION_SIZE = [6,6,6,6];
 
 
 %-------------------------------------------------------------------------%
@@ -127,12 +127,16 @@ end
 
 
 switch type
-    case {"energy","physical amplitude"}
+    case {"energy","physical amplitude","stress"}
         switch type
             case "energy"
                 energy = Dyn_Data.energy{1,solution_num};
             case "physical amplitude"
                 energy = Dyn_Data.additional_dynamic_output{1,solution_num};
+            case "stress"
+                % stress_dof = Dyn_Data.Additional_Output.dof;
+                % stress_node = 1 + (stress_dof - mod(stress_dof,6))/6;
+                energy = max(Dyn_Data.max_displacement_stress{1,solution_num},[],1);
         end
         
 

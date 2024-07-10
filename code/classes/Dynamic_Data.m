@@ -251,8 +251,7 @@ classdef Dynamic_Data
             if isstring(orbit_num)
                 if orbit_num == "all"
                     orbit_num = 1:length(obj.frequency{1,solution_num});
-                end
-                if orbit_num == "X"
+                elseif orbit_num == "X"
                     orbit_num = get_special_point(obj,solution_num,orbit_num);
                 end
             end
@@ -271,12 +270,15 @@ classdef Dynamic_Data
         %-----------------------------------------------------------------%
         function obj = get_max_disp_stress(obj,solution_num,orbit_num)
             NUM_DIMENSIONS = 6;
-
+            
             if isstring(orbit_num)
                 if orbit_num == "all"
                     orbit_num = 1:length(obj.frequency{1,solution_num});
+                elseif orbit_num == "X"
+                    orbit_num = get_special_point(obj,solution_num,orbit_num);
                 end
             end
+
             Rom = obj.Dynamic_Model;
             orbit = get_orbit(obj,solution_num,orbit_num);
             Add_Output = obj.Additional_Output;
