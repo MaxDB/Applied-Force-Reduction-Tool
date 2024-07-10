@@ -137,9 +137,36 @@ classdef Dynamic_Data
                         obj.num_solutions = next_solution_num;
 
                         obj.save_solution("coco_frf",next_solution_num,Nonconservative_Inputs)
+                    case "force"
+                        orbit = obj.get_orbit(solution_num,orbit_num(iOrbit));
+
+                        t0 = orbit.tbp';
+                        z0 = orbit.xbp';
+                        p0 = solution_type.amplitude;
+
+
+
+                        data_path = obj.Dynamic_Model.data_path;
+                        solution_name = data_path + "dynamic_sol_" + solution_num;
+                        load(solution_name + "\Nonconservative_Inputs.mat","Nonconservative_Inputs")
+
+                        Nonconservative_Inputs.continuation_variable = "amplitude";
+                        Nonconservative_Inputs.frequency = obj.frequency{1,solution_num}(orbit_num(iOrbit));
+
+                        Nonconservative_Inputs = rmfield(Nonconservative_Inputs,"amplitude");
+
+                        coco_forced_response(t0,z0,p0,Rom,model_type,obj.Continuation_Options,next_solution_num,obj.Additional_Output,Nonconservative_Inputs);
+                        obj = obj.analyse_solution(next_solution_num);
+
+                        solution_type = rmfield(solution_type,"amplitude");
+                        solution_type.frequency = obj.frequency{1,solution_num}(orbit_num(iOrbit));
+                        obj.solution_types{1,next_solution_num} = solution_type;
+                        obj.num_solutions = next_solution_num;
+
+                        obj.save_solution("coco_frf",next_solution_num,Nonconservative_Inputs)
                 end
 
-                
+
             end
         end
         %-----------------------------------------------------------------%
