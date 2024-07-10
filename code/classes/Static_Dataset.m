@@ -203,6 +203,8 @@ classdef Static_Dataset
             energy_limit = obj.Model.energy_limit;
             initial_modes = sort([obj.Model.reduced_modes,added_modes],"ascend");
             old_mode_map = ismember(initial_modes,obj.Model.reduced_modes);
+            old_L_modes = obj.Model.low_frequency_modes;
+            old_h_modes = [obj.Model.reduced_modes,old_L_modes];
 
             if nargin > 2
                 Static_Opts.static_solver = obj.Model.Static_Options.static_solver;
@@ -238,6 +240,13 @@ classdef Static_Dataset
             new_force = zeros(num_modes,num_loadcases);
             new_force(old_mode_map,:) = old_force;
             obj.restoring_force = new_force;
+
+            if obj.additional_data_type == "perturbation"
+                L_modes = obj.Model.low_frequency_modes;
+                h_modes = [obj.Model.reduced_modes,L_modes];
+                h_map = arrayfun(@(h_mode) find(old_h_modes == h_mode),h_modes);
+                obj.perturbation_displacement = obj.perturbation_displacement(:,h_map,:);
+            end
             %-------------------------------------------------%
            
         end
@@ -366,6 +375,8 @@ classdef Static_Dataset
                 case "perturbation"
                     num_h_modes = size(obj.perturbation_displacement,2);
                     additional_data = zeros(num_dofs,num_h_modes,0);
+                case "none"
+                    additional_data = [];
             end
 
             for iLoad = 1:num_checked_loadcases
@@ -733,8 +744,10 @@ classdef Static_Dataset
             stiffness = obj.Model.stiffness;
             mass = obj.Model.mass;
             L_evec = obj.Model.low_frequency_eigenvectors;
+            r_evec = obj.Model.reduced_eigenvectors;
+            h_evec = [r_evec,L_evec];
             lambda = obj.perturbation_scale_factor;
-            perturbation_0 = lambda*(stiffness\(mass*L_evec));
+            perturbation_0 = lambda*(stiffness\(mass*h_evec));
             %
             num_seps = max(sep_id);
 
@@ -801,10 +814,11 @@ classdef Static_Dataset
                             sep_span = sep_id==iSep;
                             x = [EQUILIBRIUM(1),r(1,sep_span)];
                             y = [EQUILIBRIUM(2),r(2,sep_span)];
-                            z = [h_coupling_gradient_0(plot_index(1),plot_index(2)),perturbation_i(1,sep_span)];
+                            % z = [h_coupling_gradient_0(plot_index(1),plot_index(2)),perturbation_i(1,sep_span)];
+                            z = [0,perturbation_i(1,sep_span)];
                             plot3(ax{1,iPlot},x,y,z,'.-')
                         end
-                        plot3(ax{1,iPlot},EQUILIBRIUM(1),EQUILIBRIUM(2),h_coupling_gradient_0(plot_index(1),plot_index(2)),'k.',"MarkerSize",8)
+                        plot3(ax{1,iPlot},EQUILIBRIUM(1),EQUILIBRIUM(2),0,'k.',"MarkerSize",8)
                         hold(ax{1,iPlot},"off")
                     end
 
