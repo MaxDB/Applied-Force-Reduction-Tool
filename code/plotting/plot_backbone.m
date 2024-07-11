@@ -1,7 +1,6 @@
 function ax = plot_backbone(Dyn_Data,type,solution_num,varargin)
 PLOT_BIFURCATIONS = 1;
-PLOT_SPECIAL_POINT = 0;
-PLOT_BB_SN = 0;
+PLOT_SPECIAL_POINT = 1;
 
 PLOT_PERIODICITY = 1;
 STABILITY_LIMIT = 1.005;
@@ -10,8 +9,10 @@ LINE_STYLE = [":","-"]; %[unstable,stable]
 LINE_WIDTH = 1.5;
 BIFURCATION_MARKER = ["o","o","^","x"];
 BIFURCATION_TYPE = ["BP","PD","NS","SN"];
-BIFURCATION_SIZE = [6,6,6,6];
 
+BB_BIFURCATION_SIZE = [4,4,4,0];
+FRF_BIFURCATION_SIZE = [4,4,4,5];
+SPECIAL_POINT_SIZE = 6;
 
 %-------------------------------------------------------------------------%
 num_args = length(varargin);
@@ -55,10 +56,11 @@ line_colour = get_plot_colours(colour_num);
 line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour};
 
 if PLOT_BIFURCATIONS
-    if Dyn_Data.solution_types{1,solution_num}.orbit_type == "free"
-        if ~PLOT_BB_SN
-            BIFURCATION_SIZE(4) = 0;
-        end
+    switch Dyn_Data.solution_types{1,solution_num}.orbit_type
+        case "free"
+            bifurcation_size = BB_BIFURCATION_SIZE;
+        case "forced"
+            bifurcation_size = FRF_BIFURCATION_SIZE;
     end
 
     bifurcations = Dyn_Data.bifurcations{1,solution_num};
@@ -72,7 +74,7 @@ if PLOT_BIFURCATIONS
     bifurcation_plot_settings = cell(num_bifurcation_types,1);
     for iType = 1:num_bifurcation_types
         type_plot_settings = {"LineStyle","none","LineWidth",LINE_WIDTH,"Color",line_colour,...
-            "Marker",BIFURCATION_MARKER(iType),"MarkerSize",BIFURCATION_SIZE(iType)};
+            "Marker",BIFURCATION_MARKER(iType),"MarkerSize",bifurcation_size(iType)};
         switch iType
             case 1
                 type_plot_settings{end+1} = "MarkerEdgeColor";
@@ -85,9 +87,9 @@ if PLOT_BIFURCATIONS
                 type_plot_settings{end+1} = "MarkerEdgeColor";
                 type_plot_settings{end+1} = line_colour; %#ok<*AGROW>
             case 3
-                type_plot_settings{end+1} = "MarkerEdgeColor";
-                type_plot_settings{end+1} = "w";
                 type_plot_settings{end+1} = "MarkerFaceColor";
+                type_plot_settings{end+1} = "w";
+                type_plot_settings{end+1} = "MarkerEdgeColor";
                 type_plot_settings{end+1} = line_colour;
         end
         bifurcation_plot_settings{iType,1} =  type_plot_settings;
@@ -97,6 +99,8 @@ end
 if PLOT_SPECIAL_POINT
     point_index = Dyn_Data.get_special_point(solution_num,"X");
     special_point_plot_settings = bifurcation_plot_settings{1,1}; 
+    marker_size_index = find(cellfun(@(iSetting) isequal(iSetting,"MarkerSize"),special_point_plot_settings));
+    special_point_plot_settings{1,marker_size_index+1} = SPECIAL_POINT_SIZE;
     num_settings = size(special_point_plot_settings,2);
     for iSetting = 1:num_settings
         setting = special_point_plot_settings{1,iSetting};
@@ -174,7 +178,7 @@ switch type
                 if isempty(bifurcation_index)
                     continue
                 end
-                if BIFURCATION_SIZE(iType) == 0
+                if bifurcation_size(iType) == 0
                     continue
                 end
 
