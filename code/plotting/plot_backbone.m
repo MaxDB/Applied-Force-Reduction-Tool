@@ -1,6 +1,6 @@
 function ax = plot_backbone(Dyn_Data,type,solution_num,varargin)
 PLOT_BIFURCATIONS = 1;
-PLOT_SPECIAL_POINT = 1;
+PLOT_SPECIAL_POINT = 0;
 
 PLOT_PERIODICITY = 1;
 STABILITY_LIMIT = 1.005;
@@ -311,7 +311,7 @@ switch type
                     if isempty(bifurcation_index)
                         continue
                     end
-                    if BIFURCATION_SIZE(iType) == 0
+                    if bifurcation_size(iType) == 0
                         continue
                     end
 

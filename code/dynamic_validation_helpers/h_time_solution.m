@@ -1,5 +1,7 @@
 function Dyn_Data = h_time_solution(Dyn_Data,Validation_Rom,solution_num)
 GET_STABILITY = 0;
+SAVE_ORBIT = 1;
+
 INITIAL_NUM_HARMONICS = 5;
 MAX_HARMONIC = 50;
 MINIMUM_H_FORCE = 1e-6;
@@ -242,6 +244,13 @@ for iOrbit = 1:num_periodic_orbits
     end
     fprintf("%i / %i. data: %.3f, setup: %.3f, solution: %.3f, analysis: %.3f. N_h = %i \n",...
         iOrbit,num_periodic_orbits,read_data_time,set_up_h_time,solve_h_time,h_analysis_time,num_harmonics);
+
+    if SAVE_ORBIT
+        validation_name = solution_name + "\sol" + sol_labels(iOrbit) + "_v.mat";
+        validation_orbit.h = h;
+        validation_orbit.h_dot = h_dot;
+        save(validation_name,"validation_orbit")
+    end
 end
 fprintf("Mean time: %.3f, min time: %.3f, max time: %.3f \n",...
         total_time/num_periodic_orbits,time_range(1),time_range(2));

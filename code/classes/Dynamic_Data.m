@@ -392,7 +392,6 @@ classdef Dynamic_Data
         %-----------------------------------------------------------------%
         function obj = analyse_h_solution(obj,r,r_dot,h,h_dot,orbit_stability,Validation_Analysis_Inputs,solution_num,orbit_num)
             
-            
             get_amplitude = @(x) (max(x,[],2) - min(x,[],2))/2;
             %--
             h_amp = get_amplitude(h);
@@ -466,10 +465,13 @@ classdef Dynamic_Data
             obj.h_stability{1,solution_num}(1,orbit_num) = orbit_stability;
             % obj.h_modal_energy_fraction{1,solution_num}(:,orbit_num) = max(ke_mode_fraction,[],2);
 
-
+            
         end
         %-----------------------------------------------------------------%
-        function orbit = get_orbit(obj,solution_num,orbit_num)
+        function [orbit,validation_orbit] = get_orbit(obj,solution_num,orbit_num,validated)
+            if nargin == 3
+                validated = 0;
+            end
             data_path = obj.Dynamic_Model.data_path;
             orbit_labels = obj.solution_labels{1,solution_num};
 
@@ -484,6 +486,12 @@ classdef Dynamic_Data
                 for iOrbit = 1:num_orbits
                     orbit{iOrbit,1} = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(orbit_num(iOrbit)));
                 end
+            end
+
+            if validated
+                load(solution_name + "\sol" + orbit_num + "_v.mat","validation_orbit");
+            else
+                validation_orbit = [];
             end
         end
         %-----------------------------------------------------------------%
