@@ -18,6 +18,9 @@ Rom = Dyn_Data.Dynamic_Model;
 Solution_Type = Dyn_Data.solution_types{1,solution_num};
 orbit_type = Solution_Type.orbit_type;
 solution_name = Rom.data_path + "dynamic_sol_" + solution_num;
+
+total_time = 0;
+time_range = [inf,0];
 %%% Set up h-problem
 
 switch orbit_type
@@ -216,7 +219,7 @@ for iOrbit = 1:num_periodic_orbits
             orbit_jacobian(h_vel_span,h_disp_span,iTime) = -h_inertia(:,:,iTime)\h_stiff(:,:,iTime);
             orbit_jacobian(h_vel_span,h_vel_span,iTime) = -h_inertia(:,:,iTime)\h_conv(:,:,iTime);
         end
-        fundamental_eq = @(t,z) oribit_jacobian_func(t,z,t0,orbit_jacobian);
+        fundamental_eq = @(t,z) orbit_jacobian_func(t,z,t0,orbit_jacobian);
         [~,fundamental_mat] = ode45(fundamental_eq,[0,t0(end)],eye(2*num_h_modes));
 
         monodromy_mat = reshape(fundamental_mat(end,:)',2*num_h_modes,2*num_h_modes);
@@ -228,11 +231,20 @@ for iOrbit = 1:num_periodic_orbits
 
     Dyn_Data = Dyn_Data.analyse_h_solution(r,r_dot,h,h_dot,orbit_stab,Validation_Analysis_Inputs,solution_num,iOrbit);
     h_analysis_time = toc(h_analysis_start);
-
+    orbit_time = read_data_time + set_up_h_time + solve_h_time + h_analysis_time;
+    total_time = total_time + orbit_time;
+    
+    if orbit_time < time_range(1)
+            time_range(1) = orbit_time;
+    end
+    if orbit_time > time_range(2)
+        time_range(2) = orbit_time;
+    end
     fprintf("%i / %i. data: %.3f, setup: %.3f, solution: %.3f, analysis: %.3f. N_h = %i \n",...
         iOrbit,num_periodic_orbits,read_data_time,set_up_h_time,solve_h_time,h_analysis_time,num_harmonics);
 end
-
+fprintf("Mean time: %.3f, min time: %.3f, max time: %.3f \n",...
+        total_time/num_periodic_orbits,time_range(1),time_range(2));
 end
 %-------------------------------------------------------------------------%
 
@@ -273,7 +285,7 @@ x_dt_coeffs(:,sin_span) = -harmonic_mulitplier.*x_coeffs(:,cos_span);
 x_dt_coeffs(:,cos_span) = harmonic_mulitplier.*x_coeffs(:,sin_span);
 end
 %-------------------------------------------------------------------------%
-function dz = oribit_jacobian_func(t,z,t0,orbit_jacobian)
+function dz = orbit_jacobian_func(t,z,t0,orbit_jacobian)
 num_h_modes = size(orbit_jacobian,1)/2;
 approx_jacobian = zeros(2*num_h_modes);
 for iRow = 1:(2*num_h_modes)
