@@ -321,7 +321,7 @@ classdef Static_Dataset
             Static_Data_Removed = Static_Data;
 
             Static_Data_Removed.reduced_displacement = Static_Data_Removed.reduced_displacement(:,removal_index);
-            Static_Data_Removed.condensed_displacement = Static_Data_Removed.condensed_displacement(:,removal_index);
+            Static_Data_Removed.physical_displacement = Static_Data_Removed.physical_displacement(:,removal_index);
             Static_Data_Removed.potential_energy = Static_Data_Removed.potential_energy(:,removal_index);
             Static_Data_Removed.restoring_force = Static_Data_Removed.restoring_force(:,removal_index);
             

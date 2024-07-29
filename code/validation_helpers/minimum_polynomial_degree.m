@@ -17,7 +17,7 @@ switch poly_name
 end
 while degree <= max_degree
     rom_degree(degree_index) = degree; 
-    Rom = Reduced_System(Static_Data,rom_degree,"full");
+    Rom = Reduced_System(Static_Data,rom_degree);
     Poly = Rom.(poly_name + "_Polynomial");
     poly_data = Poly.evaluate_polynomial(input_data);
     poly_error = coeff_of_determination(output_data,poly_data);

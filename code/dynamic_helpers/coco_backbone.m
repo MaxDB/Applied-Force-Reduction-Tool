@@ -77,7 +77,7 @@ switch Additional_Output.type
     case "physical displacement"
         node_map = Rom.Model.node_mapping;
         dof = node_map(node_map(:,1) == Additional_Output.dof,2);
-        Disp_Poly = Rom.Condensed_Displacement_Polynomial;
+        Disp_Poly = Rom.Physical_Displacement_Polynomial;
 
         displacement_func = @(prob,data,u) coco_displacement(prob,data,u,Disp_Poly,dof);
 

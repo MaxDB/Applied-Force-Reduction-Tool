@@ -73,9 +73,9 @@ for iIteration = 1:(max_iterations+1)
     %find predicted seps and compare
     check_interpolation_start = tic;
 
-    Rom_One = Reduced_System(Static_Data,[force_degree,disp_degree],"full");
+    Rom_One = Reduced_System(Static_Data,[force_degree,disp_degree]);
     validation_plot(1,Static_Data,Rom_One,worst_disp_index)
-    Rom_Two = Reduced_System(Static_Data,[force_degree,disp_degree] + 2,"full");
+    Rom_Two = Reduced_System(Static_Data,[force_degree,disp_degree] + 2);
     
     Potential_Poly_One = Rom_One.Potential_Polynomial;
     Force_Poly_One = Rom_One.Force_Polynomial;
