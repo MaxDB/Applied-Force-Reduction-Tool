@@ -12,7 +12,7 @@ poly_name = string([upper(poly_name(1)),poly_name(2:end)]);
 switch poly_name
     case "Force"
         degree_index = 1;
-    case "Condensed_Displacement"
+    case "Physical_Displacement"
         degree_index = 2;
 end
 while degree <= max_degree

@@ -27,11 +27,15 @@ switch num_modes
 end
 
 
+% input_order = input_order';
+% r_power_products = ones(num_coeffs,1);
 I_R = eye(num_modes);
 for iX = 1:num_x
     r_i = r_transformed(:,iX);
     r_dot_i = r_dot(:,iX);
-
+    % for iTerm = 1:num_coeffs
+    %     r_power_products(iTerm,1) = prod(r_transformed(:,iX).^input_order(:,iTerm));
+    % end
     r_power_products = ones(num_coeffs,1);
     for iMode = 1:num_modes
         r_power_products = r_power_products.*r_i(iMode).^input_order(:,iMode);
@@ -46,20 +50,20 @@ for iX = 1:num_x
     r_dr3_products_coupling = r_products_coupling(Disp_Data.diff_mapping{1,3}).*Disp_Data.diff_scale_factor{1,3};
     
     %-------------
-    disp_dr_prod = r_dr_products_coupling'*Disp_Data.beta_bar;
-    disp_dr2_prod = tensorprod(pagetranspose(r_dr2_products_coupling),Disp_Data.beta_bar,2,1);
+    theta_dr_prod = r_dr_products_coupling'*Disp_Data.beta_bar;
+    theta_dr2_prod = tensorprod(pagetranspose(r_dr2_products_coupling),Disp_Data.beta_bar,2,1);
 
-    inertia = disp_dr_prod*r_dr_products_coupling;
-    inertia_dr = tensorprod(disp_dr_prod,r_dr2_products_coupling,2,1) ...
-        + tensorprod(disp_dr2_prod,r_dr_products_coupling,d2_dims,1);
+    inertia = I_R + theta_dr_prod*r_dr_products_coupling;
+    inertia_dr = tensorprod(theta_dr_prod,r_dr2_products_coupling,2,1) ...
+        + tensorprod(theta_dr2_prod,r_dr_products_coupling,d2_dims,1);
     
     %-------------
     r_dr2_r_dot_prod = tensorprod(r_dr2_products_coupling,r_dot_i,3,1);
     r_dr3_r_dot_prod = tensorprod(r_dr3_products_coupling,r_dot_i,4,1);
-    
-    convection_dr_dot = disp_dr_prod*(r_dr2_r_dot_prod);
-    pre_convection_dr = tensorprod(disp_dr2_prod,r_dr2_r_dot_prod,d2_dims,1) ...
-        + tensorprod(disp_dr_prod,r_dr3_r_dot_prod,2,1);
+
+    convection_dr_dot = theta_dr_prod*(r_dr2_r_dot_prod);
+    pre_convection_dr = tensorprod(theta_dr2_prod,r_dr2_r_dot_prod,d2_dims,1) ...
+        + tensorprod(theta_dr_prod,r_dr3_r_dot_prod,2,1);
     convection_dr = tensorprod(pre_convection_dr,r_dot_i,3,1);
     convection = convection_dr_dot*r_dot_i;
 

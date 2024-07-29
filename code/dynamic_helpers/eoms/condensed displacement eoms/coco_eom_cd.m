@@ -20,12 +20,16 @@ r_dot = x(vel_span,:);
 
 x_dot = zeros(2*num_modes,num_x);
 x_dot(disp_span,:) = r_dot;
- 
+
+% r_power_products = ones(num_coeffs,1);
 
 
 for iX = 1:num_x
     r_i = r_transformed(:,iX);
     r_dot_i = r_dot(:,iX);
+    % for iTerm = 1:num_coeffs
+    %     r_power_products(iTerm,1) = prod(r_transformed(:,iX).^input_order(:,iTerm));
+    % end
     r_power_products = ones(num_coeffs,1);
     for iMode = 1:num_modes
         r_power_products = r_power_products.*r_i(iMode).^input_order(:,iMode);
@@ -38,11 +42,12 @@ for iX = 1:num_x
     r_dr2_products_coupling = r_products_coupling(Disp_Data.diff_mapping{1,2}).*Disp_Data.diff_scale_factor{1,2};
     
     
-    disp_prod = r_dr_products_coupling'*Disp_Data.beta_bar; 
+
+    theta_prod = r_dr_products_coupling'*Disp_Data.beta_bar;
     
-    inertia_term = disp_prod*r_dr_products_coupling;
-    convection_term = disp_prod*(tensorprod(r_dr2_products_coupling,r_dot_i,3,1)*r_dot_i);
-     
+    inertia_term = eye(num_modes) + theta_prod*r_dr_products_coupling;
+    convection_term = theta_prod*(tensorprod(r_dr2_products_coupling,r_dot_i,3,1)*r_dot_i);
+
     x_dot(vel_span,iX) = -inertia_term\(convection_term+restoring_force) - zeta(iX).*r_dot_i;
 end
 end

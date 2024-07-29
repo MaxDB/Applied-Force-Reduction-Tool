@@ -29,8 +29,8 @@ switch plot_part
         ax{1,2} = nexttile;
         
         Static_Data.plot_condensed_displacement(plot_index,ax(1,1));
-        rom.Condensed_Displacement_Polynomial.plot_polynomial(ax(1,1),plot_index);
-        title(ax{1,1},"Degree = " + rom.Condensed_Displacement_Polynomial.polynomial_degree);
+        rom.Physical_Displacement_Polynomial.plot_polynomial(ax(1,1),plot_index);
+        title(ax{1,1},"Degree = " + rom.Physical_Displacement_Polynomial.polynomial_degree);
 
         Static_Data.plot_condensed_displacement(plot_index,ax{1,2});
 

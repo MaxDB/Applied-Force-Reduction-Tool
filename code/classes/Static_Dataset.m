@@ -4,7 +4,7 @@ classdef Static_Dataset
         Model
         
         reduced_displacement
-        condensed_displacement
+        physical_displacement
         restoring_force
         potential_energy
         
@@ -172,9 +172,9 @@ classdef Static_Dataset
 
         end
         %-----------------------------------------------------------------%
-        function obj = update_data(obj,r,theta,f,V,sep_id,additional_data,found_force_ratios)
+        function obj = update_data(obj,r,x,f,V,sep_id,additional_data,found_force_ratios)
             obj.reduced_displacement = [obj.reduced_displacement,r];
-            obj.condensed_displacement = [obj.condensed_displacement,theta];
+            obj.physical_displacement = [obj.physical_displacement,x];
             obj.restoring_force = [obj.restoring_force,f];
             obj.potential_energy = [obj.potential_energy,V];
             
@@ -233,7 +233,7 @@ classdef Static_Dataset
 
             r_evecs = obj.Model.reduced_eigenvectors;
             mass = obj.Model.mass;
-            obj.reduced_displacement = r_evecs'*mass*obj.condensed_displacement;
+            obj.reduced_displacement = r_evecs'*mass*obj.physical_displacement;
 
             old_force = obj.restoring_force;
             num_loadcases = size(old_force,2);
@@ -277,7 +277,7 @@ classdef Static_Dataset
         function strongly_coupled_dofs = rank_coupling(obj,min_rating)
             r = obj.reduced_displacement;
             r_evec = obj.Model.reduced_eigenvectors;
-            theta = obj.condensed_displacement - r_evec*r;
+            theta = obj.physical_displacement - r_evec*r;
             sep_id = obj.static_equilibrium_path_id;
             M = obj.Model.mass;
 
@@ -336,7 +336,7 @@ classdef Static_Dataset
             end
             %---------------------------------------------------------------------------------------%
             Static_Data.reduced_displacement = Static_Data.reduced_displacement(:,~removal_index);
-            Static_Data.condensed_displacement = Static_Data.condensed_displacement(:,~removal_index);
+            Static_Data.physical_displacement = Static_Data.physical_displacement(:,~removal_index);
             Static_Data.potential_energy = Static_Data.potential_energy(:,~removal_index);
             Static_Data.restoring_force = Static_Data.restoring_force(:,~removal_index);
             
@@ -351,7 +351,7 @@ classdef Static_Dataset
             end
         end
         %-----------------------------------------------------------------%
-        function [loadcases_found,r,theta,f,E,additional_data] = contains_loadcase(obj,loadcases)
+        function [loadcases_found,r,x,f,E,additional_data] = contains_loadcase(obj,loadcases)
             MAX_DIFF = 0.05;
             
             found_force = obj.restoring_force;
@@ -362,7 +362,7 @@ classdef Static_Dataset
             
             matched_counter = 0;
             r = zeros(num_r_modes,0);
-            theta = zeros(num_dofs,0);
+            x = zeros(num_dofs,0);
             f = zeros(num_r_modes,0);
             E = zeros(1,0);
             switch obj.additional_data_type
@@ -393,7 +393,7 @@ classdef Static_Dataset
                         loadcase_index = loadcase_index(min_index);
                     end
                     r(:,matched_counter) = obj.reduced_displacement(:,loadcase_index);
-                    theta(:,matched_counter) = obj.condensed_displacement(:,loadcase_index);
+                    x(:,matched_counter) = obj.physical_displacement(:,loadcase_index);
                     f(:,matched_counter) = obj.restoring_force(:,loadcase_index);
                     E(:,matched_counter) = obj.potential_energy(:,loadcase_index);
 
@@ -489,7 +489,7 @@ classdef Static_Dataset
 
             if ~exist("r","var")
                 r = obj.reduced_displacement;
-                theta = obj.condensed_displacement;
+                theta = obj.physical_displacement;
                 sep_id = obj.static_equilibrium_path_id;
                 f = obj.restoring_force;
             end

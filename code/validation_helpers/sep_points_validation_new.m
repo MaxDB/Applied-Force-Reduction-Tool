@@ -61,11 +61,11 @@ for iIteration = 1:(max_iterations+1)
 
     r = Static_Data.reduced_displacement(:,validated_points);
     f = Static_Data.restoring_force(:,validated_points);
-    displacement = Static_Data.condensed_displacement(:,validated_points);
+    displacement = Static_Data.physical_displacement(:,validated_points);
 
 
     [force_degree,worst_force_index] = minimum_polynomial_degree(Static_Data,"Force",r,f,degree_range); %#ok<ASGLU>
-    [disp_degree,worst_disp_index] = minimum_polynomial_degree(Static_Data,"Condensed_Displacement",r,displacement,degree_range);
+    [disp_degree,worst_disp_index] = minimum_polynomial_degree(Static_Data,"Physical_Displacement",r,displacement,degree_range);
     
     if num_sep_loadcases == 0
         continue
@@ -84,8 +84,8 @@ for iIteration = 1:(max_iterations+1)
     force_equation = @(x,F) static_solution(x,F,Force_Poly_One,Stiffness_Poly_One);
     % energy_equation = @(x,lambda,F) energy_solution(x,lambda,F,energy_limit,Potential_Poly_One,Force_Poly_One,Stiffness_Poly_One);
     
-    Disp_Poly_One = Rom_One.Condensed_Displacement_Polynomial;
-    Disp_Poly_Two = Rom_Two.Condensed_Displacement_Polynomial;
+    Disp_Poly_One = Rom_One.Physical_Displacement_Polynomial;
+    Disp_Poly_Two = Rom_Two.Physical_Displacement_Polynomial;
 
     num_coeffs_one = Disp_Poly_One.num_element_coefficients;
     num_coeffs_two = Disp_Poly_Two.num_element_coefficients;

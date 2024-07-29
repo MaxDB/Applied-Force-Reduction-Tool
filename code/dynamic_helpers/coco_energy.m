@@ -32,8 +32,7 @@ end
 
 r_products = r_power_products(1:num_coeffs,:);
 r_dr_products = r_products(Disp_Data.diff_mapping{1,1}).*Disp_Data.diff_scale_factor{1,1};
-kinetic_energy = 0.5*r_dot(:,1)'*r_dr_products'*Disp_Data.beta_bar*r_dr_products*r_dot(:,1) ...
-    +0.5*r_dot(:,1)'*r_dot(:,1);
+kinetic_energy = 0.5*r_dot(:,1)'*r_dr_products'*Disp_Data.beta_bar*r_dr_products*r_dot(:,1);
 
 
 potential_energy = Potential_Polynomial.evaluate_polynomial(r(:,1));
