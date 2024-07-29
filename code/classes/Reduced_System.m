@@ -73,13 +73,18 @@ classdef Reduced_System
             h_stiffness = Static_Data.low_frequency_stiffness;
             h_coupling_gradient = Static_Data.low_frequency_coupling_gradient;
 
-            h_stiffness_degree = degree(3);
-            h_coupling_gradient_degree = degree(4);
+            num_L_modes = length(Static_Data.Dynamic_Validation_Data.current_L_modes);
+            num_r_modes = size(evec_r,2);
+            
+            convert_degree = @(degree) [degree*ones(1,num_r_modes),ones(1,num_r_modes+num_L_modes)];
+
+            h_stiffness_degree = convert_degree(degree(3));
+            h_coupling_gradient_degree = convert_degree(degree(4));
 
             h_stiffness_0 = Static_Data.Dynamic_Validation_Data.h_stiffness_0;
             h_coupling_gradient_0 = Static_Data.Dynamic_Validation_Data.h_coupling_gradient_0;
 
-            H_Stiffness_Poly = Polynomial(r,h_stiffness,h_stiffness_degree,"constraint",{"constant",h_stiffness_0},"coupling","stiffness","shift",SHIFT_ON,"scale",SCALE_ON);
+            H_Stiffness_Poly = Polynomial(r,h_stiffness,h_stiffness_degree,"constraint",{"none",h_stiffness_0},"coupling","stiffness","shift",SHIFT_ON,"scale",SCALE_ON);
             H_Coupling_Gradient_Poly = Polynomial(r,h_coupling_gradient,h_coupling_gradient_degree,"constraint",{"constant",h_coupling_gradient_0},"shift",SHIFT_ON,"scale",SCALE_ON);
             
             obj.Low_Frequency_Stiffness_Polynomial = H_Stiffness_Poly;

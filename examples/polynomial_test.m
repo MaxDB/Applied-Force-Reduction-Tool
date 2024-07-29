@@ -1,8 +1,8 @@
 clear
 
-load("data\exhaust_1567\Static_Data.mat");
+load("data\beam_oscillator_1\Static_Data.mat");
 %-------------------------------------------------------------------------%
-% Static_Data = Static_Data.add_validation_data(129);
+Static_Data = Static_Data.add_validation_data(2);
 
 Rom = Reduced_System(Static_Data);
 
