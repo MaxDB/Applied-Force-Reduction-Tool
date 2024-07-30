@@ -557,7 +557,6 @@ classdef Polynomial
                         Constraint.values(1,iMode) = 0;
                         Constraint.values(1+iMode,iMode) = constraint_values(iMode)/scale_factor(iMode);
                     end
-
             end
         end
         %-----------------------------------------------------------------%
@@ -759,7 +758,10 @@ classdef Polynomial
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods(Static)
         function num_coefficients = input_combinations(degree,num_inputs)
-
+            if ~isscalar(degree)
+                num_inputs = nnz(degree > 1);
+            end
+            
             num_coefficients = 1;
             for iTerm = 1:degree(1)
                 num_coefficients = num_coefficients + nchoosek(iTerm+num_inputs-1,num_inputs-1);
@@ -775,40 +777,57 @@ classdef Polynomial
         end
         %-----------------------------------------------------------------%
         function input_index = get_input_index(degree,num_inputs)
-            num_coefficients = Polynomial.input_combinations(degree(1),num_inputs);
-        
+            if isscalar(degree)
+                num_coefficients = Polynomial.input_combinations(degree(1),num_inputs);
+
+                %Power raised of each input for each term
+                input_index = zeros(num_coefficients,num_inputs);
+                term_counter = 1;
+                for iDegree = 1:degree(1)
+                    term_input_indices = nchoosek(1:num_inputs+iDegree-1,iDegree) - (0:iDegree-1);
+                    num_terms = size(term_input_indices,1);
+
+                    for iTerm = 1:num_terms
+                        term_index = term_input_indices(iTerm,:);
+                        term_counter = term_counter + 1;
+
+                        for iInput = 1:num_inputs
+                            input_index(term_counter,iInput) = sum(term_index == iInput);
+                        end
+                    end
+                end
+
+                return
+            end
+
+            max_degree_term = max(degree) + 1;
+            num_coefficients = Polynomial.input_combinations(degree(1),nnz(degree > 1));
+            linear_mode_index = degree == 1;
+
             %Power raised of each input for each term
             input_index = zeros(num_coefficients,num_inputs);
             term_counter = 1;
-            for iDegree = 1:degree(1)
+            for iDegree = 1:max_degree_term
                 term_input_indices = nchoosek(1:num_inputs+iDegree-1,iDegree) - (0:iDegree-1);
                 num_terms = size(term_input_indices,1);
 
                 for iTerm = 1:num_terms
                     term_index = term_input_indices(iTerm,:);
-                    term_counter = term_counter + 1;
-
+                    
+                    
+                    new_input_index_row = zeros(1,num_inputs);
                     for iInput = 1:num_inputs
-                        input_index(term_counter,iInput) = sum(term_index == iInput);
+                        new_input_index_row(1,iInput) = sum(term_index == iInput);
                     end
+
+                    if any(new_input_index_row > degree) || sum(new_input_index_row(linear_mode_index)) > 1
+                        continue
+                    end
+                    
+                    term_counter = term_counter + 1;
+                    input_index(term_counter,:) = new_input_index_row;
                 end
             end
-
-            if isscalar(degree)
-                return
-            end
-
-            r_input_index = input_index;
-            
-            num_linear_modes = nnz(degree == 1);
-            input_index = zeros(num_coefficients*(num_inputs+num_linear_modes),num_inputs+num_linear_modes);
-
-            input_index(:,1:num_inputs) = repmat(r_input_index,num_linear_modes+num_inputs,1);
-            
-            linear_index_base = [zeros(1,num_linear_modes);eye(num_linear_modes)];
-            linear_index = repelem(linear_index_base,num_coefficients,1);
-            input_index(:,(num_inputs+1):end) = linear_index;
-
         end
         %-----------------------------------------------------------------%
         function input_matrix = get_input_matrix(input_data,input_index)

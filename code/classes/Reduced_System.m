@@ -7,8 +7,8 @@ classdef Reduced_System
         Potential_Polynomial
         Reduced_Stiffness_Polynomial
 
-        Low_Frequency_Stiffness_Polynomial
-        Low_Frequency_Coupling_Gradient_Polynomial
+        Low_Frequency_Force_Polynomial
+        Low_Frequency_Displacement_Polynomial
         
         MINIMUM_DISPLACEMENT
         Model
@@ -70,25 +70,33 @@ classdef Reduced_System
             
             obj.Dynamic_Validation_Data = Static_Data.Dynamic_Validation_Data;
             
-            h_stiffness = Static_Data.low_frequency_stiffness;
-            h_coupling_gradient = Static_Data.low_frequency_coupling_gradient;
+
+            
 
             num_L_modes = length(Static_Data.Dynamic_Validation_Data.current_L_modes);
             num_r_modes = size(evec_r,2);
+            num_h_modes = num_L_modes + num_r_modes;
+
+           
+            condensed_perturbation_displacement = Static_Data.condensed_perturbation;
             
-            convert_degree = @(degree) [degree*ones(1,num_r_modes),ones(1,num_r_modes+num_L_modes)];
+            convert_degree = @(degree) [degree*ones(1,num_r_modes),ones(1,num_h_modes)];
 
-            h_stiffness_degree = convert_degree(degree(3));
-            h_coupling_gradient_degree = convert_degree(degree(4));
-
-            h_stiffness_0 = Static_Data.Dynamic_Validation_Data.h_stiffness_0;
-            h_coupling_gradient_0 = Static_Data.Dynamic_Validation_Data.h_coupling_gradient_0;
-
-            H_Stiffness_Poly = Polynomial(r,h_stiffness,h_stiffness_degree,"constraint",{"none",h_stiffness_0},"coupling","stiffness","shift",SHIFT_ON,"scale",SCALE_ON);
-            H_Coupling_Gradient_Poly = Polynomial(r,h_coupling_gradient,h_coupling_gradient_degree,"constraint",{"constant",h_coupling_gradient_0},"shift",SHIFT_ON,"scale",SCALE_ON);
+            h_force_degree = convert_degree(degree(3));
+            h_displacement_degree = convert_degree(degree(4));
             
-            obj.Low_Frequency_Stiffness_Polynomial = H_Stiffness_Poly;
-            obj.Low_Frequency_Coupling_Gradient_Polynomial = H_Coupling_Gradient_Poly;
+            eval_L = Static_Data.Dynamic_Validation_Data.current_L_eigenvalues;
+            eval_h = [eval_r,eval_L];
+            [h_force_input,h_force_output] = format_h_fitting_data("force",Static_Data,r,condensed_perturbation_displacement,f);
+            H_Force_Poly = Polynomial(h_force_input,h_force_output,h_force_degree,"constraint",{"linear_force",[eval_r,eval_h]},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
+            
+            evec_L = Static_Data.Dynamic_Validation_Data.current_L_eigenvectors;
+            evec_h = [evec_r,evec_L];
+            [h_disp_input,h_disp_output] = format_h_fitting_data("displacement",Static_Data,r,condensed_perturbation_displacement,displacement);
+            H_Displacement_Poly = Polynomial(h_disp_input,h_disp_output,h_displacement_degree,"constraint",{"linear_disp",[evec_r,evec_h]},"shift",SHIFT_ON,"scale",SCALE_ON);
+            
+            obj.Low_Frequency_Force_Polynomial = H_Force_Poly;
+            obj.Low_Frequency_Displacement_Polynomial = H_Displacement_Poly;
         end
         %-----------------------------------------------------------------%
 
@@ -117,7 +125,7 @@ classdef Reduced_System
             L_evec = obj.get_current_L_eigenvectors;
             h_evec = [r_evec,L_evec];
 
-            Theta_Hat_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
+            Theta_Hat_Poly = obj.Low_Frequency_Displacement_Polynomial;
 
             num_x = size(r,2);
             num_dof = size(h_evec,1);
@@ -212,8 +220,8 @@ classdef Reduced_System
             degree(1) = obj.Force_Polynomial.polynomial_degree;
             degree(2) = obj.Physical_Displacement_Polynomial.polynomial_degree;
             if ~isempty(obj.Dynamic_Validation_Data)
-                degree(3) = obj.Low_Frequency_Stiffness_Polynomial.polynomial_degree;
-                degree(4) = obj.Low_Frequency_Coupling_Gradient_Polynomial.polynomial_degree;
+                degree(3) = obj.Low_Frequency_Force_Polynomial.polynomial_degree;
+                degree(4) = obj.Low_Frequency_Displacement_Polynomial.polynomial_degree;
             end
             
             max_degree = max(degree);
@@ -254,19 +262,19 @@ classdef Reduced_System
 
                     Reduced_Force_Data.coeffs = obj.Force_Polynomial.coefficients';
 
-                    H_Stiffness_Data.coeffs = permute(obj.Low_Frequency_Stiffness_Polynomial.coefficients,[3,2,1]);
+                    H_Stiffness_Data.coeffs = permute(obj.Low_Frequency_Force_Polynomial.coefficients,[3,2,1]);
                     
                     Condensed_Disp_Diff_Data = obj.Physical_Displacement_Polynomial.get_diff_data(2);
                     Condensed_Disp_Data.diff_scale_factor = Condensed_Disp_Diff_Data.diff_scale_factor;
                     Condensed_Disp_Data.diff_mapping = Condensed_Disp_Diff_Data.diff_mapping;
                     Condensed_Disp_Data.beta_L = obj.get_beta_mode(L_evecs',obj.Physical_Displacement_Polynomial.coefficients');
 
-                    H_Coupling_Gradient.beta_bar = obj.get_beta_bar(obj.Low_Frequency_Coupling_Gradient_Polynomial);
-                    H_Coupling_Disp_Data = obj.Low_Frequency_Coupling_Gradient_Polynomial.get_diff_data(2);
+                    H_Coupling_Gradient.beta_bar = obj.get_beta_bar(obj.Low_Frequency_Displacement_Polynomial);
+                    H_Coupling_Disp_Data = obj.Low_Frequency_Displacement_Polynomial.get_diff_data(2);
                     H_Coupling_Gradient.diff_scale_factor = H_Coupling_Disp_Data.diff_scale_factor;
                     H_Coupling_Gradient.diff_mapping = H_Coupling_Disp_Data.diff_mapping;
 
-                    beta_G_theta_H = obj.get_beta_mode(obj.Low_Frequency_Coupling_Gradient_Polynomial.coefficients,obj.Physical_Displacement_Polynomial.coefficients');
+                    beta_G_theta_H = obj.get_beta_mode(obj.Low_Frequency_Displacement_Polynomial.coefficients,obj.Physical_Displacement_Polynomial.coefficients');
                     
                     Eom_Input.input_order = input_order;
                     Eom_Input.scale_factor = scale_factor;
@@ -299,13 +307,13 @@ classdef Reduced_System
                     Disp_Data.diff_mapping = Disp_Diff_Data.diff_mapping;
                     Eom_Input.Disp_Data = Disp_Data;
 
-                    H_Coupling_Gradient.beta_bar = obj.get_beta_bar(obj.Low_Frequency_Coupling_Gradient_Polynomial);
-                    H_Coupling_Disp_Data = obj.Low_Frequency_Coupling_Gradient_Polynomial.get_diff_data(1);
+                    H_Coupling_Gradient.beta_bar = obj.get_beta_bar(obj.Low_Frequency_Displacement_Polynomial);
+                    H_Coupling_Disp_Data = obj.Low_Frequency_Displacement_Polynomial.get_diff_data(1);
                     H_Coupling_Gradient.diff_scale_factor = H_Coupling_Disp_Data.diff_scale_factor;
                     H_Coupling_Gradient.diff_mapping = H_Coupling_Disp_Data.diff_mapping;
                     Eom_Input.H_Coupling_Gradient = H_Coupling_Gradient;
                     
-                    Eom_Input.H_Stiffness_Poly = obj.Low_Frequency_Stiffness_Polynomial;
+                    Eom_Input.H_Stiffness_Poly = obj.Low_Frequency_Force_Polynomial;
                     Eom_Input.Potential = obj.Potential_Polynomial;
                     Eom_Input.Force = obj.Force_Polynomial;
                    
@@ -315,7 +323,7 @@ classdef Reduced_System
                     Eom_Input.shift_factor = obj.Physical_Displacement_Polynomial.shifting_factor;
 
 
-                    G_coeffs = obj.Low_Frequency_Coupling_Gradient_Polynomial.coefficients;
+                    G_coeffs = obj.Low_Frequency_Displacement_Polynomial.coefficients;
                     G_coeffs_T = permute(G_coeffs,[2,3,1]);
                     beta_G_theta_H = obj.get_beta_mode(G_coeffs,theta_H_coeff);
                     beta_theta_H_G = obj.get_beta_mode(theta_H_coeff',G_coeffs_T);
@@ -356,7 +364,7 @@ classdef Reduced_System
                     damping = Nc_Inputs.damping;
                     L_evecs = obj.get_current_L_eigenvectors;
                     theta_coeffs = obj.Physical_Displacement_Polynomial.coefficients';
-                    G_coeffs = obj.Low_Frequency_Coupling_Gradient_Polynomial.coefficients;
+                    G_coeffs = obj.Low_Frequency_Displacement_Polynomial.coefficients;
                     G_coeffs_T = permute(G_coeffs,[2,3,1]);
 
                     damping_beta = theta_coeffs'*Nc_Inputs.damping*theta_coeffs;

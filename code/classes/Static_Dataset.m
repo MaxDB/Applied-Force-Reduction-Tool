@@ -12,9 +12,8 @@ classdef Static_Dataset
         tangent_stiffness
         perturbation_displacement
         perturbation_scale_factor
-
-        low_frequency_stiffness
-        low_frequency_coupling_gradient
+        
+        condensed_perturbation
         Dynamic_Validation_Data
 
         scaffold_points
@@ -98,15 +97,18 @@ classdef Static_Dataset
                     end
 
 
-                    [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_h_error_data(obj,L_modes);
-                    obj.low_frequency_stiffness = h_stiffness;
-                    obj.low_frequency_coupling_gradient = h_coupling_gradient;
+                    [perturbation,L_evec,L_eval] = parse_h_error_data(obj,L_modes);
+                    obj.condensed_perturbation = perturbation;
+                    % obj.low_frequency_stiffness = h_stiffness;
+                    % obj.low_frequency_coupling_gradient = h_coupling_gradient;
 
                     obj.Dynamic_Validation_Data.current_L_modes = L_modes;
-                    obj.Dynamic_Validation_Data.h_stiffness_0 = h_stiffness_0;
-                    obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
+                    obj.Dynamic_Validation_Data.current_L_eigenvectors = L_evec;
+                    obj.Dynamic_Validation_Data.current_L_eigenvalues = L_eval;
 
-                    obj = minimum_h_degree(obj);
+                    obj.validated_degree = [obj.validated_degree,obj.validated_degree(1),obj.validated_degree(2)];
+
+                    % obj = minimum_h_degree(obj);
                 case "perturbation"
                     r_modes = obj.Model.reduced_modes;
                     L_modes(ismember(L_modes,r_modes)) = [];
