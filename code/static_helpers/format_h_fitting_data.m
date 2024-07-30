@@ -30,7 +30,7 @@ switch type
             h_input(1:num_r_modes,loadcase_span) = r_i;
             h_input((num_r_modes+1):end,loadcase_span) = [zeros(num_h_modes,1),h_i];
 
-            h_output(:,loadcase_span) = [zeros(num_h_modes,1),perturbation_i] + base_output(:,iLoad);
+            h_output(:,loadcase_span) = [zeros(num_dofs,1),perturbation_i] + base_output(:,iLoad);
         end
     case "force"
         h_output = zeros(num_r_modes + num_h_modes,num_loadcases*loadcase_length );
