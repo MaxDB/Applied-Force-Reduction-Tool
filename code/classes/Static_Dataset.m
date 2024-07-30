@@ -271,6 +271,25 @@ classdef Static_Dataset
             obj.Validation_Options = update_options(Default_Validation_Opts,obj.Validation_Options,Validation_Opts);
         end
         %-----------------------------------------------------------------%
+
+        %-----------------------------------------------------------------%
+        function h_displacement = get_h_displacement(obj)
+            r_evec = obj.Model.reduced_eigenvectors;
+            L_evec = obj.Dynamic_Validation_Data.current_L_eigenvectors;
+            h_evec = [r_evec,L_evec];
+            
+            num_h_modes = size(h_evec,2);
+            h_transform = (obj.Model.mass*h_evec)';
+
+            perturbation = obj.condensed_perturbation;
+            num_loadcases = size(perturbation,3);
+            h_displacement = zeros(num_h_modes,num_h_modes,num_loadcases);
+            for iLoad = 1:num_loadcases
+                perturbation_i = perturbation(:,:,iLoad);
+                h_displacement(:,:,iLoad) = h_transform*perturbation_i;
+            end
+        end
+        %-----------------------------------------------------------------%
         
         %-----------------------------------------------------------------%
         %Overloading

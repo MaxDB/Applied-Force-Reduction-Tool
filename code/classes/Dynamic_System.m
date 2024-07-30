@@ -55,9 +55,10 @@ classdef Dynamic_System
             
             
             %----------------------- Environment Setup -------------------%
-            if ~isfolder("data")
+            if ~isfolder("data\logs")
                 mkdir("data\logs")
             end
+            
 
             log_id = fopen("data\logs\log.txt","w");
             fclose(log_id);

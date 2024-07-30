@@ -32,7 +32,7 @@ plot_backbone(system_name,"amplitude","last");
 % compare_validation(Dyn_Data,1,2:18)
 Dyn_Data = Dyn_Data.validate_solution(1,2);
 %plot_h_predicition(system_name,"amplitude",1);
-Dyn_Data = Dyn_Data.add_full_order_backbone(1);
+% Dyn_Data = Dyn_Data.add_full_order_backbone(1);
 % Dyn_Data = get_periodicity_error(Dyn_Data,2,1:587)
 
 

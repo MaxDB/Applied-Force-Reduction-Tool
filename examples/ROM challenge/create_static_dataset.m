@@ -23,6 +23,7 @@ Static_Opts.num_validation_modes = 18;
 Static_Opts.max_parallel_jobs = 8; %be careful!
 Static_Opts.num_loadcases = 8;
 Static_Opts.maximum_loadcases = 15;
+Static_Opts.perturbation_scale_factor = 1000;
 %------------------------------------------%
 
 %--------- Static Validation Settings ---------%
