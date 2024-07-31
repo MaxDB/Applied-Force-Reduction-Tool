@@ -88,12 +88,12 @@ classdef Reduced_System
             eval_L = Static_Data.Dynamic_Validation_Data.current_L_eigenvalues;
             eval_h = [eval_r,eval_L];
             [h_force_input,h_force_output] = format_h_fitting_data("force",Static_Data,r,condensed_perturbation_displacement,f);
-            H_Force_Poly = Polynomial(h_force_input,h_force_output,h_force_degree,"constraint",{"linear_force",[eval_r,eval_h]},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
+            H_Force_Poly = Polynomial(h_force_input,h_force_output,h_force_degree,"constraint",{"h_force",[eval_r,eval_h]},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
             
             evec_L = Static_Data.Dynamic_Validation_Data.current_L_eigenvectors;
             evec_h = [evec_r,evec_L];
             [h_disp_input,h_disp_output] = format_h_fitting_data("displacement",Static_Data,r,condensed_perturbation_displacement,displacement);
-            H_Displacement_Poly = Polynomial(h_disp_input,h_disp_output,h_displacement_degree,"constraint",{"linear_disp",[evec_r,evec_h]},"shift",SHIFT_ON,"scale",SCALE_ON);
+            H_Displacement_Poly = Polynomial(h_disp_input,h_disp_output,h_displacement_degree,"constraint",{"h_disp",[evec_r,evec_h]},"shift",SHIFT_ON,"scale",SCALE_ON);
             
             obj.Low_Frequency_Force_Polynomial = H_Force_Poly;
             obj.Low_Frequency_Displacement_Polynomial = H_Displacement_Poly;
@@ -220,8 +220,8 @@ classdef Reduced_System
             degree(1) = obj.Force_Polynomial.polynomial_degree;
             degree(2) = obj.Physical_Displacement_Polynomial.polynomial_degree;
             if ~isempty(obj.Dynamic_Validation_Data)
-                degree(3) = obj.Low_Frequency_Force_Polynomial.polynomial_degree;
-                degree(4) = obj.Low_Frequency_Displacement_Polynomial.polynomial_degree;
+                degree(3) = max(obj.Low_Frequency_Force_Polynomial.polynomial_degree);
+                degree(4) = max(obj.Low_Frequency_Displacement_Polynomial.polynomial_degree);
             end
             
             max_degree = max(degree);

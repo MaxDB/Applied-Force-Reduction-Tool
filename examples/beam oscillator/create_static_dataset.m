@@ -8,7 +8,7 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "beam_oscillator";
 energy_limit = 45;
-initial_modes = [1];
+initial_modes = [1,2];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%

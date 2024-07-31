@@ -2,6 +2,7 @@ classdef Polynomial
     %Tensors of multidimensional polynomials 
     properties
         polynomial_degree
+        maximum_input_degree
         coefficients
         input_limit
 
@@ -74,14 +75,20 @@ classdef Polynomial
                 end
             end
             %---------------------
-
-            obj.polynomial_degree = degree;
-
+           
             obj.input_dimension = size(input_data,1);
             obj.output_dimension = size(output_data,1);
+            
+            if isscalar(degree)
+                obj.polynomial_degree = degree;
+                obj.maximum_input_degree = ones(1,obj.input_dimension)*degree;
+            else
+                obj.polynomial_degree = sum(degree);
+                obj.maximum_input_degree = degree;
+            end
 
-            num_coeffs = Polynomial.input_combinations(degree,obj.input_dimension);
-            input_index = Polynomial.get_input_index(degree,obj.input_dimension);
+            num_coeffs = Polynomial.input_combinations(obj.polynomial_degree,obj.maximum_input_degree,obj.input_dimension);
+            input_index = Polynomial.get_input_index(obj.polynomial_degree,obj.maximum_input_degree,obj.input_dimension);
 
             obj.num_element_coefficients = num_coeffs;
             obj.input_order = input_index;
@@ -422,9 +429,10 @@ classdef Polynomial
         function Poly_Int = integrate_polynomial(obj)
             Poly_Int = obj;
             Poly_Int.polynomial_degree = obj.polynomial_degree + 1;
+            Poly_Int.maximum_input_degree = obj.maximum_input_degree + 1;
             Poly_Int.output_dimension = 1;
             
-            input_index_int = Polynomial.get_input_index(obj.polynomial_degree+1,obj.input_dimension);
+            input_index_int = Polynomial.get_input_index(Poly_Int.polynomial_degree,Poly_Int.maximum_input_degree,obj.input_dimension);
             Poly_Int.input_order = input_index_int;
             Poly_Int.num_element_coefficients = size(input_index_int,1);
 
@@ -444,11 +452,15 @@ classdef Polynomial
                 matching_terms = cellfun(@(term_row) isequal(term_row,term),integrated_terms);
                 coeff_index = reshape(matching_terms,size(int_coeffs));
                 matched_coeffs = int_coeffs(coeff_index);
+                if isempty(matched_coeffs)
+                    continue
+                end
 
                 if isscalar(uniquetol(matched_coeffs))
                     coeffs_int(iTerm_int) = matched_coeffs(1);
                 else
-                    error("Potential not consistent")
+                    warning("Potential not consistent")
+                    coeffs_int(iTerm_int) = matched_coeffs(1);
                 end
                 % term_index = mod(term_index,int_input_size(1));
             end
@@ -461,9 +473,10 @@ classdef Polynomial
         function Poly_Diff = differentiate_polynomial(obj)
             Poly_Diff = obj;
             Poly_Diff.polynomial_degree = obj.polynomial_degree - 1;
+            Poly_Diff.maximum_input_degree = obj.maximum_input_degree - (obj.maximum_input_degree > Poly_Diff.polynomial_degree);
             Poly_Diff.output_dimension = [obj.output_dimension,obj.input_dimension];
-
-            input_index_diff = Polynomial.get_input_index(Poly_Diff.polynomial_degree,Poly_Diff.input_dimension);
+  
+            input_index_diff = Polynomial.get_input_index(Poly_Diff.polynomial_degree,Poly_Diff.maximum_input_degree,Poly_Diff.input_dimension);
             Poly_Diff.input_order = input_index_diff;
             Poly_Diff.num_element_coefficients = size(input_index_diff,1);
 
@@ -490,9 +503,13 @@ classdef Polynomial
                     coeffs_index{1,end} = iDiff;
 
                     [~,term_index] = ismember(term,diff_input_index(:,:,iDiff),'rows');
-
-                    matched_coeffs = diff_coeffs(term_index,:,:)*diff_scale_factor(term_index,1,iDiff)*obj.scaling_factor(iDiff);
                     
+                    if term_index == 0
+                        matched_coeffs = zeros(1,size(diff_coeffs,2));
+                    else
+                        matched_coeffs = diff_coeffs(term_index,:,:)*diff_scale_factor(term_index,1,iDiff)*obj.scaling_factor(iDiff);
+                    end
+
                     coeffs_diff(coeffs_index{:}) = matched_coeffs;
                 end
 
@@ -557,6 +574,45 @@ classdef Polynomial
                         Constraint.values(1,iMode) = 0;
                         Constraint.values(1+iMode,iMode) = constraint_values(iMode)/scale_factor(iMode);
                     end
+                case "h_force"
+                    %constrain linear stiffness
+                    Constraint.terms = 1:(num_inputs+1);
+                    constraint_values = constraint_type{1,2};
+
+                    for iMode = 1:num_inputs
+                        Constraint.values(1,iMode) = 0;
+                        Constraint.values(1+iMode,iMode) = constraint_values(iMode)/scale_factor(iMode);
+                    end
+
+                    %constrain h linearity
+                    h_modes = obj.maximum_input_degree == 1;
+                    nonlinear_h_terms = find(sum(input_index(:,h_modes),2) > 1)';
+                    num_nonlinear_h_terms = size(nonlinear_h_terms,2);
+                    
+                    Constraint.terms = [Constraint.terms,nonlinear_h_terms];
+                    Constraint.values = [Constraint.values;zeros(num_nonlinear_h_terms,num_inputs)];
+                case "h_disp"
+                    Constraint.terms = 1:(num_inputs+1);
+                    Constraint.values = zeros(num_inputs+1,num_outputs);
+                    constraint_value = constraint_type{1,2};
+                    
+                    if isscalar(constraint_value)
+                        constraint_value = ones(num_inputs,num_outputs)*constraint_value;
+                    elseif size(constraint_value,1) == num_outputs
+                        constraint_value = constraint_value';
+                    end
+
+                    for iMode = 1:num_inputs
+                        Constraint.values(iMode+1,:) = constraint_value(iMode,:)/scale_factor(iMode);
+                    end
+
+                    %constrain h linearity
+                    h_modes = obj.maximum_input_degree == 1;
+                    nonlinear_h_terms = find(sum(input_index(:,h_modes),2) > 1)';
+                    num_nonlinear_h_terms = size(nonlinear_h_terms,2);
+                    
+                    Constraint.terms = [Constraint.terms,nonlinear_h_terms];
+                    Constraint.values = [Constraint.values;zeros(num_nonlinear_h_terms,size(constraint_value,2))];
             end
         end
         %-----------------------------------------------------------------%
@@ -572,8 +628,17 @@ classdef Polynomial
 
             terms = 1:num_terms;
             unconstrained_terms = terms;
-            if ~isempty(Constraint.terms)
-                constrained_terms = Constraint.terms;
+            
+            
+            nonlinear_constraints = sum(input_index(Constraint.terms,:),2) > 1;
+            Linear_Constraint.terms = Constraint.terms(~nonlinear_constraints);
+            Linear_Constraint.values = Constraint.values(~nonlinear_constraints,:);
+
+            Nonlinear_Constraint.terms = Constraint.terms(nonlinear_constraints);
+            Nonlinear_Constraint.values = Constraint.values(nonlinear_constraints,:);
+            
+            if ~isempty(Linear_Constraint.terms)
+                constrained_terms = Linear_Constraint.terms;
                 unconstrained_terms(constrained_terms) = [];
             else
                 constrained_terms = [];
@@ -582,13 +647,13 @@ classdef Polynomial
             input_matrix = Polynomial.get_input_matrix(transformed_data,input_index);
             output_correction = zeros(num_loadcases,num_outputs);
 
-            if isempty(Constraint.terms)
+            if isempty(Linear_Constraint.terms)
                 unconstrained_input_matrix = input_matrix;
                 return
             end
 
             
-            constraint_values = Constraint.values;
+            constraint_values = Linear_Constraint.values;
             transformation_prod = -scale_factor.*shift_factor;
             % constant constraint
             constrained_input_matrix = input_matrix(:,1);
@@ -604,7 +669,7 @@ classdef Polynomial
                 output_correction(:,iOutput) = output_correction(:,iOutput) - constrained_term_col*constraint_values(constrained_scaling==1,iOutput);
             end
             
-            if isscalar(Constraint.terms)
+            if isscalar(Linear_Constraint.terms)
                 return
             end
             % linear constraint
@@ -625,6 +690,17 @@ classdef Polynomial
                     output_correction(:,iOutput) = output_correction(:,iOutput) - constrained_term_col*constraint_values(constrained_scaling==1,iOutput);
                 end
             end
+
+            if isempty(Nonlinear_Constraint.terms)
+                return
+            end
+            %only works if there are linear constraints and nonlinear
+            %constraints are 0
+            constrained_terms = Nonlinear_Constraint.terms;
+            mapped_terms = constrained_terms - length(Linear_Constraint.terms);
+            unconstrained_input_matrix(:,mapped_terms) = [];
+
+
         end
         %-----------------------------------------------------------------%
         function coeffs = reconstruct_coefficients(obj,coeffs,Constraint)
@@ -635,18 +711,45 @@ classdef Polynomial
             scale_factor = obj.scaling_factor;
             shift_factor = obj.shifting_factor;
 
+            
+
+            nonlinear_constraints = sum(input_index(Constraint.terms,:),2) > 1;
+            Linear_Constraint.terms = Constraint.terms(~nonlinear_constraints);
+            Linear_Constraint.values = Constraint.values(~nonlinear_constraints,:);
+
+            Nonlinear_Constraint.terms = Constraint.terms(nonlinear_constraints);
+            Nonlinear_Constraint.values = Constraint.values(nonlinear_constraints,:);
+            
+
+            if ~isempty(Nonlinear_Constraint.terms)
+                %only works if there are linear constraints and nonlinear
+                %constraints are 0
+                num_nonlinear_constraints = size(Nonlinear_Constraint.terms,2);
+                num_coeffs = size(coeffs,1) + num_nonlinear_constraints;
+                nonlinear_coeffs = zeros(num_coeffs,num_outputs);
+                
+                
+                constrained_terms = Nonlinear_Constraint.terms;
+                mapped_terms = constrained_terms - length(Linear_Constraint.terms);
+                
+                unconstrained_terms = 1:num_coeffs;
+                unconstrained_terms = setdiff(unconstrained_terms,mapped_terms);
+
+                nonlinear_coeffs(unconstrained_terms,:) = coeffs;
+                coeffs = nonlinear_coeffs;
+            end
+
             terms = 1:num_terms;
             unconstrained_terms = terms;
 
-            constrained_terms = Constraint.terms;
+            constrained_terms = Linear_Constraint.terms;
             unconstrained_terms(constrained_terms) = [];
-
 
             transformation_prod = -scale_factor.*shift_factor;
             % linear constraint
-            if ~isscalar(Constraint.terms)
+            if ~isscalar(Linear_Constraint.terms)
                 lin_coeffs = zeros(num_inputs,num_outputs);
-                lin_constraint = Constraint.values(2:end,:);
+                lin_constraint = Linear_Constraint.values(2:end,:);
 
                 [diff_input_index,diff_scale_factor] = Polynomial.differentiate_input_index(input_index,1:num_inputs);
                 for iDiff = 1:num_inputs
@@ -661,12 +764,14 @@ classdef Polynomial
             end
             % constraint constraint
             
-            const_constraint = Constraint.values(1,:);
+            const_constraint = Linear_Constraint.values(1,:);
             trans_prod_input_matrix = Polynomial.get_input_matrix(transformation_prod,input_index);
             unconstrained_scaling = -trans_prod_input_matrix(2:end);
             const_coeffs = const_constraint + unconstrained_scaling*coeffs;
 
             coeffs = [const_coeffs;coeffs];
+
+            
         end
         %-----------------------------------------------------------------%
         function Coupling = get_force_coupling(obj)
@@ -675,7 +780,7 @@ classdef Polynomial
 
             [int_input_pattern,int_scale_factor] = Polynomial.integrate_input_index(input_index);
 
-            int_input_index = Polynomial.get_input_index(obj.polynomial_degree+1,num_inputs);
+            int_input_index = Polynomial.get_input_index(obj.polynomial_degree+1,obj.maximum_input_degree+1,num_inputs);
             num_int_coefficients = size(int_input_index,1);
 
             num_terms = size(input_index,1);
@@ -757,73 +862,79 @@ classdef Polynomial
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods(Static)
-        function num_coefficients = input_combinations(degree,num_inputs)
-            if ~isscalar(degree)
-                num_inputs = nnz(degree > 1);
-            end
-            
+        function num_coefficients = input_combinations(degree,max_input_degree,num_inputs)
+            % if isscalar(degree)
+            % 
+            %     num_coefficients = 1;
+            %     for iTerm = 1:degree(1)
+            %         num_coefficients = num_coefficients + nchoosek(iTerm+num_inputs-1,num_inputs-1);
+            %     end
+            %
+            %     return
+            % end
+            %
+
             num_coefficients = 1;
-            for iTerm = 1:degree(1)
+            for iTerm = 1:degree
                 num_coefficients = num_coefficients + nchoosek(iTerm+num_inputs-1,num_inputs-1);
-            end
-
-            if isscalar(degree)
-                return
-            end
-           
-            num_h_modes = nnz(degree == 1);
-            num_coefficients = num_coefficients*(1+num_h_modes);
-
-        end
-        %-----------------------------------------------------------------%
-        function input_index = get_input_index(degree,num_inputs)
-            if isscalar(degree)
-                num_coefficients = Polynomial.input_combinations(degree(1),num_inputs);
-
-                %Power raised of each input for each term
-                input_index = zeros(num_coefficients,num_inputs);
-                term_counter = 1;
-                for iDegree = 1:degree(1)
-                    term_input_indices = nchoosek(1:num_inputs+iDegree-1,iDegree) - (0:iDegree-1);
-                    num_terms = size(term_input_indices,1);
-
-                    for iTerm = 1:num_terms
-                        term_index = term_input_indices(iTerm,:);
-                        term_counter = term_counter + 1;
-
-                        for iInput = 1:num_inputs
-                            input_index(term_counter,iInput) = sum(term_index == iInput);
-                        end
+                for iMode = 1:num_inputs
+                    mode_degree = max_input_degree(iMode);
+                    degree_diff = iTerm - mode_degree;
+                    for iDiff = 1:degree_diff
+                        num_coefficients = num_coefficients - nchoosek(iTerm - (mode_degree + iDiff) + (num_inputs - 1) - 1,(num_inputs - 1) - 1);
                     end
                 end
 
-                return
             end
 
-            max_degree_term = max(degree) + 1;
-            num_coefficients = Polynomial.input_combinations(degree(1),nnz(degree > 1));
-            linear_mode_index = degree == 1;
+        end
+        %-----------------------------------------------------------------%
+        function input_index = get_input_index(degree,max_input_degree,num_inputs)
+            % if isscalar(degree)
+            %     num_coefficients = Polynomial.input_combinations(degree(1),num_inputs);
+            % 
+            %     %Power raised of each input for each term
+            %     input_index = zeros(num_coefficients,num_inputs);
+            %     term_counter = 1;
+            %     for iDegree = 1:degree(1)
+            %         term_input_indices = nchoosek(1:num_inputs+iDegree-1,iDegree) - (0:iDegree-1);
+            %         num_terms = size(term_input_indices,1);
+            % 
+            %         for iTerm = 1:num_terms
+            %             term_index = term_input_indices(iTerm,:);
+            %             term_counter = term_counter + 1;
+            % 
+            %             for iInput = 1:num_inputs
+            %                 input_index(term_counter,iInput) = sum(term_index == iInput);
+            %             end
+            %         end
+            %     end
+            % 
+            %     return
+            % end
+            
+            num_coefficients = Polynomial.input_combinations(degree,max_input_degree,num_inputs);
 
             %Power raised of each input for each term
             input_index = zeros(num_coefficients,num_inputs);
             term_counter = 1;
-            for iDegree = 1:max_degree_term
+            for iDegree = 1:degree
                 term_input_indices = nchoosek(1:num_inputs+iDegree-1,iDegree) - (0:iDegree-1);
                 num_terms = size(term_input_indices,1);
 
                 for iTerm = 1:num_terms
                     term_index = term_input_indices(iTerm,:);
-                    
-                    
+
+
                     new_input_index_row = zeros(1,num_inputs);
                     for iInput = 1:num_inputs
                         new_input_index_row(1,iInput) = sum(term_index == iInput);
                     end
 
-                    if any(new_input_index_row > degree) || sum(new_input_index_row(linear_mode_index)) > 1
+                    if any(new_input_index_row > max_input_degree)
                         continue
                     end
-                    
+
                     term_counter = term_counter + 1;
                     input_index(term_counter,:) = new_input_index_row;
                 end
