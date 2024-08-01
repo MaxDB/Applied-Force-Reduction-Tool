@@ -1,6 +1,6 @@
-
+clear
 % M*x_ddot + C*x_dot + K*x + f(x) = F 
-
+system_name = "h_oscillator";
 %%Parameters
 m = 1;
 k1 = 1000;
@@ -11,16 +11,16 @@ k5 = 21.2;
 L0 = 1;
 
 %%linear mass
-Eom.M = eye(4);
+eom.M = eye(4);
 
 %%linear stiffness
-Eom.K = [k4,0,0,0;
+eom.K = [k4,0,0,0;
          0,k5,0,0;
          0,0,k1+k2,-k2;
          0,0,-k2,k2+k3];
 
 %%nonlinear restoring force
-Eom.f = @(x) nonlinear_restoring_force(x,k1,k2,k3,k4,k5,L0);
+eom.f = @(x) nonlinear_restoring_force(x,k1,k2,k3,k4,k5,L0);
 
 %%linear damping
 % EoM.C
@@ -29,11 +29,11 @@ Eom.f = @(x) nonlinear_restoring_force(x,k1,k2,k3,k4,k5,L0);
 % EoM.F
 
 %%potential energy
-Eom.V = @(x) potential_energy(x,k1,k2,k3,k4,k5,L0);
+eom.V = @(x) potential_energy(x,k1,k2,k3,k4,k5,L0);
 
 %% 
-system_name = mfilename;
-Analytic_Eom = Analytic_System(system_name,Eom);
+analytic_EoM = Analytic_System(system_name,eom,"save","geometry\" + system_name);
+
 
 %-------------------------------------------------------------------------%
 function fnx = nonlinear_restoring_force(x,k1,k2,k3,k4,k5,L0)
@@ -60,4 +60,3 @@ dL5 = sqrt(x(4).^2 + (L0 + x(2)).^2) - L0;
 
 V = 0.5*(k1*dL1.^2 + k2*dL2.^2 + k3*dL3.^2 + k4*dL4.^2 + k5*dL5.^2);
 end
-
