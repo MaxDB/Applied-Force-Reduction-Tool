@@ -29,7 +29,7 @@ switch orbit_type
     case "free"
         Eom_Input = Rom.get_solver_inputs("coco_backbone");
         reduced_eom = @(t,z,zeta) coco_eom(t,z,zeta,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data);
-        %
+        
         Validation_Input = Validation_Rom.get_solver_inputs("h_prediction");
         h_terms = @(r,r_dot,r_ddot) get_h_error_terms(r,r_dot,r_ddot,Validation_Input);
 
@@ -214,6 +214,7 @@ for iOrbit = 1:num_periodic_orbits
     h_analysis_start = tic;
 
     if GET_STABILITY
+        %need to add r block?
         orbit_jacobian = zeros(2*num_h_modes,2*num_h_modes,num_time_points);
         for iTime = 1:(num_time_points)
             % orbit_jacobian = zeros(2*num_h_modes,2*num_h_modes);

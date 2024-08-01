@@ -12,9 +12,8 @@ classdef Static_Dataset
         tangent_stiffness
         perturbation_displacement
         perturbation_scale_factor
-
-        low_frequency_stiffness
-        low_frequency_coupling_gradient
+        
+        condensed_perturbation
         Dynamic_Validation_Data
 
         scaffold_points
@@ -98,17 +97,21 @@ classdef Static_Dataset
                     end
 
 
-                    [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_h_error_data(obj,L_modes);
-                    obj.low_frequency_stiffness = h_stiffness;
-                    obj.low_frequency_coupling_gradient = h_coupling_gradient;
+                    [perturbation,L_evec,L_eval] = parse_h_error_data(obj,L_modes);
+                    obj.condensed_perturbation = perturbation;
+                    % obj.low_frequency_stiffness = h_stiffness;
+                    % obj.low_frequency_coupling_gradient = h_coupling_gradient;
 
                     obj.Dynamic_Validation_Data.current_L_modes = L_modes;
-                    obj.Dynamic_Validation_Data.h_stiffness_0 = h_stiffness_0;
-                    obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
+                    obj.Dynamic_Validation_Data.current_L_eigenvectors = L_evec;
+                    obj.Dynamic_Validation_Data.current_L_eigenvalues = L_eval;
 
-                    obj = minimum_h_degree(obj);
+                    obj.validated_degree = [obj.validated_degree,obj.validated_degree(1),obj.validated_degree(2)];
+
+                    % obj = minimum_h_degree(obj);
                 case "perturbation"
                     r_modes = obj.Model.reduced_modes;
+                    num_r_modes = size(r_modes,2);
                     L_modes(ismember(L_modes,r_modes)) = [];
 
                     found_L_modes = obj.Model.low_frequency_modes;
@@ -123,21 +126,29 @@ classdef Static_Dataset
                     end
 
                     validation_data_start = tic;
-                    [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_perturbation_data(obj,L_modes);
+                    % [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_perturbation_data(obj,L_modes);
+
+                    [~,L_map] = ismember(L_modes,found_L_modes);
+                    L_evec = obj.Model.low_frequency_eigenvectors(:,L_map);
+                    L_eval = obj.Model.low_frequency_eigenvalues(L_map);
+                    h_map = [1:num_r_modes,L_map+num_r_modes];
+
+                    obj.condensed_perturbation = obj.perturbation_displacement(:,h_map,:);
 
                     validation_data_time = toc(validation_data_start);
                     log_message = sprintf("Processed validation data: %.1f seconds" ,validation_data_time);
                     logger(log_message,3)
 
-                    obj.low_frequency_stiffness = h_stiffness;
-                    obj.low_frequency_coupling_gradient = h_coupling_gradient;
+                    
+                    % obj.low_frequency_stiffness = h_stiffness;
+                    % obj.low_frequency_coupling_gradient = h_coupling_gradient;
 
                     obj.Dynamic_Validation_Data.current_L_modes = L_modes;
-                    obj.Dynamic_Validation_Data.h_stiffness_0 = h_stiffness_0;
-                    obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
+                    obj.Dynamic_Validation_Data.current_L_eigenvectors = L_evec;
+                    obj.Dynamic_Validation_Data.current_L_eigenvalues = L_eval;
                     
                     minimum_degree_start = tic;
-                    obj = minimum_h_degree(obj);
+                    obj.validated_degree = [obj.validated_degree,obj.validated_degree(1),obj.validated_degree(2)];
 
                     minimum_degree_time = toc(minimum_degree_start);
                     log_message = sprintf("Validating validation polynomials: %.1f seconds" ,minimum_degree_time);
@@ -258,6 +269,25 @@ classdef Static_Dataset
             % Default static options
             Default_Validation_Opts = read_default_options("validation");         
             obj.Validation_Options = update_options(Default_Validation_Opts,obj.Validation_Options,Validation_Opts);
+        end
+        %-----------------------------------------------------------------%
+
+        %-----------------------------------------------------------------%
+        function h_displacement = get_h_displacement(obj)
+            r_evec = obj.Model.reduced_eigenvectors;
+            L_evec = obj.Dynamic_Validation_Data.current_L_eigenvectors;
+            h_evec = [r_evec,L_evec];
+            
+            num_h_modes = size(h_evec,2);
+            h_transform = (obj.Model.mass*h_evec)';
+
+            perturbation = obj.condensed_perturbation;
+            num_loadcases = size(perturbation,3);
+            h_displacement = zeros(num_h_modes,num_h_modes,num_loadcases);
+            for iLoad = 1:num_loadcases
+                perturbation_i = perturbation(:,:,iLoad);
+                h_displacement(:,:,iLoad) = h_transform*perturbation_i;
+            end
         end
         %-----------------------------------------------------------------%
         
