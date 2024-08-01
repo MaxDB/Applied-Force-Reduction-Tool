@@ -46,8 +46,8 @@ for iLoad = 1:num_loadcases
 
     h_disp = h_disp_transform*h_perturbation_i;
 
-    theta_hat = h_perturbation_i - h_evec*h_disp;
-    h_coupling_gradient(:,:,iLoad) = theta_hat/h_disp;
+    disp_hat = h_perturbation_i;
+    h_coupling_gradient(:,:,iLoad) = disp_hat/h_disp;
 
     h_stiffness(:,:,iLoad) =  F_h/h_disp;
 
@@ -57,8 +57,8 @@ stiffness = Model.stiffness;
 h_perturbation_0 = lambda*(stiffness\(h_disp_transform'));
 h_0 = h_disp_transform*h_perturbation_0;
 h_0 = diag(diag(h_0));
-theta_hat_0 = h_perturbation_0 - h_evec*h_0;
+disp_hat_0 = h_perturbation_0;
 
-h_coupling_gradient_0 = theta_hat_0/h_0;
+h_coupling_gradient_0 = disp_hat_0/h_0;
 h_stiffness_0 =  F_h/h_0;
 end
