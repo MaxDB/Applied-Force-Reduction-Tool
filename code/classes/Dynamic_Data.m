@@ -397,64 +397,44 @@ classdef Dynamic_Data
             h_amp = get_amplitude(h);
             
             %--
-            Theta_Poly = Validation_Analysis_Inputs.Disp_Data.Theta_Poly;
-            theta = Theta_Poly.evaluate_polynomial(r);
+            R_Disp_Poly = Validation_Analysis_Inputs.Physical_Disp_Data.Poly;
+            x_r = R_Disp_Poly.evaluate_polynomial(r);
 
             L_disp_transform = Validation_Analysis_Inputs.L_disp_transform;
-            g_l = L_disp_transform*theta;
+            g_l = L_disp_transform*x_r;
 
-            g_l = [r;g_l];
-            g_amp = get_amplitude(g_l);
+            g_h = [r;g_l];
+            g_amp = get_amplitude(g_h);
 
             %--
-            q_l = h+g_l;
+            q_l = h+g_h;
             q_amp = get_amplitude(q_l);
 
             %--
-            % num_points = size(r,2);
-            % num_h_modes = size(h,1);
-            num_r_modes = size(r,1);
-            h_r = h(1:num_r_modes,:);
-            force_tilde = Validation_Analysis_Inputs.Force.evaluate_polynomial(r);
+            energy_point_span = 1:10;
+            num_points = size(energy_point_span,2);
 
-            % h_potential = zeros(num_h_modes,num_points);
-            % for iPoint = 1:num_points
-            %     h_stiffness = Validation_Analysis_Inputs.H_Stiffness_Poly.evaluate_polynomial(r(:,iPoint));
-            %     h_force = h_stiffness*h(:,iPoint);
-            %     h_potential(:,iPoint) = 1/2*(h_force.*h(:,iPoint));
-            %     h_potential(1:num_r_modes,iPoint) = h_potential(1:num_r_modes,iPoint) + force_tilde(:,iPoint).*h_r(:,iPoint);
-            % end
-            % h_potential = sum(h_potential);
+            r_energy = r(:,energy_point_span);
+            r_dot_energy = r_dot(:,energy_point_span);
+            h_disp_energy = h(:,energy_point_span);
+            h_dot_energy = h_dot(:,energy_point_span);
+
+            H_Stiff_Poly = Validation_Analysis_Inputs.H_Force_Poly;
+            num_r_modes = size(r_energy,1);
             
-            point_span = size(h,2);
-            num_points = size(point_span,2);
             h_potential = zeros(1,num_points);
             for iPoint = 1:num_points
-                point = point_span(iPoint);
-                h_stiffness = Validation_Analysis_Inputs.H_Stiffness_Poly.evaluate_polynomial(r(:,point));
-                h_force = h_stiffness*h(:,point);
-                h_potential(:,iPoint) = 1/2*(h_force'*h(:,point)) + force_tilde(:,point)'*h_r(:,point);
+                h_stiffness = H_Stiff_Poly.evaluate_polynomial(r_energy(:,iPoint));
+                h_force = h_stiffness*h_disp_energy(:,iPoint);
+                h_potential(:,iPoint) = 0.5*h_force'*h_disp_energy(:,iPoint);
             end
-            
-           
-            potential_tilde = Validation_Analysis_Inputs.Potential.evaluate_polynomial(r(:,point_span));
-            potential_hat = potential_tilde + h_potential;
-            %--
 
+            potential_tilde = Validation_Analysis_Inputs.Potential_Poly.evaluate_polynomial(r_energy);
+            potential_hat = h_potential + potential_tilde;
             %--
-            %  r(:,1),r_dot(:,1),h(:,1),h_dot(:,1)
-            [ke_mode_tilde,ke_condensed_tilde,ke_mode_hat,ke_condensed_hat] = h_kinetic_energy(r(:,point_span),r_dot(:,point_span),h(:,point_span),h_dot(:,point_span),Validation_Analysis_Inputs);
+            [ke_tilde,ke_hat] = h_kinetic_energy(r_energy,r_dot_energy,h_disp_energy,h_dot_energy,Validation_Analysis_Inputs);
             %--
-            % energy_test = obj.energy{1,solution_num}(orbit_num);
-            % energy_tilde = potential_tilde + sum(ke_mode_tilde) + ke_condensed_tilde;
-            ke_hat =  sum(ke_mode_hat) + ke_condensed_hat;
-            energy_hat =  potential_hat + ke_hat;
-            % energy_fraction = (mean(energy_hat)-mean(energy_tilde))/mean(energy_hat);
-            %--
-
-            %--
-            num_h_modes = size(h,1);
-            
+            energy_hat = ke_hat + potential_hat;
 
 
             %--
@@ -463,7 +443,6 @@ classdef Dynamic_Data
             obj.low_modal_amplitude{1,solution_num}(:,orbit_num) = q_amp;
             obj.h_energy{1,solution_num}(1,orbit_num) = mean(energy_hat);
             obj.h_stability{1,solution_num}(1,orbit_num) = orbit_stability;
-            % obj.h_modal_energy_fraction{1,solution_num}(:,orbit_num) = max(ke_mode_fraction,[],2);
 
             
         end
