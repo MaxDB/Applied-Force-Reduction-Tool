@@ -124,6 +124,12 @@ classdef Polynomial
             end
             %---------------------
             [scale_factor,shift_factor] = Polynomial.transform_data(input_data,scale,shift);
+            switch type
+                case "validation"
+                    num_r_modes = nnz(obj.maximum_input_degree == max(obj.maximum_input_degree));
+                    scale_factor((num_r_modes+1):end) = 1;
+                    shift_factor((num_r_modes+1):end) = 0;
+            end
             obj.scaling_factor = scale_factor;
             obj.shifting_factor = shift_factor;
             
@@ -533,6 +539,43 @@ classdef Polynomial
             Poly_Diff.coefficients = coeffs_diff;
         end
         %-----------------------------------------------------------------%
+        function Poly_Grad = convert_to_gradient_form(Poly)
+            switch Poly.polynomial_type
+                case "validation"
+                h_modes = find(Poly.maximum_input_degree == 1);
+                r_degree = max(Poly.maximum_input_degree);
+                r_degrees = Poly.maximum_input_degree(Poly.maximum_input_degree == r_degree);
+                num_r_modes = size(r_degrees,2);
+                diff_inputs = h_modes;
+                
+                new_input_index = Polynomial.get_input_index(r_degree,r_degrees,"standard");
+                new_input_index_size = size(new_input_index,1);
+            end
+            
+            old_input_index = Poly.input_order;
+            coeffs = Poly.coefficients;
+
+            num_diff_inputs = size(diff_inputs,2);
+            new_coeffs = zeros(new_input_index_size,Poly.output_dimension,num_diff_inputs);
+            for iDiff = 1:num_diff_inputs
+                h_input_index = logical(old_input_index(:,diff_inputs(iDiff)));
+                new_coeffs(:,:,iDiff) = coeffs(h_input_index,:);
+            end
+
+            Poly_Grad = Poly;
+            Poly_Grad.polynomial_degree = r_degree;
+            Poly_Grad.maximum_input_degree = r_degrees;
+            Poly_Grad.polynomial_type = "standard";
+            Poly_Grad.coefficients = new_coeffs;
+            Poly_Grad.input_order = new_input_index;
+            Poly_Grad.num_element_coefficients = new_input_index_size;
+            Poly_Grad.num_independent_element_coefficients = new_input_index_size - 1;
+            Poly_Grad.input_dimension = num_r_modes;
+            Poly_Grad.scaling_factor = Poly_Grad.scaling_factor(1:num_r_modes);
+            Poly_Grad.shifting_factor = Poly_Grad.shifting_factor(1:num_r_modes);
+            Poly_Grad.output_dimension = size(new_coeffs,[2,3]);
+
+        end
 
         %-----------------------------------------------------------------%
         %Overloading
@@ -958,6 +1001,7 @@ classdef Polynomial
             end
         end
         %-----------------------------------------------------------------%
+        
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods(Static)
@@ -977,6 +1021,7 @@ classdef Polynomial
             num_h_modes = sum(max_input_degree == minimum_degree);
             
             num_coefficients = num_coefficients*(1+num_h_modes);
+            
             if minimum_degree == 2    
                 num_coefficients_dq = Polynomial.input_combinations(degree-1,max_input_degree-1,"standard");
                 for iMode = 1:num_h_modes
@@ -1033,8 +1078,13 @@ classdef Polynomial
                         num_h_terms = num_previous_terms*num_h_modes;
                         h_term_input_indices = zeros(num_h_terms,iDegree);
                         for iTerm = 1:num_previous_terms
-                            h_span = ((iTerm-1)*num_h_terms+1):(iTerm*num_h_terms);
-                            h_term_input_indices(h_span,:) = [repmat(previous_term_input_indices,num_h_terms,1),h_modes'];
+                            h_span = ((iTerm-1)*num_h_modes+1):(iTerm*num_h_modes);
+                            if isempty(previous_term_input_indices)
+                                term = previous_term_input_indices;
+                            else
+                                term = previous_term_input_indices(iTerm,:);
+                            end
+                            h_term_input_indices(h_span,:) = [repmat(term,num_h_modes,1),h_modes'];
                         end
                         % term_input_indices = zeros(num_terms,iDegree);
                         
@@ -1156,8 +1206,8 @@ classdef Polynomial
                     diff_input_index_span{1,iDim} = 1:input_index_size(iDim);
                     input_index_span{1,iDim} = 1:input_index_size(iDim);
                 end
-                % input_index_span{1,end} = find(diff_index);
-                input_index_span{1,2} = find(diff_index);
+                input_index_span{1,end} = find(diff_index);
+                % input_index_span{1,2} = find(diff_index);
                 scale_factor_span{1,end} = iDiff;
                 diff_input_index_span{1,end} = iDiff;
                 

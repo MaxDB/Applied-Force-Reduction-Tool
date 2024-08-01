@@ -27,7 +27,7 @@ switch type
 
             r_i = r(:,iLoad);
 
-            h_input(1:num_r_modes,loadcase_span) = r_i;
+            h_input(1:num_r_modes,loadcase_span) = repmat(r_i,1,loadcase_length);
             h_input((num_r_modes+1):end,loadcase_span) = [zeros(num_h_modes,1),h_i];
 
             h_output(:,loadcase_span) = [zeros(num_dofs,1),perturbation_i] + base_output(:,iLoad);
@@ -43,10 +43,10 @@ switch type
 
             r_i = r(:,iLoad);
 
-            h_input(1:num_r_modes,loadcase_span) = r_i;
+            h_input(1:num_r_modes,loadcase_span) = repmat(r_i,1,loadcase_length);
             h_input((num_r_modes+1):end,loadcase_span) = [zeros(num_h_modes,1),h_i];
             
-            h_output(1:num_r_modes,loadcase_span) = base_output(:,iLoad);
+            h_output(1:num_r_modes,loadcase_span) = repmat(base_output(:,iLoad),1,loadcase_length);
             h_output((num_r_modes+1):end,loadcase_span) = [zeros(num_h_modes,1),h_force];
         end
 end

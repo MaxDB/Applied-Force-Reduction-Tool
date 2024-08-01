@@ -26,9 +26,9 @@ Continuation_Opts.energy_limit_multiplier = 1;
 %-----------------------------------------%
 Dyn_Data = Dyn_Data.update_continuation_opts(Continuation_Opts);
 
-Dyn_Data = Dyn_Data.add_backbone(1);
+% Dyn_Data = Dyn_Data.add_backbone(1);
 % compare_validation("amplitude",Dyn_Data,1,2:18)
-% Dyn_Data = Dyn_Data.validate_solution(1,1:18);
+Dyn_Data = Dyn_Data.validate_solution(1,1:18);
 % Dyn_Data = Dyn_Data.get_periodicity_error(1,"all");
 % Dyn_Data = Dyn_Data.get_periodicity_error(1,"X");
 % Dyn_Data = Dyn_Data.get_max_disp_stress(1,46);
