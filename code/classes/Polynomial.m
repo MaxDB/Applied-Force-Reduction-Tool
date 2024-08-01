@@ -1,8 +1,10 @@
 classdef Polynomial
     %Tensors of multidimensional polynomials 
     properties
+        polynomial_type
         polynomial_degree
         maximum_input_degree
+
         coefficients
         input_limit
 
@@ -33,6 +35,7 @@ classdef Polynomial
             scale = true;
             shift = true;
             minimum_output = 0;
+            type = "standard";
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
@@ -46,6 +49,8 @@ classdef Polynomial
                         coupling_type = keyword_values{arg_counter};
                     case "minimum_output"
                         minimum_output = keyword_values{arg_counter};
+                    case "type"
+                        type = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -78,17 +83,21 @@ classdef Polynomial
            
             obj.input_dimension = size(input_data,1);
             obj.output_dimension = size(output_data,1);
-            
-            if isscalar(degree)
-                obj.polynomial_degree = degree;
-                obj.maximum_input_degree = ones(1,obj.input_dimension)*degree;
-            else
-                obj.polynomial_degree = sum(degree);
-                obj.maximum_input_degree = degree;
-            end
+            obj.polynomial_type = type;
 
-            num_coeffs = Polynomial.input_combinations(obj.polynomial_degree,obj.maximum_input_degree,obj.input_dimension);
-            input_index = Polynomial.get_input_index(obj.polynomial_degree,obj.maximum_input_degree,obj.input_dimension);
+            switch type
+                case "standard"
+                    obj.polynomial_degree = degree;
+                    obj.maximum_input_degree = ones(1,obj.input_dimension)*degree;
+                case "validation"
+                    obj.polynomial_degree = max(degree) + min(degree);
+                    obj.maximum_input_degree = degree;
+                otherwise
+                    error("Invalid polynomial type: '" + type + "'")
+            end
+     
+            num_coeffs = Polynomial.input_combinations(obj.polynomial_degree,obj.maximum_input_degree,type);
+            input_index = Polynomial.get_input_index(obj.polynomial_degree,obj.maximum_input_degree,type);
 
             obj.num_element_coefficients = num_coeffs;
             obj.input_order = input_index;
@@ -432,7 +441,7 @@ classdef Polynomial
             Poly_Int.maximum_input_degree = obj.maximum_input_degree + 1;
             Poly_Int.output_dimension = 1;
             
-            input_index_int = Polynomial.get_input_index(Poly_Int.polynomial_degree,Poly_Int.maximum_input_degree,obj.input_dimension);
+            input_index_int = Polynomial.get_input_index(Poly_Int.polynomial_degree,Poly_Int.maximum_input_degree,Poly_Int.polynomial_type);
             Poly_Int.input_order = input_index_int;
             Poly_Int.num_element_coefficients = size(input_index_int,1);
 
@@ -470,17 +479,22 @@ classdef Polynomial
             Poly_Int.coefficients(1,:) = -int_constant; 
         end
         %-----------------------------------------------------------------%
-        function Poly_Diff = differentiate_polynomial(obj)
+        function Poly_Diff = differentiate_polynomial(obj,diff_inputs)
+            if nargin == 1
+                diff_inputs = 1:obj.input_dimension;
+            end
             Poly_Diff = obj;
             Poly_Diff.polynomial_degree = obj.polynomial_degree - 1;
             Poly_Diff.maximum_input_degree = obj.maximum_input_degree - (obj.maximum_input_degree > Poly_Diff.polynomial_degree);
-            Poly_Diff.output_dimension = [obj.output_dimension,obj.input_dimension];
+            
+            num_diff_inputs = size(diff_inputs,2);
+            Poly_Diff.output_dimension = [obj.output_dimension,num_diff_inputs];
   
-            input_index_diff = Polynomial.get_input_index(Poly_Diff.polynomial_degree,Poly_Diff.maximum_input_degree,Poly_Diff.input_dimension);
+            input_index_diff = Polynomial.get_input_index(Poly_Diff.polynomial_degree,Poly_Diff.maximum_input_degree,Poly_Diff.polynomial_type);
             Poly_Diff.input_order = input_index_diff;
             Poly_Diff.num_element_coefficients = size(input_index_diff,1);
 
-            [diff_input_index,diff_scale_factor] = Polynomial.differentiate_input_index(obj.input_order,1:obj.input_dimension);
+            [diff_input_index,diff_scale_factor] = Polynomial.differentiate_input_index(obj.input_order,diff_inputs);
             % diff_input_size = size(diff_input_index);
             % differentiated_terms = reshape(permute(diff_input_index,[1,3,2]),[diff_input_size(1)*diff_input_size(3),diff_input_size(2)]);
             % differentiated_terms = num2cell(differentiated_terms,2);
@@ -499,7 +513,7 @@ classdef Polynomial
                 coeffs_index{1,1} = iTerm_diff;
                 term = Poly_Diff.input_order(iTerm_diff,:);
 
-                for iDiff = 1:Poly_Diff.input_dimension
+                for iDiff = 1:num_diff_inputs
                     coeffs_index{1,end} = iDiff;
 
                     [~,term_index] = ismember(term,diff_input_index(:,:,iDiff),'rows');
@@ -780,7 +794,7 @@ classdef Polynomial
 
             [int_input_pattern,int_scale_factor] = Polynomial.integrate_input_index(input_index);
 
-            int_input_index = Polynomial.get_input_index(obj.polynomial_degree+1,obj.maximum_input_degree+1,num_inputs);
+            int_input_index = Polynomial.get_input_index(obj.polynomial_degree+1,obj.maximum_input_degree+1,obj.polynomial_type);
             num_int_coefficients = size(int_input_index,1);
 
             num_terms = size(input_index,1);
@@ -803,125 +817,231 @@ classdef Polynomial
         end
         %-----------------------------------------------------------------%
         function Diff_Data = get_diff_data(obj,num_diff)
-            starting_input_index = obj.input_order;
-            data_scale_factor = obj.scaling_factor;
+            switch obj.polynomial_type
+                case "standard"
+                    starting_input_index = obj.input_order;
+                    data_scale_factor = obj.scaling_factor;
 
 
-            scale_factor_size = size(starting_input_index);
-            scale_factor_size(2) = 1;
-            scale_factor = ones(scale_factor_size);
-    
-            num_inputs = obj.input_dimension;
-            diff_inputs = 1:num_inputs;
-            
+                    scale_factor_size = size(starting_input_index);
+                    scale_factor_size(2) = 1;
+                    scale_factor = ones(scale_factor_size);
+
+                    num_inputs = obj.input_dimension;
+                    diff_inputs = 1:num_inputs;
 
 
-            diff_input_index = cell(1,num_diff);
-            diff_scale_factor = cell(1,num_diff);
-            diff_mapping = cell(1,num_diff);
-            
-            input_index = starting_input_index;
-            for iDiff = 1:num_diff
-                [di_input_index,di_scale_factor] = Polynomial.differentiate_input_index(input_index,diff_inputs);
-                
-                
-               
-                scale_factor_dims = ndims(scale_factor);
-                permutation_order = [1:(scale_factor_dims-1),scale_factor_dims+1,scale_factor_dims];
-                pre_scale_factor = permute(scale_factor,permutation_order);
-                scale_factor = pre_scale_factor.*di_scale_factor;
 
-                scale_factor_index = cell(1,scale_factor_dims+1);
-                % scale_factor_size = size(scale_factor);
-                for iDim = 1:(scale_factor_dims+1)
-                    scale_factor_index{1,iDim} = 1:size(scale_factor,iDim);
-                end
-                for iDiff_input = diff_inputs
-                    scale_factor_index{1,max(3,scale_factor_dims)} = iDiff_input; %may not work for third derivative
-                    scale_factor(scale_factor_index{:}) = scale_factor(scale_factor_index{:}) * data_scale_factor(iDiff_input);
-                end
- 
-        
+                    diff_input_index = cell(1,num_diff);
+                    diff_scale_factor = cell(1,num_diff);
+                    diff_mapping = cell(1,num_diff);
 
-                % scale_factor_size = size(scale_factor);
-                % pre_scale_factor = reshape(scale_factor,[scale_factor_size(1:(end-1)),1,scale_factor_size(end)]);
-                % scale_factor = pre_scale_factor.*di_scale_factor;
-                
-                input_index = di_input_index;
-                scale_factor(isnan(scale_factor)) = 0;
+                    input_index = starting_input_index;
+                    for iDiff = 1:num_diff
+                        [di_input_index,di_scale_factor] = Polynomial.differentiate_input_index(input_index,diff_inputs);
 
-                diff_input_index{1,iDiff} = input_index;
-                diff_scale_factor{1,iDiff} = squeeze(scale_factor);
-                diff_mapping{1,iDiff} = Polynomial.get_input_index_mapping(starting_input_index,input_index);
+
+
+                        scale_factor_dims = ndims(scale_factor);
+                        permutation_order = [1:(scale_factor_dims-1),scale_factor_dims+1,scale_factor_dims];
+                        pre_scale_factor = permute(scale_factor,permutation_order);
+                        scale_factor = pre_scale_factor.*di_scale_factor;
+
+                        scale_factor_index = cell(1,scale_factor_dims+1);
+                        % scale_factor_size = size(scale_factor);
+                        for iDim = 1:(scale_factor_dims+1)
+                            scale_factor_index{1,iDim} = 1:size(scale_factor,iDim);
+                        end
+                        for iDiff_input = diff_inputs
+                            scale_factor_index{1,max(3,scale_factor_dims)} = iDiff_input; %may not work for third derivative
+                            scale_factor(scale_factor_index{:}) = scale_factor(scale_factor_index{:}) * data_scale_factor(iDiff_input);
+                        end
+
+
+
+                        % scale_factor_size = size(scale_factor);
+                        % pre_scale_factor = reshape(scale_factor,[scale_factor_size(1:(end-1)),1,scale_factor_size(end)]);
+                        % scale_factor = pre_scale_factor.*di_scale_factor;
+
+                        input_index = di_input_index;
+                        scale_factor(isnan(scale_factor)) = 0;
+
+                        diff_input_index{1,iDiff} = input_index;
+                        diff_scale_factor{1,iDiff} = squeeze(scale_factor);
+                        diff_mapping{1,iDiff} = Polynomial.get_input_index_mapping(starting_input_index,input_index);
+                    end
+                    Diff_Data.diff_input_index = diff_input_index;
+                    Diff_Data.diff_scale_factor = diff_scale_factor;
+                    Diff_Data.diff_mapping = diff_mapping;
+                case "validation"
+                    starting_input_index = obj.input_order;
+                    
+
+
+                    
+                    
+                    h_modes = find(obj.maximum_input_degree == 1);
+                    r_modes = find(obj.maximum_input_degree > 1);
+                    num_h_modes = size(h_modes,2);
+                    num_r_modes = size(r_modes,2);
+                    diff_inputs = h_modes;
+
+
+
+                    diff_input_index = cell(1,num_diff);
+                    diff_scale_factor = cell(1,num_diff);
+                    diff_mapping = cell(1,num_diff);
+
+                    
+                    % num_terms = obj.num_element_coefficients;
+                    % r_mode_terms = zeros(num_terms/(num_h_modes+num_r_modes) - 1,1);
+                    % term_counter = 0;
+                    % for iTerm = 2:num_terms
+                    %     if nnz(starting_input_index(iTerm,(num_r_modes+1):end)) == 0
+                    %         term_counter = term_counter + 1;
+                    %         r_mode_terms(term_counter) = iTerm;
+                    %     end
+                    % end
+                    coeffs = obj.coefficients;
+                    % coeffs(r_mode_terms,:) = [];
+                    % starting_input_index(r_mode_terms,:) = [];
+
+                    input_index = starting_input_index;
+                    scale_factor_size = size(input_index);
+                    scale_factor_size(2) = 1;
+                    scale_factor = ones(scale_factor_size);
+
+                    for iDiff = 1:num_diff
+                        data_scale_factor = obj.scaling_factor(diff_inputs);
+                        num_diff_inputs = size(diff_inputs,2);
+
+                        [di_input_index,di_scale_factor] = Polynomial.differentiate_input_index(input_index,diff_inputs);
+
+
+
+                        scale_factor_dims = ndims(scale_factor);
+                        permutation_order = [1:(scale_factor_dims-1),scale_factor_dims,scale_factor_dims+1];
+                        pre_scale_factor = permute(scale_factor,permutation_order);
+                        scale_factor = pre_scale_factor.*di_scale_factor;
+
+                        scale_factor_index = cell(1,scale_factor_dims+1);
+                        % scale_factor_size = size(scale_factor);
+                        for iDim = 1:(scale_factor_dims+1)
+                            scale_factor_index{1,iDim} = 1:size(scale_factor,iDim);
+                        end
+                        for iDiff_input = 1:num_diff_inputs
+                            scale_factor_index{1,max(3,scale_factor_dims)} = iDiff_input; %may not work for third derivative
+                            scale_factor(scale_factor_index{:}) = scale_factor(scale_factor_index{:}) * data_scale_factor(iDiff_input);
+                        end
+
+
+
+                        % scale_factor_size = size(scale_factor);
+                        % pre_scale_factor = reshape(scale_factor,[scale_factor_size(1:(end-1)),1,scale_factor_size(end)]);
+                        % scale_factor = pre_scale_factor.*di_scale_factor;
+
+                        input_index = di_input_index;
+                        scale_factor(isnan(scale_factor)) = 0;
+
+                        diff_input_index{1,iDiff} = input_index;
+                        diff_scale_factor{1,iDiff} = squeeze(scale_factor);
+                        diff_mapping{1,iDiff} = Polynomial.get_input_index_mapping(starting_input_index,input_index);
+
+                        diff_inputs = r_modes;
+                    end
+                    Diff_Data.diff_input_index = diff_input_index;
+                    Diff_Data.diff_scale_factor = diff_scale_factor;
+                    Diff_Data.diff_mapping = diff_mapping;
+
+                    Diff_Data.coefficients = coeffs;
+                    Diff_Data.input_index = starting_input_index;
             end
-            Diff_Data.diff_input_index = diff_input_index;
-            Diff_Data.diff_scale_factor = diff_scale_factor;
-            Diff_Data.diff_mapping = diff_mapping;
         end
         %-----------------------------------------------------------------%
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods(Static)
-        function num_coefficients = input_combinations(degree,max_input_degree,num_inputs)
-            % if isscalar(degree)
-            % 
-            %     num_coefficients = 1;
-            %     for iTerm = 1:degree(1)
-            %         num_coefficients = num_coefficients + nchoosek(iTerm+num_inputs-1,num_inputs-1);
-            %     end
-            %
-            %     return
-            % end
-            %
-
+        function num_coefficients = input_combinations(degree,max_input_degree,type)
+            max_degree = max(max_input_degree);
+            num_inputs = nnz(max_input_degree == max_degree);
+            
             num_coefficients = 1;
-            for iTerm = 1:degree
+            for iTerm = 1:max_degree
                 num_coefficients = num_coefficients + nchoosek(iTerm+num_inputs-1,num_inputs-1);
-                for iMode = 1:num_inputs
-                    mode_degree = max_input_degree(iMode);
-                    degree_diff = iTerm - mode_degree;
-                    for iDiff = 1:degree_diff
-                        num_coefficients = num_coefficients - nchoosek(iTerm - (mode_degree + iDiff) + (num_inputs - 1) - 1,(num_inputs - 1) - 1);
-                    end
-                end
-
             end
+            if type == "standard"
+                return
+            end
+  
+            minimum_degree = min(max_input_degree);
+            num_h_modes = sum(max_input_degree == minimum_degree);
+            
+            num_coefficients = num_coefficients*(1+num_h_modes);
+            if minimum_degree == 2    
+                num_coefficients_dq = Polynomial.input_combinations(degree-1,max_input_degree-1,"standard");
+                for iMode = 1:num_h_modes
+                    num_coefficients = num_coefficients + num_coefficients_dq*(num_h_modes + 1 - iMode);
+                end
+                
+            end
+     
 
-        end
-        %-----------------------------------------------------------------%
-        function input_index = get_input_index(degree,max_input_degree,num_inputs)
-            % if isscalar(degree)
-            %     num_coefficients = Polynomial.input_combinations(degree(1),num_inputs);
-            % 
-            %     %Power raised of each input for each term
-            %     input_index = zeros(num_coefficients,num_inputs);
-            %     term_counter = 1;
-            %     for iDegree = 1:degree(1)
-            %         term_input_indices = nchoosek(1:num_inputs+iDegree-1,iDegree) - (0:iDegree-1);
-            %         num_terms = size(term_input_indices,1);
-            % 
-            %         for iTerm = 1:num_terms
-            %             term_index = term_input_indices(iTerm,:);
-            %             term_counter = term_counter + 1;
-            % 
-            %             for iInput = 1:num_inputs
-            %                 input_index(term_counter,iInput) = sum(term_index == iInput);
-            %             end
+            % num_inputs = size(max_input_degree,2);
+            % num_coefficients = 1;
+            % for iTerm = 1:degree
+            %     num_coefficients = num_coefficients + nchoosek(iTerm+num_inputs-1,num_inputs-1);
+            %     for iMode = 1:num_inputs
+            %         mode_degree = max_input_degree(iMode);
+            %         degree_diff = iTerm - mode_degree;
+            %         for iDiff = 1:degree_diff
+            %             num_coefficients = num_coefficients - nchoosek(iTerm - (mode_degree + iDiff) + (num_inputs - 1) - 1,(num_inputs - 1) - 1);
             %         end
             %     end
             % 
-            %     return
             % end
+        end
+        %-----------------------------------------------------------------%
+        function input_index = get_input_index(degree,max_input_degree,type)
+            num_inputs = size(max_input_degree,2);
             
-            num_coefficients = Polynomial.input_combinations(degree,max_input_degree,num_inputs);
+            switch type
+                case "validation"
+                    min_degree = min(max_input_degree);
+                    h_mode_index = max_input_degree == min_degree;
+                    h_modes = find(h_mode_index);
+                    num_h_modes = nnz(h_mode_index);
+                    num_r_modes = num_inputs - num_h_modes;
+                    current_term_input_indices = [];
+            end
+
+            num_coefficients = Polynomial.input_combinations(degree,max_input_degree,type);
 
             %Power raised of each input for each term
             input_index = zeros(num_coefficients,num_inputs);
+            
             term_counter = 1;
             for iDegree = 1:degree
-                term_input_indices = nchoosek(1:num_inputs+iDegree-1,iDegree) - (0:iDegree-1);
+                switch type
+                    case "standard"
+                        term_input_indices = nchoosek(1:num_inputs+iDegree-1,iDegree) - (0:iDegree-1);
+                        
+                    case "validation"
+                        previous_term_input_indices = current_term_input_indices;
+                        current_term_input_indices = nchoosek(1:num_r_modes+iDegree-1,iDegree) - (0:iDegree-1);
+                        
+                        num_previous_terms = max(1,size(previous_term_input_indices,1));
+                        num_h_terms = num_previous_terms*num_h_modes;
+                        h_term_input_indices = zeros(num_h_terms,iDegree);
+                        for iTerm = 1:num_previous_terms
+                            h_span = ((iTerm-1)*num_h_terms+1):(iTerm*num_h_terms);
+                            h_term_input_indices(h_span,:) = [repmat(previous_term_input_indices,num_h_terms,1),h_modes'];
+                        end
+                        % term_input_indices = zeros(num_terms,iDegree);
+                        
+                        term_input_indices = [current_term_input_indices;h_term_input_indices];
+                        
+                end
                 num_terms = size(term_input_indices,1);
-
                 for iTerm = 1:num_terms
                     term_index = term_input_indices(iTerm,:);
 
@@ -939,6 +1059,8 @@ classdef Polynomial
                     input_index(term_counter,:) = new_input_index_row;
                 end
             end
+
+
         end
         %-----------------------------------------------------------------%
         function input_matrix = get_input_matrix(input_data,input_index)
@@ -1034,7 +1156,8 @@ classdef Polynomial
                     diff_input_index_span{1,iDim} = 1:input_index_size(iDim);
                     input_index_span{1,iDim} = 1:input_index_size(iDim);
                 end
-                input_index_span{1,end} = diff_index;
+                % input_index_span{1,end} = find(diff_index);
+                input_index_span{1,2} = find(diff_index);
                 scale_factor_span{1,end} = iDiff;
                 diff_input_index_span{1,end} = iDiff;
                 
