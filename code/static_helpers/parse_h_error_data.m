@@ -31,20 +31,7 @@ for iLoad = 1:num_loadcases
         K_i = K_array(:,:,iLoad);
     end
 
-    perturbation = K_i\mass_product;
-    h_i = mass_product'*perturbation;
-    disp_hat_i = perturbation;
-
-    h_coupling_gradient(:,:,iLoad) = disp_hat_i/h_i;
-    h_stiffness(:,:,iLoad) =  I_h/h_i;
+    perturbation(:,:,iLoad) = K_i\mass_product;
 end
-
-stiffness = Static_Data.Model.stiffness;
-perturbation_0 = stiffness\mass_product;
-h_0 = mass_product'*perturbation_0;
-disp_0 = perturbation_0;
-
-h_coupling_gradient_0 = disp_0/h_0;
-h_stiffness_0 =  I_h/h_0;
 
 end
