@@ -106,7 +106,8 @@ classdef Static_Dataset
                     obj.Dynamic_Validation_Data.h_stiffness_0 = h_stiffness_0;
                     obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
 
-                    obj = minimum_h_degree(obj);
+                    % obj = minimum_h_degree(obj);
+                    obj.validated_degree = repmat(obj.validated_degree,1,2);
                 case "perturbation"
                     r_modes = obj.Model.reduced_modes;
                     L_modes(ismember(L_modes,r_modes)) = [];
@@ -137,7 +138,8 @@ classdef Static_Dataset
                     obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
                     
                     minimum_degree_start = tic;
-                    obj = minimum_h_degree(obj);
+                    % obj = minimum_h_degree(obj);
+                    obj.validated_degree = repmat(obj.validated_degree,1,2);
 
                     minimum_degree_time = toc(minimum_degree_start);
                     log_message = sprintf("Validating validation polynomials: %.1f seconds" ,minimum_degree_time);
