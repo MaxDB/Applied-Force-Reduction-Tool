@@ -2,19 +2,19 @@ function [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] =
 num_dofs = Static_Data.Model.num_dof;
 num_h_modes = size(h_eigenvectors,2);
 
-K_array = Static_Data.tangent_stiffness;
+K_array = Static_Data.get_dataset_values("tangent_stiffness");
 is_fe_system = ~isnumeric(K_array);
 num_loadcases = size(K_array,3);
 mass = Static_Data.Model.mass;
 mass_product = mass*h_eigenvectors;
 I_L = eye(num_h_modes);
 
-r = Static_Data.reduced_displacement;
+r = Static_Data.get_dataset_values("reduced_displacement");
 % num_r_modes = size(r,1);
 r_eigenvectors = Static_Data.Model.reduced_eigenvectors;
 r_disp_transform = r_eigenvectors'*mass;
 
-theta = Static_Data.condensed_displacement;
+theta = Static_Data.get_dataset_values("physical_displacement");
 
 % total_loadcases = num_h_modes*num_loadcases;
 % r_hat = zeros(num_r_modes,total_loadcases);

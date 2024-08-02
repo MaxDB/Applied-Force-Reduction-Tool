@@ -16,10 +16,10 @@ h_evec = [r_evec,L_evec];
 
 num_dofs = Model.num_dof;
 
-K_array = Static_Data.tangent_stiffness;
+K_array = Static_Data.get_dataset_values("tangent_stiffness");
 is_fe_system = ~isnumeric(K_array);
 num_loadcases = size(K_array,3);
-mass = Static_Data.Model.mass;
+mass = Model.mass;
 mass_product = mass*h_evec;
 
 I_h = eye(num_h_modes);
@@ -41,7 +41,7 @@ for iLoad = 1:num_loadcases
     h_stiffness(:,:,iLoad) =  I_h/h_i;
 end
 
-stiffness = Static_Data.Model.stiffness;
+stiffness = Model.stiffness;
 perturbation_0 = stiffness\mass_product;
 h_0 = mass_product'*perturbation_0;
 disp_0 = perturbation_0;
