@@ -21,7 +21,8 @@ h_disp_transform = h_evec'*mass;
 lambda = Static_Data.perturbation_scale_factor(1,h_map);
 F_h = lambda.*eye(num_h_modes);
 
-x_perturbation = Static_Data.perturbation_displacement(:,h_map,:);
+x_perturbation = Static_Data.get_dataset_values("perturbation_displacement");
+x_perturbation = x_perturbation(:,h_map,:);
 num_loadcases = size(x_perturbation,3);
 
 %-- setup r perturbations

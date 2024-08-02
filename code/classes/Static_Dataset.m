@@ -191,10 +191,10 @@ classdef Static_Dataset
         end
         %-----------------------------------------------------------------%
         function obj = update_data(obj,r,x,f,V,sep_id,additional_data,found_force_ratios)
-            obj.reduced_displacement = [obj.reduced_displacement,r];
-            obj.physical_displacement = [obj.physical_displacement,x];
-            obj.restoring_force = [obj.restoring_force,f];
-            obj.potential_energy = [obj.potential_energy,V];
+            obj.reduced_displacement = [obj.get_dataset_values("reduced_displacement"),r];
+            obj.physical_displacement = [obj.get_dataset_values("physical_displacement"),x];
+            obj.restoring_force = [obj.get_dataset_values("restoring_force"),f];
+            obj.potential_energy = [obj.get_dataset_values("potential_energy"),V];
             
             sep_id_shift = size(obj.unit_sep_ratios,2);
             % sep_id_shift = max(obj.static_equilibrium_path_id);
@@ -210,13 +210,15 @@ classdef Static_Dataset
 
             switch obj.additional_data_type
                 case "stiffness"
-                    obj.tangent_stiffness = cat(3,obj.tangent_stiffness,additional_data);
+                    obj.tangent_stiffness = cat(3,obj.get_dataset_values("tangent_stiffness"),additional_data);
                 case "perturbation"
-                    obj.perturbation_displacement = cat(3,obj.perturbation_displacement,additional_data);
+                    obj.perturbation_displacement = cat(3,obj.get_dataset_values("perturbation_displacement"),additional_data);
             end
         end
         %-----------------------------------------------------------------%
         function obj = update_model(obj,added_modes,Static_Opts,Calibration_Opts)
+            TEMP_PROPERTY_VALUE = "unloaded";
+
             system_name = obj.Model.system_name;
             energy_limit = obj.Model.energy_limit;
             initial_modes = sort([obj.Model.reduced_modes,added_modes],"ascend");
@@ -235,6 +237,17 @@ classdef Static_Dataset
             if nargin < 4
                 Calibration_Opts = obj.Model.Calibration_Options;
             end
+            %-------------------------------------------------%
+            %load old data
+            static_data_properties = properties(obj);
+            num_properties = size(static_data_properties,1);
+            for iProp = 1:num_properties
+                static_data_property = static_data_properties{iProp,1};
+                if isstring(obj.(static_data_property)) && obj.(static_data_property) == TEMP_PROPERTY_VALUE
+                    obj.(static_data_property) = obj.get_dataset_values(static_data_property);
+                end
+            end
+            %-------------------------------------------------%
 
             obj.Model = Dynamic_System(system_name,energy_limit,initial_modes,Calibration_Opts,Static_Opts);
 
@@ -251,9 +264,9 @@ classdef Static_Dataset
 
             r_evecs = obj.Model.reduced_eigenvectors;
             mass = obj.Model.mass;
-            obj.reduced_displacement = r_evecs'*mass*obj.physical_displacement;
+            obj.reduced_displacement = r_evecs'*mass*obj.get_dataset_values("physical_displacement");
 
-            old_force = obj.restoring_force;
+            old_force = obj.get_dataset_values("restoring_force");
             num_loadcases = size(old_force,2);
             new_force = zeros(num_modes,num_loadcases);
             new_force(old_mode_map,:) = old_force;
@@ -263,7 +276,8 @@ classdef Static_Dataset
                 L_modes = obj.Model.low_frequency_modes;
                 h_modes = [obj.Model.reduced_modes,L_modes];
                 h_map = arrayfun(@(h_mode) find(old_h_modes == h_mode),h_modes);
-                obj.perturbation_displacement = obj.perturbation_displacement(:,h_map,:);
+                perturbation_disp = obj.get_dataset_values("perturbation_displacement");
+                obj.perturbation_displacement = perturbation_disp(:,h_map,:);
             end
             %-------------------------------------------------%
            
@@ -292,47 +306,58 @@ classdef Static_Dataset
         %Helpers
         %-----------------------------------------------------------------%
         %-----------------------------------------------------------------%
-        function strongly_coupled_dofs = rank_coupling(obj,min_rating)
-            r = obj.reduced_displacement;
-            r_evec = obj.Model.reduced_eigenvectors;
-            theta = obj.physical_displacement - r_evec*r;
-            sep_id = obj.static_equilibrium_path_id;
-            M = obj.Model.mass;
-
-            num_seps = max(sep_id);
-            sep_ends = arrayfun(@(id) find(sep_id == id,1,"last"),1:num_seps);
-
-            theta_sep_ends = theta(:,sep_ends);
-
-            couple_rating = zeros(size(theta_sep_ends));
-            for iSep = 1:num_seps
-                theta_sep_end = theta_sep_ends(:,iSep);
-                mass_theta_prod = M*theta_sep_end;
-                disp_norm = theta_sep_end'*mass_theta_prod;
-                theta_contribution = theta_sep_end.*mass_theta_prod;
-
-                couple_rating(:,iSep) = abs(theta_contribution/disp_norm);
-            end
-            
-            couple_rating = max(couple_rating,[],2);
-            normalised_couple_rating = couple_rating/max(couple_rating);
-            strongly_coupled_dofs = find(normalised_couple_rating>min_rating);
-
-        end
-        %-----------------------------------------------------------------%
         function save_data(Static_Data)
+            SEPERATELY_SAVED_PROPERTIES = [
+                "physical_displacement", ...
+                "tangent_stiffness", ...
+                "perturbation_displacement", ...
+                "low_frequency_stiffness", ...
+                "low_frequency_coupling_gradient"];
+
             data_path = get_data_path(Static_Data);
             if exist(data_path,"dir")
                 rmdir(data_path,"s")
             end
             mkdir(data_path)
+            
+            num_properties = size(SEPERATELY_SAVED_PROPERTIES,2);
+            for iProperty = 1:num_properties
+                Static_Data = save_property_data(SEPERATELY_SAVED_PROPERTIES(iProperty),Static_Data);
+            end
+
+            
             save(data_path + "Static_Data.mat","Static_Data","-v7.3")
+
+            function Static_Data = save_property_data(static_data_property,Static_Data)
+                TEMP_PROPERTY_VALUE = "unloaded";
+                if isempty(Static_Data.(static_data_property))
+                    return
+                end
+                value = Static_Data.(static_data_property);
+                Static_Data.(static_data_property) = TEMP_PROPERTY_VALUE;
+                
+                file_path = get_data_path(Static_Data) + static_data_property + ".mat";
+                save(file_path,"value")
+            end
+        end
+        %-----------------------------------------------------------------%
+        function value = get_dataset_values(obj,static_data_property)
+            if ~isstring(obj.(static_data_property))
+                value = obj.(static_data_property);
+                return
+            end
+            file_path = get_data_path(obj) + static_data_property + ".mat";
+            if ~isfile(file_path)
+                error("Can't locate " + static_data_property)
+            end
+            static_property_data = load(file_path);
+            value = static_property_data.value;
         end
         %-----------------------------------------------------------------%
         function data_path = get_data_path(obj)
             r_modes = obj.Model.reduced_modes;
             mode_id = join(string(r_modes),"");
-            data_path = "data\" + obj.Model.system_name + "_" + mode_id + "\";
+            data_path = "data\" + obj.Model.system_name + "_" + mode_id + "\static_data\";
         end
         %-----------------------------------------------------------------%
         function[Static_Data,Static_Data_Removed] = remove_loadcases(Static_Data,removal_index)
@@ -372,7 +397,7 @@ classdef Static_Dataset
         function [loadcases_found,r,x,f,E,additional_data] = contains_loadcase(obj,loadcases)
             MAX_DIFF = 0.05;
             
-            found_force = obj.restoring_force;
+            found_force = obj.get_dataset_values("restoring_force");
             num_r_modes = size(found_force,1);
             num_dofs = obj.Model.num_dof;
             num_checked_loadcases = size(loadcases,2);
@@ -383,15 +408,24 @@ classdef Static_Dataset
             x = zeros(num_dofs,0);
             f = zeros(num_r_modes,0);
             E = zeros(1,0);
+            
+
+            r_old = obj.get_dataset_values("reduced_displacement");
+            x_old = obj.get_dataset_values("physical_displacement");
+            f_old = obj.get_dataset_values("restoring_force");
+            E_old = obj.get_dataset_values("potential_energy");
+
             switch obj.additional_data_type
                 case "stiffness"
-                    if issparse(obj.tangent_stiffness)
+                    tangent_stiff_old = obj.get_dataset_values("tangent_stiffness");
+                    if issparse(tangent_stiff_old)
                         additional_data = sparse(num_dofs,num_dofs,0);
                     else
                         additional_data = zeros(num_dofs,num_dofs,0);
                     end
                 case "perturbation"
-                    num_h_modes = size(obj.perturbation_displacement,2);
+                    perturbation_disp_old = obj.get_dataset_values("perturbation_displacement");
+                    num_h_modes = size(perturbation_disp_old,2);
                     additional_data = zeros(num_dofs,num_h_modes,0);
                 case "none"
                     additional_data = [];
@@ -410,16 +444,16 @@ classdef Static_Dataset
                         [~,min_index] = min(sqrt(sum((found_force(:,loadcase_index)-loadcase).^2,1)));
                         loadcase_index = loadcase_index(min_index);
                     end
-                    r(:,matched_counter) = obj.reduced_displacement(:,loadcase_index);
-                    x(:,matched_counter) = obj.physical_displacement(:,loadcase_index);
-                    f(:,matched_counter) = obj.restoring_force(:,loadcase_index);
-                    E(:,matched_counter) = obj.potential_energy(:,loadcase_index);
+                    r(:,matched_counter) = r_old(:,loadcase_index);
+                    x(:,matched_counter) = x_old(:,loadcase_index);
+                    f(:,matched_counter) = f_old(:,loadcase_index);
+                    E(:,matched_counter) = E_old(:,loadcase_index);
 
                     switch obj.additional_data_type
                         case "stiffness"
-                            additional_data(:,:,matched_counter) = obj.tangent_stiffness(:,:,loadcase_index);
+                            additional_data(:,:,matched_counter) = tangent_stiff_old(:,:,loadcase_index);
                         case "perturbation"
-                            additional_data(:,:,matched_counter) = obj.perturbation_displacement(:,:,loadcase_index);
+                            additional_data(:,:,matched_counter) = perturbation_disp_old(:,:,loadcase_index);
                         case "none"
                             additional_data = [];
                     end
@@ -434,651 +468,651 @@ classdef Static_Dataset
         %Plotting
         %-----------------------------------------------------------------%
         %-----------------------------------------------------------------%
-        function ax = plot_force(obj,ax,r,f,sep_id)
-            EQUILIBRIUM = [0;0];
-            modes = obj.Model.reduced_modes;
-            num_modes = length(modes);
-
-            if ~exist("r","var")
-                r = obj.reduced_displacement;
-                f = obj.restoring_force;
-                sep_id = obj.static_equilibrium_path_id;
-            end
-
-            num_seps = max(sep_id);
-            
-            switch num_modes
-                case 1
-                    figure
-                    ax = axes(gcf);
-                    xlabel("r_" + modes(1))
-                    ylabel("f_" + modes(1))
-                    box on
-
-                    hold on
-                    for iSep = 1:num_seps
-                        sep_span = sep_id==iSep;
-                        r_sep = r(:,sep_span);
-                        f_sep = f(:,sep_span);
-                        [~,sep_order] = sort(abs(f_sep(1,:)),"ascend");
-
-                        x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
-                        y = [0,f_sep(1,sep_order)];
-                        plot(x,y,'.-')
-                    end
-                    plot(EQUILIBRIUM(1),0,'k.',"MarkerSize",8)
-                    hold off
-
-                case 2
-                    figure
-                    tiledlayout(1,num_modes)
-                    ax = cell(1,num_modes);
-                    for iMode = 1:num_modes
-                        ax{1,iMode} = nexttile;
-                        xlabel("r_" + modes(1))
-                        ylabel("r_" + modes(2))
-                        zlabel("f_" + modes(iMode))
-                        box on
-
-                        hold on
-                        for iSep = 1:num_seps
-                            sep_span = sep_id==iSep;
-                            r_sep = r(:,sep_span);
-                            f_sep = f(:,sep_span);
-                            [~,sep_order] = sort(max(abs(f_sep),[],1),"ascend");
-
-                            x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
-                            y = [EQUILIBRIUM(2),r_sep(2,sep_order)];
-                            z = [0,f_sep(iMode,sep_order)];
-                            plot3(x,y,z,'.-')
-                        end
-                        plot3(EQUILIBRIUM(1),EQUILIBRIUM(2),0,'k.',"MarkerSize",8)
-                        hold off
-                    end
-            end
-        end
-        %-----------------------------------------------------------------%
-        function ax = plot_condensed_displacement(obj,plotted_outputs,ax,r,theta,sep_id)
-            EQUILIBRIUM = [0;0];
-
-            num_plots = length(plotted_outputs);
-            modes = obj.Model.reduced_modes;
-            num_modes = length(modes);
-
-            if ~exist("r","var")
-                r = obj.reduced_displacement;
-                theta = obj.physical_displacement;
-                sep_id = obj.static_equilibrium_path_id;
-                f = obj.restoring_force;
-            end
-
-            r_evec = obj.Model.reduced_eigenvectors;
-            % theta = theta - r_evec*r;
-
-            num_seps = max(sep_id);
-
-            if ~exist("ax","var")
-                figure
-                 tiledlayout("flow")
-                ax = cell(1,num_plots);
-                for iPlot = 1:num_plots
-                    
-                   
-                    ax{1,iPlot} = nexttile;
-                end
-            end
-
-            if ~iscell(ax)
-                ax_temp = ax;
-                ax = cell(1,length(ax_temp));
-                for iAx = 1:length(ax_temp)
-                    ax{1,iAx} = ax_temp(iAx);
-                end
-                
-            end
-            
-
-            switch num_modes
-                case 1
-                    
-                    for iPlot = 1:num_plots
-                        xlabel(ax{1,iPlot},"r_" + modes)
-                        ylabel(ax{1,iPlot},"\theta_{" + plotted_outputs(iPlot) + "}")
-                        box(ax{1,iPlot},"on")
-
-                        hold(ax{1,iPlot},"on")
-                        for iSep = 1:num_seps
-                            sep_span = sep_id==iSep;
-                            r_sep = r(:,sep_span);
-                            theta_sep = theta(:,sep_span);
-                            [~,sep_order] = sort(abs(f(1,sep_span)),"ascend");
-                            
-                            x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
-                            y = [0,theta_sep(plotted_outputs(iPlot),sep_order)];
-                            plot(ax{1,iPlot},x,y,'.-')
-                        end
-                        plot(ax{1,iPlot},EQUILIBRIUM(1),0,'k.',"MarkerSize",8)
-                        hold(ax{1,iPlot},"off")
-                    end
-                case 2
-             
-
-                    for iPlot = 1:num_plots
-                        xlabel(ax{1,iPlot},"r_" + modes(1))
-                        ylabel(ax{1,iPlot},"r_" + modes(2))
-                        zlabel(ax{1,iPlot},"\theta_{" + plotted_outputs(iPlot) + "}")
-                        box(ax{1,iPlot},"on")
-
-                        hold(ax{1,iPlot},"on")
-                        for iSep = 1:num_seps
-                            sep_span = sep_id==iSep;
-                            r_sep = r(:,sep_span);
-                            theta_sep = theta(:,sep_span);
-                            f_sep = f(:,sep_span);
-                            [~,sep_order] = sort(max(abs(f_sep),[],1),"ascend");
-
-                            x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
-                            y = [EQUILIBRIUM(2),r_sep(2,sep_order)];
-                            z = [0,theta_sep(plotted_outputs(iPlot),sep_order)];
-                            plot3(ax{1,iPlot},x,y,z,'.-')
-                        end
-                        plot3(ax{1,iPlot},EQUILIBRIUM(1),EQUILIBRIUM(2),0,'k.',"MarkerSize",8)
-                        hold(ax{1,iPlot},"off")
-                    end
-
-            end
-        end
-        %-----------------------------------------------------------------%
-        function ax = plot_energy(obj,r,E,sep_id,f)
-            EQUILIBRIUM = [0;0];
-
-            modes = obj.Model.reduced_modes;
-            num_modes = length(modes);
-
-            if ~exist("r","var")
-                r = obj.reduced_displacement;
-                E = obj.potential_energy;
-                sep_id = obj.static_equilibrium_path_id;
-                f = obj.restoring_force;
-            end
-
-            num_seps = max(sep_id);
-            
-            
-            switch num_modes
-                case 1
-                    figure
-                    ax = axes(gcf);
-                    
-                    xlabel("r_" + modes(1))
-                    ylabel("V")
-                    box on
-
-                    hold on
-                    for iSep = 1:num_seps
-                        sep_span = sep_id==iSep;
-                        r_sep = r(:,sep_span);
-                        E_sep = E(:,sep_span);
-                        [~,sep_order] = sort(abs(f(1,sep_span)),"ascend");
-
-                        x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
-                        y = [0,E_sep(1,sep_order)];
-                        plot(x,y,'.-')
-                    end
-                    plot(EQUILIBRIUM,0,'k.',"MarkerSize",8)
-                    hold off
-
-                case 2
-                    figure
-                    ax = axes(gcf);
-
-                    xlabel("r_" + modes(1))
-                    ylabel("r_" + modes(2))
-                    zlabel("V")
-                    box on
-
-                    hold on
-                    for iSep = 1:num_seps
-                        sep_span = sep_id==iSep;
-                        r_sep = r(:,sep_span);
-                        E_sep = E(:,sep_span);
-                        f_sep = f(:,sep_span);
-                        [~,sep_order] = sort(max(abs(f_sep),[],1),"ascend");
-
-                        x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
-                        y = [EQUILIBRIUM(2),r_sep(2,sep_order)];
-                        z = [0,E_sep(1,sep_order)];
-                        plot3(x,y,z,'.-')
-                    end
-                    plot3(EQUILIBRIUM(1),EQUILIBRIUM(2),0,'k.',"MarkerSize",8)
-                    hold off
-            end
-        end
-        %-----------------------------------------------------------------%
-        function ax = plot_stiffness(obj,plotted_outputs,ax,K_array,r,sep_id)
-            EQUILIBRIUM = [0;0];
-
-            num_plots = length(plotted_outputs);
-            modes = obj.Model.reduced_modes;
-            num_modes = length(modes);
-
-
-            if nargin == 2
-                r = obj.reduced_displacement;
-                K_array = obj.tangent_stiffness;
-                sep_id = obj.static_equilibrium_path_id;
-            end
-            K_lin = obj.Model.stiffness;
-            sparsity_pattern = K_array.nonzero_indicies(plotted_outputs,:);
-
-            num_seps = max(sep_id);
-
-            if ~exist("ax","var")
-                ax = cell(1,num_plots);
-                figure
-                tiledlayout("flow")
-                for iPlot = 1:num_plots
-
-                    ax{1,iPlot} = nexttile;
-                end
-            end
-
-            if ~iscell(ax)
-                ax_temp = ax;
-                ax = cell(1,length(ax_temp));
-                for iAx = 1:length(ax_temp)
-                    ax{1,iAx} = ax_temp(iAx);
-                end
-                
-            end
-            
-
-            switch num_modes
-                case 1
-                    
-                    for iPlot = 1:num_plots
-                        K_i = K_array.get_component(plotted_outputs(iPlot));
-                        row = sparsity_pattern(iPlot,1);
-                        col = sparsity_pattern(iPlot,2);
-
-                        xlabel(ax{1,iPlot},"r_" + modes)
-                        ylabel(ax{1,iPlot},"K_{(" + row + ',' + col + ")}")
-                        box(ax{1,iPlot},"on")
-
-                        hold(ax{1,iPlot},"on")
-                        for iSep = 1:num_seps
-                            sep_span = sep_id==iSep;
-                            x = [EQUILIBRIUM(1),r(1,sep_span)];
-                            y = [K_lin(row,col),K_i(1,sep_span)];
-                            plot(ax{1,iPlot},x,y,'.-')
-                        end
-                        plot(ax{1,iPlot},EQUILIBRIUM(1),K_lin(row,col),'k.',"MarkerSize",8)
-                        hold(ax{1,iPlot},"off")
-                    end
-                case 2
-              
-
-                    for iPlot = 1:num_plots
-                        K_i = K_array.get_component(plotted_outputs(iPlot));
-                        row = sparsity_pattern(iPlot,1);
-                        col = sparsity_pattern(iPlot,2);
-
-                        xlabel(ax{1,iPlot},"r_" + modes(1))
-                        ylabel(ax{1,iPlot},"r_" + modes(2))
-                        zlabel(ax{1,iPlot},"K_{(" + row + ',' + col + ")}")
-                        box(ax{1,iPlot},"on")
-
-                        hold(ax{1,iPlot},"on")
-                        for iSep = 1:num_seps
-                            sep_span = sep_id==iSep;
-                            x = [EQUILIBRIUM(1),r(1,sep_span)];
-                            y = [EQUILIBRIUM(2),r(2,sep_span)];
-                            z = [K_lin(row,col),K_i(1,sep_span)];
-                            plot3(ax{1,iPlot},x,y,z,'.-')
-                        end
-                        plot3(ax{1,iPlot},EQUILIBRIUM(1),EQUILIBRIUM(2),K_lin(row,col),'k.',"MarkerSize",8)
-                        hold(ax{1,iPlot},"off")
-                    end
-
-            end
-
-        end
-        %-----------------------------------------------------------------%
-        function ax = plot_perturbation(obj,plotted_outputs,ax)
-            EQUILIBRIUM = [0;0];
-            
-
-            num_plots = size(plotted_outputs,1);
-            modes = obj.Model.reduced_modes;
-            num_modes = length(modes);
-
-
-            f = obj.restoring_force;
-            r = obj.reduced_displacement;
-            perturbation_disp = obj.perturbation_displacement;
-            sep_id = obj.static_equilibrium_path_id;
-
-            %
-            stiffness = obj.Model.stiffness;
-            mass = obj.Model.mass;
-            L_evec = obj.Model.low_frequency_eigenvectors;
-            r_evec = obj.Model.reduced_eigenvectors;
-            h_evec = [r_evec,L_evec];
-            lambda = obj.perturbation_scale_factor;
-            perturbation_0 = lambda*(stiffness\(mass*h_evec));
-            %
-            num_seps = max(sep_id);
-
-            if ~exist("ax","var")
-                ax = cell(1,num_plots);
-                figure
-                tiledlayout("flow")
-                for iPlot = 1:num_plots
-                    ax{1,iPlot} = nexttile;
-                end
-            end
-
-            if ~iscell(ax)
-                ax_temp = ax;
-                ax = cell(1,length(ax_temp));
-                for iAx = 1:length(ax_temp)
-                    ax{1,iAx} = ax_temp(iAx);
-                end
-                
-            end
-            
-
-            switch num_modes
-                case 1
-                    
-                    for iPlot = 1:num_plots
-                        plot_index = plotted_outputs(iPlot,:);
-                        perturbation_i = squeeze(perturbation_disp(plot_index(1),plot_index(2),:))';
-                        perturbation_i_0 = perturbation_0(plot_index(1),plot_index(2));
-
-                        xlabel(ax{1,iPlot},"r_" + modes)
-                        ylabel(ax{1,iPlot},"x_{(" + plot_index(1) + ',' + plot_index(2) + ")}")
-                        box(ax{1,iPlot},"on")
-
-                        hold(ax{1,iPlot},"on")
-                        for iSep = 1:num_seps
-                            sep_span = sep_id==iSep;
-                            r_sep = r(:,sep_span);
-                            f_sep = f(:,sep_span);
-                            perturbation_sep = perturbation_i(:,sep_span);
-                            [~,sep_order] = sort(max(abs(f_sep),[],1),"ascend");
-                            x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
-                            y = [perturbation_i_0,perturbation_sep(1,sep_order)];
-                            plot(ax{1,iPlot},x,y,'.-')
-                        end
-                        plot(ax{1,iPlot},EQUILIBRIUM(1),perturbation_i_0,'k.',"MarkerSize",8)
-                        hold(ax{1,iPlot},"off")
-                    end
-                case 2
-              
-
-                    for iPlot = 1:num_plots
-                        plot_index = plotted_outputs(iPlot,:);
-                        perturbation_i = squeeze(perturbation_disp(plot_index(1),plot_index(2),:))';
-
-
-                        xlabel(ax{1,iPlot},"r_" + modes(1))
-                        ylabel(ax{1,iPlot},"r_" + modes(2))
-                        zlabel(ax{1,iPlot},"G_{(" + plot_index(1) + ',' + plot_index(2) + ")}")
-                        box(ax{1,iPlot},"on")
-
-                        hold(ax{1,iPlot},"on")
-                        for iSep = 1:num_seps
-                            sep_span = sep_id==iSep;
-                            x = [EQUILIBRIUM(1),r(1,sep_span)];
-                            y = [EQUILIBRIUM(2),r(2,sep_span)];
-                            % z = [h_coupling_gradient_0(plot_index(1),plot_index(2)),perturbation_i(1,sep_span)];
-                            z = [0,perturbation_i(1,sep_span)];
-                            plot3(ax{1,iPlot},x,y,z,'.-')
-                        end
-                        plot3(ax{1,iPlot},EQUILIBRIUM(1),EQUILIBRIUM(2),0,'k.',"MarkerSize",8)
-                        hold(ax{1,iPlot},"off")
-                    end
-
-            end
-        end
-        %-----------------------------------------------------------------%
-        function ax = plot_h_stiffness(obj,plotted_outputs,ax,h_stiffness,r,sep_id)
-            EQUILIBRIUM = [0;0];
-
-            num_plots = size(plotted_outputs,1);
-            modes = obj.Model.reduced_modes;
-            num_modes = length(modes);
-
-
-            if nargin == 2
-                r = obj.reduced_displacement;
-                h_stiffness = obj.low_frequency_stiffness;
-                sep_id = obj.static_equilibrium_path_id;
-            end
-            h_stiffness_0 = obj.Dynamic_Validation_Data.h_stiffness_0;
-            
-
-
-            num_seps = max(sep_id);
-
-            if ~exist("ax","var")
-                ax = cell(1,num_plots);
-                figure
-                tiledlayout("flow")
-                for iPlot = 1:num_plots
-                    ax{1,iPlot} = nexttile;
-                end
-            end
-
-            if ~iscell(ax)
-                ax_temp = ax;
-                ax = cell(1,length(ax_temp));
-                for iAx = 1:length(ax_temp)
-                    ax{1,iAx} = ax_temp(iAx);
-                end
-                
-            end
-            
-
-            switch num_modes
-                case 1
-                    
-                    for iPlot = 1:num_plots
-                        plot_index = plotted_outputs(iPlot,:);
-                        h_stiffness_i = squeeze(h_stiffness(plot_index(1),plot_index(2),:))';
-
-                        xlabel(ax{1,iPlot},"r_" + modes)
-                        ylabel(ax{1,iPlot},"D_{(" + plot_index(1) + ',' + plot_index(2) + ")}")
-                        box(ax{1,iPlot},"on")
-
-                        hold(ax{1,iPlot},"on")
-                        for iSep = 1:num_seps
-                            sep_span = sep_id==iSep;
-                            x = [EQUILIBRIUM(1),r(1,sep_span)];
-                            y = [h_stiffness_0(plot_index(1),plot_index(2)),h_stiffness_i(1,sep_span)];
-                            plot(ax{1,iPlot},x,y,'.-')
-                        end
-                        plot(ax{1,iPlot},EQUILIBRIUM(1),h_stiffness_0(plot_index(1),plot_index(2)),'k.',"MarkerSize",8)
-                        hold(ax{1,iPlot},"off")
-                    end
-                case 2
-              
-
-                    for iPlot = 1:num_plots
-                        plot_index = plotted_outputs(iPlot,:);
-                        h_stiffness_i = squeeze(h_stiffness(plot_index(1),plot_index(2),:))';
-
-
-                        xlabel(ax{1,iPlot},"r_" + modes(1))
-                        ylabel(ax{1,iPlot},"r_" + modes(2))
-                        zlabel(ax{1,iPlot},"D_{(" + plot_index(1) + ',' + plot_index(2) + ")}")
-                        box(ax{1,iPlot},"on")
-
-                        hold(ax{1,iPlot},"on")
-                        for iSep = 1:num_seps
-                            sep_span = sep_id==iSep;
-                            x = [EQUILIBRIUM(1),r(1,sep_span)];
-                            y = [EQUILIBRIUM(2),r(2,sep_span)];
-                            z = [h_stiffness_0(plot_index(1),plot_index(2)),h_stiffness_i(1,sep_span)];
-                            plot3(ax{1,iPlot},x,y,z,'.-')
-                        end
-                        plot3(ax{1,iPlot},EQUILIBRIUM(1),EQUILIBRIUM(2),h_stiffness_0(plot_index(1),plot_index(2)),'k.',"MarkerSize",8)
-                        hold(ax{1,iPlot},"off")
-                    end
-
-            end
-
-        end
-        %-----------------------------------------------------------------%
-        function ax = plot_h_coupling_gradient(obj,plotted_outputs,ax,h_coupling_gradient,r,sep_id)
-            EQUILIBRIUM = [0;0];
-
-            num_plots = size(plotted_outputs,1);
-            modes = obj.Model.reduced_modes;
-            num_modes = length(modes);
-
-
-            if nargin == 2
-                r = obj.reduced_displacement;
-                h_coupling_gradient = obj.low_frequency_coupling_gradient;
-                sep_id = obj.static_equilibrium_path_id;
-                f = obj.restoring_force;
-            end
-            h_coupling_gradient_0 = obj.Dynamic_Validation_Data.h_coupling_gradient_0;
-
-            num_seps = max(sep_id);
-
-            if ~exist("ax","var")
-                ax = cell(1,num_plots);
-                figure
-                tiledlayout("flow")
-                for iPlot = 1:num_plots
-                    ax{1,iPlot} = nexttile;
-                end
-            end
-
-            if ~iscell(ax)
-                ax_temp = ax;
-                ax = cell(1,length(ax_temp));
-                for iAx = 1:length(ax_temp)
-                    ax{1,iAx} = ax_temp(iAx);
-                end
-                
-            end
-            
-
-            switch num_modes
-                case 1
-                    
-                    for iPlot = 1:num_plots
-                        plot_index = plotted_outputs(iPlot,:);
-                        h_coupling_gradient_i = squeeze(h_coupling_gradient(plot_index(1),plot_index(2),:))';
-
-                        xlabel(ax{1,iPlot},"r_" + modes)
-                        ylabel(ax{1,iPlot},"G_{(" + plot_index(1) + ',' + plot_index(2) + ")}")
-                        box(ax{1,iPlot},"on")
-
-                        hold(ax{1,iPlot},"on")
-                        for iSep = 1:num_seps
-                            sep_span = sep_id==iSep;
-                            r_sep = r(:,sep_span);
-                            f_sep = f(:,sep_span);
-                            h_coupling_gradient_sep = h_coupling_gradient_i(:,sep_span);
-                            [~,sep_order] = sort(max(abs(f_sep),[],1),"ascend");
-
-                            x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
-                            y = [h_coupling_gradient_0(plot_index(1),plot_index(2)),h_coupling_gradient_sep(1,sep_order)];
-                            plot(ax{1,iPlot},x,y,'.-')
-                        end
-                        plot(ax{1,iPlot},EQUILIBRIUM(1),h_coupling_gradient_0(plot_index(1),plot_index(2)),'k.',"MarkerSize",8)
-                        hold(ax{1,iPlot},"off")
-                    end
-                case 2
-              
-
-                    for iPlot = 1:num_plots
-                        plot_index = plotted_outputs(iPlot,:);
-                        h_coupling_gradient_i = squeeze(h_coupling_gradient(plot_index(1),plot_index(2),:))';
-
-
-                        xlabel(ax{1,iPlot},"r_" + modes(1))
-                        ylabel(ax{1,iPlot},"r_" + modes(2))
-                        zlabel(ax{1,iPlot},"G_{(" + plot_index(1) + ',' + plot_index(2) + ")}")
-                        box(ax{1,iPlot},"on")
-
-                        hold(ax{1,iPlot},"on")
-                        for iSep = 1:num_seps
-                            sep_span = sep_id==iSep;
-                            x = [EQUILIBRIUM(1),r(1,sep_span)];
-                            y = [EQUILIBRIUM(2),r(2,sep_span)];
-                            z = [h_coupling_gradient_0(plot_index(1),plot_index(2)),h_coupling_gradient_i(1,sep_span)];
-                            plot3(ax{1,iPlot},x,y,z,'.-')
-                        end
-                        plot3(ax{1,iPlot},EQUILIBRIUM(1),EQUILIBRIUM(2),h_coupling_gradient_0(plot_index(1),plot_index(2)),'k.',"MarkerSize",8)
-                        hold(ax{1,iPlot},"off")
-                    end
-
-            end
-
-        end
-        %-----------------------------------------------------------------%
-        function ax = plot_stress_manifold(obj,f,r,sep_id)
-            EQUILIBRIUM = [0;0];
-            modes = obj.Model.reduced_modes;
-            num_modes = length(modes);
-
-            if ~exist("f","var")
-                r = obj.reduced_displacement;
-                f = obj.restoring_force;
-                sep_id = obj.static_equilibrium_path_id;
-            end
-
-            num_seps = max(sep_id);
-            
-            switch num_modes
-                case 1
-                    figure
-                    ax = axes(gcf);
-                    xlabel("f_" + modes(1))
-                    ylabel("r_" + modes(1))
-                    box on
-
-                    hold on
-                    for iSep = 1:num_seps
-                        sep_span = sep_id==iSep;
-                        
-                        x = [0,f(1,sep_span)];
-                        y = [EQUILIBRIUM(1),r(1,sep_span)];
-                        plot(x,y,'.-')
-                    end
-                    plot(0,EQUILIBRIUM(1),'k.',"MarkerSize",8)
-                    hold off
-
-                case 2
-                    figure
-                    tiledlayout(1,num_modes)
-                    ax = cell(1,num_modes);
-                    for iMode = 1:num_modes
-                        ax{1,iMode} = nexttile;
-                        xlabel("f_" + modes(1))
-                        ylabel("f_" + modes(2))
-                        zlabel("r_" + modes(iMode))
-                        box on
-
-                        hold on
-                        for iSep = 1:num_seps
-                            sep_span = sep_id==iSep;
-                            x = [0,f(1,sep_span)];
-                            y = [0,f(2,sep_span)];
-                            z = [EQUILIBRIUM(iMode),r(iMode,sep_span)];
-                            plot3(x,y,z,'.-')
-                        end
-                        plot3(0,0,EQUILIBRIUM(iMode),'k.',"MarkerSize",8)
-                        hold off
-                    end
-            end
-        end
+        % function ax = plot_force(obj,ax,r,f,sep_id)
+        %     EQUILIBRIUM = [0;0];
+        %     modes = obj.Model.reduced_modes;
+        %     num_modes = length(modes);
+        % 
+        %     if ~exist("r","var")
+        %         r = obj.reduced_displacement;
+        %         f = obj.restoring_force;
+        %         sep_id = obj.static_equilibrium_path_id;
+        %     end
+        % 
+        %     num_seps = max(sep_id);
+        % 
+        %     switch num_modes
+        %         case 1
+        %             figure
+        %             ax = axes(gcf);
+        %             xlabel("r_" + modes(1))
+        %             ylabel("f_" + modes(1))
+        %             box on
+        % 
+        %             hold on
+        %             for iSep = 1:num_seps
+        %                 sep_span = sep_id==iSep;
+        %                 r_sep = r(:,sep_span);
+        %                 f_sep = f(:,sep_span);
+        %                 [~,sep_order] = sort(abs(f_sep(1,:)),"ascend");
+        % 
+        %                 x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
+        %                 y = [0,f_sep(1,sep_order)];
+        %                 plot(x,y,'.-')
+        %             end
+        %             plot(EQUILIBRIUM(1),0,'k.',"MarkerSize",8)
+        %             hold off
+        % 
+        %         case 2
+        %             figure
+        %             tiledlayout(1,num_modes)
+        %             ax = cell(1,num_modes);
+        %             for iMode = 1:num_modes
+        %                 ax{1,iMode} = nexttile;
+        %                 xlabel("r_" + modes(1))
+        %                 ylabel("r_" + modes(2))
+        %                 zlabel("f_" + modes(iMode))
+        %                 box on
+        % 
+        %                 hold on
+        %                 for iSep = 1:num_seps
+        %                     sep_span = sep_id==iSep;
+        %                     r_sep = r(:,sep_span);
+        %                     f_sep = f(:,sep_span);
+        %                     [~,sep_order] = sort(max(abs(f_sep),[],1),"ascend");
+        % 
+        %                     x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
+        %                     y = [EQUILIBRIUM(2),r_sep(2,sep_order)];
+        %                     z = [0,f_sep(iMode,sep_order)];
+        %                     plot3(x,y,z,'.-')
+        %                 end
+        %                 plot3(EQUILIBRIUM(1),EQUILIBRIUM(2),0,'k.',"MarkerSize",8)
+        %                 hold off
+        %             end
+        %     end
+        % end
+        % %-----------------------------------------------------------------%
+        % function ax = plot_condensed_displacement(obj,plotted_outputs,ax,r,theta,sep_id)
+        %     EQUILIBRIUM = [0;0];
+        % 
+        %     num_plots = length(plotted_outputs);
+        %     modes = obj.Model.reduced_modes;
+        %     num_modes = length(modes);
+        % 
+        %     if ~exist("r","var")
+        %         r = obj.reduced_displacement;
+        %         theta = obj.physical_displacement;
+        %         sep_id = obj.static_equilibrium_path_id;
+        %         f = obj.restoring_force;
+        %     end
+        % 
+        %     r_evec = obj.Model.reduced_eigenvectors;
+        %     % theta = theta - r_evec*r;
+        % 
+        %     num_seps = max(sep_id);
+        % 
+        %     if ~exist("ax","var")
+        %         figure
+        %          tiledlayout("flow")
+        %         ax = cell(1,num_plots);
+        %         for iPlot = 1:num_plots
+        % 
+        % 
+        %             ax{1,iPlot} = nexttile;
+        %         end
+        %     end
+        % 
+        %     if ~iscell(ax)
+        %         ax_temp = ax;
+        %         ax = cell(1,length(ax_temp));
+        %         for iAx = 1:length(ax_temp)
+        %             ax{1,iAx} = ax_temp(iAx);
+        %         end
+        % 
+        %     end
+        % 
+        % 
+        %     switch num_modes
+        %         case 1
+        % 
+        %             for iPlot = 1:num_plots
+        %                 xlabel(ax{1,iPlot},"r_" + modes)
+        %                 ylabel(ax{1,iPlot},"\theta_{" + plotted_outputs(iPlot) + "}")
+        %                 box(ax{1,iPlot},"on")
+        % 
+        %                 hold(ax{1,iPlot},"on")
+        %                 for iSep = 1:num_seps
+        %                     sep_span = sep_id==iSep;
+        %                     r_sep = r(:,sep_span);
+        %                     theta_sep = theta(:,sep_span);
+        %                     [~,sep_order] = sort(abs(f(1,sep_span)),"ascend");
+        % 
+        %                     x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
+        %                     y = [0,theta_sep(plotted_outputs(iPlot),sep_order)];
+        %                     plot(ax{1,iPlot},x,y,'.-')
+        %                 end
+        %                 plot(ax{1,iPlot},EQUILIBRIUM(1),0,'k.',"MarkerSize",8)
+        %                 hold(ax{1,iPlot},"off")
+        %             end
+        %         case 2
+        % 
+        % 
+        %             for iPlot = 1:num_plots
+        %                 xlabel(ax{1,iPlot},"r_" + modes(1))
+        %                 ylabel(ax{1,iPlot},"r_" + modes(2))
+        %                 zlabel(ax{1,iPlot},"\theta_{" + plotted_outputs(iPlot) + "}")
+        %                 box(ax{1,iPlot},"on")
+        % 
+        %                 hold(ax{1,iPlot},"on")
+        %                 for iSep = 1:num_seps
+        %                     sep_span = sep_id==iSep;
+        %                     r_sep = r(:,sep_span);
+        %                     theta_sep = theta(:,sep_span);
+        %                     f_sep = f(:,sep_span);
+        %                     [~,sep_order] = sort(max(abs(f_sep),[],1),"ascend");
+        % 
+        %                     x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
+        %                     y = [EQUILIBRIUM(2),r_sep(2,sep_order)];
+        %                     z = [0,theta_sep(plotted_outputs(iPlot),sep_order)];
+        %                     plot3(ax{1,iPlot},x,y,z,'.-')
+        %                 end
+        %                 plot3(ax{1,iPlot},EQUILIBRIUM(1),EQUILIBRIUM(2),0,'k.',"MarkerSize",8)
+        %                 hold(ax{1,iPlot},"off")
+        %             end
+        % 
+        %     end
+        % end
+        % %-----------------------------------------------------------------%
+        % function ax = plot_energy(obj,r,E,sep_id,f)
+        %     EQUILIBRIUM = [0;0];
+        % 
+        %     modes = obj.Model.reduced_modes;
+        %     num_modes = length(modes);
+        % 
+        %     if ~exist("r","var")
+        %         r = obj.reduced_displacement;
+        %         E = obj.potential_energy;
+        %         sep_id = obj.static_equilibrium_path_id;
+        %         f = obj.restoring_force;
+        %     end
+        % 
+        %     num_seps = max(sep_id);
+        % 
+        % 
+        %     switch num_modes
+        %         case 1
+        %             figure
+        %             ax = axes(gcf);
+        % 
+        %             xlabel("r_" + modes(1))
+        %             ylabel("V")
+        %             box on
+        % 
+        %             hold on
+        %             for iSep = 1:num_seps
+        %                 sep_span = sep_id==iSep;
+        %                 r_sep = r(:,sep_span);
+        %                 E_sep = E(:,sep_span);
+        %                 [~,sep_order] = sort(abs(f(1,sep_span)),"ascend");
+        % 
+        %                 x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
+        %                 y = [0,E_sep(1,sep_order)];
+        %                 plot(x,y,'.-')
+        %             end
+        %             plot(EQUILIBRIUM,0,'k.',"MarkerSize",8)
+        %             hold off
+        % 
+        %         case 2
+        %             figure
+        %             ax = axes(gcf);
+        % 
+        %             xlabel("r_" + modes(1))
+        %             ylabel("r_" + modes(2))
+        %             zlabel("V")
+        %             box on
+        % 
+        %             hold on
+        %             for iSep = 1:num_seps
+        %                 sep_span = sep_id==iSep;
+        %                 r_sep = r(:,sep_span);
+        %                 E_sep = E(:,sep_span);
+        %                 f_sep = f(:,sep_span);
+        %                 [~,sep_order] = sort(max(abs(f_sep),[],1),"ascend");
+        % 
+        %                 x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
+        %                 y = [EQUILIBRIUM(2),r_sep(2,sep_order)];
+        %                 z = [0,E_sep(1,sep_order)];
+        %                 plot3(x,y,z,'.-')
+        %             end
+        %             plot3(EQUILIBRIUM(1),EQUILIBRIUM(2),0,'k.',"MarkerSize",8)
+        %             hold off
+        %     end
+        % end
+        % %-----------------------------------------------------------------%
+        % function ax = plot_stiffness(obj,plotted_outputs,ax,K_array,r,sep_id)
+        %     EQUILIBRIUM = [0;0];
+        % 
+        %     num_plots = length(plotted_outputs);
+        %     modes = obj.Model.reduced_modes;
+        %     num_modes = length(modes);
+        % 
+        % 
+        %     if nargin == 2
+        %         r = obj.reduced_displacement;
+        %         K_array = obj.tangent_stiffness;
+        %         sep_id = obj.static_equilibrium_path_id;
+        %     end
+        %     K_lin = obj.Model.stiffness;
+        %     sparsity_pattern = K_array.nonzero_indicies(plotted_outputs,:);
+        % 
+        %     num_seps = max(sep_id);
+        % 
+        %     if ~exist("ax","var")
+        %         ax = cell(1,num_plots);
+        %         figure
+        %         tiledlayout("flow")
+        %         for iPlot = 1:num_plots
+        % 
+        %             ax{1,iPlot} = nexttile;
+        %         end
+        %     end
+        % 
+        %     if ~iscell(ax)
+        %         ax_temp = ax;
+        %         ax = cell(1,length(ax_temp));
+        %         for iAx = 1:length(ax_temp)
+        %             ax{1,iAx} = ax_temp(iAx);
+        %         end
+        % 
+        %     end
+        % 
+        % 
+        %     switch num_modes
+        %         case 1
+        % 
+        %             for iPlot = 1:num_plots
+        %                 K_i = K_array.get_component(plotted_outputs(iPlot));
+        %                 row = sparsity_pattern(iPlot,1);
+        %                 col = sparsity_pattern(iPlot,2);
+        % 
+        %                 xlabel(ax{1,iPlot},"r_" + modes)
+        %                 ylabel(ax{1,iPlot},"K_{(" + row + ',' + col + ")}")
+        %                 box(ax{1,iPlot},"on")
+        % 
+        %                 hold(ax{1,iPlot},"on")
+        %                 for iSep = 1:num_seps
+        %                     sep_span = sep_id==iSep;
+        %                     x = [EQUILIBRIUM(1),r(1,sep_span)];
+        %                     y = [K_lin(row,col),K_i(1,sep_span)];
+        %                     plot(ax{1,iPlot},x,y,'.-')
+        %                 end
+        %                 plot(ax{1,iPlot},EQUILIBRIUM(1),K_lin(row,col),'k.',"MarkerSize",8)
+        %                 hold(ax{1,iPlot},"off")
+        %             end
+        %         case 2
+        % 
+        % 
+        %             for iPlot = 1:num_plots
+        %                 K_i = K_array.get_component(plotted_outputs(iPlot));
+        %                 row = sparsity_pattern(iPlot,1);
+        %                 col = sparsity_pattern(iPlot,2);
+        % 
+        %                 xlabel(ax{1,iPlot},"r_" + modes(1))
+        %                 ylabel(ax{1,iPlot},"r_" + modes(2))
+        %                 zlabel(ax{1,iPlot},"K_{(" + row + ',' + col + ")}")
+        %                 box(ax{1,iPlot},"on")
+        % 
+        %                 hold(ax{1,iPlot},"on")
+        %                 for iSep = 1:num_seps
+        %                     sep_span = sep_id==iSep;
+        %                     x = [EQUILIBRIUM(1),r(1,sep_span)];
+        %                     y = [EQUILIBRIUM(2),r(2,sep_span)];
+        %                     z = [K_lin(row,col),K_i(1,sep_span)];
+        %                     plot3(ax{1,iPlot},x,y,z,'.-')
+        %                 end
+        %                 plot3(ax{1,iPlot},EQUILIBRIUM(1),EQUILIBRIUM(2),K_lin(row,col),'k.',"MarkerSize",8)
+        %                 hold(ax{1,iPlot},"off")
+        %             end
+        % 
+        %     end
+        % 
+        % end
+        % %-----------------------------------------------------------------%
+        % function ax = plot_perturbation(obj,plotted_outputs,ax)
+        %     EQUILIBRIUM = [0;0];
+        % 
+        % 
+        %     num_plots = size(plotted_outputs,1);
+        %     modes = obj.Model.reduced_modes;
+        %     num_modes = length(modes);
+        % 
+        % 
+        %     f = obj.restoring_force;
+        %     r = obj.reduced_displacement;
+        %     perturbation_disp = obj.perturbation_displacement;
+        %     sep_id = obj.static_equilibrium_path_id;
+        % 
+        %     %
+        %     stiffness = obj.Model.stiffness;
+        %     mass = obj.Model.mass;
+        %     L_evec = obj.Model.low_frequency_eigenvectors;
+        %     r_evec = obj.Model.reduced_eigenvectors;
+        %     h_evec = [r_evec,L_evec];
+        %     lambda = obj.perturbation_scale_factor;
+        %     perturbation_0 = lambda*(stiffness\(mass*h_evec));
+        %     %
+        %     num_seps = max(sep_id);
+        % 
+        %     if ~exist("ax","var")
+        %         ax = cell(1,num_plots);
+        %         figure
+        %         tiledlayout("flow")
+        %         for iPlot = 1:num_plots
+        %             ax{1,iPlot} = nexttile;
+        %         end
+        %     end
+        % 
+        %     if ~iscell(ax)
+        %         ax_temp = ax;
+        %         ax = cell(1,length(ax_temp));
+        %         for iAx = 1:length(ax_temp)
+        %             ax{1,iAx} = ax_temp(iAx);
+        %         end
+        % 
+        %     end
+        % 
+        % 
+        %     switch num_modes
+        %         case 1
+        % 
+        %             for iPlot = 1:num_plots
+        %                 plot_index = plotted_outputs(iPlot,:);
+        %                 perturbation_i = squeeze(perturbation_disp(plot_index(1),plot_index(2),:))';
+        %                 perturbation_i_0 = perturbation_0(plot_index(1),plot_index(2));
+        % 
+        %                 xlabel(ax{1,iPlot},"r_" + modes)
+        %                 ylabel(ax{1,iPlot},"x_{(" + plot_index(1) + ',' + plot_index(2) + ")}")
+        %                 box(ax{1,iPlot},"on")
+        % 
+        %                 hold(ax{1,iPlot},"on")
+        %                 for iSep = 1:num_seps
+        %                     sep_span = sep_id==iSep;
+        %                     r_sep = r(:,sep_span);
+        %                     f_sep = f(:,sep_span);
+        %                     perturbation_sep = perturbation_i(:,sep_span);
+        %                     [~,sep_order] = sort(max(abs(f_sep),[],1),"ascend");
+        %                     x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
+        %                     y = [perturbation_i_0,perturbation_sep(1,sep_order)];
+        %                     plot(ax{1,iPlot},x,y,'.-')
+        %                 end
+        %                 plot(ax{1,iPlot},EQUILIBRIUM(1),perturbation_i_0,'k.',"MarkerSize",8)
+        %                 hold(ax{1,iPlot},"off")
+        %             end
+        %         case 2
+        % 
+        % 
+        %             for iPlot = 1:num_plots
+        %                 plot_index = plotted_outputs(iPlot,:);
+        %                 perturbation_i = squeeze(perturbation_disp(plot_index(1),plot_index(2),:))';
+        % 
+        % 
+        %                 xlabel(ax{1,iPlot},"r_" + modes(1))
+        %                 ylabel(ax{1,iPlot},"r_" + modes(2))
+        %                 zlabel(ax{1,iPlot},"G_{(" + plot_index(1) + ',' + plot_index(2) + ")}")
+        %                 box(ax{1,iPlot},"on")
+        % 
+        %                 hold(ax{1,iPlot},"on")
+        %                 for iSep = 1:num_seps
+        %                     sep_span = sep_id==iSep;
+        %                     x = [EQUILIBRIUM(1),r(1,sep_span)];
+        %                     y = [EQUILIBRIUM(2),r(2,sep_span)];
+        %                     % z = [h_coupling_gradient_0(plot_index(1),plot_index(2)),perturbation_i(1,sep_span)];
+        %                     z = [0,perturbation_i(1,sep_span)];
+        %                     plot3(ax{1,iPlot},x,y,z,'.-')
+        %                 end
+        %                 plot3(ax{1,iPlot},EQUILIBRIUM(1),EQUILIBRIUM(2),0,'k.',"MarkerSize",8)
+        %                 hold(ax{1,iPlot},"off")
+        %             end
+        % 
+        %     end
+        % end
+        % %-----------------------------------------------------------------%
+        % function ax = plot_h_stiffness(obj,plotted_outputs,ax,h_stiffness,r,sep_id)
+        %     EQUILIBRIUM = [0;0];
+        % 
+        %     num_plots = size(plotted_outputs,1);
+        %     modes = obj.Model.reduced_modes;
+        %     num_modes = length(modes);
+        % 
+        % 
+        %     if nargin == 2
+        %         r = obj.reduced_displacement;
+        %         h_stiffness = obj.low_frequency_stiffness;
+        %         sep_id = obj.static_equilibrium_path_id;
+        %     end
+        %     h_stiffness_0 = obj.Dynamic_Validation_Data.h_stiffness_0;
+        % 
+        % 
+        % 
+        %     num_seps = max(sep_id);
+        % 
+        %     if ~exist("ax","var")
+        %         ax = cell(1,num_plots);
+        %         figure
+        %         tiledlayout("flow")
+        %         for iPlot = 1:num_plots
+        %             ax{1,iPlot} = nexttile;
+        %         end
+        %     end
+        % 
+        %     if ~iscell(ax)
+        %         ax_temp = ax;
+        %         ax = cell(1,length(ax_temp));
+        %         for iAx = 1:length(ax_temp)
+        %             ax{1,iAx} = ax_temp(iAx);
+        %         end
+        % 
+        %     end
+        % 
+        % 
+        %     switch num_modes
+        %         case 1
+        % 
+        %             for iPlot = 1:num_plots
+        %                 plot_index = plotted_outputs(iPlot,:);
+        %                 h_stiffness_i = squeeze(h_stiffness(plot_index(1),plot_index(2),:))';
+        % 
+        %                 xlabel(ax{1,iPlot},"r_" + modes)
+        %                 ylabel(ax{1,iPlot},"D_{(" + plot_index(1) + ',' + plot_index(2) + ")}")
+        %                 box(ax{1,iPlot},"on")
+        % 
+        %                 hold(ax{1,iPlot},"on")
+        %                 for iSep = 1:num_seps
+        %                     sep_span = sep_id==iSep;
+        %                     x = [EQUILIBRIUM(1),r(1,sep_span)];
+        %                     y = [h_stiffness_0(plot_index(1),plot_index(2)),h_stiffness_i(1,sep_span)];
+        %                     plot(ax{1,iPlot},x,y,'.-')
+        %                 end
+        %                 plot(ax{1,iPlot},EQUILIBRIUM(1),h_stiffness_0(plot_index(1),plot_index(2)),'k.',"MarkerSize",8)
+        %                 hold(ax{1,iPlot},"off")
+        %             end
+        %         case 2
+        % 
+        % 
+        %             for iPlot = 1:num_plots
+        %                 plot_index = plotted_outputs(iPlot,:);
+        %                 h_stiffness_i = squeeze(h_stiffness(plot_index(1),plot_index(2),:))';
+        % 
+        % 
+        %                 xlabel(ax{1,iPlot},"r_" + modes(1))
+        %                 ylabel(ax{1,iPlot},"r_" + modes(2))
+        %                 zlabel(ax{1,iPlot},"D_{(" + plot_index(1) + ',' + plot_index(2) + ")}")
+        %                 box(ax{1,iPlot},"on")
+        % 
+        %                 hold(ax{1,iPlot},"on")
+        %                 for iSep = 1:num_seps
+        %                     sep_span = sep_id==iSep;
+        %                     x = [EQUILIBRIUM(1),r(1,sep_span)];
+        %                     y = [EQUILIBRIUM(2),r(2,sep_span)];
+        %                     z = [h_stiffness_0(plot_index(1),plot_index(2)),h_stiffness_i(1,sep_span)];
+        %                     plot3(ax{1,iPlot},x,y,z,'.-')
+        %                 end
+        %                 plot3(ax{1,iPlot},EQUILIBRIUM(1),EQUILIBRIUM(2),h_stiffness_0(plot_index(1),plot_index(2)),'k.',"MarkerSize",8)
+        %                 hold(ax{1,iPlot},"off")
+        %             end
+        % 
+        %     end
+        % 
+        % end
+        % %-----------------------------------------------------------------%
+        % function ax = plot_h_coupling_gradient(obj,plotted_outputs,ax,h_coupling_gradient,r,sep_id)
+        %     EQUILIBRIUM = [0;0];
+        % 
+        %     num_plots = size(plotted_outputs,1);
+        %     modes = obj.Model.reduced_modes;
+        %     num_modes = length(modes);
+        % 
+        % 
+        %     if nargin == 2
+        %         r = obj.reduced_displacement;
+        %         h_coupling_gradient = obj.low_frequency_coupling_gradient;
+        %         sep_id = obj.static_equilibrium_path_id;
+        %         f = obj.restoring_force;
+        %     end
+        %     h_coupling_gradient_0 = obj.Dynamic_Validation_Data.h_coupling_gradient_0;
+        % 
+        %     num_seps = max(sep_id);
+        % 
+        %     if ~exist("ax","var")
+        %         ax = cell(1,num_plots);
+        %         figure
+        %         tiledlayout("flow")
+        %         for iPlot = 1:num_plots
+        %             ax{1,iPlot} = nexttile;
+        %         end
+        %     end
+        % 
+        %     if ~iscell(ax)
+        %         ax_temp = ax;
+        %         ax = cell(1,length(ax_temp));
+        %         for iAx = 1:length(ax_temp)
+        %             ax{1,iAx} = ax_temp(iAx);
+        %         end
+        % 
+        %     end
+        % 
+        % 
+        %     switch num_modes
+        %         case 1
+        % 
+        %             for iPlot = 1:num_plots
+        %                 plot_index = plotted_outputs(iPlot,:);
+        %                 h_coupling_gradient_i = squeeze(h_coupling_gradient(plot_index(1),plot_index(2),:))';
+        % 
+        %                 xlabel(ax{1,iPlot},"r_" + modes)
+        %                 ylabel(ax{1,iPlot},"G_{(" + plot_index(1) + ',' + plot_index(2) + ")}")
+        %                 box(ax{1,iPlot},"on")
+        % 
+        %                 hold(ax{1,iPlot},"on")
+        %                 for iSep = 1:num_seps
+        %                     sep_span = sep_id==iSep;
+        %                     r_sep = r(:,sep_span);
+        %                     f_sep = f(:,sep_span);
+        %                     h_coupling_gradient_sep = h_coupling_gradient_i(:,sep_span);
+        %                     [~,sep_order] = sort(max(abs(f_sep),[],1),"ascend");
+        % 
+        %                     x = [EQUILIBRIUM(1),r_sep(1,sep_order)];
+        %                     y = [h_coupling_gradient_0(plot_index(1),plot_index(2)),h_coupling_gradient_sep(1,sep_order)];
+        %                     plot(ax{1,iPlot},x,y,'.-')
+        %                 end
+        %                 plot(ax{1,iPlot},EQUILIBRIUM(1),h_coupling_gradient_0(plot_index(1),plot_index(2)),'k.',"MarkerSize",8)
+        %                 hold(ax{1,iPlot},"off")
+        %             end
+        %         case 2
+        % 
+        % 
+        %             for iPlot = 1:num_plots
+        %                 plot_index = plotted_outputs(iPlot,:);
+        %                 h_coupling_gradient_i = squeeze(h_coupling_gradient(plot_index(1),plot_index(2),:))';
+        % 
+        % 
+        %                 xlabel(ax{1,iPlot},"r_" + modes(1))
+        %                 ylabel(ax{1,iPlot},"r_" + modes(2))
+        %                 zlabel(ax{1,iPlot},"G_{(" + plot_index(1) + ',' + plot_index(2) + ")}")
+        %                 box(ax{1,iPlot},"on")
+        % 
+        %                 hold(ax{1,iPlot},"on")
+        %                 for iSep = 1:num_seps
+        %                     sep_span = sep_id==iSep;
+        %                     x = [EQUILIBRIUM(1),r(1,sep_span)];
+        %                     y = [EQUILIBRIUM(2),r(2,sep_span)];
+        %                     z = [h_coupling_gradient_0(plot_index(1),plot_index(2)),h_coupling_gradient_i(1,sep_span)];
+        %                     plot3(ax{1,iPlot},x,y,z,'.-')
+        %                 end
+        %                 plot3(ax{1,iPlot},EQUILIBRIUM(1),EQUILIBRIUM(2),h_coupling_gradient_0(plot_index(1),plot_index(2)),'k.',"MarkerSize",8)
+        %                 hold(ax{1,iPlot},"off")
+        %             end
+        % 
+        %     end
+        % 
+        % end
+        % %-----------------------------------------------------------------%
+        % function ax = plot_stress_manifold(obj,f,r,sep_id)
+        %     EQUILIBRIUM = [0;0];
+        %     modes = obj.Model.reduced_modes;
+        %     num_modes = length(modes);
+        % 
+        %     if ~exist("f","var")
+        %         r = obj.reduced_displacement;
+        %         f = obj.restoring_force;
+        %         sep_id = obj.static_equilibrium_path_id;
+        %     end
+        % 
+        %     num_seps = max(sep_id);
+        % 
+        %     switch num_modes
+        %         case 1
+        %             figure
+        %             ax = axes(gcf);
+        %             xlabel("f_" + modes(1))
+        %             ylabel("r_" + modes(1))
+        %             box on
+        % 
+        %             hold on
+        %             for iSep = 1:num_seps
+        %                 sep_span = sep_id==iSep;
+        % 
+        %                 x = [0,f(1,sep_span)];
+        %                 y = [EQUILIBRIUM(1),r(1,sep_span)];
+        %                 plot(x,y,'.-')
+        %             end
+        %             plot(0,EQUILIBRIUM(1),'k.',"MarkerSize",8)
+        %             hold off
+        % 
+        %         case 2
+        %             figure
+        %             tiledlayout(1,num_modes)
+        %             ax = cell(1,num_modes);
+        %             for iMode = 1:num_modes
+        %                 ax{1,iMode} = nexttile;
+        %                 xlabel("f_" + modes(1))
+        %                 ylabel("f_" + modes(2))
+        %                 zlabel("r_" + modes(iMode))
+        %                 box on
+        % 
+        %                 hold on
+        %                 for iSep = 1:num_seps
+        %                     sep_span = sep_id==iSep;
+        %                     x = [0,f(1,sep_span)];
+        %                     y = [0,f(2,sep_span)];
+        %                     z = [EQUILIBRIUM(iMode),r(iMode,sep_span)];
+        %                     plot3(x,y,z,'.-')
+        %                 end
+        %                 plot3(0,0,EQUILIBRIUM(iMode),'k.',"MarkerSize",8)
+        %                 hold off
+        %             end
+        %     end
+        % end
         %-----------------------------------------------------------------%
     end
 end

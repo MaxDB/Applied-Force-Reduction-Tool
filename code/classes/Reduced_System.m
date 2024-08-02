@@ -38,9 +38,9 @@ classdef Reduced_System
             
             obj.Model = Static_Data.Model; 
 
-            r = Static_Data.reduced_displacement;
-            f = Static_Data.restoring_force;
-            displacement = Static_Data.physical_displacement;
+            r = Static_Data.get_dataset_values("reduced_displacement");
+            f = Static_Data.get_dataset_values("restoring_force");
+            displacement = Static_Data.get_dataset_values("physical_displacement");
             eval_r = Static_Data.Model.reduced_eigenvalues;
             evec_r = Static_Data.Model.reduced_eigenvectors;
             
@@ -70,8 +70,8 @@ classdef Reduced_System
             
             obj.Dynamic_Validation_Data = Static_Data.Dynamic_Validation_Data;
             
-            h_stiffness = Static_Data.low_frequency_stiffness;
-            h_coupling_gradient = Static_Data.low_frequency_coupling_gradient;
+            h_stiffness = Static_Data.get_dataset_values("low_frequency_stiffness");
+            h_coupling_gradient = Static_Data.get_dataset_values("low_frequency_coupling_gradient");
 
             h_stiffness_degree = degree(3);
             h_coupling_gradient_degree = degree(4);

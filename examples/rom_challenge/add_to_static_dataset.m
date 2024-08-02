@@ -26,7 +26,7 @@ Validation_Opts.max_added_points = 50;
 % Validation_Opts.max_added_points = 800;
 %------------------------------------------%
 
-load("data\" + system_name + "\" + "Static_Data.mat","Static_Data");
+load("data\" + system_name + "\static_data\" + "Static_Data.mat","Static_Data");
 Static_Data = Static_Data.update_validation_opts(Validation_Opts);
 Static_Data = Static_Data.update_model(added_modes,Static_Opts);
 Static_Data = Static_Data.create_dataset;
