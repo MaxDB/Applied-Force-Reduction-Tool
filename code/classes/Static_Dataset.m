@@ -27,9 +27,24 @@ classdef Static_Dataset
     methods
         function obj = Static_Dataset(Model,Validation_Opts)
             
-            obj.Model = Model;
+            
             obj.additional_data_type = Model.Static_Options.additional_data;
-            obj.perturbation_scale_factor = Model.Static_Options.perturbation_scale_factor;
+
+            if isstring(Model.Static_Options.perturbation_scale_factor) && Model.Static_Options.perturbation_scale_factor == "auto"
+                perturbation_sf = select_perturbation_scale_factor(Model);
+            else
+                perturbation_sf = Model.Static_Options.perturbation_scale_factor;
+                if isscalar(perturbation_sf)
+                    num_h_modes = size(Model.reduced_modes,2) + size(Model.low_frequency_modes,2);
+                    perturbation_sf = repmat(perturbation_sf,1,num_h_modes);
+                end
+            end
+            obj.perturbation_scale_factor = perturbation_sf;
+            Model.Static_Options.perturbation_scale_factor = perturbation_sf;
+
+            obj.Model = Model;
+
+
 
             obj = update_validation_opts(obj,Validation_Opts);
 

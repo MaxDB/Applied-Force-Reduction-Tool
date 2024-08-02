@@ -18,8 +18,8 @@ num_dofs = Model.num_dof;
 mass = Model.mass;
 h_disp_transform = h_evec'*mass;
 
-lambda = Static_Data.perturbation_scale_factor;
-F_h = lambda*eye(num_h_modes);
+lambda = Static_Data.perturbation_scale_factor(1,h_map);
+F_h = lambda.*eye(num_h_modes);
 
 x_perturbation = Static_Data.perturbation_displacement(:,h_map,:);
 num_loadcases = size(x_perturbation,3);
@@ -54,7 +54,7 @@ for iLoad = 1:num_loadcases
 end
 
 stiffness = Model.stiffness;
-h_perturbation_0 = lambda*(stiffness\(h_disp_transform'));
+h_perturbation_0 = lambda.*(stiffness\(h_disp_transform'));
 h_0 = h_disp_transform*h_perturbation_0;
 h_0 = diag(diag(h_0));
 disp_hat_0 = h_perturbation_0;

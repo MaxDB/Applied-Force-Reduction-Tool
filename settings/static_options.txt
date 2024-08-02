@@ -19,6 +19,6 @@ max_parallel_jobs, 1, 		maximum jobs that can be submitted at once. Will use mor
 minimum_job_loadcases, 10, 	minimum number of loadcases per job when submitting in parallel
 
 ## Additional Data Requests
-additional_data, "none", 	additonal data to extract with each loadcase
-num_validation_modes, 10, 	add the first X modes as validation modes (Perturbation)
-perturbation_scale_factor, 1, 	scale factor for perturbation load (Perturbation) 
+additional_data, "none", 		additonal data to extract with each loadcase
+num_validation_modes, 10, 		add the first X modes as validation modes (Perturbation)
+perturbation_scale_factor, "auto", 	scale factor for perturbation load (Perturbation) 

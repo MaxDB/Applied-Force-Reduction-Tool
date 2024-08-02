@@ -117,7 +117,7 @@ switch add_data_type
         r_evecs = Model.reduced_eigenvectors;
         h_evecs = [r_evecs,L_evecs];
         num_h_modes = size(h_evecs,2);
-        validating_force = (Model.mass*h_evecs)*Static_Opts.perturbation_scale_factor;
+        validating_force = (Model.mass*h_evecs).*Static_Opts.perturbation_scale_factor;
 end
 
 %-------------------------------------------------------------------------%
