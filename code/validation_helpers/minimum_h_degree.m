@@ -4,9 +4,9 @@ MIN_VALIDATION_RATIO = 1e-1;
 num_r_modes = length(Static_Data.Model.reduced_modes);
 switch num_r_modes
     case 1
-        max_degree = max(15,max(Static_Data.validated_degree([1,2]))+1);
+        max_degree = Static_Data.validated_degree(1:2);
     otherwise
-        max_degree = max(Static_Data.validated_degree([1,2]))+1;
+        max_degree = Static_Data.validated_degree(1:2);
 end
 
 Validation_Opts = Static_Data.Validation_Options;
@@ -30,7 +30,7 @@ modelled_output_indicies = [row,col];
 num_modelled_outputs = size(modelled_output_indicies,1);
 
 h_stiffness_degree = Static_Data.validated_degree(1);
-while h_stiffness_degree  < max_degree
+while h_stiffness_degree  < max_degree(1)
     rom = Reduced_System(Static_Data,[1,1,h_stiffness_degree,1]);
     
     stiffness_error = zeros(num_modelled_outputs,1);
@@ -50,7 +50,7 @@ while h_stiffness_degree  < max_degree
 
     h_stiffness_degree = h_stiffness_degree + 2;
 end
-if h_stiffness_degree >= max_degree
+if h_stiffness_degree >= max_degree(1)
     warning("Low frequency stiffness polynomial requires too high a degree: worst index is " + ...
         "[" + max_stiffness_index(1) + "," + max_stiffness_index(2) + "]")
 end
@@ -73,7 +73,7 @@ h_coupling_gradient_i = h_coupling_gradient_vector(lin_index,:);
 modelled_output_indicies = [row,col];
 
 h_coupling_gradient_degree = Static_Data.validated_degree(2);
-while h_coupling_gradient_degree  < max_degree
+while h_coupling_gradient_degree  < max_degree(2)
     if isempty(modelled_output_indicies)
         break
     end
@@ -90,7 +90,7 @@ while h_coupling_gradient_degree  < max_degree
     % modelled_output_indicies(coupling_gradient_error < max_fitting_error,:) = [];
     h_coupling_gradient_degree = h_coupling_gradient_degree + 2;
 end
-if h_coupling_gradient_degree >= max_degree
+if h_coupling_gradient_degree >= max_degree(2)
     warning("Low frequency coupling gradient polynomial requires too high a degree: worst index is " + ...
         "[" + max_coupling_gradient_index(1) + "," + max_coupling_gradient_index(2) + "]")
 end
