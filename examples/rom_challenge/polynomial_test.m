@@ -1,8 +1,12 @@
 clear
 close all
-load("data\exhaust_1\Static_Data.mat");
+load("data\exhaust_17\Static_Data\Static_Data.mat");
 %-------------------------------------------------------------------------%
 Static_Data = Static_Data.add_validation_data(2);
+
+
+plot_static_data("displacement",Static_Data)
+
 
 Rom = Reduced_System(Static_Data);
 Disp_Poly = Rom.Physical_Displacement_Polynomial;

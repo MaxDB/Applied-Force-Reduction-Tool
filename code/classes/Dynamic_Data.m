@@ -236,10 +236,9 @@ classdef Dynamic_Data
                     solution_num = obj.num_solutions;
                 end
             end
-            data_path = obj.Dynamic_Model.data_path;
 
             load_static_data_start = tic;
-            load(data_path + "Static_Data.mat","Static_Data")
+            Static_Data = load_static_data(obj);
 
             load_static_data_time = toc(load_static_data_start);
             log_message = sprintf("Static dataset loaded: %.1f seconds" ,load_static_data_time);

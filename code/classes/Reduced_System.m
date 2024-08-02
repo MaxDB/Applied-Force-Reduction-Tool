@@ -60,7 +60,8 @@ classdef Reduced_System
             obj.Potential_Polynomial = Potential_Poly;
             obj.Reduced_Stiffness_Polynomial = Reduced_Stiffness_Poly;
             
-            obj.data_path = Static_Data.get_data_path;
+            static_data_path = split(Static_Data.get_data_path,"\");
+            obj.data_path = join(static_data_path(1:2),"\") + "\";
 
 
 
