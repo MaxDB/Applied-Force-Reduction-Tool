@@ -1,6 +1,6 @@
 clear
 % close all
-system_name = "exhaust_17";
+system_name = "exhaust_1";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
@@ -24,9 +24,8 @@ Continuation_Opts.min_discretisation_num = 20;
 Continuation_Opts.collation_degree = 6;
 Continuation_Opts.energy_limit_multiplier = 1;
 %-----------------------------------------%
-Dyn_Data = Dyn_Data.update_continuation_opts(Continuation_Opts);
 
-Dyn_Data = Dyn_Data.add_backbone(1);
+Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 % compare_validation(Dyn_Data,1,2:18)
 Dyn_Data = Dyn_Data.validate_solution(1,1:18);
 % Dyn_Data = Dyn_Data.get_periodicity_error(1,"all");

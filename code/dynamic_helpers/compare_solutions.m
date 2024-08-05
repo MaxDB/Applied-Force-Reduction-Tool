@@ -42,6 +42,7 @@ legend_modes = cell(1,num_solutions);
 for iSol = 1:num_solutions
     data_name = dyn_data_names{1,iSol};
     Dyn_Data = initalise_dynamic_data(data_name);
+    
 
     system_sols = solution_index{1,iSol};
     if isstring(system_sols) && system_sols == "all"
@@ -49,10 +50,9 @@ for iSol = 1:num_solutions
     end
     num_system_sols = length(system_sols);
     for jSol = 1:num_system_sols
-        sol_type = Dyn_Data.solution_types{1,system_sols(jSol)};
-        if isempty(Dyn_Data.h_amplitude{1,system_sols(jSol)})
-            validation(iSol) = 0;
-        end
+        Solution = Dyn_Data.load_solution(system_sols(jSol));
+        sol_type = Solution.solution_type;
+
         switch sol_type.orbit_type
             case "forced"
                 

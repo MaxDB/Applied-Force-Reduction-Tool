@@ -5,6 +5,6 @@ if isfile(file_path + "Dyn_Data.mat")
 else
     Static_Data = load_static_data(system_name);
     Rom = Reduced_System(Static_Data);
-    Dyn_Data = Dynamic_Data(Rom);
+    Dyn_Data = Dynamic_Dataset(Rom);
 end
 end

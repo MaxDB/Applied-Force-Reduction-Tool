@@ -2,7 +2,7 @@ function ax = plot_backbone(Dyn_Data,type,solution_num,varargin)
 PLOT_BIFURCATIONS = 1;
 PLOT_SPECIAL_POINT = 0;
 
-PLOT_PERIODICITY = 1;
+PLOT_PERIODICITY = 0;
 STABILITY_LIMIT = 1.005;
 
 LINE_STYLE = [":","-"]; %[unstable,stable]
@@ -46,9 +46,9 @@ if isstring(solution_num)
     end
 end
 %-------------------------------------------------------------------------%
-
-frequency = Dyn_Data.frequency{1,solution_num};
-num_orbits = size(frequency,2);
+Solution = Dyn_Data.load_solution(solution_num);
+frequency = Solution.frequency;
+num_orbits = Solution.num_orbits;
 orbit_labels = 1:num_orbits;
 orbit_ids = "(" + solution_num + "," + orbit_labels + ")";
 
@@ -56,18 +56,18 @@ line_colour = get_plot_colours(colour_num);
 line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour};
 
 if PLOT_BIFURCATIONS
-    switch Dyn_Data.solution_types{1,solution_num}.orbit_type
+    switch Solution.solution_type.orbit_type
         case "free"
             bifurcation_size = BB_BIFURCATION_SIZE;
         case "forced"
             bifurcation_size = FRF_BIFURCATION_SIZE;
     end
 
-    bifurcations = Dyn_Data.bifurcations{1,solution_num};
+    bifurcations = Solution.bifurcations;
     bifurcation_types = fields(bifurcations);
     num_bifurcation_types = size(bifurcation_types,1);
 
-    stability = Dyn_Data.stability{1,solution_num};
+    stability = Solution.stability;
     [index_ranges,range_stability] = get_stability_boundaries(stability<STABILITY_LIMIT,bifurcations);
     num_sections = size(range_stability,2);
 
@@ -97,7 +97,7 @@ if PLOT_BIFURCATIONS
 end
 
 if PLOT_SPECIAL_POINT
-    point_index = Dyn_Data.get_special_point(solution_num,"X");
+    point_index = Solution.get_special_point(solution_num,"X");
     special_point_plot_settings = bifurcation_plot_settings{1,1}; 
     marker_size_index = find(cellfun(@(iSetting) isequal(iSetting,"MarkerSize"),special_point_plot_settings));
     special_point_plot_settings{1,marker_size_index+1} = SPECIAL_POINT_SIZE;
@@ -118,15 +118,15 @@ if PLOT_SPECIAL_POINT
         end
     end
 end
-
-if isempty(Dyn_Data.periodicity_error)
-    PLOT_PERIODICITY = 0;
-else
-    periodicity_error = Dyn_Data.periodicity_error{1,solution_num};
-    if isempty(periodicity_error)
-        PLOT_PERIODICITY = 0;
-    end
-end
+% 
+% if isempty(Solution.periodicity_error)
+%     PLOT_PERIODICITY = 0;
+% else
+%     periodicity_error = Solution.periodicity_error;
+%     if isempty(periodicity_error)
+%         PLOT_PERIODICITY = 0;
+%     end
+% end
 
 
 
@@ -134,13 +134,13 @@ switch type
     case {"energy","physical amplitude","stress"}
         switch type
             case "energy"
-                energy = Dyn_Data.energy{1,solution_num};
+                energy = Solution.energy;
             case "physical amplitude"
-                energy = Dyn_Data.additional_dynamic_output{1,solution_num};
+                energy = Solution.additional_dynamic_output;
             case "stress"
                 % stress_dof = Dyn_Data.Additional_Output.dof;
                 % stress_node = 1 + (stress_dof - mod(stress_dof,6))/6;
-                energy = max(Dyn_Data.max_displacement_stress{1,solution_num},[],1);
+                energy = max(Solution.max_displacement_stress,[],1);
         end
         
 
@@ -242,8 +242,8 @@ switch type
         
     case "amplitude"
        
-        amplitude = Dyn_Data.amplitude{1,solution_num};
-        Solution_Type = Dyn_Data.solution_types{1,solution_num};
+        amplitude = Solution.amplitude;
+        Solution_Type = Solution.solution_type;
         num_modes = size(amplitude,1);
 
         if Solution_Type.model_type == "fom"
