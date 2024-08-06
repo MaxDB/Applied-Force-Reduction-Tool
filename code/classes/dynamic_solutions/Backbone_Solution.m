@@ -11,7 +11,7 @@ classdef Backbone_Solution < Dynamic_Solution
     
     methods
         function obj = Backbone_Solution(Rom,BB_Settings)
-            obj@Dynamic_Solution(Rom,BB_Settings.Continuation_Opts)
+            obj@Dynamic_Solution(BB_Settings.Continuation_Opts)
             
 
             mode_num = BB_Settings.mode_num;
@@ -26,7 +26,7 @@ classdef Backbone_Solution < Dynamic_Solution
             Sol_Type.orbit_type = "free";
             Sol_Type.model_type = type;
      
-            obj.solution_type = Sol_Type;
+            obj.Solution_Type = Sol_Type;
         end
         %-----------------------------------------------------------------%
         function obj = analyse_solution(obj,solution_num,Add_Output)

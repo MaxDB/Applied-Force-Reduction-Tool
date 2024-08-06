@@ -51,13 +51,14 @@ for iSol = 1:num_solutions
     num_system_sols = length(system_sols);
     for jSol = 1:num_system_sols
         Solution = Dyn_Data.load_solution(system_sols(jSol));
-        sol_type = Solution.solution_type;
+        Sol_Type = Solution.Solution_Type;
 
-        switch sol_type.orbit_type
+
+        switch Sol_Type.orbit_type
             case "forced"
                 
-                if isfield(sol_type,"amplitude")
-                    amplitude = sol_type.amplitude;
+                if isfield(Sol_Type,"amplitude")
+                    amplitude = Sol_Type.amplitude;
                     if ~exist("amplitude_map","var")
                         amplitude_map = dictionary;
                         amplitude_map(round(amplitude)) = 1;
@@ -71,7 +72,10 @@ for iSol = 1:num_solutions
                     colour_numbers = "grey";
                 end
         end
-
+        
+        if Sol_Type.validated == 0
+            validation(iSol) = 0;
+        end
 
         if validation(iSol)
             if colour_numbers(iSol) == 0

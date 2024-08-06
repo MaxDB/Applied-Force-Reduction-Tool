@@ -1,15 +1,14 @@
 classdef Dynamic_Solution
     properties
         Continuation_Options
-
-        solution_type
+        Solution_Type
 
         orbit_labels
         num_orbits
     end
     
     methods
-        function obj = Dynamic_Solution(Model,Continuation_Opts)
+        function obj = Dynamic_Solution(Continuation_Opts)
             obj = obj.update_continuation_opts(Continuation_Opts);
         end
         %-----------------------------------------------------------------%
@@ -23,7 +22,7 @@ classdef Dynamic_Solution
         %-----------------------------------------------------------------%
         % Analysis 
         %-----------------------------------------------------------------%
-        function Analysis_Output = analyse_solution(obj,solution_num,Add_Output)
+        function Analysis_Output = analyse_solution(~,solution_num,Add_Output)
             solution_name = "temp\dynamic_sol_" + solution_num; 
             bd = coco_bd_read(solution_name);
 

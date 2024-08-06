@@ -1,4 +1,4 @@
-function Dyn_Data = h_time_solution(Dyn_Data,Validation_Rom,solution_num)
+function Validation_Sol = h_time_solution(Validation_Sol,BB_Sol,Validation_Rom,solution_num)
 GET_STABILITY = 0;
 SAVE_ORBIT = 1;
 
@@ -16,10 +16,9 @@ num_h_modes = length(Validation_Rom.Dynamic_Validation_Data.current_L_modes) + n
 h_disp_span = 1:num_h_modes;
 h_vel_span = h_disp_span + num_h_modes;
 
-Rom = Dyn_Data.Dynamic_Model;
-Solution_Type = Dyn_Data.solution_types{1,solution_num};
+Solution_Type = BB_Sol.Solution_Type;
 orbit_type = Solution_Type.orbit_type;
-solution_name = Rom.data_path + "dynamic_sol_" + solution_num;
+solution_name = Validation_Rom.data_path + "dynamic_sol_" + solution_num;
 
 total_time = 0;
 time_range = [inf,0];
@@ -27,7 +26,7 @@ time_range = [inf,0];
 
 switch orbit_type
     case "free"
-        Eom_Input = Rom.get_solver_inputs("coco_backbone");
+        Eom_Input = Validation_Rom.get_solver_inputs("coco_backbone");
         reduced_eom = @(t,z,zeta) coco_eom(t,z,zeta,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data);
         %
         Validation_Input = Validation_Rom.get_solver_inputs("h_prediction");
@@ -37,7 +36,7 @@ switch orbit_type
     case "forced"
         load(solution_name + "\Nonconservative_Inputs.mat","Nonconservative_Inputs")
         amp = Nonconservative_Inputs.amplitude;
-        Eom_Input = Rom.get_solver_inputs("coco_frf",Nonconservative_Inputs);
+        Eom_Input = Validation_Rom.get_solver_inputs("coco_frf",Nonconservative_Inputs);
         reduced_eom = @(t,z,T) coco_forced_eom(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data);
         
         Validation_Input = Validation_Rom.get_solver_inputs("forced_h_prediction",Nonconservative_Inputs);
@@ -51,17 +50,16 @@ end
 
 
 
-sol_labels = Dyn_Data.solution_labels{1,solution_num};
-frequency = Dyn_Data.frequency{1,solution_num};
-num_periodic_orbits = length(sol_labels);
+orbit_labels = BB_Sol.orbit_labels;
+frequency = BB_Sol.frequency;
+num_periodic_orbits = length(orbit_labels);
 I_L = eye(num_h_modes);
 
-Dyn_Data = Dyn_Data.pre_allocate_validation_data(solution_num,num_periodic_orbits);
 num_harmonics = INITIAL_NUM_HARMONICS;
 for iOrbit = 1:num_periodic_orbits
 
     read_data_start = tic;
-    sol = po_read_solution('',convertStringsToChars(solution_name),sol_labels(iOrbit));
+    sol = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(iOrbit));
     read_data_time = toc(read_data_start);
 
     set_up_h_start = tic;
@@ -231,7 +229,7 @@ for iOrbit = 1:num_periodic_orbits
         orbit_stab = 1; %#ok<*UNRCH>
     end
 
-    Dyn_Data = Dyn_Data.analyse_h_solution(r,r_dot,h,h_dot,orbit_stab,Validation_Analysis_Inputs,solution_num,iOrbit);
+    Validation_Sol = Validation_Sol.analyse_h_solution(r,r_dot,h,h_dot,orbit_stab,Validation_Analysis_Inputs,iOrbit);
     h_analysis_time = toc(h_analysis_start);
     orbit_time = read_data_time + set_up_h_time + solve_h_time + h_analysis_time;
     total_time = total_time + orbit_time;
@@ -246,7 +244,7 @@ for iOrbit = 1:num_periodic_orbits
         iOrbit,num_periodic_orbits,read_data_time,set_up_h_time,solve_h_time,h_analysis_time,num_harmonics);
 
     if SAVE_ORBIT
-        validation_name = solution_name + "\sol" + sol_labels(iOrbit) + "_v.mat";
+        validation_name = solution_name + "\sol" + orbit_labels(iOrbit) + "_v.mat";
         validation_orbit.h = h;
         validation_orbit.h_dot = h_dot;
         save(validation_name,"validation_orbit")

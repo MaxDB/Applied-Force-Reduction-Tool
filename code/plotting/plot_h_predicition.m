@@ -41,26 +41,28 @@ if isstring(solution_num)
     end
 end
 %-------------------------------------------------------------------------%
+Solution = Dyn_Data.load_solution(solution_num);
+Validated_Solution = Dyn_Data.load_solution(solution_num,"validation");
 
-frequency = Dyn_Data.frequency{1,solution_num};
+frequency = Solution.frequency;
 num_orbits = size(frequency,2);
 
 
 orbit_labels = 1:num_orbits;
 orbit_ids = "(" + solution_num + "," + orbit_labels + ")";
 
-validation_modes = Dyn_Data.validation_modes{1,solution_num};
+validation_modes = Validated_Solution.validation_modes;
 mode_string = "[" + join(string(validation_modes),", ") + "]";
 
 line_colour = get_plot_colours(colour_num);
 line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour};
 
 if PLOT_STABILITY
-    stability = Dyn_Data.h_stability{1,solution_num}; %#ok<*UNRCH>
+    stability = Validated_Solution.h_stability; %#ok<*UNRCH>
     [index_ranges,range_stability] = get_stability_boundaries(stability<STABILITY_LIMIT);
     num_sections = size(range_stability,2);
 
-    bb_stability = Dyn_Data.stability{1,solution_num};
+    bb_stability = Solution.stability;
     [bb_index_ranges,bb_range_stability] = get_stability_boundaries(bb_stability<STABILITY_LIMIT);
     bb_num_sections = size(bb_range_stability,2);
 
@@ -68,8 +70,8 @@ end
 
 switch type
     case "energy"
-        energy_tilde = Dyn_Data.energy{1,solution_num};
-        energy_hat = Dyn_Data.h_energy{1,solution_num};
+        energy_tilde = Solution.energy;
+        energy_hat = Validated_Solution.h_energy;
         
         if isempty(ax)
             figure
@@ -125,13 +127,12 @@ switch type
 
     case "amplitude"
         r_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
-        L_modes = Dyn_Data.validation_modes{1,solution_num};
-        h_modes = [r_modes,L_modes];
+        h_modes = [r_modes,validation_modes];
 
         num_h_modes = length(h_modes);
         
-        g_amp = Dyn_Data.corrected_low_modal_amplitude{1,solution_num};
-        q_amp = Dyn_Data.low_modal_amplitude{1,solution_num};
+        g_amp = Validated_Solution.corrected_low_modal_amplitude;
+        q_amp = Validated_Solution.low_modal_amplitude;
         
         if isempty(ax)
             figure

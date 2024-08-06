@@ -56,7 +56,7 @@ line_colour = get_plot_colours(colour_num);
 line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour};
 
 if PLOT_BIFURCATIONS
-    switch Solution.solution_type.orbit_type
+    switch Solution.Solution_Type.orbit_type
         case "free"
             bifurcation_size = BB_BIFURCATION_SIZE;
         case "forced"

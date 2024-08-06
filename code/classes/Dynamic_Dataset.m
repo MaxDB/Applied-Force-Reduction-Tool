@@ -26,7 +26,6 @@ classdef Dynamic_Dataset
         % Creation
         %-----------------------------------------------------------------%
         function obj = add_backbone(obj,mode_num,varargin)
-            %-------------------------------------------------------------------------%
             num_args = length(varargin);
             if mod(num_args,2) == 1
                 error("Invalid keyword/argument pairs")
@@ -47,19 +46,43 @@ classdef Dynamic_Dataset
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
             end
-            %-------------------------------------------------------------------------%
+            %-------------------------------------------------------------%
             BB_Settings.mode_num = mode_num;
             BB_Settings.type = type;
             BB_Settings.solution_num = obj.num_solutions + 1;
             BB_Settings.Continuation_Opts = Continuation_Opts;
             BB_Settings.Additional_Output = obj.Additional_Output;
-            
+
             Rom = obj.Dynamic_Model;
             BB_Sol = Backbone_Solution(Rom,BB_Settings);
 
             obj.num_solutions = obj.num_solutions + 1;
-            obj.solution_types{obj.num_solutions} = BB_Sol.solution_type;
+            obj.solution_types{obj.num_solutions} = BB_Sol.Solution_Type;
+            obj.solution_types{obj.num_solutions}.validated = false;
             obj.save_solution(BB_Sol)
+        end
+        %-----------------------------------------------------------------%
+
+        %-----------------------------------------------------------------%
+        % Validation
+        %-----------------------------------------------------------------%
+        function  obj = validate_solution(obj,solution_num,L_modes)
+            if isstring(solution_num)
+                if solution_num == "last"
+                    solution_num = obj.num_solutions;
+                end
+            end
+
+            Rom = obj.Dynamic_Model;
+
+            BB_Sol = obj.load_solution(solution_num);
+            Validated_BB_Settings.solution_num = solution_num;
+            Validated_BB_Settings.L_modes = L_modes;
+
+            Validated_BB_Sol = Validated_Backbone_Solution(Rom,BB_Sol,Validated_BB_Settings);
+
+            obj.solution_types{obj.num_solutions}.validated = true;
+            obj.save_solution(Validated_BB_Sol)
         end
         %-----------------------------------------------------------------%
 
@@ -78,18 +101,40 @@ classdef Dynamic_Dataset
             solution_name = "dynamic_sol_" + solution_num + "\";
             solution_path = data_path + solution_name;
 
-            movefile("data\temp\" + solution_name,solution_path);
+            switch class(Solution)
+                case "Backbone_Solution"
+                    file_name = "Sol_Data";
+                    movefile("data\temp\" + solution_name,solution_path);
+                case "Validated_Backbone_Solution"
+                    file_name = "Sol_Data_Validated";
+            end 
 
-            save(solution_path + "Sol_Data","Solution")
+            save(solution_path + file_name,"Solution")
             Dyn_Data.update_dyn_data;
         end
         %-----------------------------------------------------------------%
-        function Solution = load_solution(obj,solution_num)
+        function Solution = load_solution(obj,solution_num,type)
+            if nargin == 2
+                type = "Sol_Data";
+            end
+
+            switch type
+                case "validation"
+                    type = "Sol_Data_Validated";
+            end
             data_path = obj.Dynamic_Model.data_path;
 
             solution_name = "dynamic_sol_" + solution_num + "\";
             solution_path = data_path + solution_name;
-            load(solution_path + "Sol_Data","Solution")
+            load(solution_path + type,"Solution")
+            
+            switch type
+                case "Sol_Data"
+                     Solution.Solution_Type = obj.solution_types{solution_num};
+                case "Sol_Data_Validated"
+           
+            end
+            
         end
         %-----------------------------------------------------------------%
         function obj = remove_solution(obj,solution_num)
