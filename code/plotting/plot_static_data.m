@@ -35,6 +35,17 @@ if isstring(Static_Data)
 end
 
 %-------------------------------------------------------------------------%
+%input data
+
+x_data = Static_Data.get_dataset_values("reduced_displacement");
+x_label = "r";
+
+r_modes = Static_Data.Model.reduced_modes;
+num_r_modes = size(x_data,1);
+num_points = size(x_data,2);
+
+x_origin = repmat(R_ORIGIN,num_r_modes,1); %#ok<RPMT0>
+%-------------------------------------------------------------------------%
 %output data
 switch type
     case {"displacement","physical_displacement"}
@@ -49,6 +60,15 @@ switch type
         y_data = Static_Data.get_dataset_values("potential_energy");
         y_origin = 0;
         y_label = "V";
+    case{"force-displacement"}
+        y_data = Static_Data.get_dataset_values("physical_displacement");
+        y_origin = 0;
+        y_label = "x";
+
+        x_data = Static_Data.get_dataset_values("restoring_force");
+        x_label = "f";
+
+        x_origin = repmat(R_ORIGIN,num_r_modes,1); %#ok<RPMT0>
     otherwise
         error("Plotting for '" + type + "' is not supported")
 end
@@ -70,18 +90,6 @@ switch ndims(y_data)
         y_data = y_data(outputs,:,:);
 end
 num_outputs = length(outputs);
-
-%-------------------------------------------------------------------------%
-%input data
-
-x_data = Static_Data.get_dataset_values("reduced_displacement");
-x_label = "r";
-
-r_modes = Static_Data.Model.reduced_modes;
-num_r_modes = size(x_data,1);
-num_points = size(x_data,2);
-
-x_origin = repmat(R_ORIGIN,num_r_modes,1); %#ok<RPMT0>
 
 %-------------------------------------------------------------------------%
 %data ordering

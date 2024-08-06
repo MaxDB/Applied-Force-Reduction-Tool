@@ -180,6 +180,35 @@ classdef Dynamic_Dataset
             obj.update_dyn_data;
         end
         %-----------------------------------------------------------------%
+        function [orbit,validation_orbit] = get_orbit(obj,solution_num,orbit_num,validated)
+            if nargin == 3
+                validated = 0;
+            end
+            Solution = obj.load_solution(solution_num);
+            
+            data_path = obj.Dynamic_Model.data_path;
+            orbit_labels = Solution.orbit_labels;
+
+            solution_name = data_path + "dynamic_sol_" + solution_num; 
+            
+            
+            if isscalar(orbit_num)
+                orbit = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(orbit_num));
+            else
+                num_orbits = length(orbit_num);
+                orbit = cell(num_orbits,1);
+                for iOrbit = 1:num_orbits
+                    orbit{iOrbit,1} = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(orbit_num(iOrbit)));
+                end
+            end
+
+            if validated
+                load(solution_name + "\sol" + orbit_num + "_v.mat","validation_orbit");
+            else
+                validation_orbit = [];
+            end
+        end
+        %-----------------------------------------------------------------%
 
         %-----------------------------------------------------------------%
         % Overloading 

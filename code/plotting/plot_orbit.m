@@ -71,19 +71,22 @@ switch type
         end
         
         if validated
-            L_modes = Dyn_Data.validation_modes{1,solution_num};
+            Validated_Solution = Dyn_Data.load_solution(solution_num,"validation");
+            L_modes = Validated_Solution.validation_modes;
 
             physical_displacement = Dyn_Data.Dynamic_Model.expand(displacement);
             Model = Dyn_Data.Dynamic_Model.Model;
             mass = Model.mass;
-            stiffness = Model.stiffness;
+            % stiffness = Model.stiffness;
+            L_evecs = Dyn_Data.Dynamic_Model.Model.low_frequency_eigenvectors;
 
-            [full_evecs,~] = eigs(stiffness,mass,max(L_modes),"smallestabs");
-            % full_evals = diag(full_evals);
-            new_L_modes = 1:max(L_modes);
-            new_L_modes(ismember(new_L_modes,r_modes)) = [];
+            all_L_modes = 1:max(Dyn_Data.Dynamic_Model.Model.low_frequency_modes);
+            all_L_modes(ismember(all_L_modes,r_modes)) = [];
+            L_map = ismember(all_L_modes,L_modes);
+            
+            L_evecs = L_evecs(:,L_map);
 
-            L_evecs = full_evecs(:,new_L_modes);
+            
             % r_evecs = Model.reduced_eigenvectors;
 
             g = L_evecs'*mass*physical_displacement;

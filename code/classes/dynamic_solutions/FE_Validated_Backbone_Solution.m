@@ -1,6 +1,9 @@
-classdef FE_Validated_Backbone_Solution < Backbone_Solution
+classdef FE_Validated_Backbone_Solution
     properties
-                periodicity_error
+        orbit_labels
+        num_orbits
+        
+        periodicity_error
         max_displacement_stress
     end
     
