@@ -16,7 +16,12 @@ classdef Backbone_Solution < Dynamic_Solution
 
             mode_num = BB_Settings.mode_num;
             type = BB_Settings.type;
-            [t0,z0] = get_linear_solution(Rom,mode_num,type);
+            initial_conditions = BB_Settings.initial_condition;
+            if isempty(initial_conditions)
+                [t0,z0] = get_linear_solution(Rom,mode_num,type);
+            else
+                [t0,z0] = initial_conditions{:};
+            end
             
             solution_num = BB_Settings.solution_num;
             Add_Ouput = BB_Settings.Additional_Output;

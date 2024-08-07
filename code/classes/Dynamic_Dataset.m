@@ -35,13 +35,16 @@ classdef Dynamic_Dataset
 
             Continuation_Opts = struct([]);
             type = "rom";
+            initial_condition = [];
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
                     case "type"
                         type = keyword_values{arg_counter};
                     case "opts"
-                        Continuation_Opts= keyword_values{arg_counter};
+                        Continuation_Opts = keyword_values{arg_counter};
+                    case "ic"
+                        initial_condition = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -52,6 +55,7 @@ classdef Dynamic_Dataset
             BB_Settings.solution_num = obj.num_solutions + 1;
             BB_Settings.Continuation_Opts = Continuation_Opts;
             BB_Settings.Additional_Output = obj.Additional_Output;
+            BB_Settings.initial_condition = initial_condition;
 
             Rom = obj.Dynamic_Model;
             BB_Sol = Backbone_Solution(Rom,BB_Settings);
@@ -60,6 +64,110 @@ classdef Dynamic_Dataset
             obj.solution_types{obj.num_solutions} = BB_Sol.Solution_Type;
             obj.solution_types{obj.num_solutions}.validated = false;
             obj.save_solution(BB_Sol)
+        end
+        %-----------------------------------------------------------------%
+        function obj = restart_point(obj,solution_num,orbit_num,type,varargin)
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            Continuation_Opts = struct([]);
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "opts"
+                        Continuation_Opts= keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %-------------------------------------------------------------%
+            Rom = obj.Dynamic_Model;
+            
+            switch type
+                case "IC"
+                    point_index = get_special_point(obj,solution_num,type);
+            end
+
+            if isstring(orbit_num)
+                if orbit_num == "all"
+                    orbit_num = 1:size(point_index,1);
+                end
+            end
+            num_orbits = length(orbit_num);
+            for iOrbit = 1:num_orbits
+                next_solution_num = obj.num_solutions + 1;
+
+                Solution_Type = obj.solution_types{1,solution_num};
+                model_type = Solution_Type.model_type;
+
+                switch type
+                    case "po"
+                        orbit = obj.get_orbit(solution_num,orbit_num(iOrbit));
+                        t0 = orbit.tbp';
+                        z0 = orbit.xbp';
+
+                        obj = obj.add_backbone(0,"opts",Continuation_Opts,"ic",{t0,z0});
+                    case "bp"
+
+                    case "IC"
+                        orbit = obj.get_orbit(solution_num,point_index(orbit_num(iOrbit)));
+
+                        t0 = orbit.tbp';
+                        z0 = orbit.xbp';
+                        p0 = Solution_Type.frequency;
+
+                        data_path = obj.Dynamic_Model.data_path;
+                        solution_name = data_path + "dynamic_sol_" + solution_num;
+                        load(solution_name + "\Nonconservative_Inputs.mat","Nonconservative_Inputs")
+                        Nonconservative_Inputs.continuation_variable = "frequency";
+                        Nonconservative_Inputs = rmfield(Nonconservative_Inputs,"frequency");
+                        Nonconservative_Inputs.amplitude = orbit.p;
+
+                        coco_forced_response(t0,z0,p0,Rom,model_type,obj.Continuation_Options,next_solution_num,obj.Additional_Output,Nonconservative_Inputs);
+
+                        obj = obj.analyse_solution(next_solution_num);
+                        
+                        Solution_Type = rmfield(Solution_Type,"frequency");
+                        Solution_Type.amplitude = orbit.p;
+                        obj.solution_types{1,next_solution_num} = Solution_Type;
+                        obj.num_solutions = next_solution_num;
+
+                        obj.save_solution("coco_frf",next_solution_num,Nonconservative_Inputs)
+                    case "force"
+                        orbit = obj.get_orbit(solution_num,orbit_num(iOrbit));
+
+                        t0 = orbit.tbp';
+                        z0 = orbit.xbp';
+                        p0 = Solution_Type.amplitude;
+
+
+
+                        data_path = obj.Dynamic_Model.data_path;
+                        solution_name = data_path + "dynamic_sol_" + solution_num;
+                        load(solution_name + "\Nonconservative_Inputs.mat","Nonconservative_Inputs")
+
+                        Nonconservative_Inputs.continuation_variable = "amplitude";
+                        Nonconservative_Inputs.frequency = obj.frequency{1,solution_num}(orbit_num(iOrbit));
+
+                        Nonconservative_Inputs = rmfield(Nonconservative_Inputs,"amplitude");
+
+                        coco_forced_response(t0,z0,p0,Rom,model_type,obj.Continuation_Options,next_solution_num,obj.Additional_Output,Nonconservative_Inputs);
+                        obj = obj.analyse_solution(next_solution_num);
+
+                        Solution_Type = rmfield(Solution_Type,"amplitude");
+                        Solution_Type.frequency = obj.frequency{1,solution_num}(orbit_num(iOrbit));
+                        obj.solution_types{1,next_solution_num} = Solution_Type;
+                        obj.num_solutions = next_solution_num;
+
+                        obj.save_solution("coco_frf",next_solution_num,Nonconservative_Inputs)
+                end
+
+
+            end
         end
         %-----------------------------------------------------------------%
 
@@ -175,7 +283,7 @@ classdef Dynamic_Dataset
 
                 %------
                 obj.num_solutions = num_sols - 1;
-                obj.solution_types(solution_num(iSol),:) = [];
+                obj.solution_types(:,solution_num(iSol)) = [];
             end
             obj.update_dyn_data;
         end
