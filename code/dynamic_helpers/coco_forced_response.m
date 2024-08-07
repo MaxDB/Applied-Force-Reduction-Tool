@@ -98,11 +98,11 @@ prob = coco_add_slot(prob, 'energy_slot',@coco_energy_print,data,'cont_print');
 switch Additional_Output.type
     case "physical displacement"
         node_map = Rom.Model.node_mapping;
-        r_evec = Rom.Model.reduced_eigenvectors;
-        dof = node_map(Additional_Output.dof,2);
-        Theta_Poly = Rom.Condensed_Displacement_Polynomial;
 
-        displacement_func = @(prob,data,u) coco_displacement(prob,data,u,Theta_Poly,dof,r_evec);
+        dof = node_map(Additional_Output.dof,2);
+        Disp_Poly = Rom.Physical_Displacement_Polynomial;
+
+        displacement_func = @(prob,data,u) coco_displacement(prob,data,u,Disp_Poly,dof);
 
         prob = coco_add_func(prob, 'displacement_monitor', displacement_func, data, 'regular', 'DISP', 'uidx', uidx,'remesh',@coco_energy_remesh);
         disp_points = Additional_Output.special_points;

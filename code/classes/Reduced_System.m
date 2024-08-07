@@ -314,12 +314,9 @@ classdef Reduced_System
                     Eom_Input = obj.get_solver_inputs("coco_backbone");
                     Nc_Inputs = varargin{1,1};
                     
-                    theta_coeffs = obj.Physical_Displacement_Polynomial.coefficients';
-                    damping_beta = theta_coeffs'*Nc_Inputs.damping*theta_coeffs;
-                    evec_r = obj.Model.reduced_eigenvectors;
-                    damping_r = evec_r'*Nc_Inputs.damping*evec_r;
+                    displacement_coeffs = obj.Physical_Displacement_Polynomial.coefficients';
+                    damping_beta = displacement_coeffs'*Nc_Inputs.damping*displacement_coeffs;
                     Eom_Input.Damping_Data.damping_beta = damping_beta;
-                    Eom_Input.Damping_Data.damping_r = damping_r;
 
                     switch Nc_Inputs.force_type
                         case "modal"
@@ -343,20 +340,20 @@ classdef Reduced_System
 
                     damping = Nc_Inputs.damping;
                     L_evecs = obj.get_current_L_eigenvectors;
-                    theta_coeffs = obj.Physical_Displacement_Polynomial.coefficients';
+                    displacement_coeffs = obj.Physical_Displacement_Polynomial.coefficients';
                     G_coeffs = obj.Low_Frequency_Coupling_Gradient_Polynomial.coefficients;
                     G_coeffs_T = permute(G_coeffs,[2,3,1]);
 
-                    damping_beta = theta_coeffs'*Nc_Inputs.damping*theta_coeffs;
+                    damping_beta = displacement_coeffs'*Nc_Inputs.damping*displacement_coeffs;
                     evec_r = obj.Model.reduced_eigenvectors;
                     damping_r = evec_r'*Nc_Inputs.damping*evec_r;
                     Eom_Input.Damping_Data.damping_beta = damping_beta;
                     Eom_Input.Damping_Data.damping_r = damping_r;
                     
-                    Eom_Input.beta_G_damping_theta = obj.get_beta_mode(G_coeffs,damping*theta_coeffs);
+                    Eom_Input.beta_G_damping_theta = obj.get_beta_mode(G_coeffs,damping*displacement_coeffs);
                     beta_damping_G = tensorprod(full(damping),G_coeffs_T,2,1);
                     Eom_Input.beta_G_damping_G = obj.get_beta_mode(G_coeffs,beta_damping_G);
-                    Eom_Input.beta_L_damping_theta = obj.get_beta_mode(L_evecs'*damping,theta_coeffs);
+                    Eom_Input.beta_L_damping_theta = obj.get_beta_mode(L_evecs'*damping,displacement_coeffs);
                     Eom_Input.Damping_Data.damping_L = L_evecs'*damping*L_evecs;
 
 

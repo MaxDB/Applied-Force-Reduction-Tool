@@ -89,7 +89,7 @@ classdef Dynamic_Dataset
             
             switch type
                 case "IC"
-                    point_index = get_special_point(obj,solution_num,type);
+                    point_index = obj.get_special_point(solution_num,type);
             end
 
             if isstring(orbit_num)
@@ -120,23 +120,25 @@ classdef Dynamic_Dataset
                         z0 = orbit.xbp';
                         p0 = Solution_Type.frequency;
 
-                        data_path = obj.Dynamic_Model.data_path;
-                        solution_name = data_path + "dynamic_sol_" + solution_num;
-                        load(solution_name + "\Nonconservative_Inputs.mat","Nonconservative_Inputs")
-                        Nonconservative_Inputs.continuation_variable = "frequency";
-                        Nonconservative_Inputs = rmfield(Nonconservative_Inputs,"frequency");
-                        Nonconservative_Inputs.amplitude = orbit.p;
+                        FRF_Sol = obj.load_solution(solution_num);
+                        Force_Data = FRF_Sol.Force_Data;
+                        Damping_Data = FRF_Sol.Damping_Data;
 
-                        coco_forced_response(t0,z0,p0,Rom,model_type,obj.Continuation_Options,next_solution_num,obj.Additional_Output,Nonconservative_Inputs);
+                        Force_Data.continuation_variable = "frequency";
+                        Force_Data = rmfield(Force_Data,"frequency");
+                        Force_Data.amplitude = orbit.p;
 
-                        obj = obj.analyse_solution(next_solution_num);
-                        
-                        Solution_Type = rmfield(Solution_Type,"frequency");
-                        Solution_Type.amplitude = orbit.p;
-                        obj.solution_types{1,next_solution_num} = Solution_Type;
-                        obj.num_solutions = next_solution_num;
-
-                        obj.save_solution("coco_frf",next_solution_num,Nonconservative_Inputs)
+                        obj = obj.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"ic",{t0,z0,p0});
+                        % coco_forced_response(t0,z0,p0,Rom,model_type,obj.Continuation_Options,next_solution_num,obj.Additional_Output,Nonconservative_Inputs);
+                        % 
+                        % obj = obj.analyse_solution(next_solution_num);
+                        % 
+                        % Solution_Type = rmfield(Solution_Type,"frequency");
+                        % Solution_Type.amplitude = orbit.p;
+                        % obj.solution_types{1,next_solution_num} = Solution_Type;
+                        % obj.num_solutions = next_solution_num;
+                        % 
+                        % obj.save_solution("coco_frf",next_solution_num,Nonconservative_Inputs)
                     case "force"
                         orbit = obj.get_orbit(solution_num,orbit_num(iOrbit));
 
@@ -168,6 +170,56 @@ classdef Dynamic_Dataset
 
 
             end
+        end
+        %-----------------------------------------------------------------%
+        function obj = add_forced_response(obj,Force_Data,Damping_Data,varargin)
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            Continuation_Opts = struct([]);
+            type = "rom";
+            initial_condition = [];
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "type"
+                        type = keyword_values{arg_counter};
+                    case "opts"
+                        Continuation_Opts = keyword_values{arg_counter};
+                    case "ic"
+                        initial_condition = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %-------------------------------------------------------------%
+
+
+            % obj.num_solutions = obj.num_solutions + 1;
+            % obj.solution_types{obj.num_solutions} = BB_Sol.Solution_Type;
+            % obj.solution_types{obj.num_solutions}.validated = false;
+            % obj.save_solution(BB_Sol)
+
+            FRF_Settings.Force_Data = Force_Data;
+            FRF_Settings.Damping_Data = Damping_Data;
+            FRF_Settings.Continuation_Opts = Continuation_Opts;
+            FRF_Settings.solution_num = obj.num_solutions + 1;
+            FRF_Settings.Additional_Output = obj.Additional_Output;
+            FRF_Settings.type = type;
+            FRF_Settings.initial_condition = initial_condition;
+
+            Rom = obj.Dynamic_Model;
+            FRF_Sol = Forced_Solution(Rom,FRF_Settings);
+
+           
+            obj.num_solutions = obj.num_solutions + 1;
+            obj.solution_types{obj.num_solutions} = FRF_Sol.Solution_Type;
+            obj.solution_types{obj.num_solutions}.validated = false;
+            obj.save_solution(FRF_Sol)
         end
         %-----------------------------------------------------------------%
 
@@ -210,7 +262,7 @@ classdef Dynamic_Dataset
             solution_path = data_path + solution_name;
 
             switch class(Solution)
-                case "Backbone_Solution"
+                case {"Backbone_Solution","Forced_Solution"}
                     file_name = "Sol_Data";
                     movefile("data\temp\" + solution_name,solution_path);
                 case "Validated_Backbone_Solution"
@@ -315,6 +367,14 @@ classdef Dynamic_Dataset
             else
                 validation_orbit = [];
             end
+        end
+        %-----------------------------------------------------------------%
+        function point_index = get_special_point(obj,solution_num,point_type)
+            data_path = obj.Dynamic_Model.data_path;
+            solution_name = data_path + "dynamic_sol_" + solution_num;
+            bd = coco_bd_read(solution_name);
+            orbit_type = coco_bd_col(bd, "TYPE");
+            point_index = find(orbit_type == point_type);
         end
         %-----------------------------------------------------------------%
 

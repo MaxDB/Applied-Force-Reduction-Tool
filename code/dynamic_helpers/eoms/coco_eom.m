@@ -26,6 +26,7 @@ x_dot(disp_span,:) = r_dot;
 for iX = 1:num_x
     r_i = r_transformed(:,iX);
     r_dot_i = r_dot(:,iX);
+    
     r_power_products = ones(num_coeffs,1);
     for iMode = 1:num_modes
         r_power_products = r_power_products.*r_i(iMode).^input_order(:,iMode);

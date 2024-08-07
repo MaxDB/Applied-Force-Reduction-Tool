@@ -38,8 +38,9 @@ for iX = 1:num_x
 
     r_dr_products_coupling = r_products_coupling(Disp_Data.diff_mapping{1,1}).*Disp_Data.diff_scale_factor{1,1};
     
-    theta_prod = r_dr_products_coupling'*Disp_Data.beta_bar;
-    inertia_term = eye(num_modes) + theta_prod*r_dr_products_coupling;
+    disp_prod = r_dr_products_coupling'*Disp_Data.beta_bar; 
+    %--
+    inertia_term = disp_prod*r_dr_products_coupling;
     %--
     %--
     switch force_type
