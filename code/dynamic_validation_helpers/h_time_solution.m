@@ -1,4 +1,4 @@
-function Validation_Sol = h_time_solution(Validation_Sol,BB_Sol,Validation_Rom,solution_num)
+function Validation_Sol = h_time_solution(Validation_Sol,Solution,Validation_Rom,solution_num)
 GET_STABILITY = 0;
 SAVE_ORBIT = 1;
 
@@ -16,7 +16,7 @@ num_h_modes = length(Validation_Rom.Dynamic_Validation_Data.current_L_modes) + n
 h_disp_span = 1:num_h_modes;
 h_vel_span = h_disp_span + num_h_modes;
 
-Solution_Type = BB_Sol.Solution_Type;
+Solution_Type = Solution.Solution_Type;
 orbit_type = Solution_Type.orbit_type;
 solution_name = Validation_Rom.data_path + "dynamic_sol_" + solution_num;
 
@@ -34,15 +34,16 @@ switch orbit_type
 
         Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("h_analysis");
     case "forced"
-        load(solution_name + "\Nonconservative_Inputs.mat","Nonconservative_Inputs")
-        amp = Nonconservative_Inputs.amplitude;
-        Eom_Input = Validation_Rom.get_solver_inputs("coco_frf",Nonconservative_Inputs);
+        
+        Nonconservative_Input = Solution.get_nonconservative_input(Validation_Rom.Model);
+        amp = Nonconservative_Input.amplitude;
+        Eom_Input = Validation_Rom.get_solver_inputs("coco_frf",Nonconservative_Input);
         reduced_eom = @(t,z,T) coco_forced_eom(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data);
         
-        Validation_Input = Validation_Rom.get_solver_inputs("forced_h_prediction",Nonconservative_Inputs);
+        Validation_Input = Validation_Rom.get_solver_inputs("forced_h_prediction",Nonconservative_Input);
         h_terms = @(t,r,r_dot,r_ddot,period) get_forced_h_error_terms(t,r,r_dot,r_ddot,amp,period,Validation_Input);
 
-        Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("forced_h_analysis",Nonconservative_Inputs);
+        Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("forced_h_analysis",Nonconservative_Input);
 end
 
 
@@ -50,8 +51,8 @@ end
 
 
 
-orbit_labels = BB_Sol.orbit_labels;
-frequency = BB_Sol.frequency;
+orbit_labels = Solution.orbit_labels;
+frequency = Solution.frequency;
 num_periodic_orbits = length(orbit_labels);
 I_L = eye(num_h_modes);
 

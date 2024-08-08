@@ -27,23 +27,11 @@ classdef Forced_Solution < Dynamic_Solution
             obj.Damping_Data = Damping_Data;
 
             continuation_variable = Force_Data.continuation_variable;
-
-            switch Damping_Data.damping_type
-                case "rayleigh"
-                    damping = get_rayleigh_damping_matrix(Damping_Data,Rom.Model);
-                    Nonconservative_Input.damping = damping;
-            end
-
-
-            mode_map = Force_Data.mode_number==Rom.Model.reduced_modes;
-            Nonconservative_Input.mode_map = mode_map;
-            Nonconservative_Input.force_type = Force_Data.type;
-            Nonconservative_Input.continuation_variable = continuation_variable;
+            Nonconservative_Input = obj.get_nonconservative_input(Rom.Model);
 
             switch continuation_variable
                 case "amplitude"
-                    Nonconservative_Input.frequency = Force_Data.frequency;
-                    Nonconservative_Input.force_points = Force_Data.force_points;
+                    
 
 
                     [t0,z0,F0] = get_forced_linear_solution(Rom,Nonconservative_Input,continuation_variable);
@@ -51,7 +39,7 @@ classdef Forced_Solution < Dynamic_Solution
 
                     Sol_Type.frequency = Force_Data.frequency;
                 case "frequency"
-                    Nonconservative_Input.amplitude = Force_Data.amplitude;
+                    
                     if isempty(initial_conditions)
 
                     else
@@ -71,6 +59,32 @@ classdef Forced_Solution < Dynamic_Solution
             Sol_Type.model_type = type;
      
             obj.Solution_Type = Sol_Type;
+        end
+        %-----------------------------------------------------------------%
+        function Nonconservative_Input = get_nonconservative_input(obj,Model)
+            F_Data = obj.Force_Data;
+            Damp_Data = obj.Damping_Data;
+            
+            switch Damp_Data.damping_type
+                case "rayleigh"
+                    damping = get_rayleigh_damping_matrix(Damp_Data,Model);
+                    Nonconservative_Input.damping = damping;
+            end
+            continuation_variable = F_Data.continuation_variable;
+
+            mode_map = F_Data.mode_number == Model.reduced_modes;
+            Nonconservative_Input.mode_map = mode_map;
+            Nonconservative_Input.force_type = F_Data.type;
+            Nonconservative_Input.continuation_variable = continuation_variable;
+
+            switch continuation_variable
+                case "amplitude"
+                    Nonconservative_Input.frequency = F_Data.frequency;
+                    Nonconservative_Input.force_points = F_Data.force_points;
+                case "frequency"
+                    Nonconservative_Input.amplitude = F_Data.amplitude;
+            end
+
         end
         %-----------------------------------------------------------------%
         function obj = analyse_solution(obj,solution_num,Add_Output)

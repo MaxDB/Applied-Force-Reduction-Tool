@@ -339,22 +339,16 @@ classdef Reduced_System
                     Nc_Inputs = varargin{1,1};
 
                     damping = Nc_Inputs.damping;
-                    L_evecs = obj.get_current_L_eigenvectors;
-                    displacement_coeffs = obj.Physical_Displacement_Polynomial.coefficients';
-                    G_coeffs = obj.Low_Frequency_Coupling_Gradient_Polynomial.coefficients;
-                    G_coeffs_T = permute(G_coeffs,[2,3,1]);
 
-                    damping_beta = displacement_coeffs'*Nc_Inputs.damping*displacement_coeffs;
-                    evec_r = obj.Model.reduced_eigenvectors;
-                    damping_r = evec_r'*Nc_Inputs.damping*evec_r;
-                    Eom_Input.Damping_Data.damping_beta = damping_beta;
-                    Eom_Input.Damping_Data.damping_r = damping_r;
-                    
-                    Eom_Input.beta_G_damping_theta = obj.get_beta_mode(G_coeffs,damping*displacement_coeffs);
-                    beta_damping_G = tensorprod(full(damping),G_coeffs_T,2,1);
-                    Eom_Input.beta_G_damping_G = obj.get_beta_mode(G_coeffs,beta_damping_G);
-                    Eom_Input.beta_L_damping_theta = obj.get_beta_mode(L_evecs'*damping,displacement_coeffs);
-                    Eom_Input.Damping_Data.damping_L = L_evecs'*damping*L_evecs;
+                    displacement_coeffs = obj.Physical_Displacement_Polynomial.coefficients';
+
+                    h_disp_coeff = obj.Low_Frequency_Coupling_Gradient_Polynomial.coefficients;
+                    h_disp_coeff_T = permute(h_disp_coeff,[2,3,1]);
+                    damping_h_disp = tensorprod(full(damping),h_disp_coeff_T,2,1);
+                    Beta_Damping.h_disp = obj.get_beta_mode(h_disp_coeff,damping_h_disp);
+                    Beta_Damping.h_disp_r_disp = obj.get_beta_mode(h_disp_coeff,damping*displacement_coeffs);
+ 
+                    Eom_Input.Beta_Damping = Beta_Damping;
 
 
                     switch Nc_Inputs.force_type

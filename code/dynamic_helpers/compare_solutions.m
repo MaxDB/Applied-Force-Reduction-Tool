@@ -34,7 +34,7 @@ end
 if num_solutions == 1
     colour_numbers = 0;
 else
-    colour_numbers = 1:num_solutions;
+    colour_numbers = 1:8;
 end
 ax = [];
 legend_lines = zeros(1,num_solutions);
@@ -67,7 +67,7 @@ for iSol = 1:num_solutions
                             amplitude_map(round(amplitude)) = numEntries(amplitude_map) + 1;
                        end
                     end
-                    colour_numbers = amplitude_map(round(amplitude));
+                    colour_numbers(iSol) = amplitude_map(round(amplitude)); %#ok<AGROW>
                 else
                     colour_numbers = "grey";
                 end

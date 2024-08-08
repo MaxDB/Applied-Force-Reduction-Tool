@@ -243,7 +243,7 @@ switch type
     case "amplitude"
        
         amplitude = Solution.amplitude;
-        Solution_Type = Solution.solution_type;
+        Solution_Type = Solution.Solution_Type;
         num_modes = size(amplitude,1);
 
         if Solution_Type.model_type == "fom"
