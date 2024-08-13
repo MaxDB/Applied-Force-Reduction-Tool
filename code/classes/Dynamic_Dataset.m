@@ -235,6 +235,10 @@ classdef Dynamic_Dataset
 
             Rom = obj.Dynamic_Model;
 
+            if isstring(L_modes) && L_modes == "all"
+                L_modes = Rom.Model.low_frequency_modes;
+            end
+
             BB_Sol = obj.load_solution(solution_num);
             Validated_BB_Settings.solution_num = solution_num;
             Validated_BB_Settings.L_modes = L_modes;

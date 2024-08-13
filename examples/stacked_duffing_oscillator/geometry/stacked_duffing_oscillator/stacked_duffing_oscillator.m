@@ -2,7 +2,7 @@
 %%Parameters
 Parameters.m = [1;1;1];
 Parameters.k = [1;20;0.75];
-Parameters.alpha = [0.1;0.1;0.1];
+Parameters.alpha = [1;1;1];
 
 %%linear mass
 dofs = size(Parameters.m,1);

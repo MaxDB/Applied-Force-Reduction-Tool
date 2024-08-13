@@ -27,7 +27,7 @@ num_coeffs = size(Disp_Data.beta_bar,2);
 
 r_power_products = ones(num_coeffs,1);
 for iMode = 1:num_modes
-    r_power_products = r_power_products.*r_transformed(iMode,1).^input_index(:,iMode);
+    r_power_products = r_power_products.*r_transformed(iMode,1).^input_index(1:num_coeffs,iMode);
 end
 
 r_products = r_power_products(1:num_coeffs,:);

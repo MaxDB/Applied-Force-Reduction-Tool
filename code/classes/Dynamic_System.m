@@ -201,7 +201,7 @@ classdef Dynamic_System
                 load(GEOMETRY_PATH + "force_calibration.mat","Force_Calibration");
             end
 
-            if isequal(Force_Calibration.Parameters,obj.Parameters)
+            if isfile(GEOMETRY_PATH + "force_calibration.mat") && isequal(Force_Calibration.Parameters,obj.Parameters)
                 calibrated_energy = Force_Calibration.energy_limit;
                 if ismember(obj.energy_limit,calibrated_energy)
                     calibration_id = find(calibrated_energy == obj.energy_limit);

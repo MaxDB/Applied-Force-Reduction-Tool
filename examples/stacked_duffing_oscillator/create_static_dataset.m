@@ -8,7 +8,7 @@ set_visualisation_level(0)
 %--------- System Settings ---------%
 system_name = "stacked_duffing_oscillator";
 energy_limit = 250;
-initial_modes = [1];
+initial_modes = [1,3];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
