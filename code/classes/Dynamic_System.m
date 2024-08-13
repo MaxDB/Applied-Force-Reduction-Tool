@@ -24,6 +24,8 @@ classdef Dynamic_System
         low_frequency_modes
         low_frequency_eigenvalues
         low_frequency_eigenvectors
+
+        Parameters
     end
     methods
         function obj = Dynamic_System(name,e_lim,modes,Calibration_Opts,Static_Opts,varargin)
@@ -74,6 +76,8 @@ classdef Dynamic_System
                 obj.system_type = "indirect";
             elseif isfile(GEOMETRY_FILE_PATH + ".m")
                 obj.system_type = "direct";
+                Analytic_Eom = load_analytic_system(GEOMETRY_FILE_PATH);
+                obj.Parameters = Analytic_Eom.Parameters;
             end
 
             if obj.system_type == "direct"
@@ -195,8 +199,10 @@ classdef Dynamic_System
             GEOMETRY_PATH = "geometry\" + obj.system_name + "\";
             if isfile(GEOMETRY_PATH + "force_calibration.mat")
                 load(GEOMETRY_PATH + "force_calibration.mat","Force_Calibration");
-                calibrated_energy = Force_Calibration.energy_limit;
+            end
 
+            if isequal(Force_Calibration.Parameters,obj.Parameters)
+                calibrated_energy = Force_Calibration.energy_limit;
                 if ismember(obj.energy_limit,calibrated_energy)
                     calibration_id = find(calibrated_energy == obj.energy_limit);
                     calibrated_modes = Force_Calibration.calibrated_modes{1,calibration_id};
@@ -318,7 +324,7 @@ classdef Dynamic_System
                 hold off
                 %---------------------------------------------------------%
             end
-
+            Force_Calibration.Parameters = obj.Parameters;
             save(GEOMETRY_PATH + "force_calibration","Force_Calibration")
             
             calibrated_modes = Force_Calibration.calibrated_modes{1,calibration_id};

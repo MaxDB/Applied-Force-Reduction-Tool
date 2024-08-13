@@ -163,7 +163,9 @@ for iOutput = 1:num_outputs
     end
 
     hold(s1,"off")
-    ax{iOutput,1} = s1; %#ok<AGROW>
+    if num_outputs > 1
+        ax{iOutput,1} = s1; %#ok<AGROW>
+    end
 end
 
 

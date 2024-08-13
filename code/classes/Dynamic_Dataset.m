@@ -65,7 +65,7 @@ classdef Dynamic_Dataset
             obj.solution_types{obj.num_solutions}.validated = false;
             obj.save_solution(BB_Sol)
         end
-        %-----------------------------------------------------------------%
+        %-----------------------------------------------------------------%        
         function obj = restart_point(obj,solution_num,orbit_num,type,varargin)
             num_args = length(varargin);
             if mod(num_args,2) == 1

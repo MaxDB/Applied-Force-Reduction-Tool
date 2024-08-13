@@ -28,19 +28,18 @@ switch plot_part
         ax{1,1} = nexttile;
         ax{1,2} = nexttile;
         
-        Static_Data.plot_condensed_displacement(plot_index,ax(1,1));
+        % Static_Data.plot_condensed_displacement(plot_index,ax(1,1));
+        ax{1,1} = plot_static_data("displacement",Static_Data,"outputs",plot_index,"axes",ax{1,1});
         rom.Physical_Displacement_Polynomial.plot_polynomial(ax(1,1),plot_index);
         title(ax{1,1},"Degree = " + rom.Physical_Displacement_Polynomial.polynomial_degree);
-
-        Static_Data.plot_condensed_displacement(plot_index,ax{1,2});
+        
+        
+        % Static_Data.plot_condensed_displacement(plot_index,ax{1,2});
+        ax{1,2} = plot_static_data("displacement",Static_Data,"outputs",plot_index,"axes",ax{1,2});
 
         %plot energy and limit details
         
-
-        V = Static_Data.potential_energy;
-        f = Static_Data.restoring_force;
-        sep_id = Static_Data.static_equilibrium_path_id;
-        ax = Static_Data.plot_energy(f,V,sep_id,f);
+        plot_static_data("force-displacement",Static_Data);
         fig2 = gcf;
         fig2_id = fig2.Number;
         r_modes = Static_Data.Model.reduced_modes;

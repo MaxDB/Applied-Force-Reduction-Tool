@@ -2,6 +2,8 @@ classdef Analytic_System
     %System with known equations of motion
     properties
         system_name 
+        Parameters
+
         linear_mass
         linear_damping
         linear_stiffness
@@ -29,12 +31,14 @@ classdef Analytic_System
             keyword_values = varargin(2:2:num_args);
             
             save_system = false; %save system locally
+            Parameters = [];
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
                     case "save"
                         save_system = keyword_values{arg_counter};
-                        continue
+                    case "parameters"
+                        Parameters = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -42,6 +46,13 @@ classdef Analytic_System
             %%%%%
 
             obj.system_name = name;
+            if ~isempty(obj.Parameters)
+                if ~isequal(obj.Parameters,Parameters)
+                    error("Parameter change")
+                end
+            else
+                obj.Parameters = Parameters;
+            end
 
             if isfield(eom,'M')
                 obj.linear_mass = eom.M;

@@ -11,9 +11,7 @@ r_modes = Model.reduced_modes;
 
 
 mode_index = find(r_modes == backbone_num);
-if isempty(mode_index)
-    error("Backbone " + backbone_num + " not captured by ROM. Add the corresponding mode.")
-end
+
 
 natural_freq = sqrt(r_eigenvalues(mode_index));
 period = 2*pi/natural_freq;
@@ -22,7 +20,10 @@ zeta = zeros(1,TIME_RESOLUTION);
 
 switch type
     case "rom"
-        
+        if isempty(mode_index)
+            error("Backbone " + backbone_num + " not captured by ROM. Add the corresponding mode.")
+        end
+
         num_modes = length(r_modes);
         y = zeros(2*num_modes,TIME_RESOLUTION);
         y(mode_index,:) = sin(natural_freq*t);

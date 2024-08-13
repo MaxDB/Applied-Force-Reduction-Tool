@@ -315,8 +315,10 @@ classdef Static_Dataset
                 "low_frequency_coupling_gradient"];
 
             data_path = get_data_path(Static_Data);
-            if exist(data_path,"dir")
-                rmdir(data_path,"s")
+            system_data_path = split(data_path,"\");
+            system_data_path = join(system_data_path(1:(end-2)),"\") + "\";
+            if exist(system_data_path,"dir")
+                rmdir(system_data_path,"s")
             end
             mkdir(data_path)
             
