@@ -23,7 +23,8 @@ x_dof = x(dof,:);
 x_max = x(:,max_index);
 
 node_disp = reshape(x_max,NUM_DIMENSIONS,num_nodes)';
-colour_map = Dyn_Data.max_displacement_stress{1,solution_num}(:,orbit_num);
+Stress_Output = Dyn_Data.load_solution(solution_num,"stress");
+colour_map = Stress_Output.fe_output(:,orbit_num);
 
 plot_fe_mesh(Model,node_disp,colour_map)
 end
