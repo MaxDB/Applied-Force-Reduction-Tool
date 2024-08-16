@@ -21,7 +21,7 @@ r_dot = x(vel_span,:);
 % r_power_products = ones(num_coeffs,1);
 force_type = Applied_Force_Data.type;
 switch force_type
-    case "modal"
+    case {"modal","point force"}
         force_shape_dA = Applied_Force_Data.shape_dA(t,force_amp,period);
 end
 
@@ -46,6 +46,9 @@ for iX = 1:num_x
     switch force_type
         case "modal"
             applied_force_dA = force_shape_dA(:,:,iX);
+        case "point force"
+            amplitude_shape = r_dr_products_coupling'*Applied_Force_Data.disp_force_beta;
+            applied_force_dA = amplitude_shape*force_shape_dA(:,iX);
     end
     %--
     x_dot_dA(vel_span,:,iX) = inertia_term\applied_force_dA;

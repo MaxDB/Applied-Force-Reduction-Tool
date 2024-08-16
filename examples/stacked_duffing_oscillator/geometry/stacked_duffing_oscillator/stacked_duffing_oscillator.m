@@ -1,8 +1,8 @@
 % M*x_ddot + C*x_dot + K*x + f(x) = F 
 %%Parameters
-Parameters.m = [1;1;1];
-Parameters.k = [1;20;0.75];
-Parameters.alpha = [1;1;1];
+Parameters.m = [10;0.5;1];
+Parameters.k = [1;0.4;50];
+Parameters.alpha = [0;1;0];
 
 %%linear mass
 dofs = size(Parameters.m,1);

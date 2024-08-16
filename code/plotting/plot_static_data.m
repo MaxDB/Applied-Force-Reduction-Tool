@@ -112,6 +112,10 @@ origin_plot_settings = [plot_settings,{"MarkerEdgeColor",[0,0,0]}];
 
 %-------------------------------------------------------------------------%
 %plotting 
+if isa(ax,"matlab.graphics.axis.Axes")
+    ax = {ax};
+end
+
 if isempty(ax)
     figure
     tiledlayout("flow")
@@ -163,9 +167,7 @@ for iOutput = 1:num_outputs
     end
 
     hold(s1,"off")
-    if num_outputs > 1
-        ax{iOutput,1} = s1; %#ok<AGROW>
-    end
+    ax{iOutput} = s1; %#ok<AGROW>
 end
 
 

@@ -1,26 +1,25 @@
 clear
-close all
+% close all
 NUM_POINTS = 100;
-mass_ratio_21 = linspace(0,20,NUM_POINTS);
-mass_ratio_31 = 10;
+stiff_ratio_21 = linspace(0.1,1,NUM_POINTS);
+stiff_ratio_31 = 50;
 
 k1 = 1;
-k2 = 1;
-k3 = 1;
+m1 = 10;
+m2 = 0.5;
+m3 = 1;
 
-m1 = 1;
 % syms k2 k3
 freq_ratio = zeros(2,NUM_POINTS);
 for iPoint = 1:NUM_POINTS
-    m2 = mass_ratio_21(iPoint)*m1;
-    m3 = mass_ratio_31*m1;
+    k2 = stiff_ratio_21(iPoint)*k1;
+    k3 = stiff_ratio_31*k1;
     
     K = [k1 + k2, -k2, 0;
         -k2, k2+k3, -k3;
         0, -k3, k3];
     
     M = eye(3).*[m1;m2;m3];
-    
 
     [evec,eval] = eig(K,M);
 
@@ -30,7 +29,7 @@ for iPoint = 1:NUM_POINTS
 end
 
 figure;
-plot(mass_ratio_21,freq_ratio)
+plot(stiff_ratio_21,freq_ratio)
 
 
 % NUM_POINTS = 100;

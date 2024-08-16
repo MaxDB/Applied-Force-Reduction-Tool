@@ -28,7 +28,7 @@ h_disp_r_disp_beta_damping = Eom_Input.Beta_Damping.h_disp_r_disp;
 Applied_Force_Data = Eom_Input.Applied_Force_Data;
 force_type = Applied_Force_Data.type;
 switch force_type
-    case "modal"
+    case {"modal","point force"}
         force_shape = Applied_Force_Data.shape(t,amp,period);
 end
 
@@ -105,6 +105,9 @@ for iX = 1:num_x
         case "modal"
             applied_reduced_force = force_shape(:,iX);
             applied_force = [applied_reduced_force;zeros(num_L_modes,1)];
+        case "point force"
+            amplitude_shape = r_products_disp'*Applied_Force_Data.h_disp_force_beta;
+            applied_force = amplitude_shape'*force_shape(:,iX);
     end
 
     h_force(:,iX) = h_force(:,iX) + applied_force;

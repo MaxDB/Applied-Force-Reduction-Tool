@@ -29,7 +29,7 @@ end
 
 force_type = Applied_Force_Data.type;
 switch force_type
-    case "modal"
+    case {"modal","point force"}
         force_shape = Applied_Force_Data.shape(t,force_amp,period);
         force_shape_dx = Applied_Force_Data.shape_dx(t,force_amp,period);
 end
@@ -90,6 +90,13 @@ for iX = 1:num_x
             applied_force_dx = force_shape_dx(:,:,iX);
             applied_force_dr = applied_force_dx(:,disp_span);
             applied_force_dr_dot = applied_force_dx(:,vel_span);
+        case "point force"
+            amplitude_shape = r_dr_products_coupling'*Applied_Force_Data.disp_force_beta;
+            applied_force = amplitude_shape*force_shape(:,iX);
+            applied_force_dx = tensorprod(amplitude_shape,force_shape_dx(:,:,iX),2,1);
+            applied_force_dr = applied_force_dx(:,disp_span);
+            applied_force_dr_dot = applied_force_dx(:,vel_span);
+
     end
 
     %-------------

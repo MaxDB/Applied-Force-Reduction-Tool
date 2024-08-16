@@ -115,14 +115,30 @@ for iIteration = 1:(max_iterations+1)
         estimated_end_force = scaled_force_ratios(:,iSep);
         x_0 = zeros(num_modes,1);
         
-        [estimated_sep_end,~,exit_flag] = fsolve(@(x)force_equation(x,estimated_end_force),x_0,solve_opts); %#ok<ASGLU>
+        [estimated_sep_end,~,exit_flag] = fsolve(@(x)force_equation(x,estimated_end_force),x_0,solve_opts);
+        
+
+        sep_energy_limit = fitting_energy_limit;
+        counter = 0;
+        while exit_flag < 0 
+            estimated_end_force = 0.9*estimated_end_force;
+            counter = counter + 1;
+            [estimated_sep_end,~,exit_flag] = fsolve(@(x)force_equation(x,estimated_end_force),x_0,solve_opts);
+            if counter == 50
+                error("Could not find SEP end point")
+            end
+            sep_energy_limit = Potential_Poly_One.evaluate_polynomial(estimated_sep_end);
+        end
+        lambda = 1;
+        lambda_end = find_sep_end(Potential_Poly_One,sep_energy_limit,estimated_sep_end,estimated_end_force,lambda,force_equation,solve_opts);
+        
         
         % estimated_potential = evaluate_polynomial(Potential_Poly_One,estimated_sep_end);
         % estimated_lambda = energy_limit/estimated_potential;
         % x_0 = [estimated_sep_end;estimated_lambda];
         % [sep_end_condition,obj_value,exit_flag,output] = fsolve(@(x)energy_equation(x(1:num_modes,:),x(num_modes+1,:),estimated_end_force),x_0,solve_opts);
         
-        lambda_end = find_sep_end(Potential_Poly_One,fitting_energy_limit,estimated_sep_end,estimated_end_force,1,force_equation,solve_opts);
+        
 
         sep_lambda = linspace(0,lambda_end,max_sep_loadcases+1); 
         force_one = estimated_end_force.*sep_lambda(2:end);
@@ -209,7 +225,8 @@ for iIteration = 1:(max_iterations+1)
         interpolation_error(interpolation_error < 1) = 0;
         %pick worst points
         sorted_error = sort(interpolation_error,"descend");
-        worst_errors = sorted_error(1:num_sep_loadcases);
+        num_error_points = size(sorted_error,2);
+        worst_errors = sorted_error(1:min(num_error_points,num_sep_loadcases));
         worst_errors = worst_errors(worst_errors ~= 0);
         error_index = ismember(interpolation_error,worst_errors);
         
@@ -265,6 +282,19 @@ for iIteration = 1:(max_iterations+1)
                 new_loads = new_loads(:,~found_loadcases);
             end
             [r,theta,f,E,additional_data] = Rom_One.Model.add_point(new_loads,Static_Data.additional_data_type);
+            removal_index = E > fitting_energy_limit;
+            if any(removal_index)
+                r(:,removal_index) = [];
+                theta(:,removal_index) = [];
+                f(:,removal_index) = [];
+                E(:,removal_index) = [];
+                new_sep_id(:,removal_index) = [];
+                switch Static_Data.additional_data_type
+                    case {"stiffness","perturbation"}
+                        additional_data(:,:,removal_index) = [];
+                    case "none"
+                end
+            end
             if data_available
                 r(:,~found_loadcases) = r;
                 r(:,found_loadcases) = found_r;
@@ -284,7 +314,6 @@ for iIteration = 1:(max_iterations+1)
                         additional_data(:,:,found_loadcases) = found_additional_data;
                     case "none"
                 end
-
             end
             Static_Data = Static_Data.update_data(r,theta,f,E,new_sep_id-num_original_seps,additional_data);
         end

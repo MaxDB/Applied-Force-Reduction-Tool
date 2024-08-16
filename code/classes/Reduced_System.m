@@ -48,7 +48,7 @@ classdef Reduced_System
            
             Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
             % Condensed_Poly = Polynomial(r,theta,disp_degree,"constraint",{"linear_disp",0},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.MINIMUM_DISPLACEMENT);
-            Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",evec_r},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",0);
+            Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",evec_r},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.MINIMUM_DISPLACEMENT);
 
             Potential_Poly = integrate_polynomial(Force_Poly);
             Reduced_Stiffness_Poly = differentiate_polynomial(Force_Poly);
@@ -333,6 +333,28 @@ classdef Reduced_System
                                 case "frequency"
                                     Eom_Input.Applied_Force_Data.amplitude = Nc_Inputs.amplitude;
                             end
+                        case "point force"
+                            num_r_modes = size(obj.Model.reduced_modes,2);
+
+                            Eom_Input.Applied_Force_Data.shape = @(t,amp,T) sine_force(t,amp,T);
+                            Eom_Input.Applied_Force_Data.shape_dx = @(t,amp,T) sine_force_dx(t,amp,T,num_r_modes);
+                            Eom_Input.Applied_Force_Data.shape_dTper = @(t,amp,T) sine_force_dTper(t,amp,T);
+                            Eom_Input.Applied_Force_Data.shape_dA = @(t,amp,T) sine_force_dA(t,amp,T);
+                            Eom_Input.Applied_Force_Data.shape_dt = @(t,amp,T) sine_force_dt(t,amp,T);
+
+                            Eom_Input.Applied_Force_Data.type = Nc_Inputs.force_type;
+                            switch Nc_Inputs.continuation_variable
+                                case "amplitude"
+                                    Eom_Input.Applied_Force_Data.period = 2*pi/Nc_Inputs.frequency;
+                                case "frequency"
+                                    Eom_Input.Applied_Force_Data.amplitude = Nc_Inputs.amplitude;
+                            end
+
+                            h_disp_force_beta = displacement_coeffs'*Nc_Inputs.amplitude_shape;
+                            Eom_Input.Applied_Force_Data.disp_force_beta = h_disp_force_beta;
+
+                        otherwise 
+                            error("Unknown force type: '" + Nc_Inputs.force_type + "'")
                     end
                 case "forced_h_prediction"
                     Eom_Input = obj.get_solver_inputs("h_prediction");
@@ -366,6 +388,28 @@ classdef Reduced_System
                                 case "frequency"
                                     Eom_Input.Applied_Force_Data.amplitude = Nc_Inputs.amplitude;
                             end
+                        case "point force"
+                            num_r_modes = size(obj.Model.reduced_modes,2);
+
+                            Eom_Input.Applied_Force_Data.shape = @(t,amp,T) sine_force(t,amp,T);
+                            Eom_Input.Applied_Force_Data.shape_dx = @(t,amp,T) sine_force_dx(t,amp,T,num_r_modes);
+                            Eom_Input.Applied_Force_Data.shape_dTper = @(t,amp,T) sine_force_dTper(t,amp,T);
+                            Eom_Input.Applied_Force_Data.shape_dA = @(t,amp,T) sine_force_dA(t,amp,T);
+                            Eom_Input.Applied_Force_Data.shape_dt = @(t,amp,T) sine_force_dt(t,amp,T);
+
+                            Eom_Input.Applied_Force_Data.type = Nc_Inputs.force_type;
+                            switch Nc_Inputs.continuation_variable
+                                case "amplitude"
+                                    Eom_Input.Applied_Force_Data.period = 2*pi/Nc_Inputs.frequency;
+                                case "frequency"
+                                    Eom_Input.Applied_Force_Data.amplitude = Nc_Inputs.amplitude;
+                            end
+
+                            h_disp_force_beta = obj.get_beta_mode(h_disp_coeff,Nc_Inputs.amplitude_shape);
+                            Eom_Input.Applied_Force_Data.h_disp_force_beta = h_disp_force_beta;
+
+                        otherwise
+                            error("Unknown force type: '" + Nc_Inputs.force_type + "'")
                     end
                 case "forced_h_analysis"
                     Eom_Input = obj.get_solver_inputs("h_analysis");

@@ -31,21 +31,19 @@ classdef Forced_Solution < Dynamic_Solution
 
             switch continuation_variable
                 case "amplitude"
-                    
-
-
                     [t0,z0,F0] = get_forced_linear_solution(Rom,Nonconservative_Input,continuation_variable);
                     p0 = F0;
 
                     Sol_Type.frequency = Force_Data.frequency;
                 case "frequency"
-                    
                     if isempty(initial_conditions)
-
+                        period_range = obj.Continuation_Options.parameter_range;
+                        p0 = period_range(2);
+                        [t0,z0] = get_forced_response(Rom,Nonconservative_Input,p0);
                     else
                         [t0,z0,p0] = initial_conditions{:};
                     end
-                    
+
                     Sol_Type.amplitude = Force_Data.amplitude;
             end
 
@@ -72,8 +70,16 @@ classdef Forced_Solution < Dynamic_Solution
             end
             continuation_variable = F_Data.continuation_variable;
 
-            mode_map = F_Data.mode_number == Model.reduced_modes;
-            Nonconservative_Input.mode_map = mode_map;
+            switch F_Data.type
+                case "modal"
+                    mode_map = F_Data.mode_number == Model.reduced_modes;
+                    Nonconservative_Input.mode_map = mode_map;
+                case "point force"
+                    num_dofs = Model.num_dof;
+                    dof_map = zeros(num_dofs,1);
+                    dof_map(Model.node_mapping(:,1) == F_Data.dof) = 1;
+                    Nonconservative_Input.amplitude_shape = dof_map;
+            end
             Nonconservative_Input.force_type = F_Data.type;
             Nonconservative_Input.continuation_variable = continuation_variable;
 

@@ -7,7 +7,7 @@ set_visualisation_level(0)
 
 %--------- System Settings ---------%
 system_name = "stacked_duffing_oscillator";
-energy_limit = 250;
+energy_limit = 10;
 initial_modes = [1,3];
 %-----------------------------------%
 
@@ -16,8 +16,8 @@ Static_Opts.static_solver = "matlab";
 Static_Opts.additional_data = "stiffness";
 Static_Opts.num_validation_modes = 3;
 Static_Opts.max_parallel_jobs = 4; %be careful!
-Static_Opts.num_loadcases = 50;
-Static_Opts.maximum_loadcases = 50;
+Static_Opts.num_loadcases = 10;
+Static_Opts.maximum_loadcases = 20;
 %------------------------------------------%
 
 %--------- Calibration Settings ---------%

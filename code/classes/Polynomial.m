@@ -91,7 +91,7 @@ classdef Polynomial
             
             %---------------------
             if minimum_output ~= 0
-                output_range = max(output_data,[],2) - min(output_data,[],2);
+                output_range = max(abs(output_data),[],2);
                 % max_output = max(abs(output_data),[],2);
                 % zero_index = max_output < minimum_output;
                 zero_index = output_range < minimum_output;
@@ -103,6 +103,9 @@ classdef Polynomial
                         output_data(zero_index,:) = repmat(constraint_type{1,2}(zero_index,1),1,size(output_data,2));
                     case {"linear","linear_disp"}
                         output_data(zero_index,:) = 0;
+                        constraint_value = constraint_type{1,2};
+                        constraint_value(zero_index,:) = 0;
+                        constraint_type{1,2} = constraint_value;
                 end
                 obj.modeled_outputs = ~zero_index;
             end
@@ -309,27 +312,24 @@ classdef Polynomial
             end
 
 
-            
-            if ismatrix(plotted_outputs)
-                num_plotted_outputs = size(plotted_outputs,1);
-            else
-                num_plotted_outputs = length(plotted_outputs);
-            end
-            
+
+            num_plotted_outputs = length(plotted_outputs);
+
+
             num_inputs = obj.input_dimension;
             limits = obj.input_limit;
-            
+
 
             switch num_inputs
                 case 1
                     x = linspace(limits(1),limits(2),PLOT_RESOLUTION);
-                    
+
 
                     if ~exist("ax","var")
                         figure
                         tiledlayout(1,num_plotted_outputs)
                         for iOutput = 1:num_plotted_outputs
-                            ax{1,iOutput} = nexttile;
+                            ax{iOutput} = nexttile;
                             xlabel("x")
                             if size(plotted_outputs,2) > 1 
                                 ylabel("y_{(" + plotted_outputs(iOutput,1) + "," + plotted_outputs(iOutput,2) + ")}")
@@ -341,17 +341,15 @@ classdef Polynomial
                     end
 
                     for iOutput = 1:num_plotted_outputs
-                        if ismatrix(plotted_outputs)
-                            plotted_output = plotted_outputs(iOutput,:);
-                        else
-                            plotted_output = plotted_outputs(iOutput);
-                        end
+
+                        plotted_output = plotted_outputs(iOutput);
+
 
                         y = obj.evaluate_polynomial(x,plotted_output);
 
-                        hold(ax{1,iOutput},"on")
-                        plot(ax{1,iOutput},x,y)
-                        hold(ax{1,iOutput},"off")
+                        hold(ax{iOutput},"on")
+                        plot(ax{iOutput},x,y)
+                        hold(ax{iOutput},"off")
                     end
 
                 case 2
@@ -380,7 +378,7 @@ classdef Polynomial
                         figure
                         tiledlayout(1,num_plotted_outputs)
                         for iOutput = 1:num_plotted_outputs
-                            ax{1,iOutput} = nexttile;
+                            ax{iOutput} = nexttile;
                             xlabel("x_1")
                             ylabel("x_2")
                             if size(plotted_outputs,2) > 1
@@ -393,20 +391,18 @@ classdef Polynomial
                     end
 
                     for iOutput = 1:num_plotted_outputs
-                        if ismatrix(plotted_outputs)
-                            plotted_output = plotted_outputs(iOutput,:);
-                        else
-                            plotted_output = plotted_outputs(iOutput);
-                        end
+
+                        plotted_output = plotted_outputs(iOutput);
+
 
                         X_array = reshape(X_BC,1,num_points);
                         Y_array = reshape(Y_BC,1,num_points);
                         Z_array = obj.evaluate_polynomial([X_array;Y_array],plotted_output);
                         Z_BC = reshape(Z_array,size(X_BC));
                         
-                        hold(ax{1,iOutput},"on")
-                        mesh(ax{1,iOutput},X_BC,Y_BC,Z_BC)
-                        hold(ax{1,iOutput},"off")
+                        hold(ax{iOutput},"on")
+                        mesh(ax{iOutput},X_BC,Y_BC,Z_BC)
+                        hold(ax{iOutput},"off")
                     end
             end
             
