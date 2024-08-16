@@ -128,6 +128,8 @@ classdef Reduced_System
             r_evec = obj.Model.reduced_eigenvectors;
             x_Poly = obj.Physical_Displacement_Polynomial;
             x_dr_Poly = differentiate_polynomial(x_Poly);
+
+            x_dot = x_dr_Poly.evaluate_polynomial(r)*r_dot;
             
  
 

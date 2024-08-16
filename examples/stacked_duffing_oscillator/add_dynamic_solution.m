@@ -1,8 +1,8 @@
 clear
-close all
+% close all
 set_visualisation_level(3)
 
-system_name = "stacked_duffing_oscillator_13";
+system_name = "stacked_duffing_oscillator_1";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 

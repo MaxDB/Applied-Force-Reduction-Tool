@@ -235,7 +235,7 @@ classdef Dynamic_Dataset
 
             Rom = obj.Dynamic_Model;
 
-            
+
 
             BB_Sol = obj.load_solution(solution_num);
 
@@ -256,6 +256,65 @@ classdef Dynamic_Dataset
             obj.save_solution(Validated_BB_Sol)
         end
         %-----------------------------------------------------------------%
+        function obj = get_fe_output(obj,fe_output_type,solution_num,orbit_ids)
+            if isstring(orbit_ids)
+                if orbit_ids == "all"
+                    orbit_ids = 1:Sol.num_orbits;
+                elseif orbit_ids == "X"
+                    orbit_ids = obj.get_special_point(solution_num,orbit_ids);
+                end
+            end
+
+            FE_Output = obj.load_solution(solution_num,fe_output_type);
+            if class(FE_Output) ~= "FE_Orbit_Output" 
+                FE_Output = FE_Orbit_Output(obj,fe_output_type,solution_num,orbit_ids);
+            else
+                FE_Output = FE_Output.add_orbits(obj,orbit_ids);
+            end
+
+            save_solution(obj,FE_Output)
+        end
+        %-----------------------------------------------------------------%
+        function obj = get_periodicity_error(obj,solution_num,orbit_num)
+
+            Rom = obj.Dynamic_Model;
+            
+            orbit = get_orbit(obj,solution_num,orbit_num);
+            per_error = solution_periodicity_error(orbit,Rom);
+            num_orbits = size(obj.frequency{1,solution_num},2);
+            if isempty(obj.periodicity_error{1,solution_num})
+                obj.periodicity_error{1,solution_num} = nan(1,num_orbits);
+            end
+            
+            obj.periodicity_error{1,solution_num}(orbit_num) = per_error;
+            obj.save_solution("update",solution_num)
+        end
+        %-----------------------------------------------------------------%
+        function obj = get_max_disp_stress(obj,solution_num,orbit_num)
+            NUM_DIMENSIONS = 6;
+            
+            if isstring(orbit_num)
+                if orbit_num == "all"
+                    orbit_num = 1:length(obj.frequency{1,solution_num});
+                elseif orbit_num == "X"
+                    orbit_num = get_special_point(obj,solution_num,orbit_num);
+                end
+            end
+
+            Rom = obj.Dynamic_Model;
+            orbit = get_orbit(obj,solution_num,orbit_num);
+            Add_Output = obj.Additional_Output;
+            stress = solution_max_disp_stress(orbit,Rom,Add_Output);
+            
+            num_orbits = size(obj.frequency{1,solution_num},2);
+            num_nodes = max(obj.Dynamic_Model.Model.node_mapping(:,1))/NUM_DIMENSIONS;
+            if isempty(obj.max_displacement_stress{1,solution_num})
+                obj.max_displacement_stress{1,solution_num} = nan(num_nodes,num_orbits);
+            end
+            obj.max_displacement_stress{1,solution_num}(:,orbit_num) = stress;
+            obj.save_solution("update",solution_num)
+        end
+        %-----------------------------------------------------------------%
 
         %-----------------------------------------------------------------%
         % Helpers
@@ -267,7 +326,7 @@ classdef Dynamic_Dataset
         %-----------------------------------------------------------------%
         function save_solution(Dyn_Data,Solution)
             data_path = Dyn_Data.Dynamic_Model.data_path;
-            solution_num = Dyn_Data.num_solutions;
+            solution_num = Solution.solution_num;
 
             solution_name = "dynamic_sol_" + solution_num + "\";
             solution_path = data_path + solution_name;
@@ -278,6 +337,8 @@ classdef Dynamic_Dataset
                     movefile("data\temp\" + solution_name,solution_path);
                 case "Validated_Backbone_Solution"
                     file_name = "Sol_Data_Validated";
+                case "FE_Orbit_Output"
+                    file_name = "Sol_Data_" + Solution.fe_output_type;
             end 
 
             save(solution_path + file_name,"Solution")
@@ -292,12 +353,20 @@ classdef Dynamic_Dataset
             switch type
                 case "validation"
                     type = "Sol_Data_Validated";
+                case {"periodicity","stress"}
+                    type = "Sol_Data_" + type;
             end
             data_path = obj.Dynamic_Model.data_path;
 
             solution_name = "dynamic_sol_" + solution_num + "\";
             solution_path = data_path + solution_name;
-            load(solution_path + type,"Solution")
+
+            if isfile(solution_path + type + ".mat")
+                load(solution_path + type ,"Solution")
+            else
+                Solution = -1;
+                return
+            end
             
             switch type
                 case "Sol_Data"
@@ -385,7 +454,7 @@ classdef Dynamic_Dataset
             solution_name = data_path + "dynamic_sol_" + solution_num;
             bd = coco_bd_read(solution_name);
             orbit_type = coco_bd_col(bd, "TYPE");
-            point_index = find(orbit_type == point_type);
+            point_index = find(orbit_type == point_type)';
         end
         %-----------------------------------------------------------------%
 

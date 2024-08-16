@@ -1,9 +1,9 @@
 function plot_stress_manifold(Dyn_Data,L_modes,varargin)
 PLOT_H_R = 0;
 PLOT_RESOLUTION = 51;
-LIM_SF = 1;
-PHYSICAL_COORDINATES = 1;
-PLOT_MESH = 0;
+LIM_SF = 2;
+PHYSICAL_COORDINATES = 0;
+
 
 %-------------------------------------------------------------------------%
 num_args = length(varargin);
@@ -14,14 +14,27 @@ keyword_args = varargin(1:2:num_args);
 keyword_values = varargin(2:2:num_args);
 
 Dyn_Data_Comp = [];
+orbit_id = [];
+solution_num = [];
+
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
         case "comparison"
             Dyn_Data_Comp = keyword_values{arg_counter};
+        case "orbit"
+            orbit_data = keyword_values{arg_counter};
+            solution_num = orbit_data(1);
+            orbit_id = orbit_data(2);
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
+end
+
+plot_mesh = isempty(Dyn_Data_Comp);
+plot_orbit = ~isempty(orbit_id);
+if plot_orbit
+    LIM_SF = 1;
 end
 %-------------------------------------------------------------------------%
 
@@ -87,7 +100,7 @@ else
     zlabel("q_3")
 end
 
-if PLOT_MESH
+if plot_mesh
     [R,H_L] = meshgrid(r,h_L);
     R_lin = reshape(R,PLOT_RESOLUTION^2,1);
     H_L_lin = reshape(H_L,PLOT_RESOLUTION^2,1);
@@ -97,7 +110,11 @@ if PLOT_MESH
     X_HAT_lin = zeros(PLOT_RESOLUTION^2,num_dofs);
     for iPoint = 1:num_points
          x_hat_grad = Rom.Low_Frequency_Coupling_Gradient_Polynomial.evaluate_polynomial(R_lin(iPoint));
-         X_HAT_lin(iPoint,:) = Rom.Physical_Displacement_Polynomial.evaluate_polynomial(R_lin(iPoint)) + x_hat_grad*[0;H_L_lin(iPoint)];
+         x_hat_lin = Rom.Physical_Displacement_Polynomial.evaluate_polynomial(R_lin(iPoint)) + x_hat_grad*[0;H_L_lin(iPoint)];
+         if ~PHYSICAL_COORDINATES
+             x_hat_lin = evec*x_hat_lin;
+         end
+         X_HAT_lin(iPoint,:) = x_hat_lin;
     end
 
     X_HAT = reshape(X_HAT_lin,PLOT_RESOLUTION,PLOT_RESOLUTION,3);
@@ -133,17 +150,16 @@ if ~PHYSICAL_COORDINATES
 end
 switch num_dofs
     case 2
-        plot(x_tilde(1,:),x_tilde(2,:),'k-')
+        plot(x_tilde(1,:),x_tilde(2,:),'k-',"LineWidth",1.5)
     case 3
-        plot3(x_tilde(1,:),x_tilde(2,:),x_tilde(3,:),'k-')
+        plot3(x_tilde(1,:),x_tilde(2,:),x_tilde(3,:),'k-',"LineWidth",1.5)
 end
 
 hold off
 
-PLOT_ORBIT = 0;
-if PLOT_ORBIT
-    orbit_id = 151;
-    [orbit,validation_orbit] = Dyn_Data.get_orbit(2,orbit_id,1);
+
+if plot_orbit
+    [orbit,validation_orbit] = Dyn_Data.get_orbit(solution_num,orbit_id,1);
 
     r_orbit = orbit.xbp(:,1)';
     x_tilde_orbit = Rom.Physical_Displacement_Polynomial.evaluate_polynomial(r_orbit);
@@ -155,9 +171,15 @@ if PLOT_ORBIT
         x_hat_grad_orbit = Rom.Low_Frequency_Coupling_Gradient_Polynomial.evaluate_polynomial(r_orbit(:,iPoint));
         x_hat_orbit(:,iPoint) = x_tilde_orbit(:,iPoint) + x_hat_grad_orbit*h_orbit(:,iPoint);
     end
+    
+    if ~PHYSICAL_COORDINATES
+        x_tilde_orbit = evec*x_tilde_orbit;
+        x_hat_orbit = evec*x_hat_orbit;
+    end
+
 
     hold on
-    plot3(x_tilde_orbit(1,:),x_tilde_orbit(2,:),x_tilde_orbit(3,:),'k-','LineWidth',2)
+    plot3(x_tilde_orbit(1,:),x_tilde_orbit(2,:),x_tilde_orbit(3,:),'b-','LineWidth',2)
     plot3(x_hat_orbit(1,:),x_hat_orbit(2,:),x_hat_orbit(3,:),'r-','LineWidth',2)
 hold off
 end
@@ -165,6 +187,8 @@ end
 if isempty(Dyn_Data_Comp)
     return
 end
+PLOT_MESH = 1;
+
 
 rom_2 = Dyn_Data_Comp.Dynamic_Model;
 
@@ -172,26 +196,48 @@ r_1 = r;
 r_2_lim = rom_2.reduced_displacement_limits(2,:);
 r_2 = linspace(r_2_lim(1),r_2_lim(2),PLOT_RESOLUTION);
 
-hold on
-for iR_1 = 1:PLOT_RESOLUTION
-    r_1_plot = r_1(:,iR_1);
-    x_tilde_12 = zeros(num_dofs,PLOT_RESOLUTION);
-    for iR_2 = 1:PLOT_RESOLUTION
-        r_2_plot = r_2(:,iR_2);
-        x_tilde_12(:,iR_2) = rom_2.Physical_Displacement_Polynomial.evaluate_polynomial([r_1_plot;r_2_plot]);
-    end
-    if ~PHYSICAL_COORDINATES
-        x_tilde_12 = evec*x_tilde_12;
-    end
-    switch num_dofs
-        case 2
-            plot(x_tilde_12(1,:),x_tilde_12(2,:),'-')
-        case 3
-            plot3(x_tilde_12(1,:),x_tilde_12(2,:),x_tilde_12(3,:),'-')
-    end
-end
-hold off
+if PLOT_MESH
+    [R_1,R_2] = meshgrid(r_1,r_2);
+    X_TILDE_12 = zeros(PLOT_RESOLUTION,PLOT_RESOLUTION,3);
+    for iR_1 = 1:PLOT_RESOLUTION
+        for iR_2 = 1:PLOT_RESOLUTION
+            r_1_lin = R_1(iR_1,iR_2);
+            r_2_lin = R_2(iR_1,iR_2);
+            x_tilde_12_lin = rom_2.Physical_Displacement_Polynomial.evaluate_polynomial([r_1_lin;r_2_lin]);
+            
+            if ~PHYSICAL_COORDINATES
+                x_tilde_12_lin = evec*x_tilde_12_lin;
+            end
 
+            X_TILDE_12(iR_1,iR_2,:) = x_tilde_12_lin;
+        end
+    end
+
+    hold on
+    mesh(X_TILDE_12(:,:,1),X_TILDE_12(:,:,2),X_TILDE_12(:,:,3))
+    hold off
+
+else
+    hold on
+    for iR_1 = 1:PLOT_RESOLUTION
+        r_1_plot = r_1(:,iR_1);
+        x_tilde_12 = zeros(num_dofs,PLOT_RESOLUTION);
+        for iR_2 = 1:PLOT_RESOLUTION
+            r_2_plot = r_2(:,iR_2);
+            x_tilde_12(:,iR_2) = rom_2.Physical_Displacement_Polynomial.evaluate_polynomial([r_1_plot;r_2_plot]);
+        end
+        if ~PHYSICAL_COORDINATES
+            x_tilde_12 = evec*x_tilde_12;
+        end
+        switch num_dofs
+            case 2
+                plot(x_tilde_12(1,:),x_tilde_12(2,:),'-')
+            case 3
+                plot3(x_tilde_12(1,:),x_tilde_12(2,:),x_tilde_12(3,:),'-')
+        end
+    end
+    hold off
+end
 
 end
 

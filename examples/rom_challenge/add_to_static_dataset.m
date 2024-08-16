@@ -6,8 +6,8 @@ set_visualisation_level(0)
 %-------------------------------------%
 
 %--------- System Settings ---------%
-system_name = "exhaust_17";
-added_modes = 5;
+system_name = "exhaust_1";
+added_modes = 7;
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
@@ -16,11 +16,11 @@ Static_Opts.maximum_loadcases = 9;
 %------------------------------------------%
 
 %--------- Static Validation Settings ---------%
-% Validation_Opts.maximum_iterations = 3;
-% Validation_Opts.max_added_points = 50;
-% 
 Validation_Opts.maximum_iterations = 3;
-Validation_Opts.max_added_points = 150;
+Validation_Opts.max_added_points = 50;
+% 
+% Validation_Opts.maximum_iterations = 3;
+% Validation_Opts.max_added_points = 150;
 
 % Validation_Opts.maximum_iterations = 2;
 % Validation_Opts.max_added_points = 800;
