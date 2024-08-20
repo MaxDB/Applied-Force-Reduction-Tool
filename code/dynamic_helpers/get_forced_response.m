@@ -1,5 +1,5 @@
 function [t_sol,z_sol] = get_forced_response(Rom,Nonconservative_Input,period)
-MAX_INCREMENTS = 100;
+MAX_INCREMENTS = 1000;
 MAX_ERROR = 1e-4;
 
 %-------------------------------------------------------------------------%
@@ -23,12 +23,16 @@ z0 = zeros(2*num_r_modes,1);
 opts = odeset('RelTol',1e-8,'AbsTol',1e-10);
 t = 0;
 t_increment = period;
-
+t_all = [];
+z_all = [];
 for iInc = 1:MAX_INCREMENTS
     t_span = t(end) + [0,t_increment];
     [t,z] = ode45(eom,t_span,z0,opts);
+    t_all = [t_all,t'];
+    z_all = [z_all,z'];
+    
     z0 = z(end,:);
-
+    
     error = check_periodicity(z);
     if error < MAX_ERROR
         break

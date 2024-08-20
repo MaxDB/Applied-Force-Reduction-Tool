@@ -492,8 +492,13 @@ classdef Dynamic_System
             end
         end
         %-----------------------------------------------------------------%
-        function [t,x,x_dot] = dynamic_simulation(obj,x_0,x_dot_0,f_r_0,period,min_incs)
-
+        function [t,x,x_dot,energy] = dynamic_simulation(obj,x_0,x_dot_0,f_r_0,period,num_periods,min_incs,initial_time,FE_Force_Data)
+            if ~exist("initial_time","var")
+                initial_time = zeros(1,size(x_0,2));
+            end
+            if ~exist("FE_Force_Data","var")
+                FE_Force_Data = [];
+            end
             
             Static_Opts = obj.Static_Options;
             switch Static_Opts.static_solver
@@ -511,14 +516,15 @@ classdef Dynamic_System
                         t = cell(1,num_parallel_jobs);
                         x = cell(1,num_parallel_jobs);
                         x_dot = cell(1,num_parallel_jobs);
-
-                        parfor (iJob = 1:num_parallel_jobs,Static_Opts.max_parallel_jobs)
-                        % for iJob = 1:num_parallel_jobs
-                            [t_job,x_job,x_dot_job] = dynamic_simulation_abaqus(x_0(:,iJob),x_dot_0(:,iJob),f_r_0(:,iJob),period(iJob),min_incs(iJob),obj,iJob);
+                        energy = cell(1,num_parallel_jobs);
+                        % parfor (iJob = 1:num_parallel_jobs,Static_Opts.max_parallel_jobs)
+                        for iJob = 1:num_parallel_jobs
+                            [t_job,x_job,x_dot_job,energy_job] = dynamic_simulation_abaqus(x_0(:,iJob),x_dot_0(:,iJob),f_r_0(:,iJob),period(iJob),num_periods,min_incs(iJob),initial_time(iJob),FE_Force_Data,obj,iJob);
 
                             t{1,iJob} = t_job;
                             x{1,iJob} = x_job;
                             x_dot{1,iJob} = x_dot_job;
+                            energy{1,iJob} = energy_job;
                         end
 
                         abaqus_time = toc(abaqus_start);
@@ -526,7 +532,7 @@ classdef Dynamic_System
                         log_message = sprintf("Total FE time: %.1f seconds" ,abaqus_time);
                         logger(log_message,3)
                     else
-                        [t,x,x_dot] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,min_incs,obj,1);
+                        [t,x,x_dot,energy] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,num_periods,min_incs,initial_time,FE_Force_Data,obj,1);
                     end
                 case "matlab"
 

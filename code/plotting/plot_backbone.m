@@ -13,6 +13,10 @@ BB_BIFURCATION_SIZE = [4,4,4,0];
 FRF_BIFURCATION_SIZE = [4,4,4,5];
 SPECIAL_POINT_SIZE = 6;
 
+FE_DATA_MARKER = "*";
+FE_DATA_COLOUR = [0,0,0];
+FE_DATA_MARKER_SIZE = 6;
+
 %-------------------------------------------------------------------------%
 num_args = length(varargin);
 if mod(num_args,2) == 1
@@ -131,7 +135,12 @@ if plot_periodicity
     periodicity_error(Periodicity_Ouput.orbit_labels) = Periodicity_Ouput.fe_output;
 end
 
-
+FE_Output = Dyn_Data.load_solution(solution_num,"forced_response");
+plot_fe_output = class(FE_Output) == "FE_Orbit_Output";
+if plot_fe_output
+    FE_Data = FE_Output.fe_output;
+    fe_data_plot_settings = {"Marker",FE_DATA_MARKER,"MarkerSize",FE_DATA_MARKER_SIZE,"Color",FE_DATA_COLOUR,"LineStyle","none"};
+end
 
 
 switch type
@@ -229,6 +238,10 @@ switch type
                 data_tip_row = dataTipTextRow("Periodicity",periodicity_error(point_index));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
             end
+        end
+
+        if plot_fe_output
+            plot(FE_Data.frequency,FE_Data.energy,fe_data_plot_settings{:})
         end
         hold(ax,"off")
 
@@ -346,6 +359,11 @@ switch type
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
                 end
             end
+            if plot_fe_output
+                plot(FE_Data.frequency,FE_Data.amplitude(iMode,:),fe_data_plot_settings{:})
+            end
+
+
             hold(ax{ax_id,1},"off")
 
             xlabel(ax{ax_id,1},"Frequency (rad/s)")

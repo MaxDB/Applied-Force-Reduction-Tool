@@ -5,12 +5,14 @@
 DYNAMIC_SETTINGS_HERE
 **0.1,1.1,1.2e-05
 *CLOAD, OP=NEW
+**DYNAMIC_LOAD_HERE
 ** 
 ** OUTPUT REQUESTS
 *NODE PRINT,SUMMARY=NO
 U
 *NODE PRINT,SUMMARY=NO
 V
+*ENERGY PRINT
 ** 
 *End Step
 ** ----------------------------------------------------------------

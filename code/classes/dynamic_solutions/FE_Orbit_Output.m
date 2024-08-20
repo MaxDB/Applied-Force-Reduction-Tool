@@ -31,7 +31,18 @@ classdef FE_Orbit_Output
             fe_data = obj.get_fe_output(Dyn_Data,new_orbit_ids);
             obj.orbit_labels = [obj.orbit_labels,new_orbit_ids];
             obj.num_orbits = size(obj.orbit_labels,2);
-            obj.fe_output = [obj.fe_output,fe_data];
+            switch obj.fe_output_type
+                case "forced_response"
+                    output_fields = fieldnames(obj.fe_output);
+                    num_fields = size(output_fields,1);
+                    for iField = 1:num_fields
+                        output_field = output_fields{iField,1};
+                        obj.fe_output.(output_field) = [obj.fe_output.(output_field),fe_data.(output_field)];
+                    end
+
+                otherwise
+                    obj.fe_output = [obj.fe_output,fe_data];
+            end
         end
         %-----------------------------------------------------------------%
         function fe_data = get_fe_output(obj,Dyn_Data,orbit_ids)
@@ -43,6 +54,12 @@ classdef FE_Orbit_Output
                 case "stress"
                     Add_Output = Dyn_Data.Additional_Output;
                     fe_data = solution_max_disp_stress(orbit,Rom,Add_Output);
+                case "forced_response"
+                    Add_Output = Dyn_Data.Additional_Output;
+                    Forced_Sol = Dyn_Data.load_solution(obj.solution_num);
+                    Force_Data = Forced_Sol.Force_Data;
+                    Damping_Data = Forced_Sol.Damping_Data;
+                    fe_data = get_fe_forced_response(orbit,Rom,Force_Data,Damping_Data,Add_Output);
             end
         end
         %-----------------------------------------------------------------%

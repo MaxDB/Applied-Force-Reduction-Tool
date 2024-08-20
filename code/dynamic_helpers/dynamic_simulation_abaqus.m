@@ -1,7 +1,10 @@
-function [time,x,x_dot] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,min_incs,Model,job_id)
+function [time,x,x_dot,energy] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,num_periods,min_incs,initial_time,FE_Force_Data,Model,job_id)
 JOB_NAME = "dynamic_analysis";
 NUM_DIMENSIONS = 6;
 MAX_DYNAMIC_INC = 1e6;
+
+AMPLITUDE_TYPE = "periodic_amplitude";
+TEMPLATE_PATH = "\fe_templates\abaqus\";
 project_path = get_project_path;
 
 
@@ -21,10 +24,27 @@ max_static_inc = Static_Opts.maximum_step_increments*Static_Opts.num_loadcases;
 new_job = JOB_NAME + "_" + job_id;
 
 
-
 %-------------------------------------------------------------------------%
 %Open Template
-t_id = fopen(project_path + "\fe_templates\abaqus\static_ic_step.inp");
+if ~isempty(FE_Force_Data)
+    frequency = 2*pi/period;
+    harmonic_coefficients = shift_harmonics(FE_Force_Data.harmonic_coefficients,initial_time,frequency);
+
+    t_id = fopen(project_path + TEMPLATE_PATH + AMPLITUDE_TYPE + ".inp");
+    amp_template=textscan(t_id,'%s','delimiter','\n');
+    fclose(t_id);
+    amp_template = amp_template{1,1};
+
+    for iLine = 1:length(amp_template)
+        if strfind(amp_template{iLine,1},'1, freq, t0, A0')
+            amp_template{iLine,1} = "1, " + frequency + ", 0, " + harmonic_coefficients(1);
+            amp_template{iLine+1,1} = harmonic_coefficients(2) + ", " + harmonic_coefficients(3);
+        end
+    end
+end
+%-------------------------------------------------------------------------%
+%Open Template
+t_id = fopen(project_path + TEMPLATE_PATH + "static_ic_step.inp");
 static_template=textscan(t_id,'%s','delimiter','\n');
 fclose(t_id);
 static_template = static_template{1,1};
@@ -61,7 +81,7 @@ end
 
 %-------------------------------------------------------------------------%
 %Open Template
-t_id = fopen(project_path + "\fe_templates\abaqus\dynamic_step.inp");
+t_id = fopen(project_path + TEMPLATE_PATH + "dynamic_step.inp");
 dynamic_template=textscan(t_id,'%s','delimiter','\n');
 fclose(t_id);
 dynamic_template = dynamic_template{1,1};
@@ -73,7 +93,16 @@ for iLine = 1:length(dynamic_template)
     end
 
     if strfind(dynamic_template{iLine,1},'DYNAMIC_SETTINGS_HERE')
-        dynamic_template{iLine,1} = period/1000 + "," + period + "," + period/MAX_DYNAMIC_INC + "," + period/min_incs;
+        dynamic_template{iLine,1} = period/1000 + "," + period*num_periods + "," + period/MAX_DYNAMIC_INC + "," + period/min_incs;
+    end
+
+    if ~isempty(FE_Force_Data)
+        if strfind(dynamic_template{iLine,1},'*CLOAD, OP=NEW')
+            dynamic_template{iLine,1} = "*CLOAD, amplitude=" + AMPLITUDE_TYPE +  ", OP=NEW";
+        end
+        if strfind(dynamic_template{iLine,1},'**DYNAMIC_LOAD_HERE')
+            dynamic_load_def_line = iLine;
+        end
     end
 end
 
@@ -87,8 +116,19 @@ for iLine = 1:length(geometry)
         instance_def = split(instance_def,",");
         instance_name = instance_def{1,1};
     end
-end
 
+
+    if strfind(geometry{iLine,1},"*Density")
+        density_def_line = iLine;
+    end
+
+end
+if ~isempty(FE_Force_Data)
+    alpha = FE_Force_Data.alpha;
+    beta = FE_Force_Data.beta;
+    damping_def = "*Damping, alpha = " + alpha + ", beta = " + beta;
+    geometry = [geometry(1:(density_def_line-1));damping_def;geometry(density_def_line:end);amp_template];
+end
 
 %-------------------------------------------------------------------------%
 %%% Create forcing tempate
@@ -130,7 +170,17 @@ for iDimension = 1:NUM_DIMENSIONS
     dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
     step_velocity_label(dimension_span,1) = force_label(dimension_span,1) + step_velocity(coordinate_index+iDimension,1);
 end
-
+%-------------------------------------------------------------------------%
+if ~isempty(FE_Force_Data)
+    dyn_force_bc = FE_Force_Data.amplitude*Model.mass*FE_Force_Data.force_shape;
+    dyn_force = zeros(all_dofs,1);
+    dyn_force(Model.node_mapping(:,1),:) = dyn_force_bc(Model.node_mapping(:,2),:);
+    dyn_force_label = strings(all_dofs,1);
+    for iDimension = 1:NUM_DIMENSIONS
+        dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
+        dyn_force_label(dimension_span,1) = force_label(dimension_span,1) + dyn_force(coordinate_index+iDimension,1);
+    end
+end
 %-------------------------------------------------------------------------%
 static_step = static_template;
 
@@ -142,8 +192,10 @@ fprintf(input_id,'%s\r\n',static_step{(load_def_line+1):end,1});
 
 %-------------------------------------------------------------------------%
 dynamic_step = dynamic_template;
+fprintf(input_id,'%s\r\n',dynamic_step{1:(dynamic_load_def_line-1)});
+fprintf(input_id,'%s\r\n',dyn_force_label(:));
+fprintf(input_id,'%s\r\n',dynamic_step{(dynamic_load_def_line+1):end,1});
 
-fprintf(input_id,'%s\r\n',dynamic_step{1:end});
 %-------------------------------------------------------------------------%
 fclose(input_id);
 
@@ -177,7 +229,10 @@ disp_table_pattern = "NODE FOOT-" + whitespacePattern +  "U1";
 vel_table_pattern = "NODE FOOT-" + whitespacePattern +  "V1";
 increment_time_pattern = "TIME INCREMENT COMPLETED";
 
-
+potential_pattern = "RECOVERABLE STRAIN ENERGY";
+kinetic_pattern = "KINETIC ENERGY";
+work_pattern = "EXTERNAL WORK";
+dissipation_pattern = "VISCOUS DISSIPATION";
 
 %------------------------------------------------------------------------%
 dat_ID = fopen("temp\" + new_job + ".dat");
@@ -203,6 +258,10 @@ num_increments = size(inc_start_lines,1) - 2;
 time = zeros(1,num_increments+1);
 displacement = zeros(num_dofs,num_increments);
 velocity = zeros(num_dofs,num_increments);
+potential_energy = zeros(1,num_increments);
+kinetic_energy = zeros(1,num_increments);
+external_work = zeros(1,num_increments);
+dissipated_energy = zeros(1,num_increments);
 
 for iInc = 1:num_increments
     inc_span = inc_start_lines(iInc+1):(inc_start_lines(iInc+2)-1);
@@ -214,6 +273,23 @@ for iInc = 1:num_increments
     increment_time_line_data = textscan(inc_data{increment_time_line},"%s %s %s %f");
     time(iInc+1) = increment_time_line_data{1,4} + time(iInc);
 
+    potential_line_def = find(startsWith(inc_data,potential_pattern,'IgnoreCase',true),1);
+    potential_line = textscan(inc_data{potential_line_def},"%s %s %s %f");
+    potential_energy(:,iInc) = potential_line{1,end};
+
+    kinetic_line_def = find(startsWith(inc_data,kinetic_pattern,'IgnoreCase',true),1);
+    kinetic_line = textscan(inc_data{kinetic_line_def},"%s %s %f");
+    kinetic_energy(:,iInc) = kinetic_line{1,end};
+
+    external_work_line_def = find(startsWith(inc_data,work_pattern,'IgnoreCase',true),1);
+    external_work_line = textscan(inc_data{external_work_line_def},"%s %s %f");
+    external_work(:,iInc) = external_work_line{1,end};
+
+    dissipated_energy_line_def = find(startsWith(inc_data,dissipation_pattern,'IgnoreCase',true),1);
+    dissipated_energy_line = textscan(inc_data{dissipated_energy_line_def},"%s %s %s %s %s %f");
+    dissipated_energy(:,iInc) = dissipated_energy_line{1,end};
+
+    
     disp_table_span = disp_table_start:(vel_table_start-3);
     disp_table_data = inc_data(disp_table_span,1);
     disp_pre_bc = read_abaqus_table(disp_table_data,num_nodes,NUM_DIMENSIONS);
@@ -226,6 +302,10 @@ for iInc = 1:num_increments
 
 end
 
+energy.potential = potential_energy;
+energy.work = external_work;
+energy.kinetic = kinetic_energy;
+energy.dissipated = dissipated_energy;
 
 x = [disp_0_bc,displacement];
 x_dot = [x_dot_0,velocity];

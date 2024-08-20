@@ -14,7 +14,7 @@ switch poly_name
         degree_index = 1;
     case "Physical_Displacement"
         degree_index = 2;
-        min_disp = Reduced_System(Static_Data,[1,1]).MINIMUM_DISPLACEMENT;
+        min_disp = Reduced_System(Static_Data,[1,1]).minimum_displacement;
         max_output = max(abs(output_data),[],2);
         output_data(max_output < min_disp,:) = 0;
 end

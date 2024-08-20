@@ -1,0 +1,3 @@
+*Amplitude, name=periodic_amplitude, definition=PERIODIC
+1, freq, t0, A0
+A1, B1

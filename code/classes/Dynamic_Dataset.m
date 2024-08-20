@@ -63,7 +63,7 @@ classdef Dynamic_Dataset
             obj.num_solutions = obj.num_solutions + 1;
             obj.solution_types{obj.num_solutions} = BB_Sol.Solution_Type;
             obj.solution_types{obj.num_solutions}.validated = false;
-            obj.save_solution(BB_Sol)
+            obj.save_solution(BB_Sol,obj.num_solutions)
         end
         %-----------------------------------------------------------------%        
         function obj = restart_point(obj,solution_num,orbit_num,type,varargin)
@@ -219,7 +219,7 @@ classdef Dynamic_Dataset
             obj.num_solutions = obj.num_solutions + 1;
             obj.solution_types{obj.num_solutions} = FRF_Sol.Solution_Type;
             obj.solution_types{obj.num_solutions}.validated = false;
-            obj.save_solution(FRF_Sol)
+            obj.save_solution(FRF_Sol,obj.num_solutions)
         end
         %-----------------------------------------------------------------%
 
@@ -253,7 +253,7 @@ classdef Dynamic_Dataset
             Validated_BB_Sol = Validated_Backbone_Solution(Rom,BB_Sol,Validated_BB_Settings);
 
             obj.solution_types{obj.num_solutions}.validated = true;
-            obj.save_solution(Validated_BB_Sol)
+            obj.save_solution(Validated_BB_Sol,solution_num)
         end
         %-----------------------------------------------------------------%
         function obj = get_fe_output(obj,fe_output_type,solution_num,orbit_ids)
@@ -272,47 +272,7 @@ classdef Dynamic_Dataset
                 FE_Output = FE_Output.add_orbits(obj,orbit_ids);
             end
 
-            save_solution(obj,FE_Output)
-        end
-        %-----------------------------------------------------------------%
-        function obj = get_periodicity_error(obj,solution_num,orbit_num)
-
-            Rom = obj.Dynamic_Model;
-            
-            orbit = get_orbit(obj,solution_num,orbit_num);
-            per_error = solution_periodicity_error(orbit,Rom);
-            num_orbits = size(obj.frequency{1,solution_num},2);
-            if isempty(obj.periodicity_error{1,solution_num})
-                obj.periodicity_error{1,solution_num} = nan(1,num_orbits);
-            end
-            
-            obj.periodicity_error{1,solution_num}(orbit_num) = per_error;
-            obj.save_solution("update",solution_num)
-        end
-        %-----------------------------------------------------------------%
-        function obj = get_max_disp_stress(obj,solution_num,orbit_num)
-            NUM_DIMENSIONS = 6;
-            
-            if isstring(orbit_num)
-                if orbit_num == "all"
-                    orbit_num = 1:length(obj.frequency{1,solution_num});
-                elseif orbit_num == "X"
-                    orbit_num = get_special_point(obj,solution_num,orbit_num);
-                end
-            end
-
-            Rom = obj.Dynamic_Model;
-            orbit = get_orbit(obj,solution_num,orbit_num);
-            Add_Output = obj.Additional_Output;
-            stress = solution_max_disp_stress(orbit,Rom,Add_Output);
-            
-            num_orbits = size(obj.frequency{1,solution_num},2);
-            num_nodes = max(obj.Dynamic_Model.Model.node_mapping(:,1))/NUM_DIMENSIONS;
-            if isempty(obj.max_displacement_stress{1,solution_num})
-                obj.max_displacement_stress{1,solution_num} = nan(num_nodes,num_orbits);
-            end
-            obj.max_displacement_stress{1,solution_num}(:,orbit_num) = stress;
-            obj.save_solution("update",solution_num)
+            save_solution(obj,FE_Output,solution_num)
         end
         %-----------------------------------------------------------------%
 
@@ -324,9 +284,8 @@ classdef Dynamic_Dataset
             save(data_path + "Dyn_Data","Dyn_Data")
         end
         %-----------------------------------------------------------------%
-        function save_solution(Dyn_Data,Solution)
+        function save_solution(Dyn_Data,Solution,solution_num)
             data_path = Dyn_Data.Dynamic_Model.data_path;
-            solution_num = Solution.solution_num;
 
             solution_name = "dynamic_sol_" + solution_num + "\";
             solution_path = data_path + solution_name;
@@ -353,7 +312,7 @@ classdef Dynamic_Dataset
             switch type
                 case "validation"
                     type = "Sol_Data_Validated";
-                case {"periodicity","stress"}
+                case {"periodicity","stress","forced_response"}
                     type = "Sol_Data_" + type;
             end
             data_path = obj.Dynamic_Model.data_path;

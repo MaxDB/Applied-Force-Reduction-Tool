@@ -10,7 +10,7 @@ classdef Reduced_System
         Low_Frequency_Stiffness_Polynomial
         Low_Frequency_Coupling_Gradient_Polynomial
         
-        MINIMUM_DISPLACEMENT
+        minimum_displacement
         Model
         Dynamic_Validation_Data
 
@@ -22,7 +22,8 @@ classdef Reduced_System
         function obj = Reduced_System(Static_Data,degree)
             SHIFT_ON = 1;
             SCALE_ON = 1;
-            obj.MINIMUM_DISPLACEMENT = 1e-16; %any condensed displacement with smaller range will be treated as 0
+            % obj.minimum_displacement = 1e-16; %any condensed displacement with smaller range will be treated as 0
+            obj.minimum_displacement = Static_Data.Model.Static_Options.minimum_displacement;
 
             if nargin == 1
                 degree = Static_Data.validated_degree;
@@ -48,7 +49,7 @@ classdef Reduced_System
            
             Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
             % Condensed_Poly = Polynomial(r,theta,disp_degree,"constraint",{"linear_disp",0},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.MINIMUM_DISPLACEMENT);
-            Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",evec_r},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.MINIMUM_DISPLACEMENT);
+            Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",evec_r},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
 
             Potential_Poly = integrate_polynomial(Force_Poly);
             Reduced_Stiffness_Poly = differentiate_polynomial(Force_Poly);
