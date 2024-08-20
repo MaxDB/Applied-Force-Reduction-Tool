@@ -241,7 +241,10 @@ switch type
         end
 
         if plot_fe_output
-            plot(FE_Data.frequency,FE_Data.energy,fe_data_plot_settings{:})
+            p = plot(FE_Data.frequency,FE_Data.energy,fe_data_plot_settings{:});
+            
+            data_tip_row = dataTipTextRow("ID",orbit_ids(arrayfun(@(label) find(orbit_labels == label),FE_Output.orbit_labels)));
+            p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
         end
         hold(ax,"off")
 
@@ -360,7 +363,9 @@ switch type
                 end
             end
             if plot_fe_output
-                plot(FE_Data.frequency,FE_Data.amplitude(iMode,:),fe_data_plot_settings{:})
+                p = plot(ax{ax_id,1},FE_Data.frequency,FE_Data.amplitude(iMode,:),fe_data_plot_settings{:});
+                data_tip_row = dataTipTextRow("ID",orbit_ids(arrayfun(@(label) find(orbit_labels == label),FE_Output.orbit_labels)));
+                p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
             end
 
 
