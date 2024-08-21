@@ -1,6 +1,6 @@
 function fe_forced_orbits = get_fe_forced_response(orbits,Rom,Force_Data,Damping_Data,Add_Output)
 MIN_INC_SCALE_FACTOR = 1;
-NUM_PERIODS = 100;
+NUM_PERIODS = 5;
 
 Model = Rom.Model;
 num_dofs = Model.num_dof;
@@ -66,10 +66,10 @@ frequency = zeros(1,num_orbits);
 energy = zeros(1,num_orbits);
 amplitude = zeros(num_modes,num_orbits);
 converged = false(1,num_orbits);
-% switch Add_Output.type
-%     case 
-%     additional_dynamic_output = 
-% end
+switch Add_Output.type
+    case "physical displacement"
+        additional_dynamic_output = zeros(1,num_orbits);
+end
 
 r_transform = Model.reduced_eigenvectors'*Model.mass;
 for iOrbit = 1:num_orbits
@@ -103,9 +103,15 @@ for iOrbit = 1:num_orbits
     frequency(1,iOrbit) = 2*pi/period;
     energy(1,iOrbit) = max(kinetic_energy+potential_energy);
     amplitude(:,iOrbit) = abs(max(r_sim,[],2) - min(r_sim,[],2))/2;
+
+    switch Add_Output.type
+        case "physical displacement"
+            x_dof = x_sim(Add_Output.dof,:);
+            additional_dynamic_output(:,iOrbit) = max(abs(x_dof),[],2);
+    end
     % fe_forced_orbit.t = t_sim;
     % fe_forced_orbit.x = x_sim;
-    % fe_forced_orbit.x_dot = x_dot_sim; 
+    % fe_forced_orbit.x_dot = x_dot_sim;
     % save()
 end
 
@@ -115,6 +121,8 @@ fe_forced_orbits.energy = energy;
 fe_forced_orbits.converged = converged;
 
 switch Add_Output.type
+    case "physical displacement"
+        fe_forced_orbits.additional_dynamic_output = additional_dynamic_output;
 end
 
 % t_fom_1 = t_fom{1,1};

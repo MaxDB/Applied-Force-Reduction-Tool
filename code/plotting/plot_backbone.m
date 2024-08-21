@@ -241,7 +241,13 @@ switch type
         end
 
         if plot_fe_output
-            p = plot(FE_Data.frequency,FE_Data.energy,fe_data_plot_settings{:});
+            switch type
+                case "energy"
+                    fe_data_plot = FE_Data.energy;
+                case "physical amplitude"
+                    fe_data_plot = FE_Data.additional_dynamic_output;
+            end
+            p = plot(FE_Data.frequency,fe_data_plot,fe_data_plot_settings{:});
             
             data_tip_row = dataTipTextRow("ID",orbit_ids(arrayfun(@(label) find(orbit_labels == label),FE_Output.orbit_labels)));
             p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
