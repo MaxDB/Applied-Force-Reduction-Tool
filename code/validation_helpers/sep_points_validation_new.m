@@ -282,19 +282,6 @@ for iIteration = 1:(max_iterations+1)
                 new_loads = new_loads(:,~found_loadcases);
             end
             [r,theta,f,E,additional_data] = Rom_One.Model.add_point(new_loads,Static_Data.additional_data_type);
-            removal_index = E > fitting_energy_limit;
-            if any(removal_index)
-                r(:,removal_index) = [];
-                theta(:,removal_index) = [];
-                f(:,removal_index) = [];
-                E(:,removal_index) = [];
-                new_sep_id(:,removal_index) = [];
-                switch Static_Data.additional_data_type
-                    case {"stiffness","perturbation"}
-                        additional_data(:,:,removal_index) = [];
-                    case "none"
-                end
-            end
             if data_available
                 r(:,~found_loadcases) = r;
                 r(:,found_loadcases) = found_r;
@@ -315,6 +302,21 @@ for iIteration = 1:(max_iterations+1)
                     case "none"
                 end
             end
+            
+            removal_index = E > fitting_energy_limit;
+            if any(removal_index)
+                r(:,removal_index) = [];
+                theta(:,removal_index) = [];
+                f(:,removal_index) = [];
+                E(:,removal_index) = [];
+                new_sep_id(:,removal_index) = [];
+                switch Static_Data.additional_data_type
+                    case {"stiffness","perturbation"}
+                        additional_data(:,:,removal_index) = [];
+                    case "none"
+                end
+            end
+            
             Static_Data = Static_Data.update_data(r,theta,f,E,new_sep_id-num_original_seps,additional_data);
         end
 

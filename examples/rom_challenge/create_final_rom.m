@@ -1,8 +1,9 @@
 clear
 close all
+tic
 %--------- Software Settings ---------%
 set_logging_level(3)
-set_visualisation_level(3)
+set_visualisation_level(0)
 %-------------------------------------%
 
 %--------- System Settings ---------%
@@ -78,3 +79,4 @@ Static_Data = Static_Data.update_model(added_modes,Static_Opts);
 Static_Data = Static_Data.create_dataset;
 Static_Data.save_data;
 
+toc
