@@ -40,6 +40,7 @@ ax = [];
 legend_lines = zeros(1,num_solutions);
 legend_modes = cell(1,num_solutions);
 for iSol = 1:num_solutions
+    colour_sol = colour_numbers(iSol);
     data_name = dyn_data_names{1,iSol};
     Dyn_Data = initalise_dynamic_data(data_name);
     
@@ -67,9 +68,9 @@ for iSol = 1:num_solutions
                             amplitude_map(round(amplitude)) = numEntries(amplitude_map) + 1;
                        end
                     end
-                    colour_numbers(iSol) = amplitude_map(round(amplitude)); %#ok<AGROW>
+                    colour_sol = amplitude_map(round(amplitude)); 
                 else
-                    colour_numbers = "grey";
+                    colour_sol = "grey";
                 end
         end
         
@@ -78,15 +79,15 @@ for iSol = 1:num_solutions
         end
 
         if validation(iSol)
-            if colour_numbers(iSol) == 0
+            if colour_sol == 0
                 h_colour_number = 1;
             else
-                h_colour_number = colour_numbers(iSol);
+                h_colour_number = colour_sol;
             end
 
             ax = plot_h_predicition(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",h_colour_number);
         else
-            ax = plot_backbone(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",colour_numbers(iSol));
+            ax = plot_backbone(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",colour_sol);
         end
     end
     if PLOT_LEGEND

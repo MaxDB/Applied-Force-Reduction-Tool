@@ -84,7 +84,7 @@ uidx = uidx([maps.xbp_idx; maps.T_idx]);
 
 switch type
     case "rom"
-        energy_func = @(prob,data,u) coco_energy(prob,data,u,Eom_Input.Potential_Polynomial,Eom_Input.Disp_Data,Eom_Input.input_order);
+        energy_func = @(prob,data,u) coco_energy(prob,data,u,Eom_Input.Potential_Polynomial,Eom_Input.Disp_Data,Eom_Input.input_order,"forced");
     case "fom"
         energy_func = @(prob,data,u) direct_energy(prob,data,u,Eom_Input);
 end
