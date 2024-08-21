@@ -2,7 +2,7 @@ clear
 close all
 set_visualisation_level(3)
 
-system_name = "clamped_beam_13";
+system_name = "clamped_beam_1";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%

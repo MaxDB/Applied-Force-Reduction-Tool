@@ -8,7 +8,7 @@ set_visualisation_level(0)
 %--------- System Settings ---------%
 system_name = "clamped_beam";
 energy_limit = 0.02;
-initial_modes = [1,3];
+initial_modes = [1];
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
@@ -20,7 +20,7 @@ Calibration_Opts.Static_Opts.num_loadcases = 20;
 Static_Opts.static_solver = "abaqus";
 Static_Opts.additional_data = "perturbation";
 Static_Opts.num_validation_modes = 18;
-Static_Opts.max_parallel_jobs = 4; %be careful!
+Static_Opts.max_parallel_jobs = 8; %be careful!
 Static_Opts.num_loadcases = 15;
 Static_Opts.maximum_loadcases = 15;
 Static_Opts.minimum_displacement = 5e-8;
