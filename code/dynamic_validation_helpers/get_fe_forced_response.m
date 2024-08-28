@@ -1,6 +1,6 @@
 function fe_forced_orbits = get_fe_forced_response(orbits,Rom,Force_Data,Damping_Data,Add_Output)
 MIN_INC_SCALE_FACTOR = 1;
-NUM_PERIODS = 5;
+NUM_PERIODS = 50;
 
 Model = Rom.Model;
 num_dofs = Model.num_dof;
@@ -65,7 +65,7 @@ end
 frequency = zeros(1,num_orbits);
 energy = zeros(1,num_orbits);
 amplitude = zeros(num_modes,num_orbits);
-converged = false(1,num_orbits);
+periodicity = zeros(1,num_orbits);
 switch Add_Output.type
     case "physical displacement"
         additional_dynamic_output = zeros(1,num_orbits);
@@ -93,7 +93,7 @@ for iOrbit = 1:num_orbits
     dissipated_energy = energy_sim.dissipated(:,in_range(2:end));
 
     periodicity_error = norm(x_sim(:,end) - x_sim(:,1))/norm(x_sim(:,1));
-    converged = periodicity_error <= 0.01;
+    periodicity(1,iOrbit) = periodicity_error;
     % if ~converged
     %     warning("FE forced response " + iOrbit + " may not have converged")
     % end
@@ -118,7 +118,7 @@ end
 fe_forced_orbits.frequency = frequency;
 fe_forced_orbits.amplitude = amplitude;
 fe_forced_orbits.energy = energy;
-fe_forced_orbits.converged = converged;
+fe_forced_orbits.periodicity = periodicity;
 
 switch Add_Output.type
     case "physical displacement"

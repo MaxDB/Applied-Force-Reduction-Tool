@@ -14,8 +14,10 @@ FRF_BIFURCATION_SIZE = [4,4,4,5];
 SPECIAL_POINT_SIZE = 6;
 
 FE_DATA_MARKER = "*";
-FE_DATA_COLOUR = [0,0,0];
+FE_DATA_COLOUR = [0,0,0; 1,0,0];
 FE_DATA_MARKER_SIZE = 6;
+FE_PERIODICITY_LIMIT = 0.01;
+SHOW_UNCONVERGED = 1;
 
 %-------------------------------------------------------------------------%
 num_args = length(varargin);
@@ -57,6 +59,15 @@ orbit_ids = "(" + solution_num + "," + orbit_labels + ")";
 
 line_colour = get_plot_colours(colour_num);
 line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour};
+
+extra_data = [];
+if Solution.Solution_Type.orbit_type == "forced"
+    if isfield(Solution.Solution_Type,"amplitude")
+        extra_data = Solution.Solution_Type.amplitude;
+        extra_data_name = "Amplitude";
+    end
+    
+end
 
 if PLOT_BIFURCATIONS
     switch Solution.Solution_Type.orbit_type
@@ -139,7 +150,8 @@ FE_Output = Dyn_Data.load_solution(solution_num,"forced_response");
 plot_fe_output = class(FE_Output) == "FE_Orbit_Output";
 if plot_fe_output
     FE_Data = FE_Output.fe_output;
-    fe_data_plot_settings = {"Marker",FE_DATA_MARKER,"MarkerSize",FE_DATA_MARKER_SIZE,"Color",FE_DATA_COLOUR,"LineStyle","none"};
+    converged_fe = FE_Data.periodicity < FE_PERIODICITY_LIMIT;
+    fe_data_plot_settings = {"Marker",FE_DATA_MARKER,"MarkerSize",FE_DATA_MARKER_SIZE,"LineStyle","none"};
 end
 
 
@@ -183,6 +195,11 @@ switch type
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
                 end
 
+                if ~isempty(extra_data)
+                    data_tip_row = dataTipTextRow(extra_data_name,extra_data*ones(size(index_range)));
+                    p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                end
+
             end
 
             for iType = 1:num_bifurcation_types
@@ -212,6 +229,11 @@ switch type
                     data_tip_row = dataTipTextRow("Periodicity",periodicity_error(bifurcation_index));
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
                 end
+
+                if ~isempty(extra_data)
+                    data_tip_row = dataTipTextRow(extra_data_name,extra_data*ones(size(bifurcation_index)));
+                    p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                end
             end
 
         else
@@ -221,6 +243,11 @@ switch type
 
             if plot_periodicity
                 data_tip_row = dataTipTextRow("Periodicity",periodicity_error(index_range));
+                p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+            end
+
+            if ~isempty(extra_data)
+                data_tip_row = dataTipTextRow(extra_data_name,extra_data*ones(size(index_range)));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
             end
         end
@@ -238,6 +265,11 @@ switch type
                 data_tip_row = dataTipTextRow("Periodicity",periodicity_error(point_index));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
             end
+
+            if ~isempty(extra_data)
+                data_tip_row = dataTipTextRow(extra_data_name,extra_data*ones(size(point_index)));
+                p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+            end
         end
 
         if plot_fe_output
@@ -247,10 +279,28 @@ switch type
                 case "physical amplitude"
                     fe_data_plot = FE_Data.additional_dynamic_output;
             end
-            p = plot(FE_Data.frequency,fe_data_plot,fe_data_plot_settings{:});
+            fe_plot_index = converged_fe;
+            num_fe_plots = SHOW_UNCONVERGED + 1;
+            for iFE_plot = 1:num_fe_plots
+                if nnz(fe_plot_index) == 0
+                    fe_plot_index = ~fe_plot_index;
+                    continue
+                end
+                p = plot(FE_Data.frequency(fe_plot_index ),fe_data_plot(fe_plot_index ),"Color",FE_DATA_COLOUR(iFE_plot,:),fe_data_plot_settings{:});
+
+                data_tip_row = dataTipTextRow("ID",orbit_ids(arrayfun(@(label) find(orbit_labels == label),FE_Output.orbit_labels(fe_plot_index ))));
+                p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                
+                data_tip_row = dataTipTextRow("Periodicity",FE_Data.periodicity(fe_plot_index));
+                p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
+                if ~isempty(extra_data)
+                    data_tip_row = dataTipTextRow(extra_data_name,extra_data*ones(size(fe_plot_index)));
+                    p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                end
+                fe_plot_index = ~fe_plot_index;
+            end
             
-            data_tip_row = dataTipTextRow("ID",orbit_ids(arrayfun(@(label) find(orbit_labels == label),FE_Output.orbit_labels)));
-            p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
         end
         hold(ax,"off")
 
@@ -329,6 +379,13 @@ switch type
                         p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
                     end
 
+
+                    if ~isempty(extra_data)
+                        data_tip_row = dataTipTextRow(extra_data_name,extra_data*ones(size(index_range)));
+                        p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                    end
+
+
                 end
 
                 for iType = 1:num_bifurcation_types
@@ -357,6 +414,11 @@ switch type
                         data_tip_row = dataTipTextRow("Periodicity",periodicity_error(bifurcation_index));
                         p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
                     end
+
+                    if ~isempty(extra_data)
+                        data_tip_row = dataTipTextRow(extra_data_name,extra_data*ones(size(bifurcation_index)));
+                        p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                    end
                 end
             else
                 p = plot(ax{ax_id,1},frequency,amplitude(iMode,:),'LineStyle',LINE_STYLE(2),line_plot_settings{:});
@@ -369,9 +431,29 @@ switch type
                 end
             end
             if plot_fe_output
-                p = plot(ax{ax_id,1},FE_Data.frequency,FE_Data.amplitude(iMode,:),fe_data_plot_settings{:});
-                data_tip_row = dataTipTextRow("ID",orbit_ids(arrayfun(@(label) find(orbit_labels == label),FE_Output.orbit_labels)));
-                p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
+                fe_plot_index = converged_fe;
+                num_fe_plots = SHOW_UNCONVERGED + 1;
+                for iFE_plot = 1:num_fe_plots
+                    if nnz(fe_plot_index) == 0
+                        fe_plot_index = ~fe_plot_index;
+                        continue
+                    end
+                    p = plot(ax{ax_id,1},FE_Data.frequency(fe_plot_index ),FE_Data.amplitude(iMode,fe_plot_index),"Color",FE_DATA_COLOUR(iFE_plot,:),fe_data_plot_settings{:});
+                    
+                    data_tip_row = dataTipTextRow("ID",orbit_ids(arrayfun(@(label) find(orbit_labels == label),FE_Output.orbit_labels(fe_plot_index ))));
+                    p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
+                    data_tip_row = dataTipTextRow("Periodicity",FE_Data.periodicity(fe_plot_index));
+                    p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
+                    if ~isempty(extra_data)
+                        data_tip_row = dataTipTextRow(extra_data_name,extra_data*ones(size(fe_plot_index)));
+                        p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+                    end
+
+                    fe_plot_index = ~fe_plot_index;
+                end
             end
 
 
