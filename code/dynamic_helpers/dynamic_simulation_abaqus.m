@@ -223,6 +223,8 @@ abaqus_time = toc(abaqus_time_start);
 log_message = sprintf("job " + job_id + ": Abaqus dynamic analysis complete: %.1f seconds" ,abaqus_time);
 logger(log_message,3)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+data_processing_time_start = tic;
+
 step_start_pattern = "STEP" + whitespacePattern + digitsPattern + whitespacePattern + "INCREMENT" + whitespacePattern + "1";
 increment_start_pattern = "INCREMENT" + whitespacePattern + digitsPattern + whitespacePattern + "SUMMARY";
 disp_table_pattern = "NODE FOOT-" + whitespacePattern +  "U1";
@@ -309,6 +311,11 @@ energy.dissipated = dissipated_energy;
 
 x = [disp_0_bc,displacement];
 x_dot = [x_dot_0,velocity];
+
+
+data_processing_time = toc(data_processing_time_start);
+log_message = sprintf("job " + job_id + ": Dynamic data processed: %.1f seconds" ,data_processing_time);
+logger(log_message,3)
 end
 
 

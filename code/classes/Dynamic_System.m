@@ -492,12 +492,15 @@ classdef Dynamic_System
             end
         end
         %-----------------------------------------------------------------%
-        function [t,x,x_dot,energy] = dynamic_simulation(obj,x_0,x_dot_0,f_r_0,period,num_periods,min_incs,initial_time,FE_Force_Data)
+        function [t,x,x_dot,energy] = dynamic_simulation(obj,x_0,x_dot_0,f_r_0,period,num_periods,min_incs,initial_time,FE_Force_Data,job_id)
             if ~exist("initial_time","var")
                 initial_time = zeros(1,size(x_0,2));
             end
             if ~exist("FE_Force_Data","var")
                 FE_Force_Data = [];
+            end
+            if ~exist("job_id","var")
+                job_id = [];
             end
             
             Static_Opts = obj.Static_Options;
@@ -532,7 +535,7 @@ classdef Dynamic_System
                         log_message = sprintf("Total FE time: %.1f seconds" ,abaqus_time);
                         logger(log_message,3)
                     else
-                        [t,x,x_dot,energy] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,num_periods,min_incs,initial_time,FE_Force_Data,obj,1);
+                        [t,x,x_dot,energy] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,num_periods,min_incs,initial_time,FE_Force_Data,obj,job_id);
                     end
                 case "matlab"
 
