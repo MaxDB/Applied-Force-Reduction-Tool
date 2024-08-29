@@ -499,14 +499,18 @@ classdef Dynamic_System
             if ~exist("FE_Force_Data","var")
                 FE_Force_Data = [];
             end
+
+            Static_Opts = obj.Static_Options;
             if ~exist("job_id","var")
                 job_id = [];
+                if Static_Opts.static_solver == "abaqus"
+                    reset_temp_directory()
+                end
             end
             
-            Static_Opts = obj.Static_Options;
             switch Static_Opts.static_solver
                 case "abaqus"
-                    reset_temp_directory()
+                    
 
                     if Static_Opts.max_parallel_jobs > 1
                         abaqus_start = tic;

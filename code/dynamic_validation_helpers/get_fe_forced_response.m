@@ -1,11 +1,11 @@
 function fe_forced_orbits = get_fe_forced_response(orbits,Rom,Force_Data,Damping_Data,Add_Output)
 MIN_INC_SCALE_FACTOR = 1;
 NUM_PERIODS = 10;
-MAX_PERIODICITY_ERROR = 1e-3;
+MAX_PERIODICITY_ERROR = 1e-4;
 MAX_ITERATIONS = 50;
 
 Model = Rom.Model;
-num_dofs = Model.num_dof;
+% num_dofs = Model.num_dof;
 num_modes = length(Model.reduced_modes);
 
 num_orbits = size(orbits,1);
@@ -24,23 +24,33 @@ switch Force_Data.type
 end
 
 max_parallel_jobs = Model.Static_Options.max_parallel_jobs;
+num_parallel_jobs = min(max_parallel_jobs,num_orbits);
 orbit_groups = split_abaqus_jobs(1:num_orbits,1,max_parallel_jobs,1);
 Model.Static_Options.max_parallel_jobs = 1;
 
 r_transform = Model.reduced_eigenvectors'*Model.mass;
 
-frequency = zeros(1,num_orbits);
-energy = zeros(1,num_orbits);
-amplitude = zeros(num_modes,num_orbits);
-periodicity = zeros(1,num_orbits);
+frequency_group = cell(1,num_parallel_jobs);
+energy_group = cell(1,num_parallel_jobs);
+amplitude_group = cell(1,num_parallel_jobs);
+periodicity_group = cell(1,num_parallel_jobs);
 switch Add_Output.type
     case "physical displacement"
-        additional_dynamic_output = zeros(1,num_orbits);
+        additional_dynamic_output_group = cell(1,num_parallel_jobs);
 end
-% parfor (iOrbit = 1:max_parallel_jobs,Static_Opts.max_parallel_jobs)
-for iJob = 1:min(max_parallel_jobs,num_orbits)
+
+reset_temp_directory()
+parfor (iJob = 1:num_parallel_jobs,max_parallel_jobs)
+% for iJob = 1:num_parallel_jobs
     orbit_group = orbit_groups{iJob};
     num_group_orbits = size(orbit_group,2);
+
+    frequency = zeros(1,num_group_orbits);
+    energy = zeros(1,num_group_orbits);
+    amplitude = zeros(num_modes,num_group_orbits);
+    periodicity = zeros(1,num_group_orbits);
+    additional_dynamic_output = zeros(1,num_group_orbits);
+
     for iOrbit = 1:num_group_orbits
         orbit_id = orbit_group(iOrbit);
         orbit = orbits{orbit_id,1};
@@ -66,12 +76,12 @@ for iJob = 1:min(max_parallel_jobs,num_orbits)
         physical_displacement = Rom.expand(initial_displacement);
         physical_velocity = Rom.expand_velocity(initial_displacement,initial_velocity);
         
-        figure
-        tiledlayout("flow")
-        for iMode = 1:num_modes
-            ax{iMode} = nexttile;
-            hold(ax{iMode},"on")
-        end
+        % figure
+        % tiledlayout("flow")
+        % for iMode = 1:num_modes
+        %     ax{iMode} = nexttile;
+        %     hold(ax{iMode},"on")
+        % end
         for iStep = 1:MAX_ITERATIONS
 
             [t_fom,x_fom,x_dot_fom,energy_fom] = Model.dynamic_simulation(physical_displacement,physical_velocity,initial_force,period,NUM_PERIODS,min_incs,initial_time,FE_Force_Data,iJob);
@@ -84,10 +94,10 @@ for iJob = 1:min(max_parallel_jobs,num_orbits)
             % x_dot_sim = x_dot_fom_i(:,in_range);
             
 
-            r_fom = r_transform*x_fom;
-            for iMode = 1:num_modes
-                plot(ax{iMode},t_fom+period*NUM_PERIODS*(iStep-1),r_fom(iMode,:))
-            end
+            % r_fom = r_transform*x_fom;
+            % for iMode = 1:num_modes
+            %     plot(ax{iMode},t_fom+period*NUM_PERIODS*(iStep-1),r_fom(iMode,:))
+            % end
 
             periodicity_error = norm(x_sim(:,end) - x_sim(:,1))/norm(x_sim(:,1));
 
@@ -123,17 +133,23 @@ for iJob = 1:min(max_parallel_jobs,num_orbits)
                 additional_dynamic_output(:,iOrbit) = max(abs(x_dof),[],2);
         end
     end
+
+    frequency_group{1,iJob} = frequency;
+    amplitude_group{1,iJob} = amplitude;
+    energy_group{1,iJob} = energy;
+    periodicity_group{1,iJob} = periodicity;
+    additional_dynamic_output_group{1,iJob} = additional_dynamic_output;
 end
 
 
-fe_forced_orbits.frequency = frequency;
-fe_forced_orbits.amplitude = amplitude;
-fe_forced_orbits.energy = energy;
-fe_forced_orbits.periodicity = periodicity;
+fe_forced_orbits.frequency = [frequency_group{:}];
+fe_forced_orbits.amplitude = [amplitude_group{:}];
+fe_forced_orbits.energy = [energy_group{:}];
+fe_forced_orbits.periodicity = [periodicity_group{:}];
 
 switch Add_Output.type
     case "physical displacement"
-        fe_forced_orbits.additional_dynamic_output = additional_dynamic_output;
+        fe_forced_orbits.additional_dynamic_output = additional_dynamic_output_group;
 end
 
 % t_fom_1 = t_fom{1,1};
