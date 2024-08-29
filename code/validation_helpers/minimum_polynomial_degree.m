@@ -1,7 +1,7 @@
 function [degree,max_error_index] = minimum_polynomial_degree(Static_Data,poly_name,input_data,output_data,degree_range)
 minimum_degree_start = tic;
 
-max_degree = degree_range(2);
+max_degree = max_polynomial_degree(poly_name,degree_range(2),input_data);
 max_fitting_error = Static_Data.Validation_Options.maximum_fitting_error;
 
 degree = degree_range(1);
@@ -41,4 +41,31 @@ minimum_degree_time = toc(minimum_degree_start);
 log_message = sprintf(poly_name + " degree is %i: %.1f seconds" ,[degree,minimum_degree_time]);
 logger(log_message,3)
 
+end
+
+function max_degree = max_polynomial_degree(poly_name,constrained_max_degree,input_data)
+num_points = size(input_data,2);
+num_modes = size(input_data,1);
+switch poly_name
+    case "Force"
+        degree_shift = 1;
+    case "Physical_Displacement"
+        degree_shift = 0;
+end
+
+num_coeffs = inf;
+poly_order_range = @(max_degree) [3,max_degree + degree_shift + 2];
+max_degree = constrained_max_degree + 2;
+while num_coeffs > num_points
+    max_degree = max_degree - 2;
+    num_coeffs = get_num_coeffs(poly_order_range(max_degree),num_modes);
+end
+
+end
+
+function num_coeffs = get_num_coeffs(poly_order_range,num_inputs)
+    num_coeffs = 0;
+    for iDegree = poly_order_range(1):poly_order_range(2)
+        num_coeffs = num_coeffs + nchoosek(iDegree + num_inputs - 1,num_inputs - 1);
+    end
 end
