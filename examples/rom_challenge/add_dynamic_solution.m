@@ -49,8 +49,8 @@ Continuation_Opts.energy_limit_multiplier = 1;
 
 
 Damping_Data.damping_type = "rayleigh";
-Damping_Data.mass_factor = 0;
-Damping_Data.stiffness_factor = 6.63e-7;
+Damping_Data.mass_factor = 0.67;
+Damping_Data.stiffness_factor = 2.55e-7;
 
 
 Force_Data.type = "modal";
@@ -83,7 +83,7 @@ Continuation_Opts.min_discretisation_num = 20;
 Continuation_Opts.collation_degree = 6;
 Continuation_Opts.parameter_range = [0.004,0.0068];
 %-----------------------------------------%
-Dyn_Data = Dyn_Data.restart_point(6,5,"IC","opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.restart_point(3,5,"IC","opts",Continuation_Opts);
 % Dyn_Data = Dyn_Data.restart_point(4,2:9,"IC");
 % 
 % %--------- Continuation Settings ---------%
