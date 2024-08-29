@@ -149,7 +149,7 @@ fe_forced_orbits.periodicity = [periodicity_group{:}];
 
 switch Add_Output.type
     case "physical displacement"
-        fe_forced_orbits.additional_dynamic_output = additional_dynamic_output_group;
+        fe_forced_orbits.additional_dynamic_output = [additional_dynamic_output_group{:}];
 end
 
 % t_fom_1 = t_fom{1,1};
