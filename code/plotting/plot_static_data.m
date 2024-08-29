@@ -69,6 +69,16 @@ switch type
         x_label = "f";
 
         x_origin = repmat(R_ORIGIN,num_r_modes,1); %#ok<RPMT0>
+    case {"force-energy"}
+        y_data = Static_Data.get_dataset_values("potential_energy");
+        y_origin = 0;
+        y_label = "V";
+
+        x_data = Static_Data.get_dataset_values("restoring_force");
+        x_label = "f";
+
+        x_origin = repmat(R_ORIGIN,num_r_modes,1); %#ok<RPMT0>
+
     otherwise
         error("Plotting for '" + type + "' is not supported")
 end
@@ -114,9 +124,11 @@ origin_plot_settings = [plot_settings,{"MarkerEdgeColor",[0,0,0]}];
 %plotting 
 if isa(ax,"matlab.graphics.axis.Axes")
     ax = {ax};
+    
 end
 
-if isempty(ax)
+axes_exist = ~isempty(ax);
+if ~axes_exist
     figure
     tiledlayout("flow")
     ax = cell(num_outputs,1);
@@ -128,8 +140,12 @@ if num_r_modes > 2
 end
 
 for iOutput = 1:num_outputs
-    s1 = nexttile;
-    box on
+    if ~axes_exist
+        s1 = nexttile;
+    else
+        s1 = ax{iOutput};
+    end
+    box(s1,"on")
     hold(s1,"on")
 
     for iSep = 1:num_seps
@@ -146,22 +162,22 @@ for iOutput = 1:num_outputs
 
         switch num_r_modes
             case 1
-                plot(x_plot,y_plot,plot_settings{:})
-                plot(x_origin,y_origin,origin_plot_settings{:})
+                plot(s1,x_plot,y_plot,plot_settings{:})
+                plot(s1,x_origin,y_origin,origin_plot_settings{:})
 
-                xlabel(x_label + "_{" + r_modes + "}")
+                xlabel(s1,x_label + "_{" + r_modes + "}")
                 if num_outputs == 1
-                    ylabel(y_label)
+                    ylabel(s1,y_label)
                 else
-                    ylabel(y_label + "_{" + outputs(iOutput) + "}")
+                    ylabel(s1,y_label + "_{" + outputs(iOutput) + "}")
                 end
             case 2
-                plot3(x_plot(1,:),x_plot(2,:),y_plot,plot_settings{:})
-                plot3(x_origin(1,:),x_origin(2,:),y_origin,origin_plot_settings{:})
+                plot3(s1,x_plot(1,:),x_plot(2,:),y_plot,plot_settings{:})
+                plot3(s1,x_origin(1,:),x_origin(2,:),y_origin,origin_plot_settings{:})
 
-                xlabel(x_label + "_{" + r_modes(1) + "}")
-                ylabel(x_label + "_{" + r_modes(2) + "}")
-                zlabel(y_label + "_{" + outputs(iOutput) + "}")
+                xlabel(s1,x_label + "_{" + r_modes(1) + "}")
+                ylabel(s1,x_label + "_{" + r_modes(2) + "}")
+                zlabel(s1,y_label + "_{" + outputs(iOutput) + "}")
 
         end
     end

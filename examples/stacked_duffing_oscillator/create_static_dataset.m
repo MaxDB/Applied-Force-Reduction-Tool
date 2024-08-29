@@ -2,7 +2,7 @@ clear
 close all
 %--------- Software Settings ---------%
 set_logging_level(3)
-set_visualisation_level(0)
+set_visualisation_level(3)
 %-------------------------------------%
 
 %--------- System Settings ---------%

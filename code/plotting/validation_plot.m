@@ -29,17 +29,17 @@ switch plot_part
         ax{1,2} = nexttile;
         
         % Static_Data.plot_condensed_displacement(plot_index,ax(1,1));
-        ax = plot_static_data("displacement",Static_Data,"outputs",plot_index,"axes",ax{1,1});
-        rom.Physical_Displacement_Polynomial.plot_polynomial(ax(1,1),plot_index);
+        ax(1,1) = plot_static_data("displacement",Static_Data,"outputs",plot_index,"axes",ax{1,1});
+        rom.Physical_Displacement_Polynomial.plot_polynomial(ax{1,1},plot_index);
         title(ax{1,1},"Degree = " + rom.Physical_Displacement_Polynomial.polynomial_degree);
         
         
         % Static_Data.plot_condensed_displacement(plot_index,ax{1,2});
-        ax{1,2} = plot_static_data("displacement",Static_Data,"outputs",plot_index,"axes",ax{1,2});
+        ax(1,2) = plot_static_data("displacement",Static_Data,"outputs",plot_index,"axes",ax{1,2});
 
         %plot energy and limit details
         
-        plot_static_data("force-displacement",Static_Data);
+        ax(1,3) = plot_static_data("force-energy",Static_Data);
         fig2 = gcf;
         fig2_id = fig2.Number;
         r_modes = Static_Data.Model.reduced_modes;
@@ -50,14 +50,9 @@ switch plot_part
         hold on
         switch num_modes
             case 1
-                
-                xlabel("f_{" + r_modes(1) + "}")
             case 2
-                xlabel("f_{" + r_modes(1) + "}")
-                ylabel("f_{" + r_modes(2) + "}")
-
-                x_lim = ax.XLim;
-                y_lim = ax.YLim;
+                x_lim = ax{1,3}.XLim;
+                y_lim = ax{1,3}.YLim;
                 [X,Y] = meshgrid(x_lim,y_lim);
 
                 E_lim = zeros(size(X)) + energy_lim;
