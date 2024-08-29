@@ -7,6 +7,8 @@ classdef Polynomial
 
         num_element_coefficients
         num_independent_element_coefficients
+        num_fitted_coefficients
+        
         input_dimension
         output_dimension
         
@@ -121,9 +123,13 @@ classdef Polynomial
             switch coupling_type
                 case {"stiffness","none"}
                     [coeffs,num_unconstrained_terms] = obj.fit_polynomial(input_data,output_data,Constraint);
+                    obj.num_independent_element_coefficients = num_unconstrained_terms.regression_size;
+                    obj.num_fitted_coefficients = num_unconstrained_terms.regression_size*size(coeffs,2);
                 case "force"
                     Coupling = obj.get_force_coupling;
                     [coeffs,num_unconstrained_terms] = obj.fit_coupled_polynomial(input_data,output_data,Constraint,Coupling);
+                    obj.num_independent_element_coefficients = num_unconstrained_terms.coupling_size;
+                    obj.num_fitted_coefficients = num_unconstrained_terms.regression_size;
             end
             %---------------------
             if output_reshaped
@@ -134,7 +140,7 @@ classdef Polynomial
 
             %---------------------
             obj.coefficients = coeffs;
-            obj.num_independent_element_coefficients = num_unconstrained_terms;
+            
         end
         %-----------------------------------------------------------------%
         function [coeffs,num_unconstrained_terms] = fit_polynomial(obj,input_data,output_data,Constraint)
@@ -153,7 +159,7 @@ classdef Polynomial
 
             %-------------
             coeffs = lsqminnorm(unconstrained_input_matrix,output_data,'warn');
-            num_unconstrained_terms = size(coeffs,1);
+            num_unconstrained_terms.regression_size = size(coeffs,1);
             %--------------
             if ~isempty(Constraint.terms)
                 coeffs = obj.reconstruct_coefficients(coeffs,Constraint);
@@ -229,7 +235,8 @@ classdef Polynomial
            
             %-------------
             coupled_coeffs = lsqminnorm(coupled_input_matrix,coupled_output_data,'warn');
-            num_unconstrained_terms = size(coupling_pattern,1);
+            num_unconstrained_terms.coupling_size = size(coupling_pattern,1);
+            num_unconstrained_terms.regression_size = size(coupled_coeffs,1);
             %--------------
             %Reconstruct coupling
             coeffs = coupled_coeffs(coupling_pattern).*new_coupling_scale_factors;
