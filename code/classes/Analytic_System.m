@@ -57,22 +57,38 @@ classdef Analytic_System
             if isfield(eom,'M')
                 obj.linear_mass = eom.M;
             end
-            if isfield(eom,'K')
-                obj.linear_stiffness = eom.K;
+
+            if isfield(eom,'V')
+                obj.potential_energy = eom.V;
             end
-            if isfield(eom,'f')
-                obj.nonlinear_restoring_force = eom.f;
-                obj.nonlinear_restoring_force_jacobian = obj.get_jacobian(eom.f);
-            end
+
             if isfield(eom,'F')
                 obj.external_force = eom.F;
             end
             if isfield(eom,'C')
                 obj.linear_damping = eom.C;
             end
-            if isfield(eom,'V')
-                obj.potential_energy = eom.V;
+
+            if (isfield(eom,'fnx') && isfield(eom,'K')) && ~isfield(eom,'f')
+                obj.linear_stiffness = eom.K;
+                obj.nonlinear_restoring_force = eom.fnx;
+                obj.nonlinear_restoring_force_jacobian = obj.get_jacobian(eom.fnx);
             end
+           
+            if (~isfield(eom,'fnx') && ~isfield(eom,'K')) && isfield(eom,'f')
+                stiffness = obj.get_jacobian(eom.f);
+                num_dof = size(eom.M,1);
+                origin = num2cell(zeros(1,num_dof));
+                K = stiffness(origin{:});
+
+                obj.nonlinear_restoring_force = @(x) eom.f(x) - K*x;
+                obj.linear_stiffness = K;
+                obj.nonlinear_restoring_force_jacobian = obj.get_jacobian(obj.nonlinear_restoring_force);
+            end
+            
+           
+
+            
 
             [evecs,evals] = eig(obj.linear_stiffness,obj.linear_mass,"vector");
             obj.eigenvectors = evecs;

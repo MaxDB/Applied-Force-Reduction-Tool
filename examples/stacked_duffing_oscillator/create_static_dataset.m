@@ -2,13 +2,13 @@ clear
 close all
 %--------- Software Settings ---------%
 set_logging_level(3)
-set_visualisation_level(3)
+set_visualisation_level(1)
 %-------------------------------------%
 
 %--------- System Settings ---------%
 system_name = "stacked_duffing_oscillator";
-energy_limit = 10;
-initial_modes = [1,3];
+energy_limit = 50;
+initial_modes = [1];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
