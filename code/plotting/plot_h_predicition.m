@@ -125,15 +125,21 @@ switch type
         xlabel(ax,"Frequency (rad/s)")
         ylabel(ax,"Energy")
 
-    case "amplitude"
+    case {"amplitude","force amplitude"}
         r_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
         h_modes = [r_modes,validation_modes];
 
         num_h_modes = length(h_modes);
         
-        g_amp = Validated_Solution.corrected_low_modal_amplitude;
-        q_amp = Validated_Solution.low_modal_amplitude;
-        
+        switch type
+            case "amplitude"
+                g_amp = Validated_Solution.corrected_low_modal_amplitude;
+                q_amp = Validated_Solution.low_modal_amplitude;
+            case "force amplitude"
+                q_amp = Validated_Solution.h_force_amplitude;
+                g_amp = Validated_Solution.r_force_amplitude;
+        end
+
         if isempty(ax)
             figure
             tiledlayout("flow")
@@ -224,16 +230,23 @@ switch type
 
             max_q = max(q_amp(iMode,:));
             max_g = max(g_amp(iMode,:));
-            
+
             y_lim = min(max_g*3,max_q);
             if y_lim ~= 0
                 ylim(iAx,[0,y_lim])
             end
 
-            xlabel(iAx,"Frequency (rad/s)")
-            ylabel(iAx,"Q_{" + h_modes(iMode) + "}")
+            switch type
+                case "amplitude"
+                    xlabel(iAx,"Frequency (rad/s)")
+                    ylabel(iAx,"Q_{" + h_modes(iMode) + "}")
+                case "force amplitude"
+                    xlabel(iAx,"Frequency (rad/s)")
+                    ylabel(iAx,"f_{" + h_modes(iMode) + "}")
+            end
+
         end
 
-        
+
 end
 end

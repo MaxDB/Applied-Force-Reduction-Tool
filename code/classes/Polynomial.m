@@ -320,7 +320,7 @@ classdef Polynomial
 
 
 
-            num_plotted_outputs = length(plotted_outputs);
+            num_plotted_outputs = size(plotted_outputs,1);
 
 
             num_inputs = obj.input_dimension;
@@ -349,7 +349,7 @@ classdef Polynomial
 
                     for iOutput = 1:num_plotted_outputs
 
-                        plotted_output = plotted_outputs(iOutput);
+                        plotted_output = plotted_outputs(iOutput,:);
 
 
                         y = obj.evaluate_polynomial(x,plotted_output);
@@ -399,7 +399,7 @@ classdef Polynomial
 
                     for iOutput = 1:num_plotted_outputs
 
-                        plotted_output = plotted_outputs(iOutput);
+                        plotted_output = plotted_outputs(iOutput,:);
 
 
                         X_array = reshape(X_BC,1,num_points);

@@ -47,58 +47,79 @@ num_points = size(x_data,2);
 x_origin = repmat(R_ORIGIN,num_r_modes,1); %#ok<RPMT0>
 %-------------------------------------------------------------------------%
 %output data
+is_matrix = 0;
 switch type
     case {"displacement","physical_displacement"}
         y_data = Static_Data.get_dataset_values("physical_displacement");
-        y_origin = 0;
+        y_origin = zeros(size(y_data,1),1);
         y_label = "x";
     case {"force","restoring_force"}
         y_data = Static_Data.get_dataset_values("restoring_force");
-        y_origin = 0;
+        y_origin = zeros(size(y_data,1),1);
         y_label = "f";
     case {"potential","potential_energy","energy"}
         y_data = Static_Data.get_dataset_values("potential_energy");
-        y_origin = 0;
+        y_origin = zeros(size(y_data,1),1);
         y_label = "V";
     case{"force-displacement"}
         y_data = Static_Data.get_dataset_values("physical_displacement");
-        y_origin = 0;
+        y_origin = zeros(size(y_data,1),1);
         y_label = "x";
-
         x_data = Static_Data.get_dataset_values("restoring_force");
         x_label = "f";
-
         x_origin = repmat(R_ORIGIN,num_r_modes,1); %#ok<RPMT0>
     case {"force-energy"}
         y_data = Static_Data.get_dataset_values("potential_energy");
-        y_origin = 0;
+        y_origin = zeros(size(y_data,1),1);
         y_label = "V";
-
         x_data = Static_Data.get_dataset_values("restoring_force");
         x_label = "f";
-
         x_origin = repmat(R_ORIGIN,num_r_modes,1); %#ok<RPMT0>
+    case "h_stiffness"
+        y_data = Static_Data.get_dataset_values("low_frequency_stiffness");
+        is_matrix = 1;
+        mat_size = size(y_data);
+        vec_size = {mat_size(1)*mat_size(2),mat_size(3)};
+        y_data = reshape(y_data,vec_size{:});
+        [~,h_eval,~] = Static_Data.get_current_h_data;
+        y_origin = reshape(diag(h_eval),vec_size{1},1);
+        y_label = "D";
+    case "h_displacement_gradient"
+        y_data = Static_Data.get_dataset_values("low_frequency_coupling_gradient");
+        is_matrix = 1;
+        mat_size = size(y_data);
+        vec_size = {mat_size(1)*mat_size(2),mat_size(3)};
+        y_data = reshape(y_data,vec_size{:});
+        [~,~,h_evec] = Static_Data.get_current_h_data;
+        y_origin = reshape(h_evec,vec_size{1},1);
+        y_label = "G";
 
     otherwise
         error("Plotting for '" + type + "' is not supported")
 end
 
 
-switch ndims(y_data)
-    case {1,2}
-        if isempty(outputs)
-            total_outputs = size(y_data,1);
-            if total_outputs > MAX_OUTPUTS
-                outputs = randi(total_outputs,1,MAX_OUTPUTS);
-            else
-                outputs = 1:total_outputs;
-            end
+if isempty(outputs)
+    total_outputs = size(y_data,1);
+    if total_outputs > MAX_OUTPUTS
+        outputs = zeros(1,MAX_OUTPUTS);
+        while length(unique(outputs)) < MAX_OUTPUTS
+            outputs = randi(total_outputs,1,MAX_OUTPUTS);
         end
-
-        y_data = y_data(outputs,:);
-    case {3}
-        y_data = y_data(outputs,:,:);
+    else
+        outputs = 1:total_outputs;
+    end
+elseif is_matrix
+    % outputs = sub2ind([mat_size(2),mat_size(1)],outputs(:,2),outputs(:,1));
+    outputs = sub2ind([mat_size(1),mat_size(2)],outputs(:,1),outputs(:,2));
 end
+
+    
+
+
+
+y_data = y_data(outputs,:);
+y_origin = y_origin(outputs);
 num_outputs = length(outputs);
 
 %-------------------------------------------------------------------------%
@@ -156,29 +177,38 @@ for iOutput = 1:num_outputs
         [~,sep_order] = sort(abs(force_sep(1,:)),"ascend");
 
         x_plot = [x_origin,x_sep(:,sep_order)];
-        y_plot = [y_origin,y_sep(iOutput,sep_order)];
+        y_plot = [y_origin(iOutput),y_sep(iOutput,sep_order)];
 
 
 
         switch num_r_modes
             case 1
                 plot(s1,x_plot,y_plot,plot_settings{:})
-                plot(s1,x_origin,y_origin,origin_plot_settings{:})
+                plot(s1,x_origin,y_origin(iOutput),origin_plot_settings{:})
 
                 xlabel(s1,x_label + "_{" + r_modes + "}")
-                if num_outputs == 1
-                    ylabel(s1,y_label)
+                if ~is_matrix
+                    y_output_label = y_label + "_{" + outputs(iOutput) + "}";
                 else
-                    ylabel(s1,y_label + "_{" + outputs(iOutput) + "}")
+                    output_row = ceil(outputs(iOutput)/mat_size(2));
+                    output_col = outputs(iOutput) - (output_row-1)*mat_size(2);
+                    y_output_label = y_label + "_{(" + output_row + "," + output_col + ")}";
                 end
+                ylabel(s1,y_output_label)
             case 2
                 plot3(s1,x_plot(1,:),x_plot(2,:),y_plot,plot_settings{:})
-                plot3(s1,x_origin(1,:),x_origin(2,:),y_origin,origin_plot_settings{:})
+                plot3(s1,x_origin(1,:),x_origin(2,:),y_origin(iOutput),origin_plot_settings{:})
 
                 xlabel(s1,x_label + "_{" + r_modes(1) + "}")
                 ylabel(s1,x_label + "_{" + r_modes(2) + "}")
-                zlabel(s1,y_label + "_{" + outputs(iOutput) + "}")
-
+                if ~is_matrix
+                    z_output_label = "_{" + outputs(iOutput) + "}";
+                else
+                    output_row = ceil(outputs(iOutput)/mat_size(2));
+                    output_col = outputs(iOutput) - (output_row-1)*mat_size(2);
+                    z_output_label = y_label + "_{(" + output_row + "," + output_col + ")}";
+                end
+                zlabel(s1,z_output_label)
         end
     end
 

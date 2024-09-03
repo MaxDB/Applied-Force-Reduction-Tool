@@ -289,6 +289,7 @@ classdef Reduced_System
                     Potential_Poly = obj.Potential_Polynomial;
 
                     H_Stiff_Poly = obj.Low_Frequency_Stiffness_Polynomial;
+                    Force_Poly = obj.Force_Polynomial;
                     
                     H_Disp_Grad_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
                     h_disp_coeff = H_Disp_Grad_Poly.coefficients;
@@ -309,6 +310,7 @@ classdef Reduced_System
                     Eom_Input.H_Force_Poly = H_Stiff_Poly;
                     Eom_Input.Physical_Disp_Data = Physical_Disp_Data;
                     Eom_Input.Potential_Poly = Potential_Poly;
+                    Eom_Input.Force_Poly = Force_Poly;
                     % Eom_Input.H_Disp_Data = H_Disp_Data;
                     Eom_Input.Beta_Bar_Data = Beta_Bar_Data;
                     Eom_Input.L_disp_transform = L_disp_transform;

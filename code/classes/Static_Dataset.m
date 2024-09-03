@@ -164,6 +164,7 @@ classdef Static_Dataset
                     % logger(log_message,3)
 
             end
+            validation_dataset_verificiation_plot(obj)
             
         end
         %-----------------------------------------------------------------%
@@ -467,7 +468,21 @@ classdef Static_Dataset
 
         end
         %-----------------------------------------------------------------%
+        function [h_modes,h_eval,h_evec] = get_current_h_data(obj)
+            r_modes = obj.Model.reduced_modes;
+            r_eval = obj.Model.reduced_eigenvalues;
+            r_evec = obj.Model.reduced_eigenvectors;
 
+            current_L_modes = obj.Dynamic_Validation_Data.current_L_modes;
+            L_modes = obj.Model.low_frequency_modes;
+            L_map = ismember(L_modes,current_L_modes);
+            L_eval = obj.Model.low_frequency_eigenvalues(L_map);
+            L_evec = obj.Model.low_frequency_eigenvectors(:,L_map);
+            
+            h_modes = [r_modes,current_L_modes];
+            h_eval = [r_eval;L_eval];
+            h_evec = [r_evec,L_evec];
+        end
         %-----------------------------------------------------------------%
     end
 end
