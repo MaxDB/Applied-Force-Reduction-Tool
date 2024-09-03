@@ -12,6 +12,7 @@ setup_time_start = tic;
 
 all_dofs = Model.node_mapping(end,1);
 num_dofs = Model.num_dof;
+num_nodes = (all_dofs/NUM_DIMENSIONS);
 
 static_settings = zeros(1,4);
 Static_Opts = Model.Static_Options;
@@ -21,14 +22,29 @@ static_settings(3) = Static_Opts.minimum_time_increment;
 static_settings(4) = Static_Opts.maximum_time_increment;
 max_static_inc = Static_Opts.maximum_step_increments*Static_Opts.num_loadcases;
 
-new_job = JOB_NAME + "_" + job_id;
 
+new_job = JOB_NAME + "_" + job_id(1);
+
+restart_write = size(job_id,2) == 2;
+restart_read = 0;
+
+if restart_write
+    new_job = new_job + "_" + job_id(2);
+    restart_step = job_id(2);
+    restart_read = restart_step > 1;
+end
+
+if restart_read
+    old_job = JOB_NAME + "_" + job_id(1) + "_" + (job_id(2)-1);
+end
 
 %-------------------------------------------------------------------------%
 %Open Template
 if ~isempty(FE_Force_Data)
     frequency = 2*pi/period;
     harmonic_coefficients = shift_harmonics(FE_Force_Data.harmonic_coefficients,initial_time,frequency);
+    initial_time = 0;
+    % harmonic_coefficients = FE_Force_Data.harmonic_coefficients;
 
     t_id = fopen(project_path + TEMPLATE_PATH + AMPLITUDE_TYPE + ".inp");
     amp_template=textscan(t_id,'%s','delimiter','\n');
@@ -37,13 +53,59 @@ if ~isempty(FE_Force_Data)
 
     for iLine = 1:length(amp_template)
         if strfind(amp_template{iLine,1},'1, freq, t0, A0')
-            amp_template{iLine,1} = "1, " + frequency + ", 0, " + harmonic_coefficients(1);
+            amp_template{iLine,1} = "1, " + frequency + ", " + initial_time + ", " + harmonic_coefficients(1);
             amp_template{iLine+1,1} = harmonic_coefficients(2) + ", " + harmonic_coefficients(3);
         end
     end
 end
 %-------------------------------------------------------------------------%
+
+
+%-------------------------------------------------------------------------%
 %Open Template
+t_id = fopen(project_path + TEMPLATE_PATH + "dynamic_step.inp");
+dynamic_template=textscan(t_id,'%s','delimiter','\n');
+fclose(t_id);
+dynamic_template = dynamic_template{1,1};
+
+
+for iLine = 1:length(dynamic_template)
+    if strfind(dynamic_template{iLine,1},'*Step, name=Dynamic, nlgeom=YES, inc= INC_HERE')
+        dynamic_template{iLine,1} = "*Step, name=Dynamic, nlgeom=YES, inc= " + MAX_DYNAMIC_INC;
+    end
+
+    if strfind(dynamic_template{iLine,1},'DYNAMIC_SETTINGS_HERE')
+        dynamic_template{iLine,1} = period/1000 + "," + period*num_periods + "," + period/MAX_DYNAMIC_INC + "," + period/min_incs;
+    end
+
+    if ~isempty(FE_Force_Data)
+        if strfind(dynamic_template{iLine,1},'*CLOAD, OP=NEW')
+            dynamic_template{iLine,1} = "*CLOAD, amplitude=" + AMPLITUDE_TYPE +  ", OP=NEW";
+        end
+        if strfind(dynamic_template{iLine,1},'**DYNAMIC_LOAD_HERE')
+            dynamic_load_def_line = iLine;
+        end
+    end
+
+    if restart_write
+        if strfind(dynamic_template{iLine,1},'**Restart, write, frequency = INC_HERE')
+            dynamic_template{iLine,1} = "*Restart, write, frequency =" + MAX_DYNAMIC_INC;
+        end
+    end
+
+    if restart_read
+        if strfind(dynamic_template{iLine,1},'**Restart, read, step = STEP_HERE, inc = INC_HERE')
+            dynamic_template{iLine,1} = "*Restart, read, step = " + restart_step;
+        end
+    end
+end
+
+
+%-------------------------------------------------------------------------%
+
+%-------------------------------------------------------------------------%
+%Open Template
+
 t_id = fopen(project_path + TEMPLATE_PATH + "static_ic_step.inp");
 static_template=textscan(t_id,'%s','delimiter','\n');
 fclose(t_id);
@@ -77,130 +139,105 @@ for iLine = 1:length(static_template)
     end
 
 end
-%-------------------------------------------------------------------------%
 
 %-------------------------------------------------------------------------%
-%Open Template
-t_id = fopen(project_path + TEMPLATE_PATH + "dynamic_step.inp");
-dynamic_template=textscan(t_id,'%s','delimiter','\n');
-fclose(t_id);
-dynamic_template = dynamic_template{1,1};
+
+    geometry = load_geometry(Model);
+
+    for iLine = 1:length(geometry)
+        if strfind(geometry{iLine,1},"*Instance, name=")
+            instance_def = erase(geometry{iLine,1},"*Instance, name=");
+            instance_def = split(instance_def,",");
+            instance_name = instance_def{1,1};
+        end
 
 
-for iLine = 1:length(dynamic_template)
-    if strfind(dynamic_template{iLine,1},'*Step, name=Dynamic, nlgeom=YES, inc= INC_HERE')
-        dynamic_template{iLine,1} = "*Step, name=Dynamic, nlgeom=YES, inc= " + MAX_DYNAMIC_INC;
+        if strfind(geometry{iLine,1},"*Density")
+            density_def_line = iLine;
+        end
+
     end
-
-    if strfind(dynamic_template{iLine,1},'DYNAMIC_SETTINGS_HERE')
-        dynamic_template{iLine,1} = period/1000 + "," + period*num_periods + "," + period/MAX_DYNAMIC_INC + "," + period/min_incs;
-    end
-
     if ~isempty(FE_Force_Data)
-        if strfind(dynamic_template{iLine,1},'*CLOAD, OP=NEW')
-            dynamic_template{iLine,1} = "*CLOAD, amplitude=" + AMPLITUDE_TYPE +  ", OP=NEW";
+        alpha = FE_Force_Data.alpha;
+        beta = FE_Force_Data.beta;
+        damping_def = "*Damping, alpha = " + alpha + ", beta = " + beta;
+        geometry = [geometry(1:(density_def_line-1));damping_def;geometry(density_def_line:end);amp_template];
+    end
+
+    %-------------------------------------------------------------------------%
+    %%% Create forcing tempate
+    force_label = strings(all_dofs,1);
+    for iNode = 1:num_nodes
+        node_label = instance_name + "." + iNode;
+        force_label(iNode) = node_label;
+
+        for iDimension = 1:NUM_DIMENSIONS
+            dimension_label = "," + iDimension + ",";
+            force_label(iNode+num_nodes*(iDimension-1),1) = node_label + dimension_label;
         end
-        if strfind(dynamic_template{iLine,1},'**DYNAMIC_LOAD_HERE')
-            dynamic_load_def_line = iLine;
-        end
-    end
-end
-
-
-%-------------------------------------------------------------------------%
-geometry = load_geometry(Model);
-
-for iLine = 1:length(geometry)
-    if strfind(geometry{iLine,1},"*Instance, name=")
-        instance_def = erase(geometry{iLine,1},"*Instance, name=");
-        instance_def = split(instance_def,",");
-        instance_name = instance_def{1,1};
     end
 
-
-    if strfind(geometry{iLine,1},"*Density")
-        density_def_line = iLine;
-    end
-
-end
-if ~isempty(FE_Force_Data)
-    alpha = FE_Force_Data.alpha;
-    beta = FE_Force_Data.beta;
-    damping_def = "*Damping, alpha = " + alpha + ", beta = " + beta;
-    geometry = [geometry(1:(density_def_line-1));damping_def;geometry(density_def_line:end);amp_template];
-end
-
-%-------------------------------------------------------------------------%
-%%% Create forcing tempate
-force_label = strings(all_dofs,1);
-num_nodes = (all_dofs/NUM_DIMENSIONS);
-for iNode = 1:num_nodes
-    node_label = instance_name + "." + iNode;
-    force_label(iNode) = node_label;
-
-    for iDimension = 1:NUM_DIMENSIONS
-        dimension_label = "," + iDimension + ",";
-        force_label(iNode+num_nodes*(iDimension-1),1) = node_label + dimension_label;
-    end
-end
-
-%-------------------------------------------------------------------------%
-force_transform = Model.mass*Model.reduced_eigenvectors;
-coordinate_index = ((1:num_nodes)-1)*NUM_DIMENSIONS;
+    %-------------------------------------------------------------------------%
+    force_transform = Model.mass*Model.reduced_eigenvectors;
+    coordinate_index = ((1:num_nodes)-1)*NUM_DIMENSIONS;
 
 
-%-------------------------------------------------------------------------%
-input_id = fopen("temp\" + new_job + ".inp","w");
-fprintf(input_id,'%s\r\n',geometry{:,1});
+    %-------------------------------------------------------------------------%
+    %create job
+    input_id = fopen("temp\" + new_job + ".inp","w");
+    
 
-%-------------------------------------------------------------------------%
-step_force_bc = force_transform*f_r_0;
-step_force = zeros(all_dofs,1);
-step_force(Model.node_mapping(:,1),:) = step_force_bc(Model.node_mapping(:,2),:);
-step_force_label = strings(all_dofs,1);
-for iDimension = 1:NUM_DIMENSIONS
-    dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
-    step_force_label(dimension_span,1) = force_label(dimension_span,1) + step_force(coordinate_index+iDimension,1);
-end
-%-------------------------------------------------------------------------%
-step_velocity = zeros(all_dofs,1);
-step_velocity(Model.node_mapping(:,1),:) = x_dot_0(Model.node_mapping(:,2),:);
-step_velocity_label = strings(all_dofs,1);
-for iDimension = 1:NUM_DIMENSIONS
-    dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
-    step_velocity_label(dimension_span,1) = force_label(dimension_span,1) + step_velocity(coordinate_index+iDimension,1);
-end
-%-------------------------------------------------------------------------%
-if ~isempty(FE_Force_Data)
-    dyn_force_bc = FE_Force_Data.amplitude*Model.mass*FE_Force_Data.force_shape;
-    dyn_force = zeros(all_dofs,1);
-    dyn_force(Model.node_mapping(:,1),:) = dyn_force_bc(Model.node_mapping(:,2),:);
-    dyn_force_label = strings(all_dofs,1);
+    %-------------------------------------------------------------------------%
+    step_force_bc = force_transform*f_r_0;
+    step_force = zeros(all_dofs,1);
+    step_force(Model.node_mapping(:,1),:) = step_force_bc(Model.node_mapping(:,2),:);
+    step_force_label = strings(all_dofs,1);
     for iDimension = 1:NUM_DIMENSIONS
         dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
-        dyn_force_label(dimension_span,1) = force_label(dimension_span,1) + dyn_force(coordinate_index+iDimension,1);
+        step_force_label(dimension_span,1) = force_label(dimension_span,1) + step_force(coordinate_index+iDimension,1);
     end
-end
-%-------------------------------------------------------------------------%
-static_step = static_template;
+    %-------------------------------------------------------------------------%
+    step_velocity = zeros(all_dofs,1);
+    step_velocity(Model.node_mapping(:,1),:) = x_dot_0(Model.node_mapping(:,2),:);
+    step_velocity_label = strings(all_dofs,1);
+    for iDimension = 1:NUM_DIMENSIONS
+        dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
+        step_velocity_label(dimension_span,1) = force_label(dimension_span,1) + step_velocity(coordinate_index+iDimension,1);
+    end
+    %-------------------------------------------------------------------------%
+    if ~isempty(FE_Force_Data)
+        dyn_force_bc = FE_Force_Data.amplitude*Model.mass*FE_Force_Data.force_shape;
+        dyn_force = zeros(all_dofs,1);
+        dyn_force(Model.node_mapping(:,1),:) = dyn_force_bc(Model.node_mapping(:,2),:);
+        dyn_force_label = strings(all_dofs,1);
+        for iDimension = 1:NUM_DIMENSIONS
+            dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
+            dyn_force_label(dimension_span,1) = force_label(dimension_span,1) + dyn_force(coordinate_index+iDimension,1);
+        end
+    end
+    %-------------------------------------------------------------------------%
+    if ~restart_read
+        fprintf(input_id,'%s\r\n',geometry{:,1});
+        static_step = static_template;
 
-fprintf(input_id,'%s\r\n',static_step{1:(velocity_def_line-1),1});
-fprintf(input_id,'%s\r\n',step_velocity_label(:));
-fprintf(input_id,'%s\r\n',static_step{(velocity_def_line+1):(load_def_line-1),1});
-fprintf(input_id,'%s\r\n',step_force_label(:));
-fprintf(input_id,'%s\r\n',static_step{(load_def_line+1):end,1});
+        fprintf(input_id,'%s\r\n',static_step{1:(velocity_def_line-1),1});
+        fprintf(input_id,'%s\r\n',step_velocity_label(:));
+        fprintf(input_id,'%s\r\n',static_step{(velocity_def_line+1):(load_def_line-1),1});
+        fprintf(input_id,'%s\r\n',step_force_label(:));
+        fprintf(input_id,'%s\r\n',static_step{(load_def_line+1):end,1});
+    end
+    %-------------------------------------------------------------------------%
+    dynamic_step = dynamic_template;
+    fprintf(input_id,'%s\r\n',dynamic_step{1:(dynamic_load_def_line-1)});
+    fprintf(input_id,'%s\r\n',dyn_force_label(:));
+    fprintf(input_id,'%s\r\n',dynamic_step{(dynamic_load_def_line+1):end,1});
 
-%-------------------------------------------------------------------------%
-dynamic_step = dynamic_template;
-fprintf(input_id,'%s\r\n',dynamic_step{1:(dynamic_load_def_line-1)});
-fprintf(input_id,'%s\r\n',dyn_force_label(:));
-fprintf(input_id,'%s\r\n',dynamic_step{(dynamic_load_def_line+1):end,1});
 
 %-------------------------------------------------------------------------%
 fclose(input_id);
 
 setup_time = toc(setup_time_start);
-log_message = sprintf("job " + job_id + ": Input file created: %.1f seconds" ,setup_time);
+log_message = sprintf("job " + job_id(1) + ": Input file created: %.1f seconds" ,setup_time);
 logger(log_message,3)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 num_cpus = Model.Static_Options.num_fe_cpus;
@@ -208,7 +245,11 @@ num_cpus = Model.Static_Options.num_fe_cpus;
 abaqus_time_start = tic;
 project_directory = pwd;
 cd temp
-[status,cmdout] = system("abaqus job=" + new_job + " cpus=" + num_cpus); %#ok<ASGLU>
+if ~restart_read
+    [status,cmdout] = system("abaqus job=" + new_job + " cpus=" + num_cpus); %#ok<ASGLU>
+else
+    [status,cmdout] = system("abaqus job=" + new_job + " oldjob=" + old_job + " cpus=" + num_cpus); %#ok<ASGLU>
+end
 
 while ~isfile(new_job + ".dat")
     pause(0.1)
@@ -220,7 +261,7 @@ end
 cd(project_directory)
 
 abaqus_time = toc(abaqus_time_start);
-log_message = sprintf("job " + job_id + ": Abaqus dynamic analysis complete: %.1f seconds" ,abaqus_time);
+log_message = sprintf("job " + job_id(1) + ": Abaqus dynamic analysis complete: %.1f seconds" ,abaqus_time);
 logger(log_message,3)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 data_processing_time_start = tic;
@@ -246,14 +287,15 @@ step_start_lines = [find(matches(abaqus_data,step_start_pattern,'IgnoreCase',tru
 inc_start_lines = [find(matches(abaqus_data,increment_start_pattern,'IgnoreCase',true));length(abaqus_data)];
 
 %Initial displacement
-step_span = step_start_lines(1):(step_start_lines(2)-1);
-step_data = abaqus_data(step_span,1);
-disp_table_start = find(startsWith(step_data,disp_table_pattern,'IgnoreCase',true),1);
-disp_table_span = disp_table_start:size(step_span,2);
-disp_table_data = step_data(disp_table_span,1);
-disp_0 = read_abaqus_table(disp_table_data,num_nodes,NUM_DIMENSIONS);
-disp_0_bc = disp_0(Model.node_mapping(:,1),:);
-
+if ~restart_read
+    step_span = step_start_lines(1):(step_start_lines(2)-1);
+    step_data = abaqus_data(step_span,1);
+    disp_table_start = find(startsWith(step_data,disp_table_pattern,'IgnoreCase',true),1);
+    disp_table_span = disp_table_start:size(step_span,2);
+    disp_table_data = step_data(disp_table_span,1);
+    disp_0 = read_abaqus_table(disp_table_data,num_nodes,NUM_DIMENSIONS);
+    disp_0_bc = disp_0(Model.node_mapping(:,1),:);
+end
 
 %Dynamic increments
 num_increments = size(inc_start_lines,1) - 2;
@@ -271,7 +313,7 @@ for iInc = 1:num_increments
     increment_time_line = find(startsWith(inc_data,increment_time_pattern,'IgnoreCase',true),1);
     disp_table_start = find(startsWith(inc_data,disp_table_pattern,'IgnoreCase',true),1);
     vel_table_start = find(startsWith(inc_data,vel_table_pattern,'IgnoreCase',true),1);
-     
+
     increment_time_line_data = textscan(inc_data{increment_time_line},"%s %s %s %f");
     time(iInc+1) = increment_time_line_data{1,4} + time(iInc);
 
@@ -291,7 +333,7 @@ for iInc = 1:num_increments
     dissipated_energy_line = textscan(inc_data{dissipated_energy_line_def},"%s %s %s %s %s %f");
     dissipated_energy(:,iInc) = dissipated_energy_line{1,end};
 
-    
+
     disp_table_span = disp_table_start:(vel_table_start-3);
     disp_table_data = inc_data(disp_table_span,1);
     disp_pre_bc = read_abaqus_table(disp_table_data,num_nodes,NUM_DIMENSIONS);
@@ -309,12 +351,17 @@ energy.work = external_work;
 energy.kinetic = kinetic_energy;
 energy.dissipated = dissipated_energy;
 
-x = [disp_0_bc,displacement];
-x_dot = [x_dot_0,velocity];
-
+if ~restart_read
+    x = [disp_0_bc,displacement];
+    x_dot = [x_dot_0,velocity];
+else
+    x = displacement;
+    x_dot = velocity;
+    time = time(2:end);
+end
 
 data_processing_time = toc(data_processing_time_start);
-log_message = sprintf("job " + job_id + ": Dynamic data processed: %.1f seconds" ,data_processing_time);
+log_message = sprintf("job " + job_id(1) + ": Dynamic data processed: %.1f seconds" ,data_processing_time);
 logger(log_message,3)
 end
 

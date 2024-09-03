@@ -1,6 +1,7 @@
 clear
 close all
 set_visualisation_level(3)
+set_logging_level(2)
 
 system_name = "exhaust_1567";
 Dyn_Data = initalise_dynamic_data(system_name);

@@ -17,7 +17,7 @@ function [t_shift,x_shift] = shift_orbit(t,x)
     keep_indices(find(keep_indices,1,"last")+1) = 1;
     
     t_shift = t_all(keep_indices);
-    x_shift = x_all(keep_indices);
+    x_shift = x_all(:,keep_indices);
 end
 
 %-------------------------------------------------------------------------%

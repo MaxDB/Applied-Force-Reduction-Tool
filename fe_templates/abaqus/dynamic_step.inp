@@ -1,5 +1,6 @@
 ** ----------------------------------------------------------------
 **
+**Restart, read, step = STEP_HERE, inc = INC_HERE
 *Step, name=Dynamic, nlgeom=YES, inc= INC_HERE
 *Dynamic
 DYNAMIC_SETTINGS_HERE
@@ -14,5 +15,6 @@ U
 V
 *ENERGY PRINT
 ** 
+**Restart, write, frequency = INC_HERE
 *End Step
 ** ----------------------------------------------------------------

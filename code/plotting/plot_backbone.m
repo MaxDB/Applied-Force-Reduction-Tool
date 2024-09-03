@@ -294,6 +294,9 @@ switch type
                 data_tip_row = dataTipTextRow("Periodicity",FE_Data.periodicity(fe_plot_index));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
+                data_tip_row = dataTipTextRow("Simulated periods",FE_Data.simulated_periods(fe_plot_index));
+                p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
                 if ~isempty(extra_data)
                     data_tip_row = dataTipTextRow(extra_data_name,extra_data*ones(size(fe_plot_index)));
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
@@ -445,6 +448,9 @@ switch type
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
                     data_tip_row = dataTipTextRow("Periodicity",FE_Data.periodicity(fe_plot_index));
+                    p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
+                    data_tip_row = dataTipTextRow("Simulated periods",FE_Data.simulated_periods(fe_plot_index));
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
                     if ~isempty(extra_data)
