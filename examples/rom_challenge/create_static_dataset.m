@@ -20,7 +20,7 @@ Calibration_Opts.Static_Opts.num_loadcases = 20;
 Static_Opts.static_solver = "abaqus";
 Static_Opts.additional_data = "perturbation";
 Static_Opts.num_validation_modes = 18;
-Static_Opts.max_parallel_jobs = 1; %be careful!
+Static_Opts.max_parallel_jobs = 4; %be careful!
 Static_Opts.num_loadcases = 8;
 Static_Opts.maximum_loadcases = 15;
 %------------------------------------------%

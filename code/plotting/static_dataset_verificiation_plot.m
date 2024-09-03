@@ -16,7 +16,7 @@ ax = plot_static_data("force",Static_Data);
 Rom.Force_Polynomial.plot_polynomial(ax);
 
 num_dofs = Static_Data.Model.num_dof;
-disp_outputs = randi(num_dofs,[1,NUM_DISP_PLOTS]);
+disp_outputs = randi(num_dofs,[NUM_DISP_PLOTS,1]);
 
 ax = plot_static_data("displacement",Static_Data,"outputs",disp_outputs);
 Rom.Physical_Displacement_Polynomial.plot_polynomial(ax,disp_outputs);
