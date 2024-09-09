@@ -1,9 +1,9 @@
 function fe_forced_orbits = get_fe_forced_response(orbits,Rom,Force_Data,Damping_Data,Add_Output)
 MIN_INC_SCALE_FACTOR = 1;
 NUM_PERIODS = 10;
-MAX_PERIODICITY_ERROR = 1e-4;
+MAX_PERIODICITY_ERROR = 1e-4; %convergence criteria
 MAX_ITERATIONS = 500;
-MIN_ITERATIONS = 3;
+MIN_ITERATIONS = 5; %give it some time for stuff to go wrong
 
 DEBUG_PLOT = 1;
 
@@ -44,8 +44,8 @@ switch Add_Output.type
 end
 
 reset_temp_directory()
-% parfor (iJob = 1:num_parallel_jobs,max_parallel_jobs)
-for iJob = 1:num_parallel_jobs
+parfor (iJob = 1:num_parallel_jobs,max_parallel_jobs)
+% for iJob = 1:num_parallel_jobs
     orbit_group = orbit_groups{iJob};
     num_group_orbits = size(orbit_group,2);
 
@@ -84,7 +84,8 @@ for iJob = 1:num_parallel_jobs
         physical_velocity = Rom.expand_velocity(initial_displacement,initial_velocity);
         
         if DEBUG_PLOT
-            figure %#ok<*UNRCH>
+            fig_all = figure; %#ok<*UNRCH>
+            fig_all.Name = "Job " + iJob + ", orbit " + iOrbit;
             tiledlayout("flow")
             ax_all = cell(1,num_modes);
             for iMode = 1:num_modes
@@ -95,7 +96,8 @@ for iJob = 1:num_parallel_jobs
                 hold(ax_all{iMode},"on")
             end
 
-            figure
+            fig_period = figure;
+            fig_period.Name = "Job " + iJob + ", orbit " + iOrbit;
             tiledlayout("flow")
             ax_period = cell(1,num_modes);
             for iMode = 1:num_modes
@@ -145,13 +147,17 @@ for iJob = 1:num_parallel_jobs
                 for iMode = 1:num_modes
                     plot(ax_period{iMode},t_shift,r_shift(iMode,:))
                 end
+
                 drawnow
+                file_name = "temp\J" + iJob + "O" + iOrbit + "_";
+                saveas(fig_all,file_name+"all.fig")
+                saveas(fig_period,file_name+"period.fig")
             end
 
             converged = periodicity_error < MAX_PERIODICITY_ERROR;
 
             orbit_sim_step_time = toc(orbit_sim_step_start);
-            log_message = sprintf("Orbit " + iOrbit + ": %i/%i periods in %.1f seconds with %.3f periodicity error" ,NUM_PERIODS,iStep*NUM_PERIODS,orbit_sim_step_time,periodicity_error);
+            log_message = sprintf("Job " + iJob + ", orbit " + iOrbit + ": %i/%i periods in %.1f seconds with %.3f periodicity error" ,NUM_PERIODS,iStep*NUM_PERIODS,orbit_sim_step_time,periodicity_error);
             logger(log_message,2)
 
             if converged && iStep >= MIN_ITERATIONS
@@ -166,8 +172,8 @@ for iJob = 1:num_parallel_jobs
             % initial_force = Rom.Force_Polynomial.evaluate_polynomial(initial_displacement);
         end
 
-        potential_energy = energy_fom.potential(:,in_range(2:end));
-        kinetic_energy = energy_fom.kinetic(:,in_range(2:end));
+        potential_energy = energy_fom.potential(:,period_span(1):period_span(2));
+        kinetic_energy = energy_fom.kinetic(:,period_span(1):period_span(2));
 
         % external_work = energy_sim.work(:,in_range(2:end));
         % dissipated_energy = energy_sim.dissipated(:,in_range(2:end));
