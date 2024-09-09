@@ -41,6 +41,7 @@ for iSep = 1:num_seps
 
         physical_force = force_transform*sep_force;
         disp_guess = linear_stiffness\physical_force;
+        disp_guess(isnan(disp_guess)) = 0;
 
         reached_energy_limit = 0;
         step_force = zeros(size(physical_force));

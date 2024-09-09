@@ -104,7 +104,13 @@ for iSol = 1:num_solutions
         p = plot(ax_legend,point(1),point(2),"-","LineWidth",line_width,"Color",line_colour);
         hold(ax_legend,"off")
         legend_lines(iSol) = p;
-        reduced_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
+        
+        switch Sol_Type.model_type
+            case "rom"
+                reduced_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
+            case "fom"
+                reduced_modes = 1:Dyn_Data.Dynamic_Model.Model.num_dof;
+        end
         legend_modes{1,iSol} = reduced_modes;
     end
 end

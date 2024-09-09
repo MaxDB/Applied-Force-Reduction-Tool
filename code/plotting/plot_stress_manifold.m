@@ -1,9 +1,18 @@
 function plot_stress_manifold(Dyn_Data,L_modes,varargin)
 PLOT_H_R = 0;
 PLOT_RESOLUTION = 51;
-LIM_SF = 2;
+LIM_SF = 1;
 PHYSICAL_COORDINATES = 0;
 
+PLOT_LEGEND = 1;
+
+
+LINE_WIDTH = 3;
+
+MESH_ALPHA = 1;
+MESH_COLOUR = 3;
+COMPARISON_MESH_ALPHA = 0.6;
+COMPARISON_MESH_COLOUR = 4;
 
 %-------------------------------------------------------------------------%
 num_args = length(varargin);
@@ -32,6 +41,7 @@ for arg_counter = 1:num_args/2
 end
 
 plot_mesh = isempty(Dyn_Data_Comp);
+plot_mesh = 1;
 plot_orbit = ~isempty(orbit_id);
 if plot_orbit
     LIM_SF = 1;
@@ -100,6 +110,10 @@ else
     zlabel("q_3")
 end
 
+
+
+mesh_settings = {"EdgeColor","none","FaceColor","interp","FaceLighting","gouraud"};
+
 if plot_mesh
     [R,H_L] = meshgrid(r,h_L);
     R_lin = reshape(R,PLOT_RESOLUTION^2,1);
@@ -112,13 +126,14 @@ if plot_mesh
          x_hat_grad = Rom.Low_Frequency_Coupling_Gradient_Polynomial.evaluate_polynomial(R_lin(iPoint));
          x_hat_lin = Rom.Physical_Displacement_Polynomial.evaluate_polynomial(R_lin(iPoint)) + x_hat_grad*[0;H_L_lin(iPoint)];
          if ~PHYSICAL_COORDINATES
-             x_hat_lin = evec*x_hat_lin;
+             x_hat_lin = evec'*mass*x_hat_lin;
          end
          X_HAT_lin(iPoint,:) = x_hat_lin;
     end
 
     X_HAT = reshape(X_HAT_lin,PLOT_RESOLUTION,PLOT_RESOLUTION,3);
-    mesh(X_HAT(:,:,1),X_HAT(:,:,2),X_HAT(:,:,3))
+    colour_data = zeros(size(X_HAT,[1,2]));
+    mesh(X_HAT(:,:,1),X_HAT(:,:,2),X_HAT(:,:,3),colour_data,"FaceAlpha",MESH_ALPHA,mesh_settings{:},"Tag","validation")
 else
 
     for iR = 1:PLOT_RESOLUTION
@@ -130,7 +145,7 @@ else
                 x_hat(:,iH_L) = x_tilde(:,iR) + x_hat_grad*h;
             end
             if ~PHYSICAL_COORDINATES
-                x_hat = evec*x_hat;
+                x_hat = evec'*mass*x_hat;
             end
 
             switch num_dofs
@@ -146,13 +161,13 @@ end
 % x_hat_mesh = pc2surfacemesh(pointCloud(x_hat'),"poisson");
 % surfaceMeshShow(x_hat_mesh)
 if ~PHYSICAL_COORDINATES
-    x_tilde = evec*x_tilde;
+    x_tilde = evec'*mass*x_tilde;
 end
 switch num_dofs
     case 2
-        plot(x_tilde(1,:),x_tilde(2,:),'k-',"LineWidth",1.5)
+        plot(x_tilde(1,:),x_tilde(2,:),'k-',"LineWidth",LINE_WIDTH,"Tag","one mode")
     case 3
-        plot3(x_tilde(1,:),x_tilde(2,:),x_tilde(3,:),'k-',"LineWidth",1.5)
+        plot3(x_tilde(1,:),x_tilde(2,:),x_tilde(3,:),'k-',"LineWidth",LINE_WIDTH,"Tag","one mode")
 end
 
 hold off
@@ -173,8 +188,8 @@ if plot_orbit
     end
     
     if ~PHYSICAL_COORDINATES
-        x_tilde_orbit = evec*x_tilde_orbit;
-        x_hat_orbit = evec*x_hat_orbit;
+        x_tilde_orbit =evec'*mass*x_tilde_orbit;
+        x_hat_orbit = evec'*mass*x_hat_orbit;
     end
 
 
@@ -183,6 +198,8 @@ if plot_orbit
     plot3(x_hat_orbit(1,:),x_hat_orbit(2,:),x_hat_orbit(3,:),'r-','LineWidth',2)
 hold off
 end
+
+light("Position",[1,1,1])
 
 if isempty(Dyn_Data_Comp)
     return
@@ -206,15 +223,17 @@ if PLOT_MESH
             x_tilde_12_lin = rom_2.Physical_Displacement_Polynomial.evaluate_polynomial([r_1_lin;r_2_lin]);
             
             if ~PHYSICAL_COORDINATES
-                x_tilde_12_lin = evec*x_tilde_12_lin;
+                x_tilde_12_lin =evec'*mass*x_tilde_12_lin;
             end
 
             X_TILDE_12(iR_1,iR_2,:) = x_tilde_12_lin;
         end
     end
-
+    
+    
+    colour_data = ones(size(X_TILDE_12,[1,2]));
     hold on
-    mesh(X_TILDE_12(:,:,1),X_TILDE_12(:,:,2),X_TILDE_12(:,:,3))
+    mesh(X_TILDE_12(:,:,1),X_TILDE_12(:,:,2),X_TILDE_12(:,:,3),colour_data,"FaceAlpha",COMPARISON_MESH_ALPHA,mesh_settings{:},"Tag","two mode");
     hold off
 
 else
@@ -227,7 +246,7 @@ else
             x_tilde_12(:,iR_2) = rom_2.Physical_Displacement_Polynomial.evaluate_polynomial([r_1_plot;r_2_plot]);
         end
         if ~PHYSICAL_COORDINATES
-            x_tilde_12 = evec*x_tilde_12;
+            x_tilde_12 = evec'*mass*x_tilde_12;
         end
         switch num_dofs
             case 2
@@ -239,5 +258,38 @@ else
     hold off
 end
 
+
+
+if ~isequal(MESH_COLOUR,0)
+    colormap(get_plot_colours([MESH_COLOUR,COMPARISON_MESH_COLOUR]))
+end
+
+if PLOT_LEGEND
+    ax = gca;
+    lines = ax.Children;
+    num_lines = size(lines,1);
+    for iLine = 1:num_lines
+        line = lines(iLine);
+        if isa(line,"matlab.graphics.primitive.Light")
+            continue
+        end
+        switch line.Tag
+            case "one mode"
+                line.DisplayName = "$\mathcal W_{\{1\}}$";
+                uistack(line,"top")
+                uistack(line,"down",2)
+            case "two mode"
+                line.DisplayName = "$\mathcal W_{\{1,2\}}$";
+                uistack(line,"top")
+                
+            case "validation"
+                line.DisplayName = "$\mathcal V_{\{1\}:\{1,2\}}$";
+                uistack(line,"top")
+                uistack(line,"down",1)
+        end
+    end
+    leg = legend;
+    leg.Interpreter = "latex";
+end
 end
 

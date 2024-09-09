@@ -1,5 +1,5 @@
 function coco_plot(period,energy,energy_limit)
-PLOT_LEVEL = 3;
+PLOT_LEVEL = 1;
 COLOUR = get_plot_colours(1);
 MARKER_COLOUR = get_plot_colours(3);
 LINE_WIDTH = 1.5;

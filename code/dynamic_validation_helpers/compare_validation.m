@@ -1,5 +1,15 @@
-function compare_validation(Dyn_Data,type,solution_num,L_modes)
+function compare_validation(Dyn_Data,type,solution_num,h_modes)
 ax = [];
+
+if isstring(Dyn_Data)
+    Dyn_Data = initalise_dynamic_data(Dyn_Data);
+end
+
+if isstring(h_modes) && h_modes == "all"
+    h_modes = 1:Dyn_Data.Dynamic_Model.Model.Static_Options.num_validation_modes; 
+end
+r_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
+L_modes = setdiff(h_modes,r_modes);
 
 num_L_modes = length(L_modes);
 num_colours = size(get_plot_colours,1);

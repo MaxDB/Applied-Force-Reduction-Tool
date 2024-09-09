@@ -157,8 +157,9 @@ switch type
 
             neglected_modes = setdiff(h_modes,plotted_modes);
             num_neglected_modes = length(neglected_modes);
+            tiled_layout = ax{1,1}.Parent;
             for iMode = 1:num_neglected_modes
-                ax{num_axes+iMode,1} = nexttile; %#ok<AGROW>
+                ax{num_axes+iMode,1} = nexttile(tiled_layout); %#ok<AGROW>
                 ax{num_axes+iMode,2} = neglected_modes(iMode); %#ok<AGROW>
                 plotted_modes(num_axes+iMode) = neglected_modes(iMode);
             end

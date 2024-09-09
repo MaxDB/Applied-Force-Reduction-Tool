@@ -229,8 +229,19 @@ for iOrbit = 1:num_periodic_orbits
     else
         orbit_stab = 1; %#ok<*UNRCH>
     end
+    
+    Displacement.r = r;
+    Displacement.h = h;
 
-    Validation_Sol = Validation_Sol.analyse_h_solution(r,r_dot,h,h_dot,orbit_stab,Validation_Analysis_Inputs,iOrbit);
+    Velocity.r_dot = r_dot;
+    Velocity.h_dot = h_dot;
+    
+    Eom_Terms.h_inertia = h_inertia;
+    Eom_Terms.h_convection = h_conv;
+    Eom_Terms.h_stiffness = h_stiff;
+    Eom_Terms.h_force = h_force;
+
+    Validation_Sol = Validation_Sol.analyse_h_solution(Displacement,Velocity,Eom_Terms,orbit_stab,Validation_Analysis_Inputs,iOrbit);
     h_analysis_time = toc(h_analysis_start);
     orbit_time = read_data_time + set_up_h_time + solve_h_time + h_analysis_time;
     total_time = total_time + orbit_time;

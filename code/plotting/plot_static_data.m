@@ -202,7 +202,7 @@ for iOutput = 1:num_outputs
                 xlabel(s1,x_label + "_{" + r_modes(1) + "}")
                 ylabel(s1,x_label + "_{" + r_modes(2) + "}")
                 if ~is_matrix
-                    z_output_label = "_{" + outputs(iOutput) + "}";
+                    z_output_label = y_label + "_{" + outputs(iOutput) + "}";
                 else
                     output_row = ceil(outputs(iOutput)/mat_size(2));
                     output_col = outputs(iOutput) - (output_row-1)*mat_size(2);
