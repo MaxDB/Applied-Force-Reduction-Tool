@@ -142,95 +142,100 @@ end
 
 %-------------------------------------------------------------------------%
 
-    geometry = load_geometry(Model);
+geometry = load_geometry(Model);
 
-    for iLine = 1:length(geometry)
-        if strfind(geometry{iLine,1},"*Instance, name=")
-            instance_def = erase(geometry{iLine,1},"*Instance, name=");
-            instance_def = split(instance_def,",");
-            instance_name = instance_def{1,1};
-        end
-
-
-        if strfind(geometry{iLine,1},"*Density")
-            density_def_line = iLine;
-        end
-
-    end
-    if ~isempty(FE_Force_Data)
-        alpha = FE_Force_Data.alpha;
-        beta = FE_Force_Data.beta;
-        damping_def = "*Damping, alpha = " + alpha + ", beta = " + beta;
-        geometry = [geometry(1:(density_def_line-1));damping_def;geometry(density_def_line:end);amp_template];
+for iLine = 1:length(geometry)
+    if strfind(geometry{iLine,1},"*Instance, name=")
+        instance_def = erase(geometry{iLine,1},"*Instance, name=");
+        instance_def = split(instance_def,",");
+        instance_name = instance_def{1,1};
     end
 
-    %-------------------------------------------------------------------------%
-    %%% Create forcing tempate
-    force_label = strings(all_dofs,1);
-    for iNode = 1:num_nodes
-        node_label = instance_name + "." + iNode;
-        force_label(iNode) = node_label;
 
-        for iDimension = 1:NUM_DIMENSIONS
-            dimension_label = "," + iDimension + ",";
-            force_label(iNode+num_nodes*(iDimension-1),1) = node_label + dimension_label;
-        end
+    if strfind(geometry{iLine,1},"*Density")
+        density_def_line = iLine;
     end
 
-    %-------------------------------------------------------------------------%
-    force_transform = Model.mass*Model.reduced_eigenvectors;
-    coordinate_index = ((1:num_nodes)-1)*NUM_DIMENSIONS;
+end
+if ~isempty(FE_Force_Data)
+    alpha = FE_Force_Data.alpha;
+    beta = FE_Force_Data.beta;
+    damping_def = "*Damping, alpha = " + alpha + ", beta = " + beta;
+    geometry = [geometry(1:(density_def_line-1));damping_def;geometry(density_def_line:end);amp_template];
+end
+
+%-------------------------------------------------------------------------%
+%%% Create forcing tempate
+force_label = strings(all_dofs,1);
+for iNode = 1:num_nodes
+    node_label = instance_name + "." + iNode;
+    force_label(iNode) = node_label;
+
+    for iDimension = 1:NUM_DIMENSIONS
+        dimension_label = "," + iDimension + ",";
+        force_label(iNode+num_nodes*(iDimension-1),1) = node_label + dimension_label;
+    end
+end
+
+%-------------------------------------------------------------------------%
+force_transform = Model.mass*Model.reduced_eigenvectors;
+coordinate_index = ((1:num_nodes)-1)*NUM_DIMENSIONS;
 
 
-    %-------------------------------------------------------------------------%
-    %create job
-    input_id = fopen("temp\" + new_job + ".inp","w");
-    
+%-------------------------------------------------------------------------%
+%create job
+input_id = fopen("temp\" + new_job + ".inp","w");
 
-    %-------------------------------------------------------------------------%
-    step_force_bc = force_transform*f_r_0;
-    step_force = zeros(all_dofs,1);
-    step_force(Model.node_mapping(:,1),:) = step_force_bc(Model.node_mapping(:,2),:);
-    step_force_label = strings(all_dofs,1);
+
+%-------------------------------------------------------------------------%
+step_force_bc = force_transform*f_r_0;
+step_force = zeros(all_dofs,1);
+step_force(Model.node_mapping(:,1),:) = step_force_bc(Model.node_mapping(:,2),:);
+step_force_label = strings(all_dofs,1);
+for iDimension = 1:NUM_DIMENSIONS
+    dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
+    step_force_label(dimension_span,1) = force_label(dimension_span,1) + step_force(coordinate_index+iDimension,1);
+end
+%-------------------------------------------------------------------------%
+step_velocity = zeros(all_dofs,1);
+step_velocity(Model.node_mapping(:,1),:) = x_dot_0(Model.node_mapping(:,2),:);
+step_velocity_label = strings(all_dofs,1);
+for iDimension = 1:NUM_DIMENSIONS
+    dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
+    step_velocity_label(dimension_span,1) = force_label(dimension_span,1) + step_velocity(coordinate_index+iDimension,1);
+end
+%-------------------------------------------------------------------------%
+if ~isempty(FE_Force_Data)
+    dyn_force_bc = FE_Force_Data.amplitude*Model.mass*FE_Force_Data.force_shape;
+    dyn_force = zeros(all_dofs,1);
+    dyn_force(Model.node_mapping(:,1),:) = dyn_force_bc(Model.node_mapping(:,2),:);
+    dyn_force_label = strings(all_dofs,1);
     for iDimension = 1:NUM_DIMENSIONS
         dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
-        step_force_label(dimension_span,1) = force_label(dimension_span,1) + step_force(coordinate_index+iDimension,1);
+        dyn_force_label(dimension_span,1) = force_label(dimension_span,1) + dyn_force(coordinate_index+iDimension,1);
     end
-    %-------------------------------------------------------------------------%
-    step_velocity = zeros(all_dofs,1);
-    step_velocity(Model.node_mapping(:,1),:) = x_dot_0(Model.node_mapping(:,2),:);
-    step_velocity_label = strings(all_dofs,1);
-    for iDimension = 1:NUM_DIMENSIONS
-        dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
-        step_velocity_label(dimension_span,1) = force_label(dimension_span,1) + step_velocity(coordinate_index+iDimension,1);
-    end
-    %-------------------------------------------------------------------------%
-    if ~isempty(FE_Force_Data)
-        dyn_force_bc = FE_Force_Data.amplitude*Model.mass*FE_Force_Data.force_shape;
-        dyn_force = zeros(all_dofs,1);
-        dyn_force(Model.node_mapping(:,1),:) = dyn_force_bc(Model.node_mapping(:,2),:);
-        dyn_force_label = strings(all_dofs,1);
-        for iDimension = 1:NUM_DIMENSIONS
-            dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
-            dyn_force_label(dimension_span,1) = force_label(dimension_span,1) + dyn_force(coordinate_index+iDimension,1);
-        end
-    end
-    %-------------------------------------------------------------------------%
-    if ~restart_read
-        fprintf(input_id,'%s\r\n',geometry{:,1});
-        static_step = static_template;
+end
+%-------------------------------------------------------------------------%
+if ~restart_read
+    fprintf(input_id,'%s\r\n',geometry{:,1});
+    static_step = static_template;
 
-        fprintf(input_id,'%s\r\n',static_step{1:(velocity_def_line-1),1});
-        fprintf(input_id,'%s\r\n',step_velocity_label(:));
-        fprintf(input_id,'%s\r\n',static_step{(velocity_def_line+1):(load_def_line-1),1});
-        fprintf(input_id,'%s\r\n',step_force_label(:));
-        fprintf(input_id,'%s\r\n',static_step{(load_def_line+1):end,1});
-    end
-    %-------------------------------------------------------------------------%
-    dynamic_step = dynamic_template;
+    fprintf(input_id,'%s\r\n',static_step{1:(velocity_def_line-1),1});
+    fprintf(input_id,'%s\r\n',step_velocity_label(:));
+    fprintf(input_id,'%s\r\n',static_step{(velocity_def_line+1):(load_def_line-1),1});
+    fprintf(input_id,'%s\r\n',step_force_label(:));
+    fprintf(input_id,'%s\r\n',static_step{(load_def_line+1):end,1});
+end
+%-------------------------------------------------------------------------%
+dynamic_step = dynamic_template;
+if ~isempty(FE_Force_Data)
     fprintf(input_id,'%s\r\n',dynamic_step{1:(dynamic_load_def_line-1)});
     fprintf(input_id,'%s\r\n',dyn_force_label(:));
     fprintf(input_id,'%s\r\n',dynamic_step{(dynamic_load_def_line+1):end,1});
+else
+    fprintf(input_id,'%s\r\n',dynamic_step{:});
+end
+
 
 
 %-------------------------------------------------------------------------%
