@@ -28,6 +28,10 @@ classdef Forced_Solution < Dynamic_Solution
 
             continuation_variable = Force_Data.continuation_variable;
             Nonconservative_Input = obj.get_nonconservative_input(Rom.Model);
+            if isfield(FRF_Settings,"z0")
+                Nonconservative_Input.z0 = FRF_Settings.z0;
+            end
+
 
             switch continuation_variable
                 case "amplitude"
@@ -37,8 +41,9 @@ classdef Forced_Solution < Dynamic_Solution
                     Sol_Type.frequency = Force_Data.frequency;
                 case "frequency"
                     if isempty(initial_conditions)
-                        period_range = obj.Continuation_Options.parameter_range;
-                        p0 = period_range(2);
+                        % period_range = obj.Continuation_Options.parameter_range;
+                        % p0 = period_range(2);
+                        p0 = 2*pi/Force_Data.frequency;
                         [t0,z0] = get_forced_response(Rom,Nonconservative_Input,p0);
                     else
                         [t0,z0,p0] = initial_conditions{:};

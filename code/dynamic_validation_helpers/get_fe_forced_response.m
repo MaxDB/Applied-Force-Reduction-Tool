@@ -2,7 +2,7 @@ function fe_forced_orbits = get_fe_forced_response(orbits,Rom,Force_Data,Damping
 MIN_INC_SCALE_FACTOR = 1;
 NUM_PERIODS = 10;
 MAX_PERIODICITY_ERROR = 1e-4; %convergence criteria
-MAX_ITERATIONS = 500;
+MAX_ITERATIONS = 400;
 MIN_ITERATIONS = 5; %give it some time for stuff to go wrong
 
 DEBUG_PLOT = 1;
@@ -116,7 +116,7 @@ parfor (iJob = 1:num_parallel_jobs,max_parallel_jobs)
             [t_fom,x_fom,~,energy_fom] = Model.dynamic_simulation(physical_displacement,physical_velocity,initial_force,period,NUM_PERIODS,min_incs,initial_time,FE_Force_Data,job_id);
             
            
-            
+            delete("temp\dynamic_analysis_" + iJob + "_" + (iStep - 2)+".*")
             t_norm = t_fom/period;
             period_error = inf;
             for iPeriod = 1:NUM_PERIODS

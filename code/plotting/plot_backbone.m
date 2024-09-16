@@ -1,6 +1,6 @@
 function ax = plot_backbone(Dyn_Data,type,solution_num,varargin)
 PLOT_BIFURCATIONS = 1;
-PLOT_SPECIAL_POINT = 1;
+PLOT_SPECIAL_POINT = 0;
 
 STABILITY_LIMIT = 1.005;
 
@@ -118,6 +118,9 @@ end
 
 if plot_special_point
     point_index = Dyn_Data.get_special_point(solution_num,"X");
+    if isempty(point_index)
+        plot_special_point = 0;
+    end
     special_point_plot_settings = bifurcation_plot_settings{1,1}; 
     marker_size_index = find(cellfun(@(iSetting) isequal(iSetting,"MarkerSize"),special_point_plot_settings));
     special_point_plot_settings{1,marker_size_index+1} = SPECIAL_POINT_SIZE;

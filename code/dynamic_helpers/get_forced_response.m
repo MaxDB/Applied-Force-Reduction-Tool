@@ -1,6 +1,7 @@
 function [t_sol,z_sol] = get_forced_response(Rom,Nonconservative_Input,period)
-MAX_INCREMENTS = 1000;
-MAX_ERROR = 1e-4;
+MAX_INCREMENTS = 100000;
+MAX_ERROR = 1e-6;
+NUM_PERIODS = 1;
 
 %-------------------------------------------------------------------------%
 Eom_Input = Rom.get_solver_inputs("coco_frf",Nonconservative_Input);
@@ -18,22 +19,32 @@ eom = @(t,z) coco_forced_eom(t,z,amp,period,input_order,Force_Data,Disp_Data,Dam
 %-------------------------------------------------------------------------%
 num_r_modes = size(Rom.Model.reduced_modes,2);
 
-
-z0 = zeros(2*num_r_modes,1);
-opts = odeset('RelTol',1e-8,'AbsTol',1e-10);
+if isfield(Nonconservative_Input,"z0")
+    z0 = Nonconservative_Input.z0;
+else
+    z0 = zeros(2*num_r_modes,1);
+end
+opts = odeset('RelTol',1e-6,'AbsTol',1e-8);
 t = 0;
-t_increment = period;
-t_all = [];
-z_all = [];
+t_increment = NUM_PERIODS*period;
+% t_all = [];
+% z_all = [];
+figure
+box on 
+hold on
+ax = gca;
+ax.YScale = "log";
 for iInc = 1:MAX_INCREMENTS
     t_span = t(end) + [0,t_increment];
     [t,z] = ode45(eom,t_span,z0,opts);
-    t_all = [t_all,t'];
-    z_all = [z_all,z'];
+    % t_all = [t_all,t'];
+    % z_all = [z_all,z'];
     
     z0 = z(end,:);
     
-    error = check_periodicity(z);
+    error = check_periodicity(z(:,1:num_r_modes));
+    semilogy(iInc,error,'.')
+    drawnow
     if error < MAX_ERROR
         break
     end

@@ -183,6 +183,7 @@ classdef Dynamic_Dataset
             Continuation_Opts = struct([]);
             type = "rom";
             initial_condition = [];
+            backbone_orbit = [];
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
@@ -192,6 +193,8 @@ classdef Dynamic_Dataset
                         Continuation_Opts = keyword_values{arg_counter};
                     case "ic"
                         initial_condition = keyword_values{arg_counter};
+                    case "backbone orbit"
+                        backbone_orbit = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -203,6 +206,14 @@ classdef Dynamic_Dataset
             % obj.solution_types{obj.num_solutions} = BB_Sol.Solution_Type;
             % obj.solution_types{obj.num_solutions}.validated = false;
             % obj.save_solution(BB_Sol)
+            if ~isempty(backbone_orbit)
+                Free_Orbit = obj.get_orbit(backbone_orbit(1),backbone_orbit(2));
+                frequency = 2*pi/Free_Orbit.T;
+                z0 = Free_Orbit.xbp(1,:)';
+                Force_Data.frequency = frequency;
+                FRF_Settings.z0 = z0;
+            end
+
 
             FRF_Settings.Force_Data = Force_Data;
             FRF_Settings.Damping_Data = Damping_Data;
