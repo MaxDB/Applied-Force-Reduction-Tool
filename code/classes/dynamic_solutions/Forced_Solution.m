@@ -43,8 +43,9 @@ classdef Forced_Solution < Dynamic_Solution
                     if isempty(initial_conditions)
                         % period_range = obj.Continuation_Options.parameter_range;
                         % p0 = period_range(2);
-                        p0 = 2*pi/Force_Data.frequency;
-                        [t0,z0] = get_forced_response(Rom,Nonconservative_Input,p0);
+                        p0 = Force_Data.frequency;
+                        T0 = 2*pi/Force_Data.frequency;
+                        [t0,z0] = get_forced_response(Rom,Nonconservative_Input,T0);
                     else
                         [t0,z0,p0] = initial_conditions{:};
                     end

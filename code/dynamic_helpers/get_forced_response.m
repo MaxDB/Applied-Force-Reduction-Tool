@@ -1,6 +1,7 @@
 function [t_sol,z_sol] = get_forced_response(Rom,Nonconservative_Input,period)
 MAX_INCREMENTS = 100000;
-MAX_ERROR = 1e-6;
+MAX_ERROR = 1e-4;
+CONVERGENCE_SPAN = 10;
 NUM_PERIODS = 1;
 
 %-------------------------------------------------------------------------%
@@ -20,7 +21,7 @@ eom = @(t,z) coco_forced_eom(t,z,amp,period,input_order,Force_Data,Disp_Data,Dam
 num_r_modes = size(Rom.Model.reduced_modes,2);
 
 if isfield(Nonconservative_Input,"z0")
-    z0 = Nonconservative_Input.z0;
+    z0 = Nonconservative_Input.z0*1.01;
 else
     z0 = zeros(2*num_r_modes,1);
 end
@@ -34,6 +35,8 @@ box on
 hold on
 ax = gca;
 ax.YScale = "log";
+error = zeros(1,CONVERGENCE_SPAN);
+mean_error = nan;
 for iInc = 1:MAX_INCREMENTS
     t_span = t(end) + [0,t_increment];
     [t,z] = ode45(eom,t_span,z0,opts);
@@ -41,11 +44,21 @@ for iInc = 1:MAX_INCREMENTS
     % z_all = [z_all,z'];
     
     z0 = z(end,:);
+    error_index = mod(iInc-1,CONVERGENCE_SPAN)+1;
+    error(error_index) = check_periodicity(z(:,1:num_r_modes));
+    semilogy(iInc,error(error_index),'.')
+
+    if iInc >= CONVERGENCE_SPAN
+        new_mean_error = mean(error);
+        semilogy([iInc-1,iInc],[mean_error,new_mean_error],"k","LineWidth",2)
+        error_diff = 2*abs(mean_error - new_mean_error)/(mean_error + new_mean_error);
+        mean_error = new_mean_error;
+    end
+
     
-    error = check_periodicity(z(:,1:num_r_modes));
-    semilogy(iInc,error,'.')
+
     drawnow
-    if error < MAX_ERROR
+    if mean_error < MAX_ERROR
         break
     end
 end

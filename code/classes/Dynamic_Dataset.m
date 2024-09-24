@@ -139,6 +139,8 @@ classdef Dynamic_Dataset
                         % obj.num_solutions = next_solution_num;
                         % 
                         % obj.save_solution("coco_frf",next_solution_num,Nonconservative_Inputs)
+                    case "amplitude"
+                        
                     case "force"
                         orbit = obj.get_orbit(solution_num,orbit_num(iOrbit));
 
