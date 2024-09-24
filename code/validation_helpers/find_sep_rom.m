@@ -1,5 +1,5 @@
-function [disp_sep,force_sep] = find_sep_rom(rom,force_ratio)
-TARGET_LOADCASES = 300; %approx number of points from origin to end of SEP
+function [disp_sep,lambda_sep] = find_sep_rom(rom,force_ratio,target_loadcases)
+TARGET_LOADCASES = 100; %approx number of points from origin to end of SEP
 % INITIAL_ARC_RADIUS = 1;
 
 MAX_LOADCASES = 1000;    %maximum points per SEP
@@ -7,6 +7,10 @@ MAX_INCREMENTS = 1000;   %maximum interations for convergence
 
 CONVERGENCE_TOLERACE = 1e-5;
 PSI = 1;
+
+if nargin == 2
+    target_loadcases = TARGET_LOADCASES;
+end
 %-----------------------------%
 K = rom.Reduced_Stiffness_Polynomial;
 f = rom.Force_Polynomial;
@@ -20,7 +24,7 @@ num_modes = size(f,1);
 r_0 = zeros(num_modes,1);
 lambda_0 = 0;
 
-target_lambda_inc = 1/TARGET_LOADCASES;
+target_lambda_inc = 1/target_loadcases;
 base_force = force_ratio;
 % arc_radius = INITIAL_ARC_RADIUS;
 
@@ -28,9 +32,9 @@ base_force = force_ratio;
 lin_stiffness = K.evaluate_polynomial(r_0);
 r_lin = r_0 + lin_stiffness\(target_lambda_inc*base_force);
 lin_force = lin_stiffness*r_lin;
-lambda_lin = (base_force/TARGET_LOADCASES) ./ lin_force;
+lambda_lin = (base_force/target_loadcases) ./ lin_force;
 lambda_lin = mean(lambda_lin(~isnan(lambda_lin)));
-arc_radius = (r_lin'*r_lin + PSI^2*lambda_lin^2*(lin_force'*lin_force)/TARGET_LOADCASES^2);
+arc_radius = (r_lin'*r_lin + PSI^2*lambda_lin^2*(lin_force'*lin_force)/target_loadcases^2);
 
 lambda_sep = zeros(1,MAX_LOADCASES);
 disp_sep = zeros(num_modes,MAX_LOADCASES);
@@ -103,6 +107,4 @@ for iLoad = 1:MAX_LOADCASES
 end
 lambda_sep(:,iLoad:end) = [];
 disp_sep(:,iLoad:end) = [];
-
-force_sep = lambda_sep.*base_force;
 end

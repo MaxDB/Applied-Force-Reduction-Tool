@@ -2,7 +2,7 @@ clear
 close all
 %--------- Software Settings ---------%
 set_logging_level(3)
-set_visualisation_level(1)
+set_visualisation_level(3)
 %-------------------------------------%
 
 %--------- System Settings ---------%
@@ -16,8 +16,8 @@ Static_Opts.maximum_loadcases = 9;
 %------------------------------------------%
 
 %--------- Static Validation Settings ---------%
-Validation_Opts.maximum_iterations = 3;
-Validation_Opts.max_added_points = 50;
+% Validation_Opts.maximum_iterations = 3;
+% Validation_Opts.max_added_points = 50;
 % 
 % Validation_Opts.maximum_iterations = 3;
 % Validation_Opts.max_added_points = 150;

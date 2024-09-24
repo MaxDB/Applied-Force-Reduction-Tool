@@ -74,6 +74,8 @@ classdef Static_Dataset
                     obj = sep_points_validation_new(obj);
                 case "grid"
                     obj = grid_validation(obj);
+                case "sep_verification"
+                    obj = sep_verification(obj);
             end
             % switch additional_data_type
             %     case "stiffness"

@@ -3,7 +3,7 @@ MAXIMUM_DEGREE = [11,11,9,7];
 SEP_DENSITY_MAX = [inf,251,11,5];
 DISTANCE_WEIGHT = 1.5;
 
-Validation_Opts = Static_Data.Validation_Options;
+
 max_interpolation_error = Validation_Opts.maximum_interpolation_error;
 initial_degree = Validation_Opts.minimum_degree;
 max_iterations = Validation_Opts.maximum_iterations;
@@ -252,7 +252,6 @@ for iIteration = 1:(max_iterations+1)
         disp_log_message = "displacement converged";
     else
         disp_log_message = sprintf("Max disp error: %.1f" ,max(max_sep_disp_error));
-
     end
 
     new_sep_id = [new_sep_id{1,:}];

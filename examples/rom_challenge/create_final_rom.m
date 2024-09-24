@@ -27,11 +27,9 @@ Static_Opts.maximum_loadcases = 15;
 %------------------------------------------%
 
 %--------- Static Validation Settings ---------%
-Validation_Opts.validation_algorithm = "sep_points_new";
-Validation_Opts.minimum_coupling_rating = 1e-2;
+Validation_Opts.validation_algorithm = "sep_verification";
 Validation_Opts.maximum_iterations = 0;
 Validation_Opts.maximum_interpolation_error = [1e-3,1e-3];
-Validation_Opts.maximum_fitting_error = 1e-3;
 Validation_Opts.num_added_points = 1;
 %----------------------------------------------%
 
