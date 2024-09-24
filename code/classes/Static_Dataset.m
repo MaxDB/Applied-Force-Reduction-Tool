@@ -21,11 +21,11 @@ classdef Static_Dataset
         static_equilibrium_path_id
         unit_sep_ratios
 
-        Validation_Options
-        validated_degree
+        Verification_Options
+        verified_degree
     end
     methods
-        function obj = Static_Dataset(Model,Validation_Opts)
+        function obj = Static_Dataset(Model,Verification_Opts)
             
             
             obj.additional_data_type = Model.Static_Options.additional_data;
@@ -46,7 +46,7 @@ classdef Static_Dataset
 
 
 
-            obj = update_validation_opts(obj,Validation_Opts);
+            obj = update_verification_opts(obj,Verification_Opts);
 
             obj = obj.create_dataset;        
 
@@ -64,16 +64,8 @@ classdef Static_Dataset
             logger(log_message,2)
 
             %add loadcases until convergence
-            validation_time_start = tic;
-            switch obj.Validation_Options.validation_algorithm
-                case "sep"
-                    obj = sep_validation(obj);
-                case "sep_points"
-                    obj = sep_points_validation(obj);
-                case "sep_points_new"
-                    obj = sep_points_validation_new(obj);
-                case "grid"
-                    obj = grid_validation(obj);
+            verification_time_start = tic;
+            switch obj.Verification_Options.verification_algorithm
                 case "sep_verification"
                     obj = sep_verification(obj);
             end
@@ -81,8 +73,8 @@ classdef Static_Dataset
             %     case "stiffness"
             %         obj = minimum_stiffness_degree(obj);
             % end
-            validation_time = toc(validation_time_start);
-            log_message = sprintf("ROM Dataset Validated: %.1f seconds" ,validation_time);
+            verification_time = toc(verification_time_start);
+            log_message = sprintf("ROM Verified: %.1f seconds" ,verification_time);
             logger(log_message,1)
             rom_data_time = toc(rom_data_time_start);
             log_message = sprintf("ROM Dataset Created: %.1f seconds" ,rom_data_time);
@@ -126,7 +118,7 @@ classdef Static_Dataset
                     obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
 
                     % obj = minimum_h_degree(obj);
-                    obj.validated_degree = repmat(obj.validated_degree,1,2);
+                    obj.verified_degree = repmat(obj.verified_degree,1,2);
                 case "perturbation"
                     r_modes = obj.Model.reduced_modes;
                     L_modes(ismember(L_modes,r_modes)) = [];
@@ -156,7 +148,7 @@ classdef Static_Dataset
                     obj.Dynamic_Validation_Data.h_stiffness_0 = h_stiffness_0;
                     obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
                     
-                    obj.validated_degree = repmat(obj.validated_degree,1,2);
+                    obj.verified_degree = repmat(obj.verified_degree,1,2);
                     % minimum_degree_start = tic;
                     % % obj = minimum_h_degree(obj);
                     % 
@@ -291,10 +283,10 @@ classdef Static_Dataset
 
 
         %-----------------------------------------------------------------%
-        function obj = update_validation_opts(obj,Validation_Opts)
+        function obj = update_verification_opts(obj,Verification_Opts)
             % Default static options
-            Default_Validation_Opts = read_default_options("validation");         
-            obj.Validation_Options = update_options(Default_Validation_Opts,obj.Validation_Options,Validation_Opts);
+            Default_Verification_Opts = read_default_options("verification");         
+            obj.Verification_Options = update_options(Default_Verification_Opts,obj.Verification_Options,Verification_Opts);
         end
         %-----------------------------------------------------------------%
         

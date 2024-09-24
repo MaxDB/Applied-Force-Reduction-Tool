@@ -26,7 +26,7 @@ classdef Reduced_System
             obj.minimum_displacement = Static_Data.Model.Static_Options.minimum_displacement;
 
             if nargin == 1
-                degree = Static_Data.validated_degree;
+                degree = Static_Data.verified_degree;
             end
 
             if isscalar(degree)
