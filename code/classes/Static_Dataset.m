@@ -55,6 +55,9 @@ classdef Static_Dataset
         %-----------------------------------------------------------------%
         function obj = create_dataset(obj)
             rom_data_time_start = tic;
+            verification_algorithm = obj.Verification_Options.verification_algorithm;
+
+
             rom_scaffold_time_start = tic;
 
             obj = obj.create_scaffold(obj.additional_data_type);
@@ -65,9 +68,12 @@ classdef Static_Dataset
 
             %add loadcases until convergence
             verification_time_start = tic;
-            switch obj.Verification_Options.verification_algorithm
-                case "sep_verification"
+            switch verification_algorithm
+                case "sep_to_edge"
                     obj = sep_verification(obj);
+                case "sep_from_origin"
+                    obj = sep_from_origin_verification(obj);
+
             end
             % switch additional_data_type
             %     case "stiffness"

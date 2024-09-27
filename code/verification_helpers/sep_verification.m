@@ -1,5 +1,5 @@
 function Static_Data = sep_verification(Static_Data)
-MAXIMUM_DEGREE = 13; %maximum degree that can  be fit
+MAXIMUM_DEGREE = 13; %maximum degree that can be fit
 INITIAL_FORCE_DEGREE = 3;
 INITIAL_DISPLACEMENT_DEGREE = 3;
 

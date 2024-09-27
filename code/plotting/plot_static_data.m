@@ -16,6 +16,7 @@ keyword_values = varargin(2:2:num_args);
 ax = [];
 outputs = [];
 plot_seps = 1;
+colour = [];
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
@@ -23,8 +24,10 @@ for arg_counter = 1:num_args/2
             ax = keyword_values{arg_counter};
         case "outputs"
             outputs = keyword_values{arg_counter};
-        case {"plot seps"}
+        case "plot seps"
             plot_seps = keyword_values{arg_counter};
+        case {"colour","color"}
+            colour = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -131,7 +134,7 @@ if plot_seps
     marker_type = ".-";
     sep_ordering = Static_Data.get_dataset_values("restoring_force");
 else
-    marker_type = "x";
+    marker_type = ".";
     sep_ordering = ones(1,num_points);
 end
 
@@ -139,6 +142,9 @@ end
 %plot style
 
 plot_settings = {marker_type,"MarkerSize",MARKER_SIZE,"LineWidth",LINE_WIDTH};
+if ~isempty(colour)
+    plot_settings = [plot_settings,{"Color",colour}];
+end
 origin_plot_settings = [plot_settings,{"MarkerEdgeColor",[0,0,0]}];
 
 %-------------------------------------------------------------------------%

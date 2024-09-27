@@ -2,6 +2,10 @@ function max_fitting_degree = get_max_poly_degree(type,num_r_modes,num_points,ma
 degrees = 2:1:max_degree;
 num_degrees = size(degrees,2);
 
+if num_points == 0
+    max_fitting_degree = 1;
+    return
+end
 
 switch type
     case "force"

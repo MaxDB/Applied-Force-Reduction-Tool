@@ -16,9 +16,9 @@ Static_Opts.maximum_loadcases = 9;
 %------------------------------------------%
 
 %--------- Static Validation Settings ---------%
-% Validation_Opts.maximum_iterations = 3;
-% Validation_Opts.max_added_points = 50;
-% 
+Verification_Opts.maximum_iterations = 20;
+Verification_Opts.max_added_points = 50;
+
 % Validation_Opts.maximum_iterations = 3;
 % Validation_Opts.max_added_points = 150;
 
@@ -26,8 +26,8 @@ Static_Opts.maximum_loadcases = 9;
 % Validation_Opts.max_added_points = 800;
 %------------------------------------------%
 
-load("data\" + system_name + "\static_data\" + "Static_Data.mat","Static_Data");
-Static_Data = Static_Data.update_validation_opts(Validation_Opts);
+Static_Data = load_static_data(system_name);
+Static_Data = Static_Data.update_verification_opts(Verification_Opts);
 Static_Data = Static_Data.update_model(added_modes,Static_Opts);
 Static_Data = Static_Data.create_dataset;
 Static_Data.save_data;

@@ -333,6 +333,8 @@ for iIteration = 1:(max_iterations+1)
         logger(disp_log_message,2)
         logger(interpolation_log_message,3)
     end
+
+    verification_plot()
 end
 
 Static_Data.validated_degree = [force_degree,disp_degree];

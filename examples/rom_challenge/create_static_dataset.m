@@ -2,7 +2,7 @@ clear
 close all
 %--------- Software Settings ---------%
 set_logging_level(3)
-set_visualisation_level(1)
+set_visualisation_level(3)
 %-------------------------------------%
 
 %--------- System Settings ---------%
@@ -26,13 +26,13 @@ Static_Opts.maximum_loadcases = 15;
 %------------------------------------------%
 
 %--------- Static Validation Settings ---------%
-Validation_Opts.validation_algorithm = "sep_verification";
-Validation_Opts.maximum_iterations = 0;
-Validation_Opts.maximum_interpolation_error = [1e-3,1e-3];
-Validation_Opts.num_added_points = 1;
+Verification_Opts.verification_algorithm = "sep_from_origin";
+Verification_Opts.maximum_iterations = 0;
+Verification_Opts.maximum_interpolation_error = [1e-3,1e-2];
+Verification_Opts.num_added_points = 1;
 %----------------------------------------------%
 
 Model = Dynamic_System(system_name,energy_limit,initial_modes,Calibration_Opts,Static_Opts);
 
-Static_Data = Static_Dataset(Model,Validation_Opts);
+Static_Data = Static_Dataset(Model,Verification_Opts);
 Static_Data.save_data;

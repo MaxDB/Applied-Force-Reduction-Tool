@@ -30,6 +30,8 @@ COLOUR_MAP = [
 BLACK = [0,0,0];
 GREY = [217,217,217]/256;
 
+num_colours = size(COLOURS,1);
+
 if nargin == 0
     colours = COLOURS;
     return
@@ -52,5 +54,5 @@ if colour_range == 0
     return
 end
 
-colours = COLOURS(colour_range,:);
+colours = COLOURS(mod(colour_range-1,num_colours)+1,:);
 end
