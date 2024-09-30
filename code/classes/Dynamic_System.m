@@ -251,7 +251,7 @@ classdef Dynamic_System
             end
 
             if num_uncalibrated_modes > 0
-                [r,~,f,E,sep_id] = obj.add_sep(initial_force_ratio);
+                [r,x,f,E,sep_id] = obj.add_sep(initial_force_ratio);
             end
 
             for iMode = 1:num_uncalibrated_modes
@@ -281,10 +281,13 @@ classdef Dynamic_System
                     r_limit(1,iSep) = interp1(E_sep(bound_index),r_sep(bound_index),obj.energy_limit);
                     f_limit(1,iSep) = interp1(E_sep(bound_index),f_sep(bound_index),obj.energy_limit);
                 end
+                current_seps = [1,2]+2*(iMode-1);
+                Min_Degree_Data = find_degree_limits(obj,r,x,f,E,sep_id,current_seps);
 
 
                 Force_Calibration.force_limit{1,calibration_id}(iMode+num_calibrated_modes,:) = f_limit;
                 Force_Calibration.calibrated_modes{1,calibration_id}(iMode+num_calibrated_modes,:) = mode;
+                Force_Calibration.min_degree_data{1,calibration_id}{iMode+num_calibrated_modes} = Min_Degree_Data;
                 % f_limit = interp1(E,r,obj.energy_limit);
 
                 % r_limits = [min(r),max(r)];
@@ -599,6 +602,17 @@ classdef Dynamic_System
                 case "direct"
 
             end
+        end
+        %-----------------------------------------------------------------%
+        function obj = get_modal_subset(obj,modes)
+            mode_map = ismember(obj.reduced_modes,modes);
+            if all(mode_map)
+                return
+            end
+
+            obj.reduced_modes = modes;
+            obj.reduced_eigenvalues = obj.reduced_eigenvalues(mode_map,1);
+            obj.reduced_eigenvectors = obj.reduced_eigenvectors(:,mode_map);
         end
     end
 end

@@ -22,8 +22,9 @@ num_coeffs = 0;
 for iTerm = 1:num_degrees
     degree = degrees(iTerm);
     num_coeffs = num_coeffs + nchoosek(degree + degree_shift +(num_r_modes-1),num_r_modes-1);
-    if num_coeffs >= num_points
+    if num_coeffs > num_points
         max_fitting_degree = degrees(iTerm-step_back(degree));
+        break
     elseif iTerm == num_degrees
         max_fitting_degree = degrees(end + 1 - step_back(degree+1));
     end

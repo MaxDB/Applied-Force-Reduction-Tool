@@ -25,7 +25,7 @@ classdef Static_Dataset
         verified_degree
     end
     methods
-        function obj = Static_Dataset(Model,Verification_Opts)
+        function obj = Static_Dataset(Model,Verification_Opts,varargin)
             
             
             obj.additional_data_type = Model.Static_Options.additional_data;
@@ -48,32 +48,56 @@ classdef Static_Dataset
 
             obj = update_verification_opts(obj,Verification_Opts);
 
-            obj = obj.create_dataset;        
+            if nargin == 2
+                obj = obj.create_dataset;
+                static_dataset_verificiation_plot(obj)
+            else
+                Properties_Data = varargin{1,1};
+                properties = fields(Properties_Data);
+                num_properties = size(properties,1);
+                for iProp = 1:num_properties
+                    property = properties{iProp};
+                    obj.(property) = Properties_Data.(property);
+                end
 
-            static_dataset_verificiation_plot(obj)
+            end
         end
         %-----------------------------------------------------------------%
         function obj = create_dataset(obj)
             rom_data_time_start = tic;
-            verification_algorithm = obj.Verification_Options.verification_algorithm;
+            
 
 
             rom_scaffold_time_start = tic;
 
+
             obj = obj.create_scaffold(obj.additional_data_type);
+
+
 
             rom_scaffold_time = toc(rom_scaffold_time_start);
             log_message = sprintf("Dataset scaffold created: %.1f seconds" ,rom_scaffold_time);
             logger(log_message,2)
 
+            obj = obj.verify_dataset;
+
+            rom_data_time = toc(rom_data_time_start);
+            log_message = sprintf("ROM Dataset Created: %.1f seconds" ,rom_data_time);
+            logger(log_message,1)
+        end
+        %-----------------------------------------------------------------%
+        function obj = verify_dataset(obj)
             %add loadcases until convergence
+            verification_algorithm = obj.Verification_Options.verification_algorithm;
             verification_time_start = tic;
             switch verification_algorithm
                 case "sep_to_edge"
                     obj = sep_verification(obj);
                 case "sep_from_origin"
                     obj = sep_from_origin_verification(obj);
-
+                case "sep_grow"
+                    % obj = sep_grow_verification(obj);
+                     obj = sep_from_origin_verification(obj);
             end
             % switch additional_data_type
             %     case "stiffness"
@@ -81,9 +105,6 @@ classdef Static_Dataset
             % end
             verification_time = toc(verification_time_start);
             log_message = sprintf("ROM Verified: %.1f seconds" ,verification_time);
-            logger(log_message,1)
-            rom_data_time = toc(rom_data_time_start);
-            log_message = sprintf("ROM Dataset Created: %.1f seconds" ,rom_data_time);
             logger(log_message,1)
         end
         %-----------------------------------------------------------------%
@@ -169,27 +190,53 @@ classdef Static_Dataset
         end
         %-----------------------------------------------------------------%
         function obj = create_scaffold(obj,additional_data_type)
+            verification_algorithm = obj.Verification_Options.verification_algorithm;
+            switch verification_algorithm
+                case {"sep_to_edge","sep_from_origin"}
+                    r_modes = obj.Model.reduced_modes;
+                    num_modes = length(r_modes);
 
-            r_modes = obj.Model.reduced_modes;
-            num_modes = length(r_modes);
-            
-            full_unit_force_ratios = add_sep_ratios(num_modes,1);
+                    full_unit_force_ratios = add_sep_ratios(num_modes,1);
 
-            found_sep_ratios = obj.unit_sep_ratios;
-            unit_force_ratios = add_sep_ratios(num_modes,1,found_sep_ratios);
-            
-            member_map = ismembertol(full_unit_force_ratios',unit_force_ratios',"ByRows",true)';
-            sep_map = [find(~member_map),find(member_map)];
+                    found_sep_ratios = obj.unit_sep_ratios;
+                    unit_force_ratios = add_sep_ratios(num_modes,1,found_sep_ratios);
 
-            scaled_force_ratios = scale_sep_ratios(unit_force_ratios,obj.Model.calibrated_forces);
+                    member_map = ismembertol(full_unit_force_ratios',unit_force_ratios',"ByRows",true)';
+                    sep_map = [find(~member_map),find(member_map)];
 
-            [r,theta,f,E,sep_id,additional_data] = obj.Model.add_sep(scaled_force_ratios,additional_data_type,1);
-            
-            obj = obj.update_data(r,theta,f,E,sep_id,additional_data,unit_force_ratios);
-            scaf_points = obj.scaffold_points == 1;
-            obj.static_equilibrium_path_id(scaf_points) = sep_map(obj.static_equilibrium_path_id(scaf_points));
-            obj.unit_sep_ratios(:,sep_map) = obj.unit_sep_ratios;
-            
+                    scaled_force_ratios = scale_sep_ratios(unit_force_ratios,obj.Model.calibrated_forces);
+
+                    [r,theta,f,E,sep_id,additional_data] = obj.Model.add_sep(scaled_force_ratios,additional_data_type,1);
+
+                    obj = obj.update_data(r,theta,f,E,sep_id,additional_data,unit_force_ratios);
+                    scaf_points = obj.scaffold_points == 1;
+                    obj.static_equilibrium_path_id(scaf_points) = sep_map(obj.static_equilibrium_path_id(scaf_points));
+                    obj.unit_sep_ratios(:,sep_map) = obj.unit_sep_ratios;
+                case "sep_grow"
+                    initial_energy_frac = obj.Verification_Options.initial_energy_frac;
+                    r_modes = obj.Model.reduced_modes;
+                    num_modes = length(r_modes);
+
+                    SEP_DENSITY = 5;
+
+                    full_unit_force_ratios = add_sep_ratios(num_modes,SEP_DENSITY);
+
+                    found_sep_ratios = obj.unit_sep_ratios;
+                    unit_force_ratios = add_sep_ratios(num_modes,SEP_DENSITY,found_sep_ratios);
+
+                    member_map = ismembertol(full_unit_force_ratios',unit_force_ratios',"ByRows",true)';
+                    sep_map = [find(~member_map),find(member_map)];
+
+                    scaled_force_ratios = scale_sep_ratios(unit_force_ratios,obj.Model.calibrated_forces)*initial_energy_frac;
+                    [r,theta,f,E,additional_data] = obj.Model.add_point(scaled_force_ratios,additional_data_type);
+                    sep_id = 1:size(r,2);
+
+                    obj = obj.update_data(r,theta,f,E,sep_id,additional_data,unit_force_ratios);
+                    scaf_points = obj.scaffold_points == 1;
+                    obj.static_equilibrium_path_id(scaf_points) = sep_map(obj.static_equilibrium_path_id(scaf_points));
+                    obj.unit_sep_ratios(:,sep_map) = obj.unit_sep_ratios;
+
+            end
 
         end
         %-----------------------------------------------------------------%

@@ -1,4 +1,7 @@
 function scaled_force_ratios = scale_sep_ratios(unit_force_ratios,force_magnitude)
+if isempty(force_magnitude)
+    force_magnitude = ones(size(unit_force_ratios));
+end
 num_modes = size(unit_force_ratios,1);
 
 force_sign = sign(unit_force_ratios);
