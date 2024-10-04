@@ -66,19 +66,9 @@ classdef Static_Dataset
         function obj = create_dataset(obj)
             rom_data_time_start = tic;
             
-
-
-            rom_scaffold_time_start = tic;
-
-
-            obj = obj.create_scaffold(obj.additional_data_type);
-
-
-
-            rom_scaffold_time = toc(rom_scaffold_time_start);
-            log_message = sprintf("Dataset scaffold created: %.1f seconds" ,rom_scaffold_time);
-            logger(log_message,2)
-
+            
+            obj = obj.create_scaffold;
+            
             obj = obj.verify_dataset;
 
             rom_data_time = toc(rom_data_time_start);
@@ -96,8 +86,7 @@ classdef Static_Dataset
                 case "sep_from_origin"
                     obj = sep_from_origin_verification(obj);
                 case "sep_grow"
-                    % obj = sep_grow_verification(obj);
-                     obj = sep_from_origin_verification(obj);
+                    obj = sep_grow_verification(obj);
             end
             % switch additional_data_type
             %     case "stiffness"
@@ -109,7 +98,7 @@ classdef Static_Dataset
         end
         %-----------------------------------------------------------------%
         function obj = add_validation_data(obj,L_modes)
-            
+
             switch obj.additional_data_type
                 case "stiffness"
                     r_modes = obj.Model.reduced_modes;
@@ -128,7 +117,7 @@ classdef Static_Dataset
 
                         new_L_modes = 1:max(L_modes);
                         new_L_modes(ismember(new_L_modes,r_modes)) = [];
-                        
+
                         obj.Model.low_frequency_modes = new_L_modes;
                         obj.Model.low_frequency_eigenvalues = full_evals(new_L_modes);
                         obj.Model.low_frequency_eigenvectors = full_evecs(:,new_L_modes);
@@ -174,69 +163,107 @@ classdef Static_Dataset
                     obj.Dynamic_Validation_Data.current_L_modes = L_modes;
                     obj.Dynamic_Validation_Data.h_stiffness_0 = h_stiffness_0;
                     obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
-                    
+
                     obj.verified_degree = repmat(obj.verified_degree,1,2);
                     % minimum_degree_start = tic;
                     % % obj = minimum_h_degree(obj);
-                    % 
-                    % 
+                    %
+                    %
                     % minimum_degree_time = toc(minimum_degree_start);
                     % log_message = sprintf("Validating validation polynomials: %.1f seconds" ,minimum_degree_time);
                     % logger(log_message,3)
 
             end
             validation_dataset_verificiation_plot(obj)
-            
+
         end
         %-----------------------------------------------------------------%
-        function obj = create_scaffold(obj,additional_data_type)
+        function obj = create_scaffold(obj,varargin)
+            %-------------------------------------------------------------------------%
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            sep_density = 1;
+            limit_scale_factor = 1;
             verification_algorithm = obj.Verification_Options.verification_algorithm;
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "density"
+                        sep_density = keyword_values{arg_counter};
+                    case "sf"
+                        limit_scale_factor = keyword_values{arg_counter};
+                    case "algorithm"
+                        verification_algorithm = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %-------------------------------------------------------------------------%
+            rom_scaffold_time_start = tic;
+            
             switch verification_algorithm
                 case {"sep_to_edge","sep_from_origin"}
                     r_modes = obj.Model.reduced_modes;
                     num_modes = length(r_modes);
 
-                    full_unit_force_ratios = add_sep_ratios(num_modes,1);
+                    full_unit_force_ratios = add_sep_ratios(num_modes,sep_density);
 
                     found_sep_ratios = obj.unit_sep_ratios;
-                    unit_force_ratios = add_sep_ratios(num_modes,1,found_sep_ratios);
+                    unit_force_ratios = add_sep_ratios(num_modes,sep_density,found_sep_ratios);
 
                     member_map = ismembertol(full_unit_force_ratios',unit_force_ratios',"ByRows",true)';
                     sep_map = [find(~member_map),find(member_map)];
 
                     scaled_force_ratios = scale_sep_ratios(unit_force_ratios,obj.Model.calibrated_forces);
+                    scaled_force_ratios = scaled_force_ratios*limit_scale_factor;
 
-                    [r,theta,f,E,sep_id,additional_data] = obj.Model.add_sep(scaled_force_ratios,additional_data_type,1);
+                    [r,theta,f,E,sep_id,additional_data] = obj.Model.add_sep(scaled_force_ratios,obj.additional_data_type,1);
 
                     obj = obj.update_data(r,theta,f,E,sep_id,additional_data,unit_force_ratios);
                     scaf_points = obj.scaffold_points == 1;
                     obj.static_equilibrium_path_id(scaf_points) = sep_map(obj.static_equilibrium_path_id(scaf_points));
                     obj.unit_sep_ratios(:,sep_map) = obj.unit_sep_ratios;
                 case "sep_grow"
-                    initial_energy_frac = obj.Verification_Options.initial_energy_frac;
+                    if num_args == 0
+                        return
+                    end
+
+                    % obj = obj.create_scaffold("algorithm","sep_from_origin",varargin{:});
                     r_modes = obj.Model.reduced_modes;
                     num_modes = length(r_modes);
 
-                    SEP_DENSITY = 5;
+                    full_unit_force_ratios = add_sep_ratios(num_modes,sep_density);
 
-                    full_unit_force_ratios = add_sep_ratios(num_modes,SEP_DENSITY);
-
-                    found_sep_ratios = obj.unit_sep_ratios;
-                    unit_force_ratios = add_sep_ratios(num_modes,SEP_DENSITY,found_sep_ratios);
+                    unit_force_ratios = add_sep_ratios(num_modes,sep_density,[]);
 
                     member_map = ismembertol(full_unit_force_ratios',unit_force_ratios',"ByRows",true)';
                     sep_map = [find(~member_map),find(member_map)];
+                    
 
-                    scaled_force_ratios = scale_sep_ratios(unit_force_ratios,obj.Model.calibrated_forces)*initial_energy_frac;
-                    [r,theta,f,E,additional_data] = obj.Model.add_point(scaled_force_ratios,additional_data_type);
+                    scaled_force_ratios = scale_sep_ratios(unit_force_ratios,obj.Model.calibrated_forces);
+                    scaled_force_ratios = scaled_force_ratios*limit_scale_factor;
+                    
+                    [r,theta,f,E,additional_data] = obj.Model.add_point(scaled_force_ratios,obj.additional_data_type);
                     sep_id = 1:size(r,2);
 
                     obj = obj.update_data(r,theta,f,E,sep_id,additional_data,unit_force_ratios);
                     scaf_points = obj.scaffold_points == 1;
-                    obj.static_equilibrium_path_id(scaf_points) = sep_map(obj.static_equilibrium_path_id(scaf_points));
-                    obj.unit_sep_ratios(:,sep_map) = obj.unit_sep_ratios;
+                    num_scaf_points = nnz(scaf_points);
+                    sep_map_rep = repmat(sep_map,num_scaf_points/size(sep_map,2));
+
+                    % obj.static_equilibrium_path_id(scaf_points) = sep_map_rep(obj.static_equilibrium_path_id(scaf_points));
+                    % obj.unit_sep_ratios = obj.unit_sep_ratios(:,sep_map);
 
             end
+            rom_scaffold_time = toc(rom_scaffold_time_start);
+            log_message = sprintf("Dataset scaffold created: %.1f seconds" ,rom_scaffold_time);
+            logger(log_message,2)
+
 
         end
         %-----------------------------------------------------------------%

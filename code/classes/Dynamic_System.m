@@ -12,6 +12,7 @@ classdef Dynamic_System
 
         Calibration_Options
         calibrated_forces
+        calibrated_degree_limits
         
         node_mapping
         mass
@@ -332,12 +333,17 @@ classdef Dynamic_System
             
             calibrated_modes = Force_Calibration.calibrated_modes{1,calibration_id};
             obj.calibrated_forces = zeros(num_r_modes,2);
-            
+            obj.calibrated_degree_limits = Force_Calibration.min_degree_data{1,calibration_id};
+
             for iMode = 1:num_r_modes
                 mode = r_modes(iMode);
                 obj.calibrated_forces(iMode,:) = Force_Calibration.force_limit{1,calibration_id}(mode == calibrated_modes,:)*Calibration_Opts.force_overcalibration;
+                obj.calibrated_degree_limits{iMode}.force_applied_force = obj.calibrated_degree_limits{iMode}.force_applied_force./obj.calibrated_forces(iMode,:)';
+                obj.calibrated_degree_limits{iMode}.disp_applied_force = obj.calibrated_degree_limits{iMode}.disp_applied_force./obj.calibrated_forces(iMode,:)';
             end
             
+            
+
         end
         %-----------------------------------------------------------------%
         

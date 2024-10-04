@@ -97,7 +97,7 @@ for iLoad = 1:MAX_LOADCASES
         % convergence_test = eq_condition./((lambda_0+lambda)*base_force.*f_x);
         
         convergence_test = eq_condition./((lambda*base_force).*f_x);
-        if max(abs(eq_condition)) < 1e-16 
+        if max(abs(eq_condition)) < 1e-10 
             convergence_test(:) = 0;
         end
 
@@ -118,10 +118,12 @@ for iLoad = 1:MAX_LOADCASES
         r = r + increment(1:num_modes);
         lambda = lambda + increment(end);
     end
+    include_end = 0;
     if iInc == MAX_INCREMENTS
         warning("Convergence tolerance not met for arc length continuation of SEPs")
         break
     end
+   
     
    
     % r_0 = r_0 + r;
