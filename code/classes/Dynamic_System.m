@@ -283,12 +283,12 @@ classdef Dynamic_System
                     f_limit(1,iSep) = interp1(E_sep(bound_index),f_sep(bound_index),obj.energy_limit);
                 end
                 current_seps = [1,2]+2*(iMode-1);
-                Min_Degree_Data = find_degree_limits(obj,r,x,f,E,sep_id,current_seps);
+                % Min_Degree_Data = find_degree_limits(obj,r,x,f,E,sep_id,current_seps);
 
 
                 Force_Calibration.force_limit{1,calibration_id}(iMode+num_calibrated_modes,:) = f_limit;
                 Force_Calibration.calibrated_modes{1,calibration_id}(iMode+num_calibrated_modes,:) = mode;
-                Force_Calibration.min_degree_data{1,calibration_id}{iMode+num_calibrated_modes} = Min_Degree_Data;
+                % Force_Calibration.min_degree_data{1,calibration_id}{iMode+num_calibrated_modes} = Min_Degree_Data;
                 % f_limit = interp1(E,r,obj.energy_limit);
 
                 % r_limits = [min(r),max(r)];
@@ -333,13 +333,13 @@ classdef Dynamic_System
             
             calibrated_modes = Force_Calibration.calibrated_modes{1,calibration_id};
             obj.calibrated_forces = zeros(num_r_modes,2);
-            obj.calibrated_degree_limits = Force_Calibration.min_degree_data{1,calibration_id};
+            % obj.calibrated_degree_limits = Force_Calibration.min_degree_data{1,calibration_id};
 
             for iMode = 1:num_r_modes
                 mode = r_modes(iMode);
                 obj.calibrated_forces(iMode,:) = Force_Calibration.force_limit{1,calibration_id}(mode == calibrated_modes,:)*Calibration_Opts.force_overcalibration;
-                obj.calibrated_degree_limits{iMode}.force_applied_force = obj.calibrated_degree_limits{iMode}.force_applied_force./obj.calibrated_forces(iMode,:)';
-                obj.calibrated_degree_limits{iMode}.disp_applied_force = obj.calibrated_degree_limits{iMode}.disp_applied_force./obj.calibrated_forces(iMode,:)';
+                % obj.calibrated_degree_limits{iMode}.force_applied_force = obj.calibrated_degree_limits{iMode}.force_applied_force./obj.calibrated_forces(iMode,:)';
+                % obj.calibrated_degree_limits{iMode}.disp_applied_force = obj.calibrated_degree_limits{iMode}.disp_applied_force./obj.calibrated_forces(iMode,:)';
             end
             
             
