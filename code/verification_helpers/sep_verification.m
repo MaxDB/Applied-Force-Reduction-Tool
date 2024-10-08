@@ -4,7 +4,7 @@ INITIAL_FORCE_DEGREE = 3;
 INITIAL_DISPLACEMENT_DEGREE = 3;
 
 %-------------------------
-Verification_Opts = Static_Data.Validation_Options;
+Verification_Opts = Static_Data.Verification_Options;
 max_interpolation_error = Verification_Opts.maximum_interpolation_error;
 max_iteration_loadcases = Verification_Opts.max_added_points;
 max_iterations = Verification_Opts.maximum_iterations;
@@ -45,9 +45,9 @@ for iIteration = 1:(max_iterations+1)
 
     scaled_force_ratios = scale_sep_ratios(unit_force_ratios,Static_Data.Model.calibrated_forces);
     found_force_ratios = unit_force_ratios;
-    num_validated_seps = size(unit_force_ratios,2);
+    num_verified_seps = size(unit_force_ratios,2);
     
-    validated_seps = (1:num_validated_seps);
+    validated_seps = (1:num_verified_seps);
 
     V = Static_Data.potential_energy;
     num_dataset_points = size(V,2);
@@ -59,8 +59,8 @@ for iIteration = 1:(max_iterations+1)
         continue
     end
     
-    force_converged = zeros(1,num_validated_seps);
-    disp_converged = zeros(1,num_validated_seps);
+    force_converged = zeros(1,num_verified_seps);
+    disp_converged = zeros(1,num_verified_seps);
 
     Rom_One = Reduced_System(Static_Data,[force_degree,disp_degree]);
     
@@ -89,14 +89,14 @@ for iIteration = 1:(max_iterations+1)
 
         
 
-        max_sep_force_error = zeros(1,num_validated_seps);
-        max_sep_disp_error = zeros(1,num_validated_seps);
+        max_sep_force_error = zeros(1,num_verified_seps);
+        max_sep_disp_error = zeros(1,num_verified_seps);
 
-        new_sep_id = cell(1,num_validated_seps);
-        new_loads = cell(1,num_validated_seps);
-        new_error = cell(1,num_validated_seps);
+        new_sep_id = cell(1,num_verified_seps);
+        new_loads = cell(1,num_verified_seps);
+        new_error = cell(1,num_verified_seps);
         
-        for iSep = 1:num_validated_seps
+        for iSep = 1:num_verified_seps
             validation_iteration_start = tic;
 
             force_ratio = scaled_force_ratios(:,iSep);
@@ -282,6 +282,6 @@ for iIteration = 1:(max_iterations+1)
 
 end
 
-Static_Data.validated_degree = [force_degree,disp_degree];
+Static_Data.verified_degree = [force_degree,disp_degree];
 end
 

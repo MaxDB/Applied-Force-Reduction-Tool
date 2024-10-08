@@ -26,7 +26,7 @@ Static_Opts.maximum_loadcases = 15;
 %------------------------------------------%
 
 %--------- Static Validation Settings ---------%
-Verification_Opts.verification_algorithm = "sep_from_origin";
+Verification_Opts.verification_algorithm = "sep_to_edge";
 Verification_Opts.maximum_iterations = 0;
 Verification_Opts.maximum_interpolation_error = [1e-3,1e-2];
 Verification_Opts.num_added_points = 1;
