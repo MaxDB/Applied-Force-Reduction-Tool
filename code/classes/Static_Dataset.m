@@ -374,8 +374,11 @@ classdef Static_Dataset
         %Overloading
         %-----------------------------------------------------------------%
         %-----------------------------------------------------------------%
-        function sz = size(obj)
+        function sz = size(obj,dim)
             sz = size(obj.restoring_force);
+            if nargin == 2
+                sz = sz(dim);
+            end
         end
         %-----------------------------------------------------------------%
         

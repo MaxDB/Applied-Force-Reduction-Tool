@@ -265,7 +265,7 @@ classdef Dynamic_Dataset
 
             Validated_BB_Sol = Validated_Backbone_Solution(Rom,BB_Sol,Validated_BB_Settings);
 
-            obj.solution_types{obj.num_solutions}.validated = true;
+            obj.solution_types{solution_num}.validated = true;
             obj.save_solution(Validated_BB_Sol,solution_num)
         end
         %-----------------------------------------------------------------%

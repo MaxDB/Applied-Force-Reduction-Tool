@@ -6,9 +6,8 @@ INITIAL_DISPLACEMENT_DEGREE = 3;
 %-------------------------
 Verification_Opts = Static_Data.Verification_Options;
 max_interpolation_error = Verification_Opts.maximum_interpolation_error;
-max_iteration_loadcases = Verification_Opts.max_added_points;
+max_iteration_loadcases_setting = Verification_Opts.max_added_points;
 max_iterations = Verification_Opts.maximum_iterations;
-max_added_points = Verification_Opts.max_added_points;
 
 num_added_points = Verification_Opts.num_added_points;
 
@@ -19,6 +18,7 @@ fitting_energy_limit = Model.fitting_energy_limit;
 energy_limit = Model.energy_limit;
 
 num_r_modes = length(Model.reduced_modes);
+
 
 %-------------------------
 found_force_ratios = Static_Data.unit_sep_ratios;
@@ -54,6 +54,11 @@ for iIteration = 1:(max_iterations+1)
 
     max_force_degree = get_max_poly_degree("force",num_r_modes,num_dataset_points,MAXIMUM_DEGREE);
     max_disp_degree = get_max_poly_degree("displacement",num_r_modes,num_dataset_points,MAXIMUM_DEGREE);
+    max_degree = max(max_force_degree,max_disp_degree);
+    next_max_degree = min(MAXIMUM_DEGREE,max_degree + 2);
+    data_size = size(Static_Data);
+    max_iteration_loadcases = get_max_added_points(next_max_degree,data_size,...
+        max_iteration_loadcases_setting);
 
     if num_added_points == 0
         continue
@@ -70,6 +75,7 @@ for iIteration = 1:(max_iterations+1)
     max_pair_error = inf;
 
     verification_data = cell(1,num_degree_pairs);
+    error_time_start = tic;
     for iDegree_pair = 1:num_degree_pairs
         maximum_force_pair_error = 0;
         maximum_disp_pair_error = 0;
@@ -205,12 +211,15 @@ for iIteration = 1:(max_iterations+1)
         %     Rom_One = Rom_Two;
         % end
     end
-
+    error_time = toc(error_time_start);
             %------------------------------------------------------------------
     [~,degree_index] = min(max(maximum_disp_pair_errors,maximum_force_pair_errors)); 
     Extra_Point_Data = verification_data{1,degree_index};
     force_degree = Extra_Point_Data.degree(1);
     disp_degree = Extra_Point_Data.degree(2);
+
+    log_message = sprintf("Max force error: %.2f and max disp error: %.2f found in %.1f seconds" ,maximum_force_pair_errors(degree_index),maximum_disp_pair_errors(degree_index),error_time);
+    logger(log_message,3)
 
     new_sep_id = [Extra_Point_Data.new_sep_id{1,:}];
     new_loads = [Extra_Point_Data.new_loads{1,:}];
@@ -285,3 +294,14 @@ end
 Static_Data.verified_degree = [force_degree,disp_degree];
 end
 
+function max_iteration_loadcases = get_max_added_points(degree,data_size,max_loadcase_setting)
+num_r_modes = data_size(1);
+num_points = data_size(2);
+min_points = 0;
+for iDegree = 2:degree
+    min_points = min_points + nchoosek(iDegree + num_r_modes - 1,num_r_modes-1);
+end
+
+point_diff = min_points - num_points;
+max_iteration_loadcases = max(point_diff,max_loadcase_setting);
+end

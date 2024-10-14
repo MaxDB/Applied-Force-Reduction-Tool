@@ -74,8 +74,9 @@ for iIteration = 1:(max_iterations+1)
     min_pair_lambda = 0;
 
     verification_data = cell(1,num_degree_pairs);
+    error_time_start = tic;
     for iDegree_pair = 1:num_degree_pairs
-        error_time_start = tic;
+        
         maximum_force_pair_error = 0;
         maximum_disp_pair_error = 0;
 
