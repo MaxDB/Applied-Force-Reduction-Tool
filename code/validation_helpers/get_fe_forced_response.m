@@ -55,8 +55,8 @@ end
 
 reset_temp_directory()
 
-% parfor (iJob = 1:num_parallel_jobs,max_parallel_jobs)
-for iJob = 1:num_parallel_jobs
+parfor (iJob = 1:num_parallel_jobs,max_parallel_jobs)
+% for iJob = 1:num_parallel_jobs
     orbit_group = orbit_groups{iJob};
     num_group_orbits = size(orbit_group,2);
 
