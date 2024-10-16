@@ -23,7 +23,17 @@ switch Force_Data.type
         FE_Force_Data.harmonic_coefficients = [0,0,1];
         FE_Force_Data.alpha = Damping_Data.mass_factor;
         FE_Force_Data.beta = Damping_Data.stiffness_factor;
-        FE_Force_Data.force_shape = Model.reduced_eigenvectors(:,Force_Data.mode_number);
+        FE_Force_Data.force_shape = Model.mass*Model.reduced_eigenvectors(:,Force_Data.mode_number);
+    case "point force"
+        FE_Force_Data.amplitude = Force_Data.amplitude;
+        FE_Force_Data.harmonic_coefficients = [0,0,1];
+        FE_Force_Data.alpha = Damping_Data.mass_factor;
+        FE_Force_Data.beta = Damping_Data.stiffness_factor;
+
+        num_dofs = Model.num_dof;
+        dof_map = zeros(num_dofs,1);
+        dof_map(Model.node_mapping(:,1) == Force_Data.dof) = 1;
+        FE_Force_Data.force_shape = dof_map;
 end
 
 max_parallel_jobs = Model.Static_Options.max_parallel_jobs;
@@ -44,8 +54,9 @@ switch Add_Output.type
 end
 
 reset_temp_directory()
-parfor (iJob = 1:num_parallel_jobs,max_parallel_jobs)
-% for iJob = 1:num_parallel_jobs
+
+% parfor (iJob = 1:num_parallel_jobs,max_parallel_jobs)
+for iJob = 1:num_parallel_jobs
     orbit_group = orbit_groups{iJob};
     num_group_orbits = size(orbit_group,2);
 
@@ -187,7 +198,9 @@ parfor (iJob = 1:num_parallel_jobs,max_parallel_jobs)
 
         switch Add_Output.type
             case "physical displacement"
-                x_dof = x_sim(Add_Output.dof,:);
+                node_map = Model.node_mapping;
+                dof = node_map(node_map(:,1) == Add_Output.dof,2);
+                x_dof = x_sim(dof,:);
                 additional_dynamic_output(:,iOrbit) = max(abs(x_dof),[],2);
         end
 

@@ -53,4 +53,4 @@ Continuation_Opts.energy_limit_multiplier = 1;
 Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
 % % 
 % 
- Dyn_Data = Dyn_Data.get_fe_output("forced_response",9,[31,22,15,8]);
+ Dyn_Data = Dyn_Data.get_fe_output("forced_response",2,82);
