@@ -18,6 +18,9 @@ classdef Dynamic_Dataset
         end
         %-----------------------------------------------------------------%
         function obj = add_additional_output(obj,Additional_Output)
+            if ~isfield(Additional_Output,"special_points")
+                Additional_Output.special_points = [];
+            end
             obj.Additional_Output = Additional_Output;
         end
         %-----------------------------------------------------------------%

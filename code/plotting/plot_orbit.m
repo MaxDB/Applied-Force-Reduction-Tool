@@ -212,8 +212,23 @@ switch type
         hold(ax,"on")
         plot(time,x_dof,line_plot_settings{:})
         hold(ax,"off")
+    case "max physical displacement"
+        displacement = orbit.xbp';
+        num_modes = size(displacement,1)/2;
+        displacement = displacement(1:num_modes,:);
 
+        Rom = Dyn_Data.Dynamic_Model;
+        node_map = Rom.Model.node_mapping;
+        dof_bc = Dyn_Data.Additional_Output.dof;
+        dof = node_map(node_map(:,1) == dof_bc,2);
 
+        x_phy = Rom.expand(displacement);
+        x_dof = x_phy(dof,:);
+        [~,max_disp_index] = max(abs(x_dof));
+        max_disp = x_phy(:,max_disp_index);
+        
+        Model = Dyn_Data.Dynamic_Model.Model;
+        plot_fe_mesh(Model,max_disp)
 end
 
 end

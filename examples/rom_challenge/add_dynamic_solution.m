@@ -107,7 +107,7 @@ Dyn_Data = Dyn_Data.restart_point(12,1,"IC","opts",Continuation_Opts);
 % %-----------------------------------------%
 % Dyn_Data = Dyn_Data.restart_point(29,2,"IC");
 
-% Dyn_Data = Dyn_Data.get_fe_output("forced_response",9,[31,22,15,8]);
+Dyn_Data = Dyn_Data.get_fe_output("forced_response",9,[31,22,15,8]);
 % 
 % 
 % 

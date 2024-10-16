@@ -1,4 +1,4 @@
-function [t0,z0,mode_amplitude] =  get_forced_linear_solution(Rom,Nonconservative_Input,type)
+function [t0,z0,force_amplitude] =  get_forced_linear_solution(Rom,Nonconservative_Input,type)
 TIME_RESOLUTION = 100; %number of time points in solution
 INITIAL_FORCE = 0.01; %initual guess at force amplitude for a linear response 
 MAX_ITERATIONS = 100; %maximum number of attempts to find linear solution
@@ -15,9 +15,12 @@ num_modes = size(r_modes,2);
 
 damping = r_eigenvectors'*Nonconservative_Input.damping*r_eigenvectors;
 
+frequency = Nonconservative_Input.frequency;
+reduced_frequency = sqrt(Model.reduced_eigenvalues);
 
-mode_map = Nonconservative_Input.mode_map;
-mode_index = find(mode_map);
+[~,mode_index] = min(abs(reduced_frequency-frequency));
+mode_map = Model.reduced_modes(mode_index) == Model.reduced_modes;
+
 if isempty(mode_map)
     error("Mode: " + backbone_num + " not captured by ROM. Add the corresponding mode.")
 end
@@ -25,7 +28,7 @@ end
 
 mode_damping = damping(mode_map,mode_map);
 
-frequency = Nonconservative_Input.frequency;
+
 period = 2*pi/frequency;
 mode_natural_frequency = sqrt(r_eigenvalues(mode_map,mode_map));
 
@@ -50,11 +53,11 @@ Applied_Force_Data = Eom_Input.Applied_Force_Data;
 eom = @(z,amp) coco_forced_eom(t,z,amp,period,input_order,Force_Data,Disp_Data,Damping_Data,Applied_Force_Data);
 
 
+force_amplitude = INITIAL_FORCE;
 
-mode_amplitude = INITIAL_FORCE;
 for iIteration = 1:MAX_ITERATIONS
-    sin_amp = mode_amplitude*sin_amp_scale_factor;
-    cos_amp = -mode_amplitude*cos_amp_scale_factor;
+    sin_amp = force_amplitude*sin_amp_scale_factor;
+    cos_amp = -force_amplitude*cos_amp_scale_factor;
 
     r_lin = sin_amp*sin_t + cos_amp*cos_t;
     r_dot_lin = frequency*sin_amp*cos_t - frequency*cos_amp*sin_t;
@@ -63,7 +66,7 @@ for iIteration = 1:MAX_ITERATIONS
     x_lin = zeros(2*num_modes,TIME_RESOLUTION);
     x_lin(mode_index,:) = r_lin;
     x_lin(mode_index + num_modes,:) = r_dot_lin;
-    z_dot_sol = eom(x_lin,mode_amplitude);
+    z_dot_sol = eom(x_lin,force_amplitude);
     
     r_ddot_sol = z_dot_sol(mode_index+num_modes,:);
     r_ddot_sol(abs(r_ddot_sol) < 1e-10) = 0;
@@ -74,7 +77,7 @@ for iIteration = 1:MAX_ITERATIONS
     elseif iIteration == MAX_ITERATIONS
         error("Could not converge to linear solution")
     else
-        mode_amplitude = mode_amplitude/2;
+        force_amplitude = force_amplitude/2;
     end
 end
 z0 = x_lin;
