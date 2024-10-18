@@ -1,9 +1,9 @@
 function fe_forced_orbits = get_fe_forced_response(orbits,Rom,Force_Data,Damping_Data,Add_Output)
 MIN_INC_SCALE_FACTOR = 1;
-NUM_PERIODS = 10;
-MAX_PERIODICITY_ERROR = 1e-4; %convergence criteria
-MAX_ITERATIONS = 400;
-MIN_ITERATIONS = 5; %give it some time for stuff to go wrong
+NUM_PERIODS = 50;
+MAX_PERIODICITY_ERROR = 1e-10; %convergence criteria
+MAX_ITERATIONS = 100;
+MIN_ITERATIONS = 2; %give it some time for stuff to go wrong
 
 DEBUG_PLOT = 1;
 
@@ -55,8 +55,8 @@ end
 
 reset_temp_directory()
 
-parfor (iJob = 1:num_parallel_jobs,max_parallel_jobs)
-% for iJob = 1:num_parallel_jobs
+% parfor (iJob = 1:num_parallel_jobs,max_parallel_jobs)
+for iJob = 1:num_parallel_jobs
     orbit_group = orbit_groups{iJob};
     num_group_orbits = size(orbit_group,2);
 
