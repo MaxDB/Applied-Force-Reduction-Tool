@@ -15,7 +15,7 @@ Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
 Continuation_Opts.initial_inc = 1e-1;
 Continuation_Opts.max_inc = 2e-1;
 Continuation_Opts.min_inc = 1e-2;
-Continuation_Opts.forward_steps = 2500;
+Continuation_Opts.forward_steps = 1000;
 Continuation_Opts.backward_steps = 0;
 Continuation_Opts.initial_discretisation_num = 20;
 Continuation_Opts.max_discretisation_num = 250;
@@ -53,4 +53,4 @@ Continuation_Opts.energy_limit_multiplier = 1;
 Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
 % % 
 % 
- Dyn_Data = Dyn_Data.get_fe_output("forced_response",9,[31,22,15,8]);
+ Dyn_Data = Dyn_Data.get_fe_output("forced_response",2,82);

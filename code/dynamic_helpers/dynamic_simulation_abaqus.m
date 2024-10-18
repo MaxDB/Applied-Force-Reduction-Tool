@@ -207,7 +207,7 @@ end
 %-------------------------------------------------------------------------%
 if ~isempty(FE_Force_Data)
     % dyn_force_bc = FE_Force_Data.amplitude*FE_Force_Data.force_shape;
-    dyn_force_bc = FE_Force_Data.amplitude*Model.mass*FE_Force_Data.force_shape;
+    dyn_force_bc = FE_Force_Data.amplitude*FE_Force_Data.force_shape;
     dyn_force = zeros(all_dofs,1);
     dyn_force(Model.node_mapping(:,1),:) = dyn_force_bc(Model.node_mapping(:,2),:);
     dyn_force_label = strings(all_dofs,1);
