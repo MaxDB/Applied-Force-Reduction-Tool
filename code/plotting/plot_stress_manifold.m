@@ -1,4 +1,5 @@
 function plot_stress_manifold(Dyn_Data,L_modes,varargin)
+ALT_MODE = 1;
 PLOT_H_R = 0;
 PLOT_RESOLUTION = 51;
 LIM_SF = 1;
@@ -70,6 +71,8 @@ if ~PHYSICAL_COORDINATES
     [evec,eval] = eig(stiffness,mass);
 end
 
+
+
 %get all stress manifold parameters
 %generate cloud of physical displacement points
 
@@ -113,7 +116,7 @@ end
 
 
 mesh_settings = {"EdgeColor","none","FaceColor","interp","FaceLighting","gouraud"};
-
+if ~ALT_MODE
 if plot_mesh
     [R,H_L] = meshgrid(r,h_L);
     R_lin = reshape(R,PLOT_RESOLUTION^2,1);
@@ -198,6 +201,40 @@ if plot_orbit
     plot3(x_hat_orbit(1,:),x_hat_orbit(2,:),x_hat_orbit(3,:),'r-','LineWidth',2)
 hold off
 end
+
+
+
+else
+    BB_Sol = Dyn_Data.load_solution(solution_num);
+    num_orbits = BB_Sol.num_orbits;
+    num_r_modes = size(Static_Data,1);
+
+
+    for iOrbit = 1:num_orbits
+        [orbit,validation_orbit] = Dyn_Data.get_orbit(solution_num,iOrbit,1);
+        r_orbit = orbit.xbp(:,1:num_r_modes)';
+        x_tilde_orbit = Rom.Physical_Displacement_Polynomial.evaluate_polynomial(r_orbit);
+
+        h_orbit = validation_orbit.h;
+        num_points = size(h_orbit,2);
+        x_hat_orbit = zeros(3,num_points);
+        for iPoint = 1:num_points
+            x_hat_grad_orbit = Rom.Low_Frequency_Coupling_Gradient_Polynomial.evaluate_polynomial(r_orbit(:,iPoint));
+            x_hat_orbit(:,iPoint) = x_tilde_orbit(:,iPoint) + x_hat_grad_orbit*h_orbit(:,iPoint);
+        end
+
+        if ~PHYSICAL_COORDINATES
+            x_tilde_orbit =evec'*mass*x_tilde_orbit;
+            x_hat_orbit = evec'*mass*x_hat_orbit;
+        end
+
+
+        plot3(x_tilde_orbit(1,:),x_tilde_orbit(2,:),x_tilde_orbit(3,:),'k.','LineWidth',2)
+        plot3(x_hat_orbit(1,:),x_hat_orbit(2,:),x_hat_orbit(3,:),'r.')
+    end
+    hold off
+end
+
 
 light("Position",[1,1,1])
 
@@ -292,4 +329,3 @@ if PLOT_LEGEND
     leg.Interpreter = "latex";
 end
 end
-
