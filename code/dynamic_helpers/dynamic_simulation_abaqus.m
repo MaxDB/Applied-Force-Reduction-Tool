@@ -1,6 +1,8 @@
 function [time,x,x_dot,energy] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,num_periods,min_incs,initial_time,FE_Force_Data,Model,job_id)
 JOB_NAME = "dynamic_analysis";
 NUM_DIMENSIONS = 6;
+
+OUTPUT_VELOCITY = 0;
 MAX_DYNAMIC_INC = 1e6;
 
 AMPLITUDE_TYPE = "periodic_amplitude";
@@ -96,6 +98,13 @@ for iLine = 1:length(dynamic_template)
     if restart_read
         if strfind(dynamic_template{iLine,1},'**Restart, read, step = STEP_HERE, inc = INC_HERE')
             dynamic_template{iLine,1} = "*Restart, read, step = " + restart_step;
+        end
+    end
+
+    if ~OUTPUT_VELOCITY
+        if strfind(dynamic_template{iLine,1},'V')
+            dynamic_template{iLine-1,1} = "** " + dynamic_template{iLine-1,1};
+            dynamic_template{iLine,1} = "** " + dynamic_template{iLine,1};
         end
     end
 end
@@ -230,8 +239,11 @@ end
 %-------------------------------------------------------------------------%
 dynamic_step = dynamic_template;
 if ~isempty(FE_Force_Data)
-    fprintf(input_id,'%s\r\n',dynamic_step{1:(dynamic_load_def_line-1)});
-    fprintf(input_id,'%s\r\n',dyn_force_label(:));
+    fprintf(input_id,'%s\r\n',dynamic_step{1:(dynamic_load_def_line-2)});
+    if ~restart_read
+        fprintf(input_id,'%s\r\n',dynamic_step{dynamic_load_def_line-1});
+        fprintf(input_id,'%s\r\n',dyn_force_label(:));
+    end
     fprintf(input_id,'%s\r\n',dynamic_step{(dynamic_load_def_line+1):end,1});
 else
     fprintf(input_id,'%s\r\n',dynamic_step{:});
@@ -307,7 +319,11 @@ end
 num_increments = size(inc_start_lines,1) - 2;
 time = zeros(1,num_increments+1);
 displacement = zeros(num_dofs,num_increments);
-velocity = zeros(num_dofs,num_increments);
+if OUTPUT_VELOCITY
+    velocity = zeros(num_dofs,num_increments); %#ok<*UNRCH>
+else
+    velocity = [];
+end
 potential_energy = zeros(1,num_increments);
 kinetic_energy = zeros(1,num_increments);
 external_work = zeros(1,num_increments);
@@ -318,8 +334,9 @@ for iInc = 1:num_increments
     inc_data = abaqus_data(inc_span,1);
     increment_time_line = find(startsWith(inc_data,increment_time_pattern,'IgnoreCase',true),1);
     disp_table_start = find(startsWith(inc_data,disp_table_pattern,'IgnoreCase',true),1);
-    vel_table_start = find(startsWith(inc_data,vel_table_pattern,'IgnoreCase',true),1);
-
+    if OUTPUT_VELOCITY
+        vel_table_start = find(startsWith(inc_data,vel_table_pattern,'IgnoreCase',true),1);
+    end
     increment_time_line_data = textscan(inc_data{increment_time_line},"%s %s %s %f");
     time(iInc+1) = increment_time_line_data{1,4} + time(iInc);
 
@@ -340,16 +357,17 @@ for iInc = 1:num_increments
     dissipated_energy(:,iInc) = dissipated_energy_line{1,end};
 
 
-    disp_table_span = disp_table_start:(vel_table_start-3);
+    disp_table_span = disp_table_start:size(inc_span,2);
     disp_table_data = inc_data(disp_table_span,1);
     disp_pre_bc = read_abaqus_table(disp_table_data,num_nodes,NUM_DIMENSIONS);
     displacement(:,iInc) = disp_pre_bc(Model.node_mapping(:,1),:);
-
-    vel_table_span = vel_table_start:size(inc_span,2);
-    vel_table_data = inc_data(vel_table_span,1);
-    vel_pre_bc = read_abaqus_table(vel_table_data,num_nodes,NUM_DIMENSIONS);
-    velocity(:,iInc) = vel_pre_bc(Model.node_mapping(:,1),:);
-
+    
+        if OUTPUT_VELOCITY
+        vel_table_span = vel_table_start:size(inc_span,2);
+        vel_table_data = inc_data(vel_table_span,1);
+        vel_pre_bc = read_abaqus_table(vel_table_data,num_nodes,NUM_DIMENSIONS);
+        velocity(:,iInc) = vel_pre_bc(Model.node_mapping(:,1),:);
+        end
 end
 
 energy.potential = potential_energy;

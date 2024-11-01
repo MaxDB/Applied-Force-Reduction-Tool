@@ -1,8 +1,8 @@
 function fe_forced_orbits = get_fe_forced_response(orbits,Rom,Force_Data,Damping_Data,Add_Output)
 MIN_INC_SCALE_FACTOR = 1;
-NUM_PERIODS = 50;
+NUM_PERIODS = 10;
 MAX_PERIODICITY_ERROR = 1e-10; %convergence criteria
-MAX_ITERATIONS = 100;
+MAX_ITERATIONS = 250;
 MIN_ITERATIONS = 2; %give it some time for stuff to go wrong
 
 DEBUG_PLOT = 1;
@@ -51,12 +51,14 @@ simulated_periods_group = cell(1,num_parallel_jobs);
 switch Add_Output.type
     case "physical displacement"
         additional_dynamic_output_group = cell(1,num_parallel_jobs);
+        node_map = Model.node_mapping;
+        monitored_dof = node_map(node_map(:,1) == Add_Output.dof,2);
 end
 
 reset_temp_directory()
 
-% parfor (iJob = 1:num_parallel_jobs,max_parallel_jobs)
-for iJob = 1:num_parallel_jobs
+parfor (iJob = 1:num_parallel_jobs,max_parallel_jobs)
+% for iJob = 1:num_parallel_jobs
     orbit_group = orbit_groups{iJob};
     num_group_orbits = size(orbit_group,2);
 
@@ -81,13 +83,14 @@ for iJob = 1:num_parallel_jobs
 
         r_disp = r(1:num_modes,:);
         r_dot = r(num_modes + (1:num_modes),:);
-        V = Rom.Potential_Polynomial.evaluate_polynomial(r_disp);
-        [~,max_V_index] = max(V);
+        % V = Rom.Potential_Polynomial.evaluate_polynomial(r_disp);
+        % [~,start_index] = max(V);
+        start_index = 1;
 
         % max_V_index = 1;
-        initial_displacement = r_disp(:,max_V_index);
-        initial_velocity = r_dot(:,max_V_index);
-        initial_time = t(max_V_index);
+        initial_displacement = r_disp(:,start_index);
+        initial_velocity = r_dot(:,start_index);
+        initial_time = t(start_index);
 
         initial_force = Rom.Force_Polynomial.evaluate_polynomial(initial_displacement);
 
@@ -103,23 +106,24 @@ for iJob = 1:num_parallel_jobs
                 ax_all{iMode} = nexttile;
                 box(ax_all{iMode},"on")
                 xlabel(ax_all{iMode},"t (s)")
-                ylabel(ax_all{iMode},"q_"+Model.reduced_modes(iMode))
+                ylabel(ax_all{iMode},"q_{"+Model.reduced_modes(iMode) + "}")
                 hold(ax_all{iMode},"on")
             end
 
-            fig_period = figure;
-            fig_period.Name = "Job " + iJob + ", orbit " + iOrbit;
-            tiledlayout("flow")
-            ax_period = cell(1,num_modes);
-            for iMode = 1:num_modes
-                ax_period{iMode} = nexttile;
-                hold(ax_period{iMode},"on")
-                box(ax_period{iMode},"on")
-                xlabel(ax_period{iMode},"t_{norm}")
-                ylabel(ax_period{iMode},"q_"+Model.reduced_modes(iMode))
+            switch Add_Output.type
+                case "physical displacement"
+                    fig_physical = figure;
+                    fig_physical.Name = "Job " + iJob + ", orbit " + iOrbit;
+                    tiledlayout("flow")
+                    ax_physical = nexttile;
+                    hold(ax_physical,"on")
+                    box(ax_physical,"on")
+                    xlabel(ax_physical,"t (s)")
+                    ylabel(ax_physical,"x_{"+Add_Output.dof+"}")
             end
         end
-
+        
+        x0 = physical_displacement;
         for iStep = 1:MAX_ITERATIONS
             orbit_sim_step_start = tic;
 
@@ -128,41 +132,35 @@ for iJob = 1:num_parallel_jobs
             
            
             delete("temp\dynamic_analysis_" + iJob + "_" + (iStep - 2)+".*")
-            t_norm = t_fom/period;
-            period_error = inf;
-            for iPeriod = 1:NUM_PERIODS
-                [~,period_start_index] = min(abs(t_norm-(iPeriod-1)));
-                period_start_time = t_fom(period_start_index);
-                [~,period_end_index] = min(abs(t_norm-(1+period_start_time/period)));
-                period_end_time = t_fom(period_end_index);
-                new_period_error = abs((period_end_time-period_start_time)/period - 1);
-                if new_period_error < period_error
-                    period_error = new_period_error;
-                    period_span = [period_start_index,period_end_index];
-                end
-            end
-            x_sim = x_fom(:,period_span(1):period_span(2));
-            periodicity_error = norm(x_sim(:,2) - x_sim(:,1))/norm(x_sim(:,1));
 
+            x_sim = x_fom;
+            xN = x_fom(:,end);
+            periodicity_error = norm(xN - x0)/norm(x0);
+            x0 = xN;
 
             if DEBUG_PLOT
                 r_fom = r_transform*x_fom;
                 for iMode = 1:num_modes
                     plot(ax_all{iMode},t_fom+period*NUM_PERIODS*(iStep-1),r_fom(iMode,:))
                 end
-
-                t_sim_norm = t_fom(:,period_span(1):period_span(2))/period;
-                t_sim_norm = t_sim_norm - t_sim_norm(1);
-                r_sim = r_transform*x_sim;
-                [t_shift,r_shift] = shift_orbit(t_sim_norm,r_sim);
-                for iMode = 1:num_modes
-                    plot(ax_period{iMode},t_shift,r_shift(iMode,:))
+                
+                switch Add_Output.type
+                    case "physical displacement"
+                        x_dof = x_fom(monitored_dof,:);
+                        plot(ax_physical,t_fom+period*NUM_PERIODS*(iStep-1),x_dof)
                 end
+                % t_sim_norm = t_fom(:,period_span(1):period_span(2))/period;
+                % t_sim_norm = t_sim_norm - t_sim_norm(1);
+                % r_sim = r_transform*x_sim;
+                % [t_shift,r_shift] = shift_orbit(t_sim_norm,r_sim);
+                % for iMode = 1:num_modes
+                %     plot(ax_period{iMode},t_shift,r_shift(iMode,:))
+                % end
 
                 drawnow
                 file_name = "temp\J" + iJob + "O" + iOrbit + "_";
                 saveas(fig_all,file_name+"all.fig")
-                saveas(fig_period,file_name+"period.fig")
+                saveas(fig_physical,file_name+"period.fig")
             end
 
             converged = periodicity_error < MAX_PERIODICITY_ERROR;
@@ -174,17 +172,10 @@ for iJob = 1:num_parallel_jobs
             if converged && iStep >= MIN_ITERATIONS
                 break
             end
-
-            % physical_displacement = x_sim(:,end);
-            % physical_velocity = x_dot_fom(:,end);
-            
-            % initial_displacement = r_transform*physical_displacement;
-            % 
-            % initial_force = Rom.Force_Polynomial.evaluate_polynomial(initial_displacement);
         end
 
-        potential_energy = energy_fom.potential(:,period_span(1):period_span(2));
-        kinetic_energy = energy_fom.kinetic(:,period_span(1):period_span(2));
+        potential_energy = energy_fom.potential;
+        kinetic_energy = energy_fom.kinetic;
 
         % external_work = energy_sim.work(:,in_range(2:end));
         % dissipated_energy = energy_sim.dissipated(:,in_range(2:end));
@@ -198,9 +189,7 @@ for iJob = 1:num_parallel_jobs
 
         switch Add_Output.type
             case "physical displacement"
-                node_map = Model.node_mapping;
-                dof = node_map(node_map(:,1) == Add_Output.dof,2);
-                x_dof = x_sim(dof,:);
+                x_dof = x_sim(monitored_dof,:);
                 additional_dynamic_output(:,iOrbit) = max(abs(x_dof),[],2);
         end
 

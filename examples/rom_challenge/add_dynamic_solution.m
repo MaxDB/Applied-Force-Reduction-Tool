@@ -52,24 +52,31 @@ Damping_Data.mass_factor = 0.67;
 Damping_Data.stiffness_factor = 2.55e-7;
 
 
-Force_Data.type = "point force";
-Force_Data.dof = 1563;
-Force_Data.continuation_variable = "frequency";
-Force_Data.amplitude = 0.17;
-% 
-%--------- Continuation Settings ---------%
-% Continuation_Opts.initial_inc = 1e0;
-% Continuation_Opts.max_inc = 1e1;
-% Continuation_Opts.min_inc = 1e-1;
-% Continuation_Opts.forward_steps = 100;
-% Continuation_Opts.backward_steps = 0;
-% %-----------------------------------------%
-% % 
+% Force_Data.type = "point force";
+% Force_Data.dof = 1563;
+% Force_Data.continuation_variable = "frequency";
+% Force_Data.amplitude = 0.17;
+% Force_Data.frequency = 942;
 
-% Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
-% Force_Data.frequency = 1570;
-% Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
-% % 
+Force_Data.type = "modal";
+Force_Data.mode_number = 1;
+Force_Data.continuation_variable = "amplitude";
+Force_Data.force_points = [1,10,50];
+
+
+% --------- Continuation Settings ---------%
+Continuation_Opts.initial_inc = 1e0;
+Continuation_Opts.max_inc = 1e1;
+Continuation_Opts.min_inc = 1e-1;
+Continuation_Opts.forward_steps = 100;
+Continuation_Opts.backward_steps = 0;
+%-----------------------------------------%
+% 
+Force_Data.frequency = 942;
+Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
+Force_Data.frequency = 1570;
+Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
+% 
 %--------- Continuation Settings ---------%
 Continuation_Opts.initial_inc = 5e-2;
 Continuation_Opts.max_inc = 3e-1;
@@ -83,7 +90,7 @@ Continuation_Opts.collation_degree = 6;
 Continuation_Opts.parameter_range = [0.004,0.0068];
 Continuation_Opts.energy_limit_multiplier = 1;
 % %-----------------------------------------%
-Force_Data.frequency = 942;
+
 Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
 
 %--------- Continuation Settings ---------%
@@ -95,16 +102,15 @@ Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuat
 % %-----------------------------------------%
 % Dyn_Data = Dyn_Data.restart_point(3,1114,"force","opts",Continuation_Opts);
 
-% %--------- Continuation Settings ---------%
-% Continuation_Opts.initial_inc = 1e-1;
-% Continuation_Opts.max_inc = 3e-1;
-% Continuation_Opts.min_inc = 1e-2;
-% Continuation_Opts.forward_steps = 500;
-% Continuation_Opts.backward_steps = 500;
-% Continuation_Opts.parameter_range = [0.004,0.0068];
-% Dyn_Data = Dyn_Data.update_continuation_opts(Continuation_Opts);
-% %-----------------------------------------%
-% Dyn_Data = Dyn_Data.restart_point(29,2,"IC");
+%--------- Continuation Settings ---------%
+Continuation_Opts.initial_inc = 1e-1;
+Continuation_Opts.max_inc = 3e-1;
+Continuation_Opts.min_inc = 1e-2;
+Continuation_Opts.forward_steps = 10;
+Continuation_Opts.backward_steps = 100;
+Continuation_Opts.parameter_range = [0.004,0.0068];
+%-----------------------------------------%
+Dyn_Data = Dyn_Data.restart_point(4,1,"IC","opts",Continuation_Opts);
 
 Dyn_Data = Dyn_Data.get_fe_output("forced_response",3,[1047]);
 
