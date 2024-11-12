@@ -1,14 +1,14 @@
 function plot_stress_manifold(Dyn_Data,L_modes,varargin)
-ALT_MODE = 1;
+ALT_MODE = 0;
 PLOT_H_R = 0;
 PLOT_RESOLUTION = 51;
 LIM_SF = 1;
-PHYSICAL_COORDINATES = 0;
+PHYSICAL_COORDINATES = 1;
 
 PLOT_LEGEND = 1;
 
 
-LINE_WIDTH = 3;
+LINE_WIDTH = 4;
 
 MESH_ALPHA = 1;
 MESH_COLOUR = 3;
@@ -104,9 +104,9 @@ figure
 box on
 hold on
 if PHYSICAL_COORDINATES
-    xlabel("x_1")
+    xlabel("x_3")
     ylabel("x_2")
-    zlabel("x_3")
+    zlabel("x_1")
 else
     xlabel("q_1")
     ylabel("q_2")
@@ -136,7 +136,7 @@ if plot_mesh
 
     X_HAT = reshape(X_HAT_lin,PLOT_RESOLUTION,PLOT_RESOLUTION,3);
     colour_data = zeros(size(X_HAT,[1,2]));
-    mesh(X_HAT(:,:,1),X_HAT(:,:,2),X_HAT(:,:,3),colour_data,"FaceAlpha",MESH_ALPHA,mesh_settings{:},"Tag","validation")
+    mesh(X_HAT(:,:,3),X_HAT(:,:,2),X_HAT(:,:,1),colour_data,"FaceAlpha",MESH_ALPHA,mesh_settings{:},"Tag","validation")
 else
 
     for iR = 1:PLOT_RESOLUTION
@@ -170,7 +170,7 @@ switch num_dofs
     case 2
         plot(x_tilde(1,:),x_tilde(2,:),'k-',"LineWidth",LINE_WIDTH,"Tag","one mode")
     case 3
-        plot3(x_tilde(1,:),x_tilde(2,:),x_tilde(3,:),'k-',"LineWidth",LINE_WIDTH,"Tag","one mode")
+        plot3(x_tilde(3,:),x_tilde(2,:),x_tilde(1,:),'k-',"LineWidth",LINE_WIDTH,"Tag","one mode")
 end
 
 hold off
@@ -270,7 +270,7 @@ if PLOT_MESH
     
     colour_data = ones(size(X_TILDE_12,[1,2]));
     hold on
-    mesh(X_TILDE_12(:,:,1),X_TILDE_12(:,:,2),X_TILDE_12(:,:,3),colour_data,"FaceAlpha",COMPARISON_MESH_ALPHA,mesh_settings{:},"Tag","two mode");
+    mesh(X_TILDE_12(:,:,3),X_TILDE_12(:,:,2),X_TILDE_12(:,:,1),colour_data,"FaceAlpha",COMPARISON_MESH_ALPHA,mesh_settings{:},"Tag","two mode");
     hold off
 
 else
@@ -310,17 +310,25 @@ if PLOT_LEGEND
         if isa(line,"matlab.graphics.primitive.Light")
             continue
         end
+
+        if line.Marker == "."
+            line.DisplayName = "";
+            continue
+        end
         switch line.Tag
             case "one mode"
-                line.DisplayName = "$\mathcal W_{\{1\}}$";
+                % line.DisplayName = "$\mathcal W_{\{1\}}$";
+                 line.DisplayName = "One mode stress manifold";
                 uistack(line,"top")
                 uistack(line,"down",2)
             case "two mode"
-                line.DisplayName = "$\mathcal W_{\{1,2\}}$";
+                % line.DisplayName = "$\mathcal W_{\{1,2\}}$";
+                 line.DisplayName = "Two mode stress manifold";
                 uistack(line,"top")
                 
             case "validation"
-                line.DisplayName = "$\mathcal V_{\{1\}:\{1,2\}}$";
+                % line.DisplayName = "$\mathcal V_{\{1\}:\{1,2\}}$";
+                line.DisplayName = "Two mode validation manifold";
                 uistack(line,"top")
                 uistack(line,"down",1)
         end
