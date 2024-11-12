@@ -24,7 +24,8 @@ classdef FE_Orbit_Output
         %-----------------------------------------------------------------%
         function obj = add_orbits(obj,Dyn_Data,orbit_ids)
             current_orbit_ids = obj.orbit_labels;
-            new_orbit_ids = setdiff(orbit_ids,current_orbit_ids);
+            % new_orbit_ids = setdiff(orbit_ids,current_orbit_ids);
+            new_orbit_ids = orbit_ids;
             if isempty(new_orbit_ids)
                 return
             end
