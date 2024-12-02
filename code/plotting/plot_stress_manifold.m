@@ -26,7 +26,8 @@ keyword_values = varargin(2:2:num_args);
 Dyn_Data_Comp = [];
 orbit_id = [];
 solution_num = [];
-
+comparison_orbit_id = [];
+comparison_solution_num = [];
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
@@ -36,6 +37,10 @@ for arg_counter = 1:num_args/2
             orbit_data = keyword_values{arg_counter};
             solution_num = orbit_data(1);
             orbit_id = orbit_data(2);
+        case "comparison orbit"
+            comparison_orbit_data = keyword_values{arg_counter};
+            comparison_solution_num = comparison_orbit_data(1);
+            comparison_orbit_id = comparison_orbit_data(2);
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -44,6 +49,7 @@ end
 plot_mesh = isempty(Dyn_Data_Comp);
 plot_mesh = 1;
 plot_orbit = ~isempty(orbit_id);
+plot_comparison_orbit = ~isempty(comparison_orbit_id);
 if plot_orbit
     LIM_SF = 1;
 end
@@ -197,9 +203,9 @@ if plot_orbit
 
 
     hold on
-    plot3(x_tilde_orbit(1,:),x_tilde_orbit(2,:),x_tilde_orbit(3,:),'b-','LineWidth',2)
-    plot3(x_hat_orbit(1,:),x_hat_orbit(2,:),x_hat_orbit(3,:),'r-','LineWidth',2)
-hold off
+    plot3(x_tilde_orbit(3,:),x_tilde_orbit(2,:),x_tilde_orbit(1,:),'g-','LineWidth',2)
+    plot3(x_hat_orbit(3,:),x_hat_orbit(2,:),x_hat_orbit(1,:),'r-','LineWidth',2)
+    hold off
 end
 
 
@@ -244,10 +250,10 @@ end
 PLOT_MESH = 1;
 
 
-rom_2 = Dyn_Data_Comp.Dynamic_Model;
+Rom_2 = Dyn_Data_Comp.Dynamic_Model;
 
 r_1 = r;
-r_2_lim = rom_2.reduced_displacement_limits(2,:);
+r_2_lim = Rom_2.reduced_displacement_limits(2,:);
 r_2 = linspace(r_2_lim(1),r_2_lim(2),PLOT_RESOLUTION);
 
 if PLOT_MESH
@@ -257,7 +263,7 @@ if PLOT_MESH
         for iR_2 = 1:PLOT_RESOLUTION
             r_1_lin = R_1(iR_1,iR_2);
             r_2_lin = R_2(iR_1,iR_2);
-            x_tilde_12_lin = rom_2.Physical_Displacement_Polynomial.evaluate_polynomial([r_1_lin;r_2_lin]);
+            x_tilde_12_lin = Rom_2.Physical_Displacement_Polynomial.evaluate_polynomial([r_1_lin;r_2_lin]);
             
             if ~PHYSICAL_COORDINATES
                 x_tilde_12_lin =evec'*mass*x_tilde_12_lin;
@@ -280,7 +286,7 @@ else
         x_tilde_12 = zeros(num_dofs,PLOT_RESOLUTION);
         for iR_2 = 1:PLOT_RESOLUTION
             r_2_plot = r_2(:,iR_2);
-            x_tilde_12(:,iR_2) = rom_2.Physical_Displacement_Polynomial.evaluate_polynomial([r_1_plot;r_2_plot]);
+            x_tilde_12(:,iR_2) = Rom_2.Physical_Displacement_Polynomial.evaluate_polynomial([r_1_plot;r_2_plot]);
         end
         if ~PHYSICAL_COORDINATES
             x_tilde_12 = evec'*mass*x_tilde_12;
@@ -295,6 +301,32 @@ else
     hold off
 end
 
+
+if plot_comparison_orbit
+    orbit = Dyn_Data_Comp.get_orbit(comparison_solution_num,comparison_orbit_id);
+
+    r_orbit = orbit.xbp(:,1)';
+    x_tilde_orbit = Rom_2.Physical_Displacement_Polynomial.evaluate_polynomial(r_orbit);
+
+    % h_orbit = validation_orbit.h;
+    % num_points = size(h_orbit,2);
+    % x_hat_orbit = zeros(3,num_points);
+    % for iPoint = 1:num_points
+    %     x_hat_grad_orbit = Rom_2.Low_Frequency_Coupling_Gradient_Polynomial.evaluate_polynomial(r_orbit(:,iPoint));
+    %     x_hat_orbit(:,iPoint) = x_tilde_orbit(:,iPoint) + x_hat_grad_orbit*h_orbit(:,iPoint);
+    % end
+    
+    if ~PHYSICAL_COORDINATES
+        x_tilde_orbit =evec'*mass*x_tilde_orbit;
+        % x_hat_orbit = evec'*mass*x_hat_orbit;
+    end
+
+
+    hold on
+    plot3(x_tilde_orbit(3,:),x_tilde_orbit(2,:),x_tilde_orbit(1,:),'b-','LineWidth',2)
+    % plot3(x_hat_orbit(1,:),x_hat_orbit(2,:),x_hat_orbit(3,:),'r-','LineWidth',2)
+    hold off
+end
 
 
 if ~isequal(MESH_COLOUR,0)

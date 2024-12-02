@@ -417,10 +417,10 @@ classdef Dynamic_Dataset
                 end
             end
 
-            if validated
+            validation_orbit = [];
+            orbit_name = solution_name + "\sol" + orbit_num + "_v.mat";
+            if validated && isfile(orbit_name)
                 load(solution_name + "\sol" + orbit_num + "_v.mat","validation_orbit");
-            else
-                validation_orbit = [];
             end
         end
         %-----------------------------------------------------------------%

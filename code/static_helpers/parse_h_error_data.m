@@ -12,6 +12,8 @@ L_evec = Model.low_frequency_eigenvectors(:,L_map);
 h_modes = [r_modes,L_modes];
 num_h_modes = size(h_modes,2);
 h_evec = [r_evec,L_evec];
+% num_h_modes = size(L_modes,2);
+% h_evec = [L_evec];
 % h_map = [1:num_r_modes,L_map+num_r_modes];
 
 num_dofs = Model.num_dof;

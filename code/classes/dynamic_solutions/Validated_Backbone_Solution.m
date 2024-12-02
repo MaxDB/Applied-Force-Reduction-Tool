@@ -1,6 +1,7 @@
 classdef Validated_Backbone_Solution 
     properties
         validation_modes
+        Validation_Options
 
         h_amplitude
         corrected_low_modal_amplitude
@@ -14,7 +15,9 @@ classdef Validated_Backbone_Solution
 
     methods
         function obj = Validated_Backbone_Solution(Rom,BB_Sol,Validated_BB_Settings)
-            H_ALGORITHM = "time_solution";
+            
+            Validation_Opts.validation_algorithm = "h_frequency";
+            obj = obj.update_validation_opts(Validation_Opts);
             
             solution_num = Validated_BB_Settings.solution_num;
             L_modes = Validated_BB_Settings.L_modes;
@@ -44,12 +47,13 @@ classdef Validated_Backbone_Solution
             logger(log_message,2)
 
             validation_solution_start = tic;
-            switch H_ALGORITHM
-                case "harmonic_balance"
-                    obj = h_harmonic_balance(BB_Sol,Validation_Rom,solution_num);
-                case "time_solution"
-                    obj = h_time_solution(obj,BB_Sol,Validation_Rom,solution_num);
-            end
+            obj = solve_h_prediction(obj,BB_Sol,Validation_Rom,solution_num);
+            % switch H_ALGORITHM
+            %     case "harmonic_balance"
+            %         obj = h_harmonic_balance(BB_Sol,Validation_Rom,solution_num);
+            %     case "time_solution"
+            %         obj = h_time_solution(obj,BB_Sol,Validation_Rom,solution_num);
+            % end
             validation_solution_time = toc(validation_solution_start);
             log_message = sprintf("Validation equations solved: %.1f seconds" ,validation_solution_time);
             logger(log_message,2)
@@ -140,7 +144,12 @@ classdef Validated_Backbone_Solution
             %--
             energy_hat = ke_hat + potential_hat;
                 
-
+            %--
+            % TEST
+            % h_force(h_force<1e-6) = 0;
+            h_zero_force = get_amplitude(h_force);
+            h_force_amp = h_zero_force;
+            % r_force_amp((num_r_modes+1):num_h_modes) = get_amplitude(arrayfun(@norm,r_force));
             %--
             obj.h_amplitude(:,orbit_num) = h_amp;
             obj.corrected_low_modal_amplitude(:,orbit_num) = g_amp;
@@ -151,6 +160,10 @@ classdef Validated_Backbone_Solution
             obj.r_force_amplitude(:,orbit_num) = r_force_amp;
         end
         %-----------------------------------------------------------------%
+        function obj = update_validation_opts(obj,Validation_Opts)
+            Default_Continuation_Opts = read_default_options("validation");
+            obj.Validation_Options = update_options(Default_Continuation_Opts,obj.Validation_Options,Validation_Opts);
+        end
     end
 
 end

@@ -97,7 +97,10 @@ classdef Static_Dataset
             logger(log_message,1)
         end
         %-----------------------------------------------------------------%
-        function obj = add_validation_data(obj,L_modes)
+        function obj = add_validation_data(obj,L_modes,DEBUG)
+            if nargin == 2
+                DEBUG = 0;
+            end
 
             switch obj.additional_data_type
                 case "stiffness"
@@ -124,8 +127,12 @@ classdef Static_Dataset
 
                     end
 
-
-                    [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_h_error_data(obj,L_modes);
+                    if DEBUG
+                        [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_h_error_data_DEBUG(obj,L_modes);
+                    else
+                        [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_h_error_data(obj,L_modes);
+                    end
+                    
                     obj.low_frequency_stiffness = h_stiffness;
                     obj.low_frequency_coupling_gradient = h_coupling_gradient;
 

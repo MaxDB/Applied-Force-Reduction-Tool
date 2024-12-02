@@ -1,5 +1,5 @@
 function ax = plot_h_predicition(Dyn_Data,type,solution_num,varargin)
-PLOT_STABILITY = 0;
+PLOT_STABILITY = 1;
 STABILITY_LIMIT = 1.005;
 
 LINE_STYLE = [":","-"]; %[unstable,stable]
@@ -16,7 +16,7 @@ keyword_values = varargin(2:2:num_args);
 
 ax = [];
 colour_num = 1;
-add_backbone = 1;
+add_backbone = 0;
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
