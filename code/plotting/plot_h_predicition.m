@@ -16,7 +16,7 @@ keyword_values = varargin(2:2:num_args);
 
 ax = [];
 colour_num = 1;
-add_backbone = 0;
+add_backbone = 1;
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}

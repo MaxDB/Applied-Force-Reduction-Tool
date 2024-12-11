@@ -41,6 +41,8 @@ switch Validation_Opts.validation_algorithm
         h_solver = @(h_terms,t0,omega,num_harmonics) h_time_solution(h_terms,t0,omega,num_harmonics);
     case "h_frequency"
         h_solver = @(h_terms,t0,omega,num_harmonics) h_harmonic_balance(h_terms,t0,omega,num_harmonics);
+    case "h_infinite_determinant"
+        h_solver = @(h_terms,t0,omega,num_harmonics) h_infinite_determinant(h_terms,t0,omega,num_harmonics);
 end
 
 
@@ -77,11 +79,12 @@ for iOrbit = 1:num_periodic_orbits
     set_up_h_time = toc(set_up_h_start);
 
     validation_eq_terms = {h_inertia,h_conv,h_stiff,h_force};
+    r_force = Validation_Rom.Force_Polynomial.evaluate_polynomial(r);
     solution_converged = 0;
     while ~solution_converged
         solve_h_start = tic;
         h_frequency = h_solver(validation_eq_terms,t0,omega,num_harmonics);
-        [solution_converged,num_harmonics,Validation_Orbit] = check_h_convergence(validation_eq_terms,h_frequency,t0,omega,num_harmonics,Validation_Opts);
+        [solution_converged,num_harmonics,Validation_Orbit] = check_h_convergence(validation_eq_terms,r_force,h_frequency,t0,omega,num_harmonics,Validation_Opts);
         solve_h_time = toc(solve_h_start);
     end
 
@@ -89,6 +92,8 @@ for iOrbit = 1:num_periodic_orbits
 
     if Validation_Opts.get_stability
         orbit_stab = get_h_stability(validation_eq_terms,t0);
+        % orbit_stab = h_infinite_determinant(validation_eq_terms,t0,omega,num_harmonics);
+        % orbit_stab = get_h_coco_stability(Validation_Orbit,validation_eq_terms,t0,omega,num_harmonics);
     else
         orbit_stab = 1;
     end

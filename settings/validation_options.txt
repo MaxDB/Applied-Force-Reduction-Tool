@@ -4,7 +4,7 @@
 validation_algorithm, "h_time",		algorithm to find validated orbits
 initial_harmonic, 5, 		  	initial cut-off harmonic
 maximum_harmonic, 50, 			maximum cut-off harmonic
-maximum_convergence_error, 1e-4, 	increase cut-off harmonic until change in answer is less than maximum
-minimum_validation_force, 1e-6, 	ignore small terms when calculating error
+maximum_convergence_error, 1e-3, 	increase cut-off harmonic until change in answer is less than maximum
+minimum_validation_force, 1e-3, 	ignore small terms when calculating error
 save_orbit, 1, 				save validated orbit to disk (BOOL) 
 get_stability, 1,			calculate validated orbit stability (BOOL)

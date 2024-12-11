@@ -1,8 +1,8 @@
-function [solution_converged,num_harmonics,Validation_Orbit] = check_h_convergence(h_terms,h_frequency,t0,omega,num_harmonics,Validation_Opts)
+function [solution_converged,num_harmonics,Validation_Orbit] = check_h_convergence(h_terms,r_force,h_frequency,t0,omega,num_harmonics,Validation_Opts)
 [h_inertia,h_conv,h_stiff,h_force] = h_terms{:};
-
+max_r_force = max(abs(r_force),[],"all");
 solution_converged = 0;
-validated_h_terms = max(abs(h_force),[],2) >= Validation_Opts.minimum_validation_force;
+validated_h_terms = max(abs(h_force/max_r_force),[],2) >= Validation_Opts.minimum_validation_force;
 if ~any(validated_h_terms)
     solution_converged = 1;
     h = frequency_to_time(h_frequency,t0,omega,num_harmonics);
@@ -13,15 +13,30 @@ else
     h_n = h_linear;
     h_n_plus_two = h_n;
     harmonic_counter = 0;
+    % if num_harmonics > 50
+    %     figure
+    % end
     for iHarmonic = 2:num_harmonics
         harmonic_counter = harmonic_counter + 1;
 
         h_cos = h_frequency(:,iHarmonic+1).*cos(iHarmonic*omega*t0);
         h_sin = h_frequency(:,iHarmonic+1 + num_harmonics).*sin(iHarmonic*omega*t0);
         h_n_plus_two = h_n_plus_two + h_cos + h_sin;
+        
+        
 
         convergence_error = abs(h_n_plus_two - h_n)./max(abs(h_n_plus_two),[],2);
-        max_error = max(convergence_error(validated_h_terms,:),[],"all");
+
+        [max_row_error,max_error_row_index] = max(convergence_error(validated_h_terms,:),[],2);
+        [max_error,max_error_index] = max(max_row_error);
+        
+        % if num_harmonics > 50
+        %     hold on
+        %     plot(t0,h_n(12,:),"--")
+        %     plot(t0,h_n_plus_two(12,:),"-")
+        %     hold off
+        % end
+
         if harmonic_counter == 2
             harmonic_counter = 0;
             if max_error < Validation_Opts.maximum_convergence_error
@@ -57,8 +72,8 @@ if solution_converged
     Validation_Orbit.h_dot = h_dot;
 
 
-    %---------------------------------%
-    %% DEBUG
+    % ---------------------------------%
+    % DEBUG
     % h_ddot_frequency = differentiate_frequency_coefficients(h_dot_frequency,omega);
     % h_ddot = frequency_to_time(h_ddot_frequency,t0,omega,converged_harmonics);
     % 
@@ -85,7 +100,7 @@ if solution_converged
     %     plot(t0,net_force(iMode,:),"k")
     %     hold off
     % end
-    %---------------------------------%
+    % ---------------------------------%
 end
 num_harmonics = converged_harmonics;
 

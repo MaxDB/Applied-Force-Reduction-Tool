@@ -395,7 +395,7 @@ classdef Dynamic_Dataset
             obj.update_dyn_data;
         end
         %-----------------------------------------------------------------%
-        function [orbit,validation_orbit] = get_orbit(obj,solution_num,orbit_num,validated)
+        function [orbit,Validation_Orbit] = get_orbit(obj,solution_num,orbit_num,validated)
             if nargin == 3
                 validated = 0;
             end
@@ -417,10 +417,10 @@ classdef Dynamic_Dataset
                 end
             end
 
-            validation_orbit = [];
+            Validation_Orbit = [];
             orbit_name = solution_name + "\sol" + orbit_num + "_v.mat";
             if validated && isfile(orbit_name)
-                load(solution_name + "\sol" + orbit_num + "_v.mat","validation_orbit");
+                load(solution_name + "\sol" + orbit_num + "_v.mat","Validation_Orbit");
             end
         end
         %-----------------------------------------------------------------%

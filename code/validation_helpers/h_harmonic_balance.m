@@ -15,27 +15,38 @@ h_stiff_frequency = time_to_frequency(h_stiff,t0,num_harmonics);
 % t_lin = linspace(t0(1),t0(end),num_points);
 % 
 % 
-% if num_harmonics == 23
-%     test_name = "h_stiff";
+% if num_harmonics > 10
+%     test_name = "h_conv";
 %     test = eval(test_name);
 %     test_frequency = eval(test_name + "_frequency");
 %     test_time = evaluate_fourier_series(test_frequency,omega,t0);
 %     num_h_modes = size(test_time,1);
+%     if num_h_modes > 3
+%         num_plot_modes = 3;
+%         i_plot = randi(num_h_modes,3);
+%         j_plot = randi(num_h_modes,3);
+%     else
+%         num_plot_modes = num_h_modes;
+%         i_plot = 1:num_plot_modes;
+%         j_plot = 1:num_plot_modes;
+%     end
 %     figure;
 %     tiledlayout("flow")
-%     for iPlot = 1:num_h_modes
-%         for jPlot = 1:num_h_modes
+%     for iPlot = 1:num_plot_modes
+%         i_index = i_plot(iPlot);
+%         for jPlot = 1:num_plot_modes
+%             j_index = j_plot(jPlot);
 %             nexttile
 %             hold on
-%             plot(t0,squeeze(test(iPlot,jPlot,:)))
-%             plot(t0,squeeze(test_time(iPlot,jPlot,:)),"--")
+%             plot(t0,squeeze(test(i_index,j_index,:)))
+%             plot(t0,squeeze(test_time(i_index,j_index,:)),"--")
 % 
-%             x_lin = interp1(t0,squeeze(test(iPlot,jPlot,:)),t_lin);
+%             x_lin = interp1(t0,squeeze(test(i_index,j_index,:)),t_lin);
 %             plot(t_lin,x_lin,"x")
 %             hold off
 %         end
 %     end
-%     a
+%     done = 1;
 % end
 %------------------------- TEST ----------------------%
 num_coefficients = size(h_force_frequency,2);
@@ -64,7 +75,11 @@ bs_n = c_stiffness(sin_index,:,:);
 upsilon = zeros(num_h_modes*num_coefficients,num_h_modes*num_coefficients);
 
 % go through equation (D.1) working out the coefficients for A and B for each harmonic
-
+inertia_diff_num = 2;
+inertia_sf = - omega^2;
+convective_diff_num = 1;
+convective_sf = omega;
+stiffness_diff_num = 0;
 % constant term
 row_counter = 0;
 col_range = @(index) ((index-1)*num_coefficients + 1):(index*num_coefficients);
@@ -73,68 +88,45 @@ for iMode = 1:num_h_modes %h mode
     % c_0
     row_counter = row_counter + 1;
     for jMode = 1:num_h_modes %% stiffness columns
-        C_n = c_0(as_0(1,iMode,jMode),as_n(:,iMode,jMode),num_harmonics);
+        C_n = c_0(as_0(1,iMode,jMode),as_n(:,iMode,jMode),bs_n(:,iMode,jMode),num_harmonics);
         col_indices = col_range(jMode);
-        upsilon(row_counter,col_indices) = C_n';
+        upsilon(row_counter,col_indices) = C_n;
     end
 
 
     for kHarmonic = 1:num_harmonics
         %cos terms
         row_counter = row_counter + 1;
-        %inertia terms
-        inertia_sf = - (kHarmonic*omega)^2;
         for jMode = 1:num_h_modes
-            C_n = c_k(ai_0(1,iMode,jMode),ai_n(:,iMode,jMode),bi_n(:,iMode,jMode),kHarmonic,num_harmonics);
-            C_n(1) = 0; %no constant term
-            col_indices = col_range(jMode);
-            upsilon(row_counter,col_indices) = upsilon(row_counter,col_indices) + inertia_sf*C_n';
-        end
+            C_n = c_k(ai_0(1,iMode,jMode),ai_n(:,iMode,jMode),bi_n(:,iMode,jMode),kHarmonic,inertia_diff_num,num_harmonics);
+            C_n_inertia =  inertia_sf*C_n;
 
-        %convective terms
-        convective_sf = (kHarmonic*omega);
-        for jMode = 1:num_h_modes
-            C_n = d_k(ac_0(1,iMode,jMode),ac_n(:,iMode,jMode),bc_n(:,iMode,jMode),kHarmonic,num_harmonics);
-            C_n(1) = 0; %no constant term
-            col_indices = col_range(jMode);
-            upsilon(row_counter,col_indices) = upsilon(row_counter,col_indices) + convective_sf*C_n';
-        end
+            C_n = d_k(ac_0(1,iMode,jMode),ac_n(:,iMode,jMode),bc_n(:,iMode,jMode),kHarmonic,convective_diff_num,num_harmonics);
+            C_n_conv = convective_sf*C_n;
 
-        %stiffness terms
-        % c_k
-        for jMode = 1:num_h_modes
-            C_n = c_k(as_0(1,iMode,jMode),as_n(:,iMode,jMode),bs_n(:,iMode,jMode),kHarmonic,num_harmonics);
+            C_n = c_k(as_0(1,iMode,jMode),as_n(:,iMode,jMode),bs_n(:,iMode,jMode),kHarmonic,stiffness_diff_num,num_harmonics);
+            C_n_stiff = C_n;
+            
             col_indices = col_range(jMode);
-            upsilon(row_counter,col_indices) = upsilon(row_counter,col_indices) + C_n';
+            % upsilon(row_counter,col_indices) = upsilon(row_counter,col_indices) + C_n_inertia + C_n_conv + C_n_stiff;
+            upsilon(row_counter,col_indices) = C_n_inertia + C_n_conv + C_n_stiff;
         end
 
         % sin terms
         row_counter = row_counter + 1;
-        %inertia terms
-        inertia_sf = - (kHarmonic*omega)^2;
         for jMode = 1:num_h_modes
-            C_n = d_k(ai_0(1,iMode,jMode),ai_n(:,iMode,jMode),bi_n(:,iMode,jMode),kHarmonic,num_harmonics);
-            C_n(1) = 0; %no constant term
-            col_indices = col_range(jMode);
-            upsilon(row_counter,col_indices) = upsilon(row_counter,col_indices) + inertia_sf*C_n';
-        end
+            C_n = d_k(ai_0(1,iMode,jMode),ai_n(:,iMode,jMode),bi_n(:,iMode,jMode),kHarmonic,inertia_diff_num,num_harmonics);
+            C_n_inertia =  inertia_sf*C_n;
 
-        %convective terms
-        convective_sf = -(kHarmonic*omega);
-        for jMode = 1:num_h_modes
-            C_n = c_k(ac_0(1,iMode,jMode),ac_n(:,iMode,jMode),bc_n(:,iMode,jMode),kHarmonic,num_harmonics);
-            C_n(1) = 0; %no constant term
-            col_indices = col_range(jMode);
-            upsilon(row_counter,col_indices) = upsilon(row_counter,col_indices) + convective_sf*C_n';
-        end
+            C_n = c_k(ac_0(1,iMode,jMode),ac_n(:,iMode,jMode),bc_n(:,iMode,jMode),kHarmonic,convective_diff_num,num_harmonics);
+            C_n_conv = - convective_sf*C_n;
 
-
-        %stiffness terms
-        % d_k
-        for jMode = 1:num_h_modes
-            C_n = d_k(as_0(1,iMode,jMode),as_n(:,iMode,jMode),bs_n(:,iMode,jMode),kHarmonic,num_harmonics);
+            C_n = d_k(as_0(1,iMode,jMode),as_n(:,iMode,jMode),bs_n(:,iMode,jMode),kHarmonic,stiffness_diff_num,num_harmonics);
+            C_n_stiff = C_n;
+            
             col_indices = col_range(jMode);
-            upsilon(row_counter,col_indices) = upsilon(row_counter,col_indices) + C_n';
+            % upsilon(row_counter,col_indices) = upsilon(row_counter,col_indices) + C_n_inertia + C_n_conv + C_n_stiff;
+            upsilon(row_counter,col_indices) = C_n_inertia + C_n_conv + C_n_stiff;
         end
     end
 
@@ -146,6 +138,46 @@ force_frequency_coeffs = reshape(force_frequency_coeffs,[num_h_modes*num_coeffic
 h_frequency_coeffs = upsilon\force_frequency_coeffs;
 
 h_frequency = reshape(h_frequency_coeffs,num_coefficients,num_h_modes)';
+
+%----------------------------------------------%
+%%% DEBUG
+% h_dot_frequency = differentiate_coefficients(h_frequency,omega);
+% h_ddot_frequency = differentiate_coefficients(h_dot_frequency,omega);
+% 
+% h = evaluate_fourier_series(h_frequency,omega,t0);
+% h_dot = evaluate_fourier_series(h_dot_frequency,omega,t0);
+% h_ddot = evaluate_fourier_series(h_ddot_frequency,omega,t0);
+% 
+% h_force_test = evaluate_fourier_series(h_force_frequency,omega,t0);
+% h_stiff_test = evaluate_fourier_series(h_stiff_frequency,omega,t0);
+% h_conv_test = evaluate_fourier_series(h_conv_frequency,omega,t0);
+% h_inertia_test = evaluate_fourier_series(h_inertia_frequency,omega,t0);
+% 
+% num_time_points = size(t0,2);
+% inertia_force = zeros(num_h_modes,num_time_points);
+% conv_force = zeros(num_h_modes,num_time_points);
+% restoring_force = zeros(num_h_modes,num_time_points);
+% for iTime = 1:num_time_points
+%     inertia_force(:,iTime) = h_inertia_test(:,:,iTime)*h_ddot(:,iTime);
+%     conv_force(:,iTime) = h_conv_test(:,:,iTime)*h_dot(:,iTime);
+%     restoring_force(:,iTime) = h_stiff_test(:,:,iTime)*h(:,iTime);
+% end
+% 
+% net_force = inertia_force + conv_force + restoring_force - h_force_test;
+% 
+% figure
+% tiledlayout("flow")
+% for iPlot = 1:num_h_modes
+%     nexttile
+%     hold on
+%     plot(t0,inertia_force(iPlot,:),"b")
+%     plot(t0,conv_force(iPlot,:),"r")
+%     plot(t0,restoring_force(iPlot,:),"g")
+%     plot(t0,h_force(iPlot,:),"y")
+%     plot(t0,net_force(iPlot,:),"k")
+%     hold off
+% end
+%----------------------------------------------%
 
 %convert to [cos, sin] ceofficient form
 h_frequency_alt = zeros(size(h_frequency));
@@ -199,7 +231,7 @@ function X = fourier_coefficients(t,x)
 % dtMin = T/length(t);
 % tLin = t(1):dtMin:t(end);
 max_points = length(t);
-num_points = ceil(max_points*0.8);
+num_points = ceil(max_points*1);
 t_lin = linspace(t(1),t(end),num_points);
 
 L = length(t_lin);   %discrete length
@@ -207,7 +239,7 @@ L = length(t_lin);   %discrete length
 x_lin = interp1(t,x,t_lin);
 
 % x_signal = [x_lin(1),repmat(x_lin(2:end),1,5)];
-x_signal = x_lin(1:(end-1));
+x_signal = x_lin(1:(end-1)); %!!!!!!
 
 X = fft(x_signal);
 X = X/(L-1);
@@ -217,63 +249,69 @@ end
 %-------------------------------------------------------------------------%
 %-- Harmonic Balance Helpers
 %-------------------------------------------------------------------------%
-function C_n = c_0(a_0,a_n,num_harmonics)
-A_n = zeros(num_harmonics,1);
-B_n = zeros(num_harmonics,1);
-
-A_0 = a_0(1);
-for iHarmonic = 1:num_harmonics
-    A_n(iHarmonic) = A_n(iHarmonic) + 0.5*a_n(iHarmonic);
-    B_n(iHarmonic) = B_n(iHarmonic) + 0.5*a_n(iHarmonic); % dont "correct"
-end
-C_n = convert_to_C(A_0,A_n,B_n,num_harmonics);
-end
-%-------------------------------------------------------------------------%
-function C_n = c_k(a_0,a_n,b_n,kHarmonic,num_harmonics)
-A_n = zeros(num_harmonics,1);
-B_n = zeros(num_harmonics,1);
-
-A_n(kHarmonic) = A_n(kHarmonic) + a_0;
-A_0 = a_n(kHarmonic);
-
-for nHarmonic = 1:(kHarmonic-1)
-    A_n(nHarmonic) = A_n(nHarmonic) + 0.5*a_n(kHarmonic-nHarmonic);
-    B_n(nHarmonic) = B_n(nHarmonic) - 0.5*b_n(kHarmonic-nHarmonic);
-end
-
-for nHarmonic = 1:(num_harmonics-kHarmonic)
-    A_n(nHarmonic) = A_n(nHarmonic) + 0.5*a_n(nHarmonic+kHarmonic);
-    B_n(nHarmonic) = B_n(nHarmonic) + 0.5*b_n(nHarmonic+kHarmonic);
-end
-
-for nHarmonic = (kHarmonic+1):(num_harmonics)
-    A_n(nHarmonic) = A_n(nHarmonic) + 0.5*a_n(nHarmonic-kHarmonic);
-    B_n(nHarmonic) = B_n(nHarmonic) + 0.5*b_n(nHarmonic-kHarmonic);
-end
+function C_n = c_0(a_0,a_n,b_n,num_harmonics)
+%coeffs for unknown h fourier coefficients
+A_0 = a_0;
+A_n = 0.5*a_n;
+B_n = 0.5*b_n;
 
 C_n = convert_to_C(A_0,A_n,B_n,num_harmonics);
 end
 %-------------------------------------------------------------------------%
-function C_n = d_k(a_0,a_n,b_n,kHarmonic,num_harmonics)
+function C_n = c_k(a_0,a_n,b_n,k_harmonic,diff_num,num_harmonics)
 A_n = zeros(num_harmonics,1);
 B_n = zeros(num_harmonics,1);
 
-B_n(kHarmonic) = B_n(kHarmonic) + a_0;
-A_0 = B_n(kHarmonic);
-
-for nHarmonic = 1:(kHarmonic-1)
-    A_n(nHarmonic) = A_n(nHarmonic) + 0.5*b_n(kHarmonic-nHarmonic);
-    B_n(nHarmonic) = B_n(nHarmonic) + 0.5*a_n(kHarmonic-nHarmonic);
+A_n(k_harmonic) = A_n(k_harmonic) + k_harmonic^diff_num*a_0;
+if diff_num == 0
+    A_0 = a_n(k_harmonic);
+else
+    A_0 = 0;
 end
 
-for nHarmonic = 1:(num_harmonics-kHarmonic)
-    A_n(nHarmonic) = A_n(nHarmonic) + 0.5*b_n(nHarmonic+kHarmonic);
-    B_n(nHarmonic) = B_n(nHarmonic) - 0.5*a_n(nHarmonic+kHarmonic);
+for nHarmonic = 1:(k_harmonic-1)
+    A_n(nHarmonic) = A_n(nHarmonic) + 0.5*a_n(k_harmonic-nHarmonic)*nHarmonic^diff_num;
+    B_n(nHarmonic) = B_n(nHarmonic) - 0.5*b_n(k_harmonic-nHarmonic)*nHarmonic^diff_num;
 end
 
-for nHarmonic = (kHarmonic+1):(num_harmonics)
-    A_n(nHarmonic) = A_n(nHarmonic) - 0.5*b_n(nHarmonic-kHarmonic);
-    B_n(nHarmonic) = B_n(nHarmonic) + 0.5*a_n(nHarmonic-kHarmonic);
+for nHarmonic = 1:(num_harmonics-k_harmonic)
+    A_n(nHarmonic) = A_n(nHarmonic) + (-1)^diff_num*0.5*a_n(nHarmonic+k_harmonic)*nHarmonic^diff_num;
+    B_n(nHarmonic) = B_n(nHarmonic) + (-1)^diff_num*0.5*b_n(nHarmonic+k_harmonic)*nHarmonic^diff_num;
+end
+
+for nHarmonic = (k_harmonic+1):(num_harmonics)
+    A_n(nHarmonic) = A_n(nHarmonic) + 0.5*a_n(nHarmonic-k_harmonic)*nHarmonic^diff_num;
+    B_n(nHarmonic) = B_n(nHarmonic) + 0.5*b_n(nHarmonic-k_harmonic)*nHarmonic^diff_num;
+end
+
+C_n = convert_to_C(A_0,A_n,B_n,num_harmonics);
+end
+%-------------------------------------------------------------------------%
+function C_n = d_k(a_0,a_n,b_n,k_harmonic,diff_num,num_harmonics)
+A_n = zeros(num_harmonics,1);
+B_n = zeros(num_harmonics,1);
+
+B_n(k_harmonic) = B_n(k_harmonic) + k_harmonic^diff_num*a_0;
+if diff_num == 0
+    A_0 = b_n(k_harmonic); 
+else
+    A_0 = 0;
+end
+
+
+for nHarmonic = 1:(k_harmonic-1)
+    A_n(nHarmonic) = A_n(nHarmonic) + 0.5*b_n(k_harmonic-nHarmonic)*nHarmonic^diff_num;
+    B_n(nHarmonic) = B_n(nHarmonic) + 0.5*a_n(k_harmonic-nHarmonic)*nHarmonic^diff_num;
+end
+
+for nHarmonic = 1:(num_harmonics-k_harmonic)
+    A_n(nHarmonic) = A_n(nHarmonic) + (-1)^diff_num*0.5*b_n(nHarmonic+k_harmonic)*nHarmonic^diff_num;
+    B_n(nHarmonic) = B_n(nHarmonic) - (-1)^diff_num*0.5*a_n(nHarmonic+k_harmonic)*nHarmonic^diff_num;
+end
+
+for nHarmonic = (k_harmonic+1):(num_harmonics)
+    A_n(nHarmonic) = A_n(nHarmonic) - 0.5*b_n(nHarmonic-k_harmonic)*nHarmonic^diff_num;
+    B_n(nHarmonic) = B_n(nHarmonic) + 0.5*a_n(nHarmonic-k_harmonic)*nHarmonic^diff_num;
 end
 
 C_n = convert_to_C(A_0,A_n,B_n,num_harmonics);
@@ -281,7 +319,7 @@ end
 %-------------------------------------------------------------------------%
 function C_n = convert_to_C(A_0,A_n,B_n,num_harmonics)
 num_coeffs = 2*num_harmonics+1;
-C_n = zeros(num_coeffs,1);
+C_n = zeros(1,num_coeffs);
 
 cos_index = 2:2:num_coeffs;
 sin_index = 3:2:num_coeffs;
@@ -330,4 +368,25 @@ for iHarmonic = 1:num_harmonics
         x(time_dims{:}) = x(time_dims{:}) + sin_coeffs(coeff_dims{:}).*sin(iHarmonic*omega*t(iTime));
     end
 end
+end
+%------------------------------------------------------------------------%
+function coeffs_dt = differentiate_coefficients(coeffs,omega)
+num_coefficients = size(coeffs,2);
+num_harmonics = (num_coefficients-1)/2;
+num_modes = size(coeffs,1);
+
+cos_index = 2:2:num_coefficients;
+sin_index = 3:2:num_coefficients;
+
+diff_prod = 1:num_harmonics;
+
+cos_coeffs = coeffs(:,cos_index);
+cos_dt_coeffs = -omega*cos_coeffs.*diff_prod;
+
+sin_coeffs = coeffs(:,sin_index);
+sin_dt_coeffs = omega*sin_coeffs.*diff_prod;
+
+coeffs_dt = zeros(num_modes,num_coefficients);
+coeffs_dt(:,cos_index) = sin_dt_coeffs;
+coeffs_dt(:,sin_index) = cos_dt_coeffs;
 end

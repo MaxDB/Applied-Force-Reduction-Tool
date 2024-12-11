@@ -28,6 +28,17 @@ I_h = eye(num_h_modes);
 
 h_coupling_gradient = zeros(num_dofs,num_h_modes,num_loadcases);
 h_stiffness = zeros(num_h_modes,num_h_modes,num_loadcases);
+
+%%% TEST
+% Plot_Settings.plot_type = "physical";
+% Plot_Settings.coords = [3,2,1];
+% Manifold_One.system = "mass_spring_roller_1";
+% Manifold_Two.system = "mass_spring_roller_12";
+% ax = compare_stress_manifold({Manifold_One,Manifold_Two},"opts",Plot_Settings);
+% hold(ax,"on")
+% x_tilde = Static_Data.get_dataset_values("physical_displacement");
+%%%%
+
 for iLoad = 1:num_loadcases
     if is_fe_system
         K_i = K_array.get_matrix(iLoad);
@@ -41,6 +52,14 @@ for iLoad = 1:num_loadcases
 
     h_coupling_gradient(:,:,iLoad) = disp_hat_i/h_i;
     h_stiffness(:,:,iLoad) =  I_h/h_i;
+
+
+    %%% TEST
+    % x_tilde_i = x_tilde(:,iLoad);
+    % x_i = disp_hat_i + x_tilde_i;
+    % x_minus_i = -disp_hat_i + x_tilde_i;
+    % % plot3([x_minus_i(3,1),x_i(3,1)],[x_minus_i(2,1),x_i(2,1)],[x_minus_i(1,1),x_i(1,1)])
+    % plot3([x_minus_i(3,2),x_i(3,2)],[x_minus_i(2,2),x_i(2,2)],[x_minus_i(1,2),x_i(1,2)])
 end
 
 stiffness = Model.stiffness;
