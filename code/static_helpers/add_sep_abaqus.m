@@ -8,6 +8,12 @@ project_path = get_project_path;
 setup_time_start = tic;
 
 all_dofs = Model.node_mapping(end,1);
+deactivated_dofs = mod(all_dofs,NUM_DIMENSIONS) ~= 0;
+if deactivated_dofs
+    % replace with real solution
+    EXCLUDED_DOF = 242*[4,5,6];
+    all_dofs = floor(all_dofs/NUM_DIMENSIONS)*NUM_DIMENSIONS +NUM_DIMENSIONS;
+end
 num_seps = size(force_ratio,2);
 
 if ~exist("restart_type","var")
@@ -197,7 +203,6 @@ sep_ends = zeros(num_seps,1);
 load_step_counter = 0;
 total_step_counter = 0;
 
-
 try
     input_ID = fopen("temp\" + new_job + ".inp","w");
     fprintf(input_ID,'%s\r\n',geometry{:,1});
@@ -236,11 +241,13 @@ try
             sep_id(:,load_step_counter) = iSep;
 
             step_force = physical_force*force_scale_factors(iLoad) + physical_base_force;
+           
+            
             step_force_label = strings(all_dofs,1);
             for iDimension = 1:NUM_DIMENSIONS
                 dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
                 step_force_label(dimension_span,1) = force_label(dimension_span,1) + step_force(coordinate_index+iDimension,1);
-            end
+             end
 
             if iLoad == 1
                 step_max_inc = max_inc + num_sep_loadcases;
@@ -257,6 +264,9 @@ try
             static_step{disp_print_line} = "*NODE PRINT,SUMMARY=NO,FREQUENCY = " + step_max_inc;
             static_step{energy_print_line} = "*ENERGY PRINT, FREQUENCY = " + step_max_inc;
 
+            if deactivated_dofs
+                step_force_label(EXCLUDED_DOF) = [];
+            end
 
             fprintf(input_ID,'%s\r\n',static_step{1:(load_def_line-1),1});
             fprintf(input_ID,'%s\r\n',step_force_label(:));

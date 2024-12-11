@@ -60,22 +60,35 @@ cd(project_directory)
 
 % Apply boundary conditions
 K = sparse(pre_K(:,1),pre_K(:,2),pre_K(:,3));
+M = sparse(pre_M(:,1),pre_M(:,2),pre_M(:,3));
+
+%%% Added for Xiao Xiao's beam
+% zero stiffness but still appearing with sparse output?
+% due to constraint?
+zero_indicies = pre_K(pre_K(:,3) == 0,1:2);
+ci_zero = zero_indicies(:,1);
+%%
+
+
 indicies = pre_K(pre_K(:,3) == 1e36,1:2);
 ci = indicies(:,1);
 
 K_bc = K;
-K_bc(ci,:) = [];
-K_bc(:,ci) = [];
+K_bc([ci;ci_zero],:) = [];
+K_bc(:,[ci;ci_zero]) = [];
 
-M = sparse(pre_M(:,1),pre_M(:,2),pre_M(:,3));
+
 M_bc = M;
-M_bc(ci,:) = [];
-M_bc(:,ci) = [];
+M_bc([ci;ci_zero],:) = [];
+M_bc(:,[ci;ci_zero]) = [];
+
+
+
 
 
 % Caclulate node mapping
 dof_bc = length(K_bc);
-dof = length(K);
+dof = length(K) - length(ci_zero);
 
 node_map = zeros(dof,2);
 node_map(:,1) = (1:dof)';
