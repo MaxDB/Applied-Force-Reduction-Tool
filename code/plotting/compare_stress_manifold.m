@@ -8,19 +8,24 @@ end
 keyword_args = varargin(1:2:num_args);
 keyword_values = varargin(2:2:num_args);
 Plot_Settings = struct([]);
+ax = [];
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
         case "opts"
             Plot_Settings = keyword_values{arg_counter};
+        case "axes"
+            ax = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
 end
 %-------------------------------------------------------------------------%
-fig = figure;
-ax = axes(fig);
-
+if isempty(ax)
+    fig = figure;
+    ax = axes(fig);
+end
+colours = get_plot_colours(1);
 
 num_manifolds = length(manifolds);
 for iManifold = 1:num_manifolds
@@ -30,19 +35,40 @@ for iManifold = 1:num_manifolds
     if isfield(Manifold,"plot_validation_manifold")
         validation_manifold_plotting = Manifold.plot_validation_manifold;
     end
+    validation_orbit_plotting = true;
+    if isfield(Manifold,"plot_validation_orbit")
+        validation_orbit_plotting = Manifold.plot_validation_orbit;
+    end
 
     if isstring(Dyn_Data)
         Dyn_Data = initalise_dynamic_data(Dyn_Data);
     end
-    ax = plot_manifold(ax,Dyn_Data,Plot_Settings);
+    ax = plot_manifold(ax,Dyn_Data,Plot_Settings,colours(1,:));
 
     if ~isfield(Manifold,"orbit")
         continue
     end
+
+    
     num_orbits = size(Manifold.orbit,1);
     for iOrbit = 1:num_orbits
         orbit_data = Manifold.orbit(iOrbit,:);
-        ax = plot_orbit(ax,Dyn_Data,orbit_data,Plot_Settings,validation_manifold_plotting);
+        if isstring(orbit_data(1))
+            switch orbit_data(2)
+                case "closest"
+                    manifold_id = str2double(orbit_data(3));
+                    sol_num = str2double(orbit_data(1));
+                    comparative_manifold = manifolds{manifold_id};
+                    Dyn_Data_Comp = comparative_manifold.system;
+                    comparative_orbit = comparative_manifold.orbit(iOrbit,:);
+                    orbit_data = get_closest_orbit(Dyn_Data,sol_num,Dyn_Data_Comp,comparative_orbit);
+                otherwise
+                    continue
+            end
+        end
+        for jOrbit = 1:size(orbit_data,1)
+            ax = plot_orbit(ax,Dyn_Data,orbit_data(jOrbit,:),Plot_Settings,validation_orbit_plotting,validation_manifold_plotting);
+        end
     end
 
 end
@@ -64,7 +90,12 @@ xlabel(ax,labels(1));
 ylabel(ax,labels(2))
 zlabel(ax,labels(3))
 
-light("Position",[1,1,1])
+if ~isprop(Plot_Settings,"light_on")
+    Plot_Settings.light_on = 1;
+end
+if Plot_Settings.light_on
+    light(ax,"Position",[0,0,1],"Color",0.8*[1,1,1])
+end
 % daspect([1 1 1])
 %-------------------------------------------------------------------------%
 if ~PLOT_LEGEND
@@ -95,13 +126,16 @@ for iLine = 1:num_lines
                 orbit_display = "\hat{o}";
             end
             line.DisplayName = "$" + orbit_display + manifold_def + ":" + orbit_def + "$";
+        case "vm"
+            line.DisplayName = "$\mathcal{V}(t)" + manifold_def + "$";
+        
     end
 end
-leg = legend;
+leg = legend(ax);
 leg.Interpreter = "latex";
 end
 %-------------------------------------------------------------------------%
-function ax = plot_manifold(ax,Dyn_Data,Plot_Settings)
+function ax = plot_manifold(ax,Dyn_Data,Plot_Settings,colour)
 PLOT_RESOLUTION = 101;
 MESH_ALPHA = 0.5;
 LINE_WIDTH = 1;
@@ -156,14 +190,15 @@ switch num_r_modes
         Z_BC = reshape(Z_array,[num_dof,size(X_BC)]);
         Z_BC = permute(Z_BC,[2,3,1]);
 
-        colour_data = ones(size(Z_BC,[1,2]));
+        colour_data = ones([size(Z_BC,[1,2]),3]).*reshape(colour,[1,1,3]);
+        
 
         mesh(ax,Z_BC(:,:,plot_order(1)),Z_BC(:,:,plot_order(2)),Z_BC(:,:,plot_order(3)),colour_data,mesh_settings{:},"tag",manifold_name);
 end
 hold(ax,"off")
 end
 %-------------------------------------------------------------------------%
-function ax = plot_orbit(ax,Dyn_Data,orbit_data,Plot_Settings,validation_manifold_plotting)
+function ax = plot_orbit(ax,Dyn_Data,orbit_data,Plot_Settings,validation_orbit_plotting,validation_manifold_plotting)
 LINE_WIDTH = 2;
 
 line_style = {"linewidth",LINE_WIDTH};
@@ -182,17 +217,18 @@ if num_r_modes == 1
     orbit_style = ".-";
 end
 r_orbit = Orbit.xbp(:,1:num_r_modes)';
-num_time_points = size(r_orbit,2);
+t0 = Orbit.tbp';
+
 x_tilde = Rom.Physical_Displacement_Polynomial.evaluate_polynomial(r_orbit);
 
 plot_order = Plot_Settings.coords;
 hold(ax,"on")
 p = plot3(ax,x_tilde(plot_order(1),:),x_tilde(plot_order(2),:),x_tilde(plot_order(3),:),orbit_style,line_style{:},"tag",orbit_name);
 hold(ax,"off")
-data_tip_row = dataTipTextRow("time point",1:num_time_points);
+data_tip_row = dataTipTextRow("time (s)",t0);
 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
-if isempty(Validation_orbit)
+if isempty(Validation_orbit) || ~validation_orbit_plotting
     return
 end
 validation_orbit_name = "v" + orbit_name;
@@ -212,27 +248,35 @@ for iPoint = 1:num_points
 end
 
 hold(ax,"on")
-p = plot3(ax,x_hat(plot_order(1),:),x_hat(plot_order(2),:),x_hat(plot_order(3),:),"--",line_style{:},"tag",validation_orbit_name);
+p = plot3(ax,x_hat(plot_order(1),:),x_hat(plot_order(2),:),x_hat(plot_order(3),:),"-",line_style{:},"tag",validation_orbit_name);
 hold(ax,"off")
 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
-if validation_manifold_plotting
+if validation_manifold_plotting > 0
     % Static_Data = load_static_data(Rom);
     % Static_Data = Static_Data.add_validation_data(Sol.validation_modes,1);
     % Rom = Reduced_System(Static_Data);
-    ax = plot_validation_manifold_time(ax,Rom,r_orbit,h_orbit,Plot_Settings);
+    t_point = validation_manifold_plotting;
+    ax = plot_validation_manifold_time(ax,t_point,Rom,r_orbit,h_orbit,Plot_Settings);
 end
 end
 %-------------------------------------------------------------------------%
-function ax = plot_validation_manifold_time(ax,Rom,r_orbit,h_orbit,Plot_Settings)
+function ax = plot_validation_manifold_time(ax,t_point,Rom,r_orbit,h_orbit,Plot_Settings)
 H_LIM_SCALE_FACTOR = 1.5;
-PLOT_RESOLUTION = 101;
-MESH_ALPHA = 0.5;
+PLOT_RESOLUTION = 2;
+MESH_ALPHA = 1;
+
+manifold_colour = get_plot_colours(3);
 
 mesh_settings = {"EdgeColor","none","FaceColor","interp","FaceLighting","gouraud","FaceAlpha",MESH_ALPHA};
 manifold_name = "vm-" + join(string(Rom.Model.reduced_modes),",");
 
 plot_order = Plot_Settings.coords;
+
+num_h_modes = size(h_orbit,1);
+if num_h_modes > 2
+    return
+end
 %---------------------------------------
 orbit_lim = [min(h_orbit,[],2),max(h_orbit,[],2)].*H_LIM_SCALE_FACTOR;
 
@@ -245,8 +289,6 @@ X_array = reshape(X,1,num_points);
 Y_array = reshape(Y,1,num_points);
 h_array = [X_array;Y_array];
 
-
-t_point = 148;
 x_tilde = Rom.Physical_Displacement_Polynomial.evaluate_polynomial(r_orbit(:,t_point));
 x_hat_grad = Rom.Low_Frequency_Coupling_Gradient_Polynomial.evaluate_polynomial(r_orbit(:,t_point));
 
@@ -256,7 +298,7 @@ num_dof = size(x_hat,1);
 Z = reshape(x_hat,[num_dof,size(X)]);
 Z = permute(Z,[2,3,1]);
 
-colour_data = ones(size(Z,[1,2]))/2;
+colour_data = ones([size(Z,[1,2]),3]).*reshape(manifold_colour,[1,1,3]);
 
 %validation whisker
 hold(ax,"on")
@@ -264,16 +306,16 @@ mesh(ax,Z(:,:,plot_order(1)),Z(:,:,plot_order(2)),Z(:,:,plot_order(3)),colour_da
 hold(ax,"off")
 
 %r orbit time point
-hold(ax,"on")
-plot3(x_tilde(plot_order(1)),x_tilde(plot_order(2)),x_tilde(plot_order(3)),"x")
-hold(ax,"off")
-
-%h orbit time point
-h_t = h_orbit(:,t_point);
-x_hat_t = x_tilde + x_hat_grad*h_t;
-hold(ax,"on")
-plot3(x_hat_t(plot_order(1)),x_hat_t(plot_order(2)),x_hat_t(plot_order(3)),"x")
-hold(ax,"off")
+% hold(ax,"on")
+% plot3(ax,x_tilde(plot_order(1)),x_tilde(plot_order(2)),x_tilde(plot_order(3)),"x")
+% hold(ax,"off")
+% 
+% %h orbit time point
+% h_t = h_orbit(:,t_point);
+% x_hat_t = x_tilde + x_hat_grad*h_t;
+% hold(ax,"on")
+% plot3(x_hat_t(plot_order(1)),x_hat_t(plot_order(2)),x_hat_t(plot_order(3)),"x")
+% hold(ax,"off")
 end
 
 
@@ -396,3 +438,33 @@ end
 % end
 
 
+function matched_orbits = get_closest_orbit(Dyn_Data,sol_num,Dyn_Data_Comp,comparative_orbit)
+if isstring(Dyn_Data)
+    Dyn_Data = initalise_dynamic_data(Dyn_Data);
+end
+if isstring(Dyn_Data_Comp)
+    Dyn_Data_Comp = initalise_dynamic_data(Dyn_Data_Comp);
+end
+
+comparative_sol_num = comparative_orbit(1);
+comparative_orbit_id = comparative_orbit(2);
+Sol_Comp = Dyn_Data_Comp.load_solution(comparative_sol_num);
+comparative_orbit_frequency = Sol_Comp.frequency(comparative_orbit_id);
+
+Sol = Dyn_Data.load_solution(sol_num);
+frequency = Sol.frequency;
+
+% find sign changes
+frequency_diff = frequency - comparative_orbit_frequency;
+frequency_diff_sign = sign(frequency_diff);
+sign_diff = find(diff(frequency_diff_sign) ~= 0);
+num_matches = length(sign_diff);
+matched_orbits = zeros(num_matches,2);
+matched_orbits(:,1) = sol_num;
+for iMatch = 1:num_matches
+    matched_index = sign_diff(iMatch) + [0,1];
+    bounds = frequency_diff(matched_index);
+    [~,closest_bound] = min(abs(bounds));
+    matched_orbits(iMatch,2) = matched_index(closest_bound);
+end
+end
