@@ -206,6 +206,41 @@ classdef Reduced_System
 
         end
         %-----------------------------------------------------------------%
+        function Validation_Beta_Bar_Data = get_h_beta_bar(obj,h_disp_coeff_diff,physical_disp_coeffs)
+
+            %reformat h_disp_coeffs to input differential form
+            h_coeff_size = size(h_disp_coeff_diff);
+            num_coeffs = h_coeff_size(1);
+            num_dof = h_coeff_size(2);
+            num_validation_modes = h_coeff_size(3);
+            
+            num_combined_coeffs = num_coeffs*num_validation_modes;
+            h_disp_coeff = zeros(num_combined_coeffs,num_dof);
+            for iMode = 1:num_validation_modes
+                mode_index = iMode:num_validation_modes:num_combined_coeffs;
+                h_disp_coeff(mode_index,:) = h_disp_coeff_diff(:,:,iMode);
+            end
+
+            h_disp_h_disp = obj.get_beta_mode(h_disp_coeff,h_disp_coeff');
+            h_disp_r_disp = obj.get_beta_mode(h_disp_coeff,physical_disp_coeffs);
+            
+            num_physical_disp_coeffs = size(physical_disp_coeffs,2);
+            h_disp_h_disp_diff = zeros(num_coeffs,num_validation_modes,num_validation_modes,num_coeffs);
+            h_disp_r_disp_diff = zeros(num_coeffs,num_validation_modes,num_physical_disp_coeffs);
+            for iMode = 1:num_validation_modes
+                mode_index_one = iMode:num_validation_modes:num_combined_coeffs;
+                h_disp_r_disp_diff(:,iMode,:) = h_disp_r_disp(mode_index_one,:);
+                for jMode = 1:num_validation_modes
+                    mode_index_two = jMode:num_validation_modes:num_combined_coeffs;
+                    h_disp_h_disp_diff(:,iMode,jMode,:) = h_disp_h_disp(mode_index_one,mode_index_two);
+                end
+            end
+            Validation_Beta_Bar_Data.h_disp = h_disp_h_disp_diff;
+            Validation_Beta_Bar_Data.h_disp_r_disp = h_disp_r_disp_diff;
+            % Beta_Bar_Data.h_disp = obj.get_beta_mode(h_disp_coeff_diff,permute(h_disp_coeff_diff,[2,3,1]));
+            % Beta_Bar_Data.h_disp_r_disp = obj.get_beta_mode(h_disp_coeff_diff,physical_disp_coeffs);
+        end
+        %-----------------------------------------------------------------%
         function input_index = get_max_input_order(obj)
             num_modes = length(obj.Model.reduced_modes);
             degree(1) = obj.Force_Polynomial.polynomial_degree;
@@ -262,8 +297,10 @@ classdef Reduced_System
                     H_Disp_Grad_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
                     h_disp_coeff = H_Disp_Grad_Poly.coefficients;
 
-                    Beta_Bar_Data.h_disp = obj.get_beta_mode(h_disp_coeff,permute(h_disp_coeff,[2,3,1]));
-                    Beta_Bar_Data.h_disp_r_disp = obj.get_beta_mode(h_disp_coeff,physical_disp_coeffs);
+                    Beta_Bar_Data = obj.get_h_beta_bar(h_disp_coeff,physical_disp_coeffs);
+
+                    % Beta_Bar_Data.h_disp = obj.get_beta_mode(h_disp_coeff,permute(h_disp_coeff,[2,3,1]));
+                    % Beta_Bar_Data.h_disp_r_disp = obj.get_beta_mode(h_disp_coeff,physical_disp_coeffs);
 
                    
                     Eom_Input.input_order = input_order;
@@ -298,9 +335,9 @@ classdef Reduced_System
                     mass = obj.Model.mass;
                     L_disp_transform = (L_evecs'*mass);
 
-
-                    Beta_Bar_Data.h_disp = obj.get_beta_mode(h_disp_coeff,permute(h_disp_coeff,[2,3,1]));
-                    Beta_Bar_Data.h_disp_r_disp = obj.get_beta_mode(h_disp_coeff,physical_disp_coeffs);
+                    Beta_Bar_Data = obj.get_h_beta_bar(h_disp_coeff,physical_disp_coeffs);
+                    % Beta_Bar_Data.h_disp = obj.get_beta_mode(h_disp_coeff,permute(h_disp_coeff,[2,3,1]));
+                    % Beta_Bar_Data.h_disp_r_disp = obj.get_beta_mode(h_disp_coeff,physical_disp_coeffs);
                     Beta_Bar_Data.r_disp = obj.get_beta_mode(physical_disp_coeffs',physical_disp_coeffs);
 
                     Eom_Input.input_order = input_order;
