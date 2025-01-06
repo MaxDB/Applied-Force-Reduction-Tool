@@ -2,13 +2,13 @@ function stress = solution_max_disp_stress(orbits,Rom,Additional_Output)
 STRESS_TYPE = "von mises";
 CALCULATION_TYPE = "extreme displacement";
 STRESS_SECTION_POINT = 3;
-NUM_DIMENSIONS = 6;
+num_dimensions = get_num_node_dimensions(Rom.Model);
 
 Model = Rom.Model;
 num_dofs = Model.num_dof;
 num_modes = length(Model.reduced_modes);
 node_map = Model.node_mapping;
-num_nodes = max(node_map(:,1))/NUM_DIMENSIONS;
+num_nodes = max(node_map(:,1))/num_dimensions;
 
 
 num_orbits = size(orbits,1);
@@ -21,7 +21,7 @@ dof_bc = Additional_Output.dof;
 
 
 dof = node_map(node_map(:,1) == dof_bc,2);
-dof_node = 1 + (dof_bc - mod(dof_bc,6))/NUM_DIMENSIONS;
+dof_node = 1 + (dof_bc - mod(dof_bc,6))/num_dimensions;
 
 switch CALCULATION_TYPE
     case "extreme displacement"

@@ -1,6 +1,6 @@
 function [stress,stress_labels,section_points] = stress_simulation_abaqus(x_0,x_dot_0,f_r_0,Model,job_id)
 JOB_NAME = "stress_analysis";
-NUM_DIMENSIONS = 6;
+num_dimensions = get_num_node_dimensions(Model);
 project_path = get_project_path;
 
 
@@ -74,12 +74,12 @@ end
 %-------------------------------------------------------------------------%
 %%% Create forcing tempate
 force_label = strings(all_dofs,1);
-num_nodes = (all_dofs/NUM_DIMENSIONS);
+num_nodes = (all_dofs/num_dimensions);
 for iNode = 1:num_nodes
     node_label = instance_name + "." + iNode;
     force_label(iNode) = node_label;
 
-    for iDimension = 1:NUM_DIMENSIONS
+    for iDimension = 1:num_dimensions
         dimension_label = "," + iDimension + ",";
         force_label(iNode+num_nodes*(iDimension-1),1) = node_label + dimension_label;
     end
@@ -87,7 +87,7 @@ end
 
 %-------------------------------------------------------------------------%
 force_transform = Model.mass*Model.reduced_eigenvectors;
-coordinate_index = ((1:num_nodes)-1)*NUM_DIMENSIONS;
+coordinate_index = ((1:num_nodes)-1)*num_dimensions;
 
 %-------------------------------------------------------------------------%
 input_id = fopen("temp\" + new_job + ".inp","w");
@@ -98,7 +98,7 @@ step_force_bc = force_transform*f_r_0;
 step_force = zeros(all_dofs,1);
 step_force(Model.node_mapping(:,1),:) = step_force_bc(Model.node_mapping(:,2),:);
 step_force_label = strings(all_dofs,1);
-for iDimension = 1:NUM_DIMENSIONS
+for iDimension = 1:num_dimensions
     dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
     step_force_label(dimension_span,1) = force_label(dimension_span,1) + step_force(coordinate_index+iDimension,1);
 end
@@ -106,7 +106,7 @@ end
 step_velocity = zeros(all_dofs,1);
 step_velocity(Model.node_mapping(:,1),:) = x_dot_0(Model.node_mapping(:,2),:);
 step_velocity_label = strings(all_dofs,1);
-for iDimension = 1:NUM_DIMENSIONS
+for iDimension = 1:num_dimensions
     dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
     step_velocity_label(dimension_span,1) = force_label(dimension_span,1) + step_velocity(coordinate_index+iDimension,1);
 end

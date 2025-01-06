@@ -2,7 +2,7 @@ function [r,theta,f,E,additional_data,sep_id] = ...
     add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,add_data_type,clean_data,Model,job_id,initial_load,restart_type)
 
 JOB_NAME = "static_analysis";
-NUM_DIMENSIONS = 3;
+num_dimensions = get_num_node_dimensions(Model);
 project_path = get_project_path;
 
 setup_time_start = tic;
@@ -13,7 +13,7 @@ deactivated_dofs = 0;
 if deactivated_dofs
     % replace with real solution
     EXCLUDED_DOF = 242*[4,5,6]; %#ok<UNRCH>
-    all_dofs = floor(all_dofs/NUM_DIMENSIONS)*NUM_DIMENSIONS +NUM_DIMENSIONS;
+    all_dofs = floor(all_dofs/num_dimensions)*num_dimensions +num_dimensions;
 end
 num_seps = size(force_ratio,2);
 
@@ -142,12 +142,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Create forcing tempate
 force_label = strings(all_dofs,1);
-num_nodes = (all_dofs/NUM_DIMENSIONS);
+num_nodes = (all_dofs/num_dimensions);
 for iNode = 1:num_nodes
     node_label = instance_name + "." + iNode;
     force_label(iNode) = node_label;
     
-    for iDimension = 1:NUM_DIMENSIONS
+    for iDimension = 1:num_dimensions
         dimension_label = "," + iDimension + ",";
         force_label(iNode+num_nodes*(iDimension-1),1) = node_label + dimension_label;
     end
@@ -156,7 +156,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 force_transform = Model.mass*Model.reduced_eigenvectors;
-coordinate_index = ((1:num_nodes)-1)*NUM_DIMENSIONS;
+coordinate_index = ((1:num_nodes)-1)*num_dimensions;
 
 
 total_static_steps = sum(num_loadcases);
@@ -185,7 +185,7 @@ switch add_data_type
             perturbation_force = physical_perturbation_force(:,iMode);
 
             perturbation_force_label = strings(all_dofs,1);
-            for iDimension = 1:NUM_DIMENSIONS
+            for iDimension = 1:num_dimensions
                 dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
                 perturbation_force_label(dimension_span,1) = force_label(dimension_span,1) + perturbation_force(coordinate_index+iDimension,1);
             end
@@ -245,7 +245,7 @@ try
            
             
             step_force_label = strings(all_dofs,1);
-            for iDimension = 1:NUM_DIMENSIONS
+            for iDimension = 1:num_dimensions
                 dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
                 step_force_label(dimension_span,1) = force_label(dimension_span,1) + step_force(coordinate_index+iDimension,1);
              end
@@ -329,7 +329,7 @@ logger(log_message,3)
 
 data_processing_time_start = tic;
 
-[displacement,E,additional_data,additional_data_time] = read_abaqus_static_data(new_job,step_type,num_nodes);
+[displacement,E,additional_data,additional_data_time] = read_abaqus_static_data(new_job,step_type,num_nodes,num_dimensions);
 
 displacement_bc = displacement(Model.node_mapping(:,1),:);
 disp_transform = force_transform';

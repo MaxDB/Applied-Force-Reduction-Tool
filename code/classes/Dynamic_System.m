@@ -90,6 +90,9 @@ classdef Dynamic_System
 
             %Update and set optional calibration settings
             obj = obj.update_calibration_opts(Calibration_Opts);
+
+            %Extract  data from input file
+            obj = obj.set_problem_data;
             
             %Find mass and stiffness matricies and find eigenvectors
             matrix_time_start = tic;
@@ -131,25 +134,85 @@ classdef Dynamic_System
         %-----------------------------------------------------------------%
         %%% Setup
         %-----------------------------------------------------------------%
+        function obj = set_problem_data(obj)
+            if obj.system_type == "direct"
+                return
+            end
+            if obj.Static_Options.static_solver ~= "abaqus"
+                return
+            end
+
+            ELEMENT_DEF = "*Element";
+            ASSEMBLY_DEF = "*Assembly";
+            TYPE_DEF = 'type=';
+
+            geometry = load_geometry(obj);
+            assembly_def_line = find(startsWith(geometry,ASSEMBLY_DEF,'IgnoreCase',true),1,"last");
+            element_def_lines = find(startsWith(geometry(1:assembly_def_line),ELEMENT_DEF,'IgnoreCase',true));
+            elements_def = geometry(element_def_lines);
+
+            num_element_types = length(element_def_lines);
+            if num_element_types > 1
+                warning("multiple element types detected")
+            end
+
+            mesh_data = cell(num_element_types,1);
+            for iElement = 1:num_element_types
+
+                element_def_line = elements_def{iElement};
+                element_def_parts = split(element_def_line,",");
+                element_type_part = element_def_parts{2};
+                type_start = strfind(element_type_part,TYPE_DEF);
+                element_def = element_type_part((type_start+length(TYPE_DEF)):end);
+
+
+
+                switch element_def(1)
+                    case 'C'
+                        element_type = "continuous 3D";
+                        element_dimension = 3;
+                    case 'B'
+                        element_type = "beam";
+                        element_dimension = 6;
+                    case 'S'
+                        element_type = "shell";
+                        element_dimension = 6;
+                    otherwise
+                        error("Unsupported element type: " + element_def)
+                end
+
+            end
+
+            clear("Element_Data")
+            Element_Data.definition = element_def;
+            Element_Data.type = element_type;
+            Element_Data.dimension = element_dimension;
+            mesh_data{iElement} = Element_Data;
+            
+            %------------ save data
+            data_path = "geometry\" + obj.system_name + "\mesh_data";
+            save(data_path,"mesh_data")
+        end
+        %-----------------------------------------------------------------%
         function obj = eigenanalysis(obj,load_cache)
             %extract mass and stiffness matricies and solve generalised
             %eigenvalue problem
-            GEOMETRY_PATH = "geometry\" + obj.system_name + "\";
+            geometry_path = "geometry\" + obj.system_name + "\";
             switch obj.Static_Options.static_solver
                 case "abaqus"
-                    MATRIX_PATH = GEOMETRY_PATH + "matrices";
-                    matrices_loaded = isfile(MATRIX_PATH + ".mat") && load_cache;
+                    matrix_path = geometry_path + "matrices";
+                    matrices_loaded = isfile(matrix_path + ".mat") && load_cache;
                     if matrices_loaded
-                        load(MATRIX_PATH,"M","K","node_map")
+                        load(matrix_path,"M","K","node_map")
 
                         logger("Matrices Loaded",3)
                     else
                         [M,K,node_map] = matrices_abaqus(obj.system_name);
-                        save(MATRIX_PATH,"M","K","node_map")
+                        save(matrix_path,"M","K","node_map")
                     end
 
                 case "matlab"
-                    Analytic_Eom = load_analytic_system(GEOMETRY_PATH + obj.system_name);
+                    Analytic_Eom = load_analytic_system(geometry_path + obj.system_name);
                     M = Analytic_Eom.linear_mass;
                     K = Analytic_Eom.linear_stiffness;
 

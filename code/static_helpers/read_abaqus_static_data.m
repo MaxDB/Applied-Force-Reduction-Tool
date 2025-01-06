@@ -1,13 +1,12 @@
-function [displacement,energy,additional_data,additional_data_time] = read_abaqus_static_data(file_name,step_type,num_nodes)
-NUM_DIMENSIONS = 3;
-num_dofs = num_nodes*NUM_DIMENSIONS;
+function [displacement,energy,additional_data,additional_data_time] = read_abaqus_static_data(file_name,step_type,num_nodes,num_dimensions)
+
 num_steps = length(step_type);
 num_static_steps = sum(step_type(:,1) == "static");
 
 step_start_pattern = "STEP" + whitespacePattern + digitsPattern + whitespacePattern + "INCREMENT" + whitespacePattern + "1";
 energy_pattern = "RECOVERABLE STRAIN ENERGY";
 node_output_pattern = "N O D E   O U T P U T";
-displacement_table_rows = join(["%u",repmat("%f",1,NUM_DIMENSIONS)]," ");
+displacement_table_rows = join(["%u",repmat("%f",1,num_dimensions)]," ");
 % table_pattern = digitsPattern + asManyOfPattern(whitespacePattern + digitsPattern,NUM_DIMENSIONS,NUM_DIMENSIONS); 
 
 %------------------------------------------------------------------------%
@@ -57,7 +56,7 @@ for iStep = 1:num_steps
             output_start_line = find(startsWith(step_data,node_output_pattern,'IgnoreCase',true));
             node_data = step_data(output_start_line:end,1);
             
-            step_displacement = zeros(num_nodes,NUM_DIMENSIONS);
+            step_displacement = zeros(num_nodes,num_dimensions);
             for iLine = 1:length(node_data)
                 line = node_data{iLine,1};
                 if isempty(line)
@@ -94,7 +93,7 @@ for iStep = 1:num_steps
                 output_end_line = output_start_lines(iMode+1);
                 node_data = step_data(output_start_line:output_end_line,1);
 
-                loadcase_displacement = zeros(num_nodes,NUM_DIMENSIONS);
+                loadcase_displacement = zeros(num_nodes,num_dimensions);
                 for iLine = 1:length(node_data)
                     line = node_data{iLine,1};
                     if isempty(line)
