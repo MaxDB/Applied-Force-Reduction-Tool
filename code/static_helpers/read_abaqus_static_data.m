@@ -1,5 +1,6 @@
 function [displacement,energy,additional_data,additional_data_time] = read_abaqus_static_data(file_name,step_type,num_nodes,num_dimensions)
 
+num_dofs = num_nodes*num_dimensions;
 num_steps = length(step_type);
 num_static_steps = sum(step_type(:,1) == "static");
 
