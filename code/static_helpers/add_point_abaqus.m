@@ -2,7 +2,7 @@ function [r,theta,f,E,additional_data] = ...
     add_point_abaqus(applied_force,max_inc,add_data_type,Model,job_id)
 
 JOB_NAME = "static_analysis";
-NUM_DIMENSIONS = 6;
+NUM_DIMENSIONS = 3;
 project_path = get_project_path;
 
 setup_time_start = tic;

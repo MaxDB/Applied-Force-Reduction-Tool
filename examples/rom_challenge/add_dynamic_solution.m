@@ -28,8 +28,8 @@ Continuation_Opts.collation_degree = 6;
 Continuation_Opts.energy_limit_multiplier = 1;
 %-----------------------------------------%
 
-Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
-compare_validation(Dyn_Data,"energy",1,"all")
+% Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+% compare_validation(Dyn_Data,"energy",1,"all")
 Dyn_Data = Dyn_Data.validate_solution(1,"all");
 % Dyn_Data = Dyn_Data.get_fe_output("periodicity",1,"X");
 % Dyn_Data = Dyn_Data.get_max_disp_stress(1,46);

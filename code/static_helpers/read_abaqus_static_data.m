@@ -1,5 +1,5 @@
 function [displacement,energy,additional_data,additional_data_time] = read_abaqus_static_data(file_name,step_type,num_nodes)
-NUM_DIMENSIONS = 6;
+NUM_DIMENSIONS = 3;
 num_dofs = num_nodes*NUM_DIMENSIONS;
 num_steps = length(step_type);
 num_static_steps = sum(step_type(:,1) == "static");
@@ -7,6 +7,7 @@ num_static_steps = sum(step_type(:,1) == "static");
 step_start_pattern = "STEP" + whitespacePattern + digitsPattern + whitespacePattern + "INCREMENT" + whitespacePattern + "1";
 energy_pattern = "RECOVERABLE STRAIN ENERGY";
 node_output_pattern = "N O D E   O U T P U T";
+displacement_table_rows = join(["%u",repmat("%f",1,NUM_DIMENSIONS)]," ");
 % table_pattern = digitsPattern + asManyOfPattern(whitespacePattern + digitsPattern,NUM_DIMENSIONS,NUM_DIMENSIONS); 
 
 %------------------------------------------------------------------------%
@@ -63,8 +64,8 @@ for iStep = 1:num_steps
                     continue
                 end
 
-                line_data = textscan(line,"%u %f %f %f %f %f %f");
-                if isempty(line_data{1,7})
+                line_data = textscan(line,displacement_table_rows);
+                if isempty(line_data{1,end})
                     continue
                 end
                 
@@ -100,8 +101,8 @@ for iStep = 1:num_steps
                         continue
                     end
 
-                    line_data = textscan(line,"%u %f %f %f %f %f %f");
-                    if isempty(line_data{1,7})
+                    line_data = textscan(line,displacement_table_rows);
+                    if isempty(line_data{1,end})
                         continue
                     end
 

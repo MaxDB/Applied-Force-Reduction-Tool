@@ -2,16 +2,17 @@ function [r,theta,f,E,additional_data,sep_id] = ...
     add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,add_data_type,clean_data,Model,job_id,initial_load,restart_type)
 
 JOB_NAME = "static_analysis";
-NUM_DIMENSIONS = 6;
+NUM_DIMENSIONS = 3;
 project_path = get_project_path;
 
 setup_time_start = tic;
 
 all_dofs = Model.node_mapping(end,1);
-deactivated_dofs = mod(all_dofs,NUM_DIMENSIONS) ~= 0;
+% deactivated_dofs = mod(all_dofs,NUM_DIMENSIONS) ~= 0
+deactivated_dofs = 0;
 if deactivated_dofs
     % replace with real solution
-    EXCLUDED_DOF = 242*[4,5,6];
+    EXCLUDED_DOF = 242*[4,5,6]; %#ok<UNRCH>
     all_dofs = floor(all_dofs/NUM_DIMENSIONS)*NUM_DIMENSIONS +NUM_DIMENSIONS;
 end
 num_seps = size(force_ratio,2);
