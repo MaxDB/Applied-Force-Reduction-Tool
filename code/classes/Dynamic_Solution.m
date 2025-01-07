@@ -62,9 +62,9 @@ classdef Dynamic_Solution
             max_disp = solution_data{1,7}(1:num_modes,:);
             orbit_amplitude = abs(max_disp - min_disp)/2;
 
-            switch Add_Output.type
+            switch Add_Output.output
                 case "physical displacement"
-                    physical_amp  = coco_bd_col(bd, "DISP");
+                    additional_output  = coco_bd_col(bd, "DISP");
             end
 
 
@@ -77,9 +77,9 @@ classdef Dynamic_Solution
             Analysis_Output.stability = orbit_stability;
             Analysis_Output.bifurcations = orbit_bifurcation;
 
-            switch Add_Output.type
+            switch Add_Output.output
                 case "physical displacement"
-                    Analysis_Output.additional_dynamic_output = physical_amp;
+                    Analysis_Output.additional_dynamic_output = additional_output;
             end
         end
         %-----------------------------------------------------------------%

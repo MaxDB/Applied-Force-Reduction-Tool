@@ -7,7 +7,8 @@ system_name = "exhaust_1";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
-Additional_Output.type = "physical displacement";
+Additional_Output.output = "physical displacement";
+Additional_Output.type = "max";
 Additional_Output.dof = 1563;
 Additional_Output.special_points = [0.25,0.5,0.75,1,1.5,2,3]*1.5e-3;
 Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
@@ -28,9 +29,9 @@ Continuation_Opts.collation_degree = 6;
 Continuation_Opts.energy_limit_multiplier = 1;
 %-----------------------------------------%
 
-% Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 % compare_validation(Dyn_Data,"energy",1,"all")
-Dyn_Data = Dyn_Data.validate_solution(1,"all");
+% Dyn_Data = Dyn_Data.validate_solution(1,"all");
 % Dyn_Data = Dyn_Data.get_fe_output("periodicity",1,"X");
 % Dyn_Data = Dyn_Data.get_max_disp_stress(1,46);
 

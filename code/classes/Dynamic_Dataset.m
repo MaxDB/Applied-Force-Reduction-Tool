@@ -21,6 +21,16 @@ classdef Dynamic_Dataset
             if ~isfield(Additional_Output,"special_points")
                 Additional_Output.special_points = [];
             end
+            
+            Rom = obj.Dynamic_Model;
+            switch Additional_Output.output
+                case "physical displacement"
+                    node_map = Rom.Model.node_mapping;
+                    Disp_Poly = Rom.Physical_Displacement_Polynomial;
+                    disp_func = @(input_disp) additional_physical_displacement(input_disp,Disp_Poly,Additional_Output,node_map);
+
+                    Additional_Output.output_func = disp_func;
+            end
             obj.Additional_Output = Additional_Output;
         end
         %-----------------------------------------------------------------%

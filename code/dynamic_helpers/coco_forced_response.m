@@ -95,16 +95,12 @@ prob = coco_add_event(prob, 'VBP', 'boundary','ENERGY',energy_limit);
 prob = coco_add_slot(prob, 'energy_slot',@coco_energy_print,data,'cont_print');
 
 % Monitor additional output
-switch Additional_Output.type
+switch Additional_Output.output
     case "physical displacement"
-        node_map = Rom.Model.node_mapping;
+        disp_func = Additional_Output.output_func;
+        coco_disp_func = @(prob,data,u) coco_displacement(prob,data,u,disp_func);
 
-        dof = node_map(node_map(:,1) == Additional_Output.dof,2);
-        Disp_Poly = Rom.Physical_Displacement_Polynomial;
-
-        displacement_func = @(prob,data,u) coco_displacement(prob,data,u,Disp_Poly,dof);
-
-        prob = coco_add_func(prob, 'displacement_monitor', displacement_func, data, 'regular', 'DISP', 'uidx', uidx,'remesh',@coco_energy_remesh);
+        prob = coco_add_func(prob, 'displacement_monitor', coco_disp_func, data, 'regular', 'DISP', 'uidx', uidx,'remesh',@coco_energy_remesh);
         disp_points = Additional_Output.special_points;
         prob = coco_add_event(prob, 'X', 'special point','DISP',disp_points);
 end

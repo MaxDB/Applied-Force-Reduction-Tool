@@ -1,6 +1,6 @@
 function [time,x,x_dot,energy] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,num_periods,min_incs,initial_time,FE_Force_Data,Model,job_id)
 JOB_NAME = "dynamic_analysis";
-NUM_DIMENSIONS = 6;
+num_dimensions = get_num_node_dimensions(Model);
 
 OUTPUT_VELOCITY = 0;
 MAX_DYNAMIC_INC = 1e6;
@@ -14,7 +14,7 @@ setup_time_start = tic;
 
 all_dofs = Model.node_mapping(end,1);
 num_dofs = Model.num_dof;
-num_nodes = (all_dofs/NUM_DIMENSIONS);
+num_nodes = (all_dofs/num_dimensions);
 
 static_settings = zeros(1,4);
 Static_Opts = Model.Static_Options;
@@ -180,7 +180,7 @@ for iNode = 1:num_nodes
     node_label = instance_name + "." + iNode;
     force_label(iNode) = node_label;
 
-    for iDimension = 1:NUM_DIMENSIONS
+    for iDimension = 1:num_dimensions
         dimension_label = "," + iDimension + ",";
         force_label(iNode+num_nodes*(iDimension-1),1) = node_label + dimension_label;
     end
@@ -188,7 +188,7 @@ end
 
 %-------------------------------------------------------------------------%
 force_transform = Model.mass*Model.reduced_eigenvectors;
-coordinate_index = ((1:num_nodes)-1)*NUM_DIMENSIONS;
+coordinate_index = ((1:num_nodes)-1)*num_dimensions;
 
 
 %-------------------------------------------------------------------------%
@@ -201,7 +201,7 @@ step_force_bc = force_transform*f_r_0;
 step_force = zeros(all_dofs,1);
 step_force(Model.node_mapping(:,1),:) = step_force_bc(Model.node_mapping(:,2),:);
 step_force_label = strings(all_dofs,1);
-for iDimension = 1:NUM_DIMENSIONS
+for iDimension = 1:num_dimensions
     dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
     step_force_label(dimension_span,1) = force_label(dimension_span,1) + step_force(coordinate_index+iDimension,1);
 end
@@ -209,7 +209,7 @@ end
 step_velocity = zeros(all_dofs,1);
 step_velocity(Model.node_mapping(:,1),:) = x_dot_0(Model.node_mapping(:,2),:);
 step_velocity_label = strings(all_dofs,1);
-for iDimension = 1:NUM_DIMENSIONS
+for iDimension = 1:num_dimensions
     dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
     step_velocity_label(dimension_span,1) = force_label(dimension_span,1) + step_velocity(coordinate_index+iDimension,1);
 end
@@ -220,7 +220,7 @@ if ~isempty(FE_Force_Data)
     dyn_force = zeros(all_dofs,1);
     dyn_force(Model.node_mapping(:,1),:) = dyn_force_bc(Model.node_mapping(:,2),:);
     dyn_force_label = strings(all_dofs,1);
-    for iDimension = 1:NUM_DIMENSIONS
+    for iDimension = 1:num_dimensions
         dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
         dyn_force_label(dimension_span,1) = force_label(dimension_span,1) + dyn_force(coordinate_index+iDimension,1);
     end
@@ -311,7 +311,7 @@ if ~restart_read
     disp_table_start = find(startsWith(step_data,disp_table_pattern,'IgnoreCase',true),1);
     disp_table_span = disp_table_start:size(step_span,2);
     disp_table_data = step_data(disp_table_span,1);
-    disp_0 = read_abaqus_table(disp_table_data,num_nodes,NUM_DIMENSIONS);
+    disp_0 = read_abaqus_table(disp_table_data,num_nodes,num_dimensions);
     disp_0_bc = disp_0(Model.node_mapping(:,1),:);
 end
 
@@ -359,13 +359,13 @@ for iInc = 1:num_increments
 
     disp_table_span = disp_table_start:size(inc_span,2);
     disp_table_data = inc_data(disp_table_span,1);
-    disp_pre_bc = read_abaqus_table(disp_table_data,num_nodes,NUM_DIMENSIONS);
+    disp_pre_bc = read_abaqus_table(disp_table_data,num_nodes,num_dimensions);
     displacement(:,iInc) = disp_pre_bc(Model.node_mapping(:,1),:);
     
         if OUTPUT_VELOCITY
         vel_table_span = vel_table_start:size(inc_span,2);
         vel_table_data = inc_data(vel_table_span,1);
-        vel_pre_bc = read_abaqus_table(vel_table_data,num_nodes,NUM_DIMENSIONS);
+        vel_pre_bc = read_abaqus_table(vel_table_data,num_nodes,num_dimensions);
         velocity(:,iInc) = vel_pre_bc(Model.node_mapping(:,1),:);
         end
 end

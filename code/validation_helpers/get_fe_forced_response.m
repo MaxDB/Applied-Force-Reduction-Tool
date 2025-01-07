@@ -48,11 +48,9 @@ energy_group = cell(1,num_parallel_jobs);
 amplitude_group = cell(1,num_parallel_jobs);
 periodicity_group = cell(1,num_parallel_jobs);
 simulated_periods_group = cell(1,num_parallel_jobs);
-switch Add_Output.type
+switch Add_Output.output
     case "physical displacement"
         additional_dynamic_output_group = cell(1,num_parallel_jobs);
-        node_map = Model.node_mapping;
-        monitored_dof = node_map(node_map(:,1) == Add_Output.dof,2);
 end
 
 reset_temp_directory()
@@ -110,7 +108,7 @@ for iJob = 1:num_parallel_jobs
                 hold(ax_all{iMode},"on")
             end
 
-            switch Add_Output.type
+            switch Add_Output.output
                 case "physical displacement"
                     fig_physical = figure;
                     fig_physical.Name = "Job " + iJob + ", orbit " + iOrbit;
@@ -144,7 +142,7 @@ for iJob = 1:num_parallel_jobs
                     plot(ax_all{iMode},t_fom+period*NUM_PERIODS*(iStep-1),r_fom(iMode,:))
                 end
                 
-                switch Add_Output.type
+                switch Add_Output.output
                     case "physical displacement"
                         x_dof = x_fom(monitored_dof,:);
                         plot(ax_physical,t_fom+period*NUM_PERIODS*(iStep-1),x_dof)
@@ -187,10 +185,9 @@ for iJob = 1:num_parallel_jobs
         energy(1,iOrbit) = max(kinetic_energy+potential_energy);
         amplitude(:,iOrbit) = abs(max(r_sim,[],2) - min(r_sim,[],2))/2;
 
-        switch Add_Output.type
+        switch Add_Output.output
             case "physical displacement"
-                x_dof = x_sim(monitored_dof,:);
-                additional_dynamic_output(:,iOrbit) = max(abs(x_dof),[],2);
+                additional_dynamic_output(:,iOrbit) = Add_Output.output_func(x_sim);
         end
 
         orbit_sim_time = toc(orbit_sim_time_start);
@@ -213,7 +210,7 @@ fe_forced_orbits.energy = [energy_group{:}];
 fe_forced_orbits.periodicity = [periodicity_group{:}];
 fe_forced_orbits.simulated_periods = [simulated_periods_group{:}];
 
-switch Add_Output.type
+switch Add_Output.output
     case "physical displacement"
         fe_forced_orbits.additional_dynamic_output = [additional_dynamic_output_group{:}];
 end
