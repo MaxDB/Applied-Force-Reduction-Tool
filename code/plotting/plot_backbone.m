@@ -75,6 +75,8 @@ if PLOT_BIFURCATIONS
             bifurcation_size = BB_BIFURCATION_SIZE;
         case "forced"
             bifurcation_size = FRF_BIFURCATION_SIZE;
+        otherwise
+            bifurcation_size = BB_BIFURCATION_SIZE;
     end
 
     bifurcations = Solution.bifurcations;

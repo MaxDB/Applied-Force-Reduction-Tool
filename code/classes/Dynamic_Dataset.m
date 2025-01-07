@@ -98,7 +98,7 @@ classdef Dynamic_Dataset
                 end
             end
             %-------------------------------------------------------------%
-            Rom = obj.Dynamic_Model;
+            % Rom = obj.Dynamic_Model;
             
             switch type
                 case "IC"
@@ -112,10 +112,10 @@ classdef Dynamic_Dataset
             end
             num_orbits = length(orbit_num);
             for iOrbit = 1:num_orbits
-                next_solution_num = obj.num_solutions + 1;
+                % next_solution_num = obj.num_solutions + 1;
 
                 Solution_Type = obj.solution_types{1,solution_num};
-                model_type = Solution_Type.model_type;
+                % model_type = Solution_Type.model_type;
 
                 switch type
                     case "po"
@@ -155,32 +155,44 @@ classdef Dynamic_Dataset
                     case "amplitude"
                         
                     case "force"
+                        % orbit = obj.get_orbit(solution_num,orbit_num(iOrbit));
+                        % 
+                        % t0 = orbit.tbp';
+                        % z0 = orbit.xbp';
+                        % p0 = Solution_Type.amplitude;
+                        % 
+                        % 
+                        % 
+                        % data_path = obj.Dynamic_Model.data_path;
+                        % solution_name = data_path + "dynamic_sol_" + solution_num;
+                        % load(solution_name + "\Nonconservative_Inputs.mat","Nonconservative_Inputs")
+                        % 
+                        % Nonconservative_Inputs.continuation_variable = "amplitude";
+                        % Nonconservative_Inputs.frequency = obj.frequency{1,solution_num}(orbit_num(iOrbit));
+                        % 
+                        % Nonconservative_Inputs = rmfield(Nonconservative_Inputs,"amplitude");
+                        % 
+                        % coco_forced_response(t0,z0,p0,Rom,model_type,obj.Continuation_Options,next_solution_num,obj.Additional_Output,Nonconservative_Inputs);
+                        % obj = obj.analyse_solution(next_solution_num);
+                        % 
+                        % Solution_Type = rmfield(Solution_Type,"amplitude");
+                        % Solution_Type.frequency = obj.frequency{1,solution_num}(orbit_num(iOrbit));
+                        % obj.solution_types{1,next_solution_num} = Solution_Type;
+                        % obj.num_solutions = next_solution_num;
+                        % 
+                        % obj.save_solution("coco_frf",next_solution_num,Nonconservative_Inputs)
+                    case "frf_to_bb"
                         orbit = obj.get_orbit(solution_num,orbit_num(iOrbit));
 
                         t0 = orbit.tbp';
                         z0 = orbit.xbp';
-                        p0 = Solution_Type.amplitude;
 
+                        FRF_Sol = obj.load_solution(solution_num);
+                        Force_Data = FRF_Sol.Force_Data;
+                        Force_Data.continuation_variable = "epsilon";
+                        Damping_Data = FRF_Sol.Damping_Data;
 
-
-                        data_path = obj.Dynamic_Model.data_path;
-                        solution_name = data_path + "dynamic_sol_" + solution_num;
-                        load(solution_name + "\Nonconservative_Inputs.mat","Nonconservative_Inputs")
-
-                        Nonconservative_Inputs.continuation_variable = "amplitude";
-                        Nonconservative_Inputs.frequency = obj.frequency{1,solution_num}(orbit_num(iOrbit));
-
-                        Nonconservative_Inputs = rmfield(Nonconservative_Inputs,"amplitude");
-
-                        coco_forced_response(t0,z0,p0,Rom,model_type,obj.Continuation_Options,next_solution_num,obj.Additional_Output,Nonconservative_Inputs);
-                        obj = obj.analyse_solution(next_solution_num);
-
-                        Solution_Type = rmfield(Solution_Type,"amplitude");
-                        Solution_Type.frequency = obj.frequency{1,solution_num}(orbit_num(iOrbit));
-                        obj.solution_types{1,next_solution_num} = Solution_Type;
-                        obj.num_solutions = next_solution_num;
-
-                        obj.save_solution("coco_frf",next_solution_num,Nonconservative_Inputs)
+                        obj = obj.frf_to_bb(Force_Data,Damping_Data,"opts",Continuation_Opts,"ic",{t0,z0});
                 end
 
 
@@ -248,6 +260,49 @@ classdef Dynamic_Dataset
             obj.save_solution(FRF_Sol,obj.num_solutions)
         end
         %-----------------------------------------------------------------%
+        function obj = frf_to_bb(obj,Force_Data,Damping_Data,varargin)
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            Continuation_Opts = struct([]);
+            type = "rom";
+            initial_condition = [];
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "type"
+                        type = keyword_values{arg_counter};
+                    case "opts"
+                        Continuation_Opts = keyword_values{arg_counter};
+                    case "ic"
+                        initial_condition = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %-------------------------------------------------------------%
+
+            FRF_Settings.Force_Data = Force_Data;
+            FRF_Settings.Damping_Data = Damping_Data;
+            FRF_Settings.Continuation_Opts = Continuation_Opts;
+            FRF_Settings.solution_num = obj.num_solutions + 1;
+            FRF_Settings.Additional_Output = obj.Additional_Output;
+            FRF_Settings.type = type;
+            FRF_Settings.initial_condition = initial_condition;
+
+            Rom = obj.Dynamic_Model;
+            FRF_To_BB_Sol = FRF_To_BB_Solution(Rom,FRF_Settings);
+
+           
+            obj.num_solutions = obj.num_solutions + 1;
+            obj.solution_types{obj.num_solutions} = FRF_To_BB_Sol.Solution_Type;
+            obj.solution_types{obj.num_solutions}.validated = false;
+            obj.save_solution(FRF_To_BB_Sol,obj.num_solutions)
+        end
 
         %-----------------------------------------------------------------%
         % Validation
@@ -317,7 +372,7 @@ classdef Dynamic_Dataset
             solution_path = data_path + solution_name;
 
             switch class(Solution)
-                case {"Backbone_Solution","Forced_Solution"}
+                case {"Backbone_Solution","Forced_Solution","FRF_To_BB_Solution"}
                     file_name = "Sol_Data";
                     movefile("data\temp\" + solution_name,solution_path);
                 case "Validated_Backbone_Solution"
