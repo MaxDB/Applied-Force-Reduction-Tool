@@ -68,9 +68,13 @@ for iSol = 1:num_solutions
                             amplitude_map(round(amplitude)) = numEntries(amplitude_map) + 1;
                        end
                     end
-                    colour_sol = amplitude_map(round(amplitude)); 
+                    colour_sol = amplitude_map(round(amplitude));
                 else
                     colour_sol = "grey";
+                end
+            case "free"
+                if num_solutions == 1
+                    colour_sol = 0;
                 end
         end
         
@@ -88,6 +92,17 @@ for iSol = 1:num_solutions
             ax = plot_h_predicition(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",h_colour_number);
         else
             ax = plot_backbone(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",colour_sol);
+            if Sol_Type.orbit_type == "free"
+                if iscell(ax)
+                    num_axes = size(ax,1);
+                    for iAx = 1:num_axes
+                        uistack(ax{iAx,1}.Children(1),"bottom")
+                    end
+                else
+                    uistack(ax(1).Children(1),"bottom")
+                end
+
+            end
         end
     end
     if PLOT_LEGEND

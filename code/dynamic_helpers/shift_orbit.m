@@ -1,8 +1,11 @@
-function [t_shift,x_shift] = shift_orbit(t,x)
+function [t_shift,x_shift] = shift_orbit(t,x,mode_num)
+if nargin == 2
+    mode_num = 1;
+end
     period = t(end) - t(1);
     omega = 2*pi/period;
 
-    x_frequency = time_to_frequency(x,t,1);
+    x_frequency = time_to_frequency(x(mode_num,:),t,1);
     a1 = x_frequency(2);
     b1 = x_frequency(3);
     %find phase diff compared to cosine

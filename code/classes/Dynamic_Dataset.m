@@ -12,7 +12,7 @@ classdef Dynamic_Dataset
         function obj = Dynamic_Dataset(Model)
             obj.Dynamic_Model = Model;
             
-            obj.Additional_Output.type = "none";
+            obj.Additional_Output.output = "none";
             obj.num_solutions = 0;
             obj.solution_types = {};
         end

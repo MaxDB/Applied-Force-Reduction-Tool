@@ -25,7 +25,7 @@ for arg_counter = 1:num_args/2
             normalise = keyword_values{arg_counter};
         case {"shift_orbit"}
             orbit_shift = keyword_values{arg_counter};
-        case {"validated"}
+        case {"validation"}
             validated = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
@@ -33,11 +33,11 @@ for arg_counter = 1:num_args/2
 end
 %-------------------------------------------------------------------------%
 line_colour = get_plot_colours(colour_num);
-line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour};
+line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour,"DisplayName","r"};
 
 if validated
     validated_line_colour = get_plot_colours(colour_num+1);
-    validated_line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",validated_line_colour};
+    validated_line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",validated_line_colour,"DisplayName","h"};
 end
 
 
@@ -104,6 +104,18 @@ switch type
         end
 
         num_modes = size(plot_modes,2);
+        
+        if exist("h_displacement","var")
+            displacement_all = [displacement;h_displacement];
+        else
+            displacement_all = displacement;
+        end
+        [time_shifted,displacement_shifted] = shift_orbit(time,displacement_all);
+        time = time_shifted;
+        displacement = displacement_shifted(1:num_modes,:);
+        if exist("h_displacement","var")
+            h_displacement = displacement_shifted((num_modes+1):(2*num_modes),:);
+        end
 
         switch type
             case "displacement"
@@ -149,6 +161,8 @@ switch type
 
                     xlabel(ax{ax_id,1},"Time (s)")
                     ylabel(ax{ax_id,1},"r_{" + plot_modes(iMode) + "}")
+                    xlim(ax{ax_id},[min(time),max(time)])
+                    legend(ax{ax_id})
                 end
                 title(ax{1,1},"(" + solution_num + "," + orbit_num + ")")
             case "phase"

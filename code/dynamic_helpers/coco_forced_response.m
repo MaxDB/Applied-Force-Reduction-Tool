@@ -1,7 +1,7 @@
 function coco_forced_response(t0,z0,p0,Rom,type,Continuation_Settings,solution_number,Additional_Output,Nonconservative_Input)
 %Calculates frfs using coco.
 ODE_TOLERACE = 1e-9;
-RESONANT_PHASE = pi/2;
+RESONANT_PHASE = -pi/2;
 
 % Set increment options
 h0 = Continuation_Settings.initial_inc;
