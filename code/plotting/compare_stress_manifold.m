@@ -93,6 +93,11 @@ zlabel(ax,labels(3))
 if ~isprop(Plot_Settings,"light_on")
     Plot_Settings.light_on = 1;
 end
+if ~isprop(Plot_Settings,"energy_limit")
+    Plot_Settings.energy_limit = 1;
+end
+
+
 if Plot_Settings.light_on
     light(ax,"Position",[0,0,1],"Color",0.8*[1,1,1])
 end
@@ -174,13 +179,18 @@ switch num_r_modes
         y = linspace(y_lim(1),y_lim(2),PLOT_RESOLUTION);
         [X,Y] = meshgrid(x,y);
 
-        X_BC = nan(PLOT_RESOLUTION);
-        Y_BC = nan(PLOT_RESOLUTION);
-        for iCol = 1:PLOT_RESOLUTION
-            x_vec = [X(:,iCol),Y(:,iCol)];
-            valid_point = isinterior(poly_bound,x_vec);
-            X_BC(valid_point,iCol) = X(valid_point,iCol);
-            Y_BC(valid_point,iCol) = Y(valid_point,iCol);
+        if Plot_Settings.energy_limit
+            X_BC = nan(PLOT_RESOLUTION);
+            Y_BC = nan(PLOT_RESOLUTION);
+            for iCol = 1:PLOT_RESOLUTION
+                x_vec = [X(:,iCol),Y(:,iCol)];
+                valid_point = isinterior(poly_bound,x_vec);
+                X_BC(valid_point,iCol) = X(valid_point,iCol);
+                Y_BC(valid_point,iCol) = Y(valid_point,iCol);
+            end
+        else
+            X_BC = X;
+            Y_BC = Y;
         end
 
         X_array = reshape(X_BC,1,num_points);
