@@ -5,23 +5,23 @@ classdef Dynamic_System
         system_type
         Static_Options
         num_dof
-        
+
         energy_limit
         fitting_energy_limit
-        
+
 
         Calibration_Options
         calibrated_forces
         calibrated_degree_limits
-        
+
         node_mapping
         mass
         stiffness
-        
+
         reduced_modes
         reduced_eigenvalues
-        reduced_eigenvectors 
-        
+        reduced_eigenvectors
+
         low_frequency_modes
         low_frequency_eigenvalues
         low_frequency_eigenvectors
@@ -39,7 +39,7 @@ classdef Dynamic_System
             end
             keyword_args = varargin(1:2:num_args);
             keyword_values = varargin(2:2:num_args);
-            
+
             load_cache = true; %load prestored mass and stiffness matrices if they exist
 
             for arg_counter = 1:num_args/2
@@ -50,13 +50,13 @@ classdef Dynamic_System
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
             end
-            
+
 
             obj.system_name = name;
             obj.energy_limit = e_lim;
-            obj.reduced_modes = modes;
-            
-            
+
+
+
             %----------------------- Environment Setup -------------------%
             if ~isfolder("data\logs")
                 mkdir("data\logs")
@@ -72,44 +72,48 @@ classdef Dynamic_System
             end
             mkdir('temp')
             %-------------------------------------------------------------%
-            GEOMETRY_FILE_PATH = "geometry\" + obj.system_name + "\" + obj.system_name;
-            if isfile(GEOMETRY_FILE_PATH + ".inp")
+            geometry_file_path = "geometry\" + obj.system_name + "\" + obj.system_name;
+            if isfile(geometry_file_path + ".inp")
                 obj.system_type = "indirect";
-            elseif isfile(GEOMETRY_FILE_PATH + ".m")
+            elseif isfile(geometry_file_path + ".m")
                 obj.system_type = "direct";
-                Analytic_Eom = load_analytic_system(GEOMETRY_FILE_PATH);
+                Analytic_Eom = load_analytic_system(geometry_file_path);
                 obj.Parameters = Analytic_Eom.Parameters;
             end
 
             if obj.system_type == "direct"
                 Static_Opts.static_solver = "matlab";
             end
-            
-            %Update and set optional static solver settings
-            obj = obj.update_static_opts(Static_Opts);
 
-            %Update and set optional calibration settings
-            obj = obj.update_calibration_opts(Calibration_Opts);
+            if obj.energy_limit > 0
 
-            %Extract  data from input file
-            obj = obj.set_problem_data;
-            
-            %Find mass and stiffness matricies and find eigenvectors
-            matrix_time_start = tic;
-            obj = obj.eigenanalysis(load_cache);
-            matrix_time = toc(matrix_time_start);
-            log_message = sprintf("Eigenvectors: %.1f seconds" ,matrix_time);
-            logger(log_message,2)
+                obj.reduced_modes = modes;
+                %Update and set optional static solver settings
+                obj = obj.update_static_opts(Static_Opts);
 
-            %Find single modal forcing required to reach energy limit
-            calibration_time_start = tic;
-            obj = obj.update_static_opts(Calibration_Opts.Static_Opts);
-            obj = obj.calibrate_mode(modes);
-            obj = obj.update_static_opts(Static_Opts);
-            calibration_time = toc(calibration_time_start);
-            log_message = sprintf("Mode Calibration: %.1f seconds" ,calibration_time);
-            logger(log_message,2)
-            %--------------------%
+                %Update and set optional calibration settings
+                obj = obj.update_calibration_opts(Calibration_Opts);
+
+                %Extract  data from input file
+                obj = obj.set_problem_data;
+
+                %Find mass and stiffness matricies and find eigenvectors
+                matrix_time_start = tic;
+                obj = obj.eigenanalysis(load_cache);
+                matrix_time = toc(matrix_time_start);
+                log_message = sprintf("Eigenvectors: %.1f seconds" ,matrix_time);
+                logger(log_message,2)
+
+                %Find single modal forcing required to reach energy limit
+                calibration_time_start = tic;
+                obj = obj.update_static_opts(Calibration_Opts.Static_Opts);
+                obj = obj.calibrate_mode(modes);
+                obj = obj.update_static_opts(Static_Opts);
+                calibration_time = toc(calibration_time_start);
+                log_message = sprintf("Mode Calibration: %.1f seconds" ,calibration_time);
+                logger(log_message,2)
+                %--------------------%
+            end
 
             model_init_time = toc(model_init_start);
             log_message = sprintf("Model Initialised: %.1f seconds" ,model_init_time);
@@ -142,52 +146,9 @@ classdef Dynamic_System
                 return
             end
 
-            ELEMENT_DEF = "*Element";
-            ASSEMBLY_DEF = "*Assembly";
-            TYPE_DEF = 'type=';
-
+            
             geometry = load_geometry(obj);
-            assembly_def_line = find(startsWith(geometry,ASSEMBLY_DEF,'IgnoreCase',true),1,"last");
-            element_def_lines = find(startsWith(geometry(1:assembly_def_line),ELEMENT_DEF,'IgnoreCase',true));
-            elements_def = geometry(element_def_lines);
-
-            num_element_types = length(element_def_lines);
-            if num_element_types > 1
-                warning("multiple element types detected")
-            end
-
-            mesh_data = cell(num_element_types,1);
-            for iElement = 1:num_element_types
-
-                element_def_line = elements_def{iElement};
-                element_def_parts = split(element_def_line,",");
-                element_type_part = element_def_parts{2};
-                type_start = strfind(element_type_part,TYPE_DEF);
-                element_def = element_type_part((type_start+length(TYPE_DEF)):end);
-
-
-
-                switch element_def(1)
-                    case 'C'
-                        element_type = "continuous 3D";
-                        element_dimension = 3;
-                    case 'B'
-                        element_type = "beam";
-                        element_dimension = 6;
-                    case 'S'
-                        element_type = "shell";
-                        element_dimension = 6;
-                    otherwise
-                        error("Unsupported element type: " + element_def)
-                end
-
-            end
-
-            clear("Element_Data")
-            Element_Data.definition = element_def;
-            Element_Data.type = element_type;
-            Element_Data.dimension = element_dimension;
-            mesh_data{iElement} = Element_Data;
+            mesh_data = get_mesh_data(geometry);
             
             %------------ save data
             data_path = "geometry\" + obj.system_name + "\mesh_data";
