@@ -1,6 +1,6 @@
 clear
 
-seed_size = 0.01;
+seed_size = 0.005;
 % 0.003   --> 100,000
 % 0.002   --> 300,000
 % 0.00125 --> 1,000,000
@@ -16,8 +16,8 @@ system("python mesh_arch.py " + seed_size);
 
 
 current_directory = pwd;
-current_path = split(current_directory,"\");
-previous_directory = join(current_path(1:(end-1)),"\");
+current_path = split(current_directory,DIR_DELIMINATOR);
+previous_directory = join(current_path(1:(end-1)),DIR_DELIMINATOR);
 geometry_path = previous_directory{1} + DIR_DELIMINATOR + "geometry" + DIR_DELIMINATOR + SYSTEM_NAME;
 
 if isfolder(geometry_path)
