@@ -108,6 +108,7 @@ classdef Dynamic_System
                 calibration_time_start = tic;
                 obj = obj.update_static_opts(Calibration_Opts.Static_Opts);
                 obj = obj.calibrate_mode(modes);
+                obj.Static_Options = struct([]);
                 obj = obj.update_static_opts(Static_Opts);
                 calibration_time = toc(calibration_time_start);
                 log_message = sprintf("Mode Calibration: %.1f seconds" ,calibration_time);

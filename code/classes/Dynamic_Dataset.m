@@ -507,6 +507,14 @@ classdef Dynamic_Dataset
                 sz = sz(index);
             end
         end
+        %-----------------------------------------------------------------%
+        function is_equal = eq(obj_one,obj_two)
+            is_equal = false;
+            if class(obj_one) ~= class(obj_two)
+                return
+            end
+
+        end
     end
 
 end

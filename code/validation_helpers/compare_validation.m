@@ -22,8 +22,10 @@ for iMode = 1:num_L_modes
         case "energy"
             plot_backbone = iMode == num_L_modes;
         case "amplitude"
-            plot_backbone = 1;
+            plot_backbone = 0;
         case "force amplitude"
+            plot_backbone = 1;
+        case "mean error"
             plot_backbone = 1;
     end
            

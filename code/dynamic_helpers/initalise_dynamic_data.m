@@ -1,4 +1,8 @@
 function Dyn_Data = initalise_dynamic_data(system_name)
+if class(system_name) == "Dynamic_Dataset"
+    Dyn_Data = system_name;
+    return
+end
 file_path = "data\" + system_name + "\";
 if isfile(file_path + "Dyn_Data.mat")
     load(file_path + "Dyn_Data.mat","Dyn_Data");

@@ -3,8 +3,8 @@
 
 ## General
 static_solver, "abaqus", 	software/alogrithm for apply static loadcases    
-num_loadcases, 20, 		initial target number of loadcases per SEP
-maximum_loadcases, 30, 		maxium number of loadcases per SEP
+num_loadcases, 10, 		initial target number of loadcases per SEP
+maximum_loadcases, 20, 		maxium number of loadcases per SEP
 minimum_displacement, 1e-16,	anything lower will be treated as zero when creating the ROM
 
 ## Abaqus

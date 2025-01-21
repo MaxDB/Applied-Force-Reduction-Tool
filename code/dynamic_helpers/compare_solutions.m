@@ -13,14 +13,19 @@ dyn_data_names = cell(0,1);
 solution_index = cell(0,1);
 system_counter = 0;
 for arg_counter = 1:num_args/2
+    if class(keyword_args{arg_counter}) == "Dynamic_Dataset"
+        system_counter = system_counter + 1;
+        dyn_data_names{1,system_counter} = keyword_args{arg_counter};
+        solution_index{1,system_counter} = keyword_values{arg_counter};
+        continue
+    end
     switch keyword_args{arg_counter}
         case "validation"
             validation = keyword_values{arg_counter};
         otherwise
             system_counter = system_counter + 1;
             dyn_data_names{1,system_counter} = keyword_args{arg_counter};
-            solution_index{1,system_counter} = keyword_values{arg_counter};
-            
+            solution_index{1,system_counter} = keyword_values{arg_counter};  
     end
 end
 %-------------------------------------------------------------------------%

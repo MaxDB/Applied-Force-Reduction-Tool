@@ -72,19 +72,19 @@ switch type
     case "energy"
         energy_tilde = Solution.energy;
         energy_hat = Validated_Solution.h_energy;
-        
+
         if isempty(ax)
             figure
             ax = axes(gcf);
         end
-        
-        
-        
+
+
+
         box(ax,"on")
         hold(ax,"on")
 
-        
-        
+
+
         if PLOT_STABILITY
             for iSection = 1:num_sections
                 stab = range_stability(iSection);
@@ -109,11 +109,11 @@ switch type
             p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_modes;
         end
 
-       if add_backbone
+        if add_backbone
             ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0);
         end
 
-        
+
         hold(ax,"off")
 
         max_e_hat = max(energy_hat);
@@ -125,19 +125,25 @@ switch type
         xlabel(ax,"Frequency (rad/s)")
         ylabel(ax,"Energy")
 
-    case {"amplitude","force amplitude"}
+    case {"amplitude","force amplitude","mean error"}
         r_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
         h_modes = [r_modes,validation_modes];
 
         num_h_modes = length(h_modes);
-        
+
         switch type
             case "amplitude"
                 g_amp = Validated_Solution.corrected_low_modal_amplitude;
-                q_amp = Validated_Solution.low_modal_amplitude;
+                q_amp = Validated_Solution.low_modal_amplitude./g_amp;
             case "force amplitude"
                 q_amp = Validated_Solution.h_force_amplitude;
                 g_amp = Validated_Solution.r_force_amplitude;
+            case "mean error"
+                % g_amp = Validated_Solution.r_abs_mean;
+                % q_amp = Validated_Solution.h_abs_mean + g_amp;
+                
+                q_amp = Validated_Solution.h_abs_mean;
+                g_amp = zeros(size(q_amp));
         end
 
         if isempty(ax)
@@ -148,7 +154,7 @@ switch type
                 ax{iMode,2} = h_modes(iMode); %#ok<AGROW>
             end
             plotted_modes = h_modes;
-        else 
+        else
             num_axes = size(ax,1);
             %check if all required r_modes are present]
             for iAx = 1:num_axes
@@ -169,11 +175,11 @@ switch type
             mode = h_modes(iMode);
             ax_id = plotted_modes == mode;
             iAx = ax{ax_id,1};
-            
+
             box(iAx,"on")
 
             hold(iAx,"on")
-            
+
 
             if PLOT_STABILITY
                 for iSection = 1:num_sections
@@ -191,7 +197,7 @@ switch type
                     p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_stab;
                 end
             else
-                p1 = plot(iAx,frequency,q_amp(iMode,:),line_plot_settings{:}); 
+                p1 = plot(iAx,frequency,q_amp(iMode,:),line_plot_settings{:});
 
                 data_tip_row_id = dataTipTextRow("ID",orbit_ids);
                 p1.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
@@ -217,7 +223,7 @@ switch type
                         p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_stab;
                     end
                 else
-                    p2 = plot(iAx,frequency,g_amp(iMode,:),'k-',line_plot_settings{1:2}); 
+                    p2 = plot(iAx,frequency,g_amp(iMode,:),'k-',line_plot_settings{1:2});
 
                     data_tip_row_id = dataTipTextRow("ID",orbit_ids);
                     p2.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
@@ -234,7 +240,7 @@ switch type
 
             y_lim = min(max_g*3,max_q);
             if y_lim ~= 0
-                ylim(iAx,[0,y_lim])
+                % ylim(iAx,[0,y_lim])
             end
 
             switch type
@@ -244,10 +250,17 @@ switch type
                 case "force amplitude"
                     xlabel(iAx,"Frequency (rad/s)")
                     ylabel(iAx,"f_{" + h_modes(iMode) + "}")
-            end
+                case "mean error"
+                    xlabel(iAx,"Frequency (rad/s)")
+                    ylabel(iAx,"mean($\vert h_{" + h_modes(iMode) +"} \vert)$","Interpreter","latex")
+            end 
 
         end
+   
 
-
+    
+    otherwise
+        error_msg = "Unrecognised plotting type: '" + type + "'";
+        error(error_msg)
 end
 end
