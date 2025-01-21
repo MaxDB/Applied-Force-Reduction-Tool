@@ -141,13 +141,13 @@ leg.Interpreter = "latex";
 end
 %-------------------------------------------------------------------------%
 function ax = plot_manifold(ax,Dyn_Data,Plot_Settings,colour)
-PLOT_RESOLUTION = 101;
+PLOT_RESOLUTION = 21;
 MESH_ALPHA = 0.5;
-LINE_WIDTH = 1;
+LINE_WIDTH = 2;
 
 
 
-mesh_settings = {"EdgeColor","none","FaceColor","interp","FaceLighting","gouraud","FaceAlpha",MESH_ALPHA};
+mesh_settings = {"EdgeColor",colour,"EdgeAlpha",MESH_ALPHA,"LineWidth",1,"FaceColor","interp","FaceLighting","gouraud","FaceAlpha",MESH_ALPHA};
 line_settings = {"k-","linewidth",LINE_WIDTH};
 
 Rom = Dyn_Data.Dynamic_Model;

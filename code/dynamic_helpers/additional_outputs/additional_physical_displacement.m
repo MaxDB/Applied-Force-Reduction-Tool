@@ -28,8 +28,10 @@ end
 switch Additional_Output.type
     case "max"
         additional_disp = max(abs(phy_disp),[],2);
-        if Additional_Output.dof == "all"
-            additional_disp = max(additional_disp);
+        if isstring(Additional_Output.dof)
+            if Additional_Output.dof == "all"
+                additional_disp = max(additional_disp);
+            end
         end
     case "amplitude"
         additional_disp = (max(phy_disp,[],2) - min(phy_disp,[],2))/2;

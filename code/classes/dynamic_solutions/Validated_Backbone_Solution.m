@@ -112,6 +112,8 @@ classdef Validated_Backbone_Solution
             q_amp = get_amplitude(q_l);
 
             %--
+            % h_ke_approx = 0.5*1
+            % [~,energy_point_span] = min(abs(h_dot))
             energy_point_span = 1:size(h,2);
             num_points = size(energy_point_span,2);
 
@@ -123,30 +125,47 @@ classdef Validated_Backbone_Solution
             num_r_modes = size(r_energy,1);
             num_h_modes = size(h,1);
             
+            % h_potential = zeros(1,num_points);
+            % validation_force = zeros(num_h_modes,num_points);
+            % 
+            % for iPoint = 1:num_points
+            %     h_stiffness = h_stiff(:,:,iPoint);
+            %     validation_force(:,iPoint) = h_stiffness*h_disp_energy(:,iPoint) - h_force(:,iPoint);
+            %     h_potential(:,iPoint) = 0.5*validation_force(:,iPoint)'*h_disp_energy(:,iPoint);
+            % end
+
+             
+            r_force = Validation_Analysis_Inputs.Force_Poly.evaluate_polynomial(r_energy);
+            
             h_potential = zeros(1,num_points);
-            validation_force = zeros(num_h_modes,num_points);
-           
             for iPoint = 1:num_points
-                h_stiffness = h_stiff(:,:,iPoint);
-                validation_force(:,iPoint) = h_stiffness*h_disp_energy(:,iPoint) - h_force(:,iPoint);
-                h_potential(:,iPoint) = 0.5*validation_force(:,iPoint)'*h_disp_energy(:,iPoint);
+                h_i = h(:,iPoint);
+                r_force_hat_i = [r_force(:,iPoint);zeros(num_h_modes-num_r_modes,1)];
+                r_force_gradient_i = Validation_Analysis_Inputs.H_Force_Poly.evaluate_polynomial(r_energy(:,iPoint));
+                h_potential(iPoint) = (r_force_hat_i + r_force_gradient_i*h_i)'*h_i;
             end
+
 
             potential_tilde = Validation_Analysis_Inputs.Potential_Poly.evaluate_polynomial(r_energy);
             potential_hat = h_potential + potential_tilde;
+            [max_potential,energy_index] = max(potential_hat); 
             %--
-            r_force = Validation_Analysis_Inputs.Force_Poly.evaluate_polynomial(r_energy);
+            
             r_force_amp = get_amplitude(r_force);
             r_force_amp((num_r_modes+1):num_h_modes) = 0;
-            validation_force(1:num_r_modes,:) = validation_force(1:num_r_modes,:) + r_force;
-            h_force_amp = get_amplitude(validation_force);
+            % validation_force(1:num_r_modes,:) = validation_force(1:num_r_modes,:) + r_force;
+            % h_force_amp = get_amplitude(validation_force);
             %--
-            [ke_tilde,ke_hat] = h_kinetic_energy(r_energy,r_dot_energy,h_disp_energy,h_dot_energy,Validation_Analysis_Inputs);
-            %--
-            energy_hat = ke_hat + potential_hat;
+            [~,max_ke_hat] = h_kinetic_energy(r_energy(:,energy_index),r_dot_energy(:,energy_index),h_disp_energy(:,energy_index),h_dot_energy(:,energy_index),Validation_Analysis_Inputs);
+            % %--
+            % energy_hat = ke_hat + potential_hat;
+            %energy_hat = mean(energy_hat)
+            energy_hat = max_potential + max_ke_hat;
                 
             %--
             % TEST
+            % h_energy = get_h_energy(r_energy,r_dot_energy,h_disp_energy,h_dot_energy,Validation_Analysis_Inputs);
+            %---
             % h_force(h_force<1e-6) = 0;
             h_zero_force = get_amplitude(h_force);
             h_force_amp = h_zero_force;
@@ -155,7 +174,7 @@ classdef Validated_Backbone_Solution
             obj.h_amplitude(:,orbit_num) = h_amp;
             obj.corrected_low_modal_amplitude(:,orbit_num) = g_amp;
             obj.low_modal_amplitude(:,orbit_num) = q_amp;
-            obj.h_energy(:,orbit_num) = mean(energy_hat);
+            obj.h_energy(:,orbit_num) = energy_hat;
             obj.h_stability(:,orbit_num) = orbit_stability;
             obj.h_force_amplitude(:,orbit_num) = h_force_amp;
             obj.r_force_amplitude(:,orbit_num) = r_force_amp;

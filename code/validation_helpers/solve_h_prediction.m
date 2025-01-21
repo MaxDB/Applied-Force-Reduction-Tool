@@ -91,7 +91,8 @@ for iOrbit = 1:num_periodic_orbits
     h_analysis_start = tic;
 
     if Validation_Opts.get_stability
-        orbit_stab = get_h_stability(validation_eq_terms,t0);
+        [orbit_stab,orbit_evals] = get_h_stability(validation_eq_terms,t0);
+        Validation_Orbit.evals = orbit_evals;
         % orbit_stab = h_infinite_determinant(validation_eq_terms,t0,omega,num_harmonics);
         % orbit_stab = get_h_coco_stability(Validation_Orbit,validation_eq_terms,t0,omega,num_harmonics);
     else

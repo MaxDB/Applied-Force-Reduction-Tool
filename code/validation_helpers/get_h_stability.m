@@ -1,4 +1,4 @@
-function orbit_stability = get_h_stability(h_terms,t0)
+function [orbit_stability,orbit_evals] = get_h_stability(h_terms,t0)
 [h_inertia,h_conv,h_stiff,~] = h_terms{:};
 num_h_modes = size(h_inertia,1);
 num_time_points = size(t0,2);

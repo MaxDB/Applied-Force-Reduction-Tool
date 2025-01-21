@@ -69,6 +69,11 @@ for iX = 1:num_x
     h_vel_h_vel = h_vel_h_vel_prod'*h_dot_i;
 
     %--
+    %small h
+    % h_disp_h_disp = 0;
+    % h_vel_h_vel = 0;
+    % h_disp_h_vel = 0;
+    %--
     ke_tilde(:,iX) = 0.5*r_disp_r_disp;
     ke_hat(:,iX) = 0.5*(r_disp_r_disp + h_disp_h_disp + h_vel_h_vel) + r_disp_h_disp + r_disp_h_vel + h_disp_h_vel;
 
