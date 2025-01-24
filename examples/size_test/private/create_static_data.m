@@ -10,7 +10,7 @@ energy_limit = 2;
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
-Calibration_Opts.Static_Opts = struct([]);
+Calibration_Opts.Static_Opts.num_loadcases = 15;
 %----------------------------------------%
 
 %--------- Static Solver Settings ---------%
