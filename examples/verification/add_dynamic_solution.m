@@ -3,7 +3,7 @@ clear
 set_visualisation_level(1)
 set_logging_level(2)
 
-system_name = "ic_demo_12";
+system_name = "full_mass_spring_12";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
@@ -26,7 +26,8 @@ Continuation_Opts.energy_limit_multiplier = 1;
 %-----------------------------------------%
 
 Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
-compare_validation(Dyn_Data,"energy",1,"all")
+Dyn_Data = Dyn_Data.add_backbone(1,"type","fom","opts",Continuation_Opts);
+% compare_validation(Dyn_Data,"energy",1,"all")
 % Dyn_Data = Dyn_Data.validate_solution(1,"all");
 % 
 % plot_h_predicition(Dyn_Data,"amplitude",1,"backbone",0);

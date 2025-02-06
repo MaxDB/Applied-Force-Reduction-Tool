@@ -126,6 +126,18 @@ classdef Dynamic_Dataset
                         obj = obj.add_backbone(0,"opts",Continuation_Opts,"ic",{t0,z0});
                     case "bp"
 
+                    case "PD"
+                        orbit = obj.get_orbit(solution_num,orbit_num(iOrbit));
+                        t_base = orbit.tbp';
+                        z_base = orbit.xbp';
+
+                        z0 = [z_base,z_base(:,2:end)];
+                        
+                        t_shift = t_base + t_base(end);
+                        t0 = [t_base, t_shift(2:end)];
+
+                        obj = obj.add_backbone(0,"opts",Continuation_Opts,"ic",{t0,z0},"type",Solution_Type.model_type);
+
                     case "IC"
                         orbit = obj.get_orbit(solution_num,point_index(orbit_num(iOrbit)));
 
