@@ -132,8 +132,19 @@ classdef Analytic_System
         function J = get_jacobian(obj,f)
             num_dofs = size(obj.linear_mass,1);
             x = sym("x",[num_dofs,1]);
-            J_sym = jacobian(f(x),x);
+            J_sym = simplify(jacobian(f(x),x));
             J = matlabFunction(J_sym);
+        end
+        %-----------------------------------------------------------------%
+        function stiffness_equation = get_stiffness(obj)
+            static_equation = obj.get_static_equation;
+            static_jacobian = obj.get_jacobian(static_equation);
+            stiffness_equation = @(x) stiffness_func(x,static_jacobian);
+            function stiffness = stiffness_func(x_in,static_jacobian)
+                x_cell = num2cell(x_in);
+                stiffness = static_jacobian(x_cell{:});
+            end
+            
         end
         %-----------------------------------------------------------------%
         function [fq,dfqdq] = get_modal_restoring_force(obj)

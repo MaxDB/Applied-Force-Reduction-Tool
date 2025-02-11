@@ -452,10 +452,16 @@ classdef Dynamic_System
                     end
 
 
-                   
+
                 case "matlab"
-                    [reduced_disp,condensed_disp,restoring_force,energy,additional_data,sep_id] = ...
-                        add_sep_matlab(force_ratio,num_loadcases,additional_data_type,obj);
+                    switch Static_Opts.solver_algorithm
+                        case "standard"
+                            [reduced_disp,condensed_disp,restoring_force,energy,additional_data,sep_id] = ...
+                                add_sep_matlab(force_ratio,num_loadcases,additional_data_type,obj);
+                        case "riks"
+                            [reduced_disp,condensed_disp,restoring_force,energy,additional_data,sep_id] = ...
+                                add_sep_matlab_riks(force_ratio,num_loadcases,additional_data_type,obj);
+                    end
             end
         end
         %-----------------------------------------------------------------%

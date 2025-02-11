@@ -26,7 +26,7 @@ Continuation_Opts.energy_limit_multiplier = 1;
 %-----------------------------------------%
 
 Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
-Dyn_Data = Dyn_Data.add_backbone(1,"type","fom","opts",Continuation_Opts);
+% Dyn_Data = Dyn_Data.add_backbone(1,"type","fom","opts",Continuation_Opts);
 % compare_validation(Dyn_Data,"energy",1,"all")
 % Dyn_Data = Dyn_Data.validate_solution(1,"all");
 % 

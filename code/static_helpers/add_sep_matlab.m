@@ -32,7 +32,7 @@ switch add_data_type
 end
 
 %solver settings
-options = optimoptions('fsolve','Display','off');
+fsolve_options = optimoptions('fsolve','Display','off');
 
 load_step_counter = 0;
 
@@ -51,7 +51,7 @@ for iSep = 1:num_seps
             step_force = step_force + physical_force;
             modal_step_force = modal_step_force + sep_force;
 
-            [physical_disp,~,~,~,stiffness] = fsolve(@(x) static_equation(x) - step_force,disp_guess,options);
+            [physical_disp,~,~,~,stiffness] = fsolve(@(x) static_equation(x) - step_force,disp_guess,fsolve_options);
             disp_guess = physical_disp*(load_step_counter+1)/load_step_counter;
 
             potential = potential_equation(physical_disp);

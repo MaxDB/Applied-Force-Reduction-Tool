@@ -2,7 +2,8 @@
 # "#" are ignored. "," are delimeters. format is [option_name,option_value,short description]. avoid whitespace. place string values in double quotation marks
 
 ## General
-static_solver, "abaqus", 	software/alogrithm for apply static loadcases    
+static_solver, "abaqus", 	software for apply static loadcases    
+solver_algorithm, "standard",	solver algorithm to implement (e.g. continuation) 
 num_loadcases, 10, 		initial target number of loadcases per SEP
 maximum_loadcases, 20, 		maxium number of loadcases per SEP
 minimum_displacement, 1e-16,	anything lower will be treated as zero when creating the ROM
