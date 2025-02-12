@@ -29,6 +29,7 @@ keyword_values = varargin(2:2:num_args);
 
 ax = [];
 colour_num = 1;
+tag = "";
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
@@ -36,6 +37,8 @@ for arg_counter = 1:num_args/2
             ax = keyword_values{arg_counter};
         case {"colour","color"}
             colour_num = keyword_values{arg_counter};
+        case "tag"
+            tag = keyword_values{arg_counter}; 
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -58,7 +61,7 @@ orbit_labels = 1:num_orbits;
 orbit_ids = "(" + solution_num + "," + orbit_labels + ")";
 
 line_colour = get_plot_colours(colour_num);
-line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour};
+line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour,"Tag",tag};
 
 extra_data = [];
 if Solution.Solution_Type.orbit_type == "forced"
@@ -90,7 +93,7 @@ if PLOT_BIFURCATIONS
     bifurcation_plot_settings = cell(num_bifurcation_types,1);
     for iType = 1:num_bifurcation_types
         type_plot_settings = {"LineStyle","none","LineWidth",LINE_WIDTH,"Color",line_colour,...
-            "Marker",BIFURCATION_MARKER(iType),"MarkerSize",bifurcation_size(iType)};
+            "Marker",BIFURCATION_MARKER(iType),"MarkerSize",bifurcation_size(iType),"Tag",tag};
         switch iType
             case 1
                 type_plot_settings{end+1} = "MarkerEdgeColor";
@@ -156,7 +159,7 @@ plot_fe_output = class(FE_Output) == "FE_Orbit_Output";
 if plot_fe_output
     FE_Data = FE_Output.fe_output;
     converged_fe = FE_Data.periodicity < FE_PERIODICITY_LIMIT;
-    fe_data_plot_settings = {"Marker",FE_DATA_MARKER,"MarkerSize",FE_DATA_MARKER_SIZE,"LineStyle","none"};
+    fe_data_plot_settings = {"Marker",FE_DATA_MARKER,"MarkerSize",FE_DATA_MARKER_SIZE,"LineStyle","none","Tag",tag};
 end
 
 

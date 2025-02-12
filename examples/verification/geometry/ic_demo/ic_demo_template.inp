@@ -393,16 +393,24 @@
 **  
 *Nset, nset=Set-2, instance=cantilever-1
  1,
+**  
 *Spring, elset=Springs/Dashpots-1-spring
 2
 STIFFNESS_HERE
 *Element, type=Spring1, elset=Springs/Dashpots-1-spring
 1, cantilever-1.121
+**  
 *Spring, elset=Springs/Dashpots-2-spring
 6
 STIFFNESS_HERE
 *Element, type=Spring1, elset=Springs/Dashpots-2-spring
 2, cantilever-1.121
+**
+*Spring, elset=Springs/Dashpots-3-spring
+1
+STIFFNESS_HERE
+*Element, type=Spring1, elset=Springs/Dashpots-3-spring
+3, cantilever-1.121
 *End Assembly
 ** 
 ** MATERIALS
