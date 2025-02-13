@@ -1,8 +1,8 @@
 clear
 close all
 
-spring_stiffness = [0,1e10];
-
+spring_stiffness = [1,100,1000,1e4,1e10];
+energy_limit = [0.18, 0.18, 0.18, 0.1, 0.01];
 
 %--------- Software Settings ---------%
 set_logging_level(1)
@@ -11,9 +11,7 @@ set_visualisation_level(0)
 
 %--------- System Settings ---------%
 system_name = "ic_demo";
-energy_limit = [0.18, 0.01];
-% initial_modes = [1,2];
-initial_modes = 1;
+initial_modes = [1,2];
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
@@ -58,7 +56,7 @@ ax = axes;
 
 for iK = 1:num_stiffness
     set_bc_stiffness(system_name,spring_stiffness(iK))
-    Model = Dynamic_System(system_name,energy_limit,initial_modes,Calibration_Opts,Static_Opts);
+    Model = Dynamic_System(system_name,energy_limit(iK),initial_modes,Calibration_Opts,Static_Opts);
 
     Static_Data = Static_Dataset(Model,Verification_Opts);
     Static_Data.save_data;
