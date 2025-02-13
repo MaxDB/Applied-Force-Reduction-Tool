@@ -1,8 +1,8 @@
 clear
 close all
 
-spring_stiffness = [0,100,1000,1e4,1e10];
-energy_limit = [0.18, 0.18, 0.18, 0.1, 0.01];
+spring_stiffness = [0,1e4,1e10];
+energy_limit = [1, 1, 1];
 
 %--------- Software Settings ---------%
 set_logging_level(1)
@@ -41,7 +41,7 @@ Additional_Output.dof = 362;
 Continuation_Opts.initial_inc = 1e-1;
 Continuation_Opts.max_inc = 2e-1;
 Continuation_Opts.min_inc = 1e-2;
-Continuation_Opts.forward_steps = 100;
+Continuation_Opts.forward_steps = 500;
 Continuation_Opts.backward_steps = 0;
 Continuation_Opts.initial_discretisation_num = 20;
 Continuation_Opts.max_discretisation_num = 250;

@@ -402,7 +402,7 @@ STIFFNESS_HERE
 **  
 *Spring, elset=Springs/Dashpots-2-spring
 6
-STIFFNESS_HERE
+0
 *Element, type=Spring1, elset=Springs/Dashpots-2-spring
 2, cantilever-1.121
 **
