@@ -6,8 +6,8 @@ energy_limit_multiplier, 1, 	#energy_limit = energy_limit * energy_limit_multipl
 
 ## COCO
 initial_inc, 0.1,		#initial continuation increment
-max_inc, 0.5,			#maximum continaution increment
-min_inc, 0.01,			#minimum continaution increment
+max_inc, 0.5,			#maximum continuation increment
+min_inc, 0.01,			#minimum continuation increment
 forward_steps, 100,		#number of forward incrementations
 backward_steps, 0, 		#number of backward incrementations
 initial_discretisation_num, 10, #intial number of discretisation points
@@ -15,3 +15,6 @@ max_discretisation_num, 100, 	#maximum number of discretisation points
 min_discretisation_num, 5, 	#minimum number of discretisation points
 collation_degree, 4, 		#degree of interpolating polynomial
 parameter_range, [0;1e16],	#allowable range of continuation variable
+
+## Experimental (use with care as not fully implemented)
+inertial_compensation,1,	#toggle between ICE-IC and ICE

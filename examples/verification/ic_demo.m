@@ -1,7 +1,7 @@
 clear
 close all
 
-spring_stiffness = [1,100,1000,1e4,1e10];
+spring_stiffness = [0,100,1000,1e4,1e10];
 energy_limit = [0.18, 0.18, 0.18, 0.1, 0.01];
 
 %--------- Software Settings ---------%
@@ -12,6 +12,7 @@ set_visualisation_level(0)
 %--------- System Settings ---------%
 system_name = "ic_demo";
 initial_modes = [1,2];
+% initial_modes = 1;
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
@@ -55,6 +56,7 @@ figure
 ax = axes;
 
 for iK = 1:num_stiffness
+    stiffness_tag = string(iK);
     set_bc_stiffness(system_name,spring_stiffness(iK))
     Model = Dynamic_System(system_name,energy_limit(iK),initial_modes,Calibration_Opts,Static_Opts);
 
@@ -63,6 +65,12 @@ for iK = 1:num_stiffness
 
     Dyn_Data = initalise_dynamic_data(dynamic_system_name);
     Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
+
+    Continuation_Opts.inertial_compensation = 1;
     Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
-    ax = plot_backbone(Dyn_Data,"physical amplitude",1,"axes",ax,"tag",string(iK));
+    ax = plot_backbone(Dyn_Data,"physical amplitude",1,"axes",ax,"tag",stiffness_tag + "_ic","colour",1);
+
+    Continuation_Opts.inertial_compensation = 0;
+    Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+    ax = plot_backbone(Dyn_Data,"physical amplitude",2,"axes",ax,"tag",stiffness_tag,"colour",2);
 end

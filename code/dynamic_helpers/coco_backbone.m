@@ -14,9 +14,18 @@ switch type
     case "rom"
         Eom_Input = Rom.get_solver_inputs("coco_backbone");
 
-        funcs = {@(z,zeta) coco_eom(0,z,zeta,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data),...
-            @(z,zeta) coco_eom_dx(0,z,zeta,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data),...
-            @(z,zeta) coco_eom_dzeta(0,z)};
+        
+
+        if Continuation_Settings.inertial_compensation
+            funcs = {@(z,zeta) coco_eom(0,z,zeta,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data),...
+                @(z,zeta) coco_eom_dx(0,z,zeta,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data),...
+                @(z,zeta) coco_eom_dzeta(0,z)};
+        else
+            funcs = {@(z,zeta) ice_eom(0,z,zeta,Eom_Input.input_order,Eom_Input.Force_Data),...
+                @(z,zeta) ice_eom_dx(0,z,zeta,Eom_Input.input_order,Eom_Input.Force_Data),...
+                @(z,zeta) ice_eom_dzeta(0,z)};
+        end
+
     case "fom"
         Model = Rom.Model;
         Analytic_Eom = load_analytic_system("geometry\" + Model.system_name+ "\" + Model.system_name);

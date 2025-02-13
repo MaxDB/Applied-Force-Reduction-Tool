@@ -1,4 +1,5 @@
 Adding additional settings or modifying default values
+In most cases settings should be changed programmatically 
 
 "#" are ignored
 "," are delimeters
