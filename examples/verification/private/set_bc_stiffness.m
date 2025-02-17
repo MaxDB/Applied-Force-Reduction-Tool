@@ -1,4 +1,4 @@
-function set_bc_stiffness(system_name,spring_stiffness)
+function set_bc_stiffness(system_name,x_spring_stiffness,y_spring_stiffness)
 STIFFNESS_PATTERN = "STIFFNESS_HERE";
 
 geometry_path = "geometry\" + system_name + "\";
@@ -10,22 +10,23 @@ geometry_template = textscan(gt_id,'%s','delimiter','\n');
 fclose(gt_id);
 geometry_template = geometry_template{1,1};
 
-stiffness_lines = find(startsWith(geometry_template,STIFFNESS_PATTERN));
+stiffness_lines = find(endsWith(geometry_template,STIFFNESS_PATTERN));
+x_line = stiffness_lines(startsWith(geometry_template(stiffness_lines),"X"));
+y_line = stiffness_lines(startsWith(geometry_template(stiffness_lines),"Y"));
 
 if isfile(geometry_file_path)
     g_id =fopen(geometry_file_path);
     geometry = textscan(g_id,'%s','delimiter','\n');
     fclose(g_id);
     geometry = geometry{1,1};
-    if all(geometry(stiffness_lines) == string(spring_stiffness))
+    if geometry{x_line} == string(x_spring_stiffness) && geometry{y_line} == string(y_spring_stiffness)
         return
     end
 end
 
+geometry_template{x_line} = string(x_spring_stiffness);
+geometry_template{y_line} = string(y_spring_stiffness);
 
-for iLine = stiffness_lines'
-    geometry_template{iLine} = string(spring_stiffness);
-end
 
 reset_geometry_directory(system_name)
 

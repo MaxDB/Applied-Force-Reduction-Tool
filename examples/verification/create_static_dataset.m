@@ -8,8 +8,9 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "ic_demo";
 energy_limit = 0.4;
-initial_modes = [1,2];
-spring_stiffness = 1e3;
+initial_modes = 1;
+x_spring_stiffness = 1e3;
+y_spring_stiffness = 1e4;
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
@@ -31,7 +32,7 @@ Verification_Opts.maximum_iterations = 3;
 Verification_Opts.maximum_interpolation_error = [1e-3,1e-2];
 Verification_Opts.num_added_points = 1;
 %----------------------------------------------%
-set_bc_stiffness(system_name,spring_stiffness)
+set_bc_stiffness(system_name,x_spring_stiffness,y_spring_stiffness)
 Model = Dynamic_System(system_name,energy_limit,initial_modes,Calibration_Opts,Static_Opts);
 
 Static_Data = Static_Dataset(Model,Verification_Opts);
