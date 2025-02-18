@@ -1,10 +1,17 @@
 function reset_temp_directory
 try
     rmdir('temp','s')
+    mkdir('temp')
 catch
-    warning("Cannot delete all files in temp directory")
+    try
+        pause(0.5)
+        rmdir('temp','s')
+        mkdir('temp')
+    catch
+        warning("Cannot delete all files in temp directory")
+    end
 end
-mkdir('temp')
+
 % if isfolder('temp')
 %     iLoop = 1;
 %     while iLoop < 100

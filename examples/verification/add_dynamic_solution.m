@@ -3,7 +3,7 @@ clear
 set_visualisation_level(1)
 set_logging_level(2)
 
-system_name = "ic_demo_1";
+system_name = "ic_demo_13";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%

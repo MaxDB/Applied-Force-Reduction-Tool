@@ -6,3 +6,6 @@ calibration_scale_factor, 1.5,	estimated ratio between effective stiffness at en
 energy_overfit, 1.1,		actual_energy_limit = energy_limit * energy_overfit
 force_overcalibration,1.1, 	actual_calibrated_force = calibrated_force * force_overcalibration
 Static_Opts,[],			any changed static options for calibration
+
+## Experimental
+disable_calibration, 0,		turn off calibration

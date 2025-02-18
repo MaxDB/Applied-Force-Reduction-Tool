@@ -68,7 +68,12 @@ classdef Dynamic_System
             logger("",1)
 
             if isfolder('temp')
-                rmdir('temp','s')
+                try
+                    rmdir('temp','s')
+                catch
+                    pause(1)
+                    rmdir('temp','s')
+                end
             end
             mkdir('temp')
             %-------------------------------------------------------------%
@@ -106,7 +111,7 @@ classdef Dynamic_System
 
                 %Find single modal forcing required to reach energy limit
                 calibration_time_start = tic;
-                obj = obj.update_static_opts(Calibration_Opts.Static_Opts);
+                obj = obj.update_static_opts(obj.Calibration_Options.Static_Opts);
                 obj = obj.calibrate_mode(modes);
                 obj.Static_Options = struct([]);
                 obj = obj.update_static_opts(Static_Opts);
@@ -131,6 +136,9 @@ classdef Dynamic_System
             
 
             New_Calibration_Opts = update_options(Default_Calibration_Opts,obj.Calibration_Options,Calibration_Opts);
+            if ~isstruct(New_Calibration_Opts.Static_Opts)
+                New_Calibration_Opts.Static_Opts = struct([]);
+            end
             obj.Calibration_Options = New_Calibration_Opts;
             obj.fitting_energy_limit = obj.energy_limit*New_Calibration_Opts.energy_overfit;
         end
@@ -220,6 +228,9 @@ classdef Dynamic_System
         function obj = calibrate_mode(obj,modes)
             %finds static forces that reach the potential energy limit
             Calibration_Opts = obj.Calibration_Options;
+            if Calibration_Opts.disable_calibration
+                return
+            end
 
             %check if already calibrated
             GEOMETRY_PATH = "geometry\" + obj.system_name + "\";

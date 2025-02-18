@@ -505,7 +505,7 @@ classdef Polynomial
             Poly_Diff.coefficients = coeffs_diff;
         end
         %-----------------------------------------------------------------%
-
+        
         %-----------------------------------------------------------------%
         %Overloading
         %-----------------------------------------------------------------%
@@ -518,6 +518,13 @@ classdef Polynomial
             if nargin == 2
                 sz = sz(dim);
             end
+        end
+        %-----------------------------------------------------------------%
+        function poly_two = mtimes(const,poly_one)
+            poly_two = poly_one;
+            coeffs = poly_two.coefficients;
+            new_coeffs = (const*coeffs')';
+            poly_two.coefficients = new_coeffs;
         end
         %-----------------------------------------------------------------%
 
@@ -926,6 +933,7 @@ classdef Polynomial
         end
         %-----------------------------------------------------------------%
         function coupling_pattern = relabel_coupling_pattern(coupling_pattern)
+            
             order = reshape(coupling_pattern,numel(coupling_pattern),1);
             new_order = zeros(size(order));
             coefficient_counter = 0;
@@ -939,6 +947,9 @@ classdef Polynomial
             end
             coupling_pattern = reshape(new_order,size(coupling_pattern));
         end
+        %-----------------------------------------------------------------%
+        
+        
     end
 
 end
