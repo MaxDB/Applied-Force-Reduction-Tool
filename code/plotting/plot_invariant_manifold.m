@@ -1,14 +1,4 @@
-function ax = plot_invariant_manifold(Dyn_Data,sol_num,Plotting_Opts,varargin)
-%-------------------------------------------------------------------------%
-points_per_orbit = 500;
-plotting_coords = [1,3,2];
-orbit_spacing = 0.002;
-% add this into plotting options
-%-------------------------------------------------------------------------%
-mesh_alpha = 1;
-mesh_settings = {"EdgeColor","none","LineWidth",0.01,"FaceColor",get_plot_colours(5),"FaceLighting","gouraud","FaceAlpha",mesh_alpha,"Tag","invariant_manifold"};
-grid_line_style = {"Color",[0.25,0.25,0.25,0.2],"LineWidth",0.2,"Tag","grid_line"};
-outline_style = {"Color",[0,0,0],"LineWidth",1,"Tag","outline"};
+function ax = plot_invariant_manifold(Dyn_Data,sol_num,varargin)
 %-------------------------------------------------------------------------%
 num_args = length(varargin);
 if mod(num_args,2) == 1
@@ -21,12 +11,15 @@ ax = [];
 limit_type = {};
 limit_value = {};
 limit_counter = 0;
+Plot_Opts = struct([]);
 
 for arg_counter = 1:num_args/2
     keyword_arg = keyword_args{arg_counter};
     switch keyword_arg
         case "axes"
             ax = keyword_values{arg_counter};
+        case "opts"
+            Plot_Opts = keyword_values{arg_counter};
         otherwise
             if endsWith(keyword_arg,"limit")
                 limit_counter = limit_counter + 1;
@@ -39,6 +32,25 @@ for arg_counter = 1:num_args/2
     end
 end
 %-------------------------------------------------------------------------%
+Default_Settings.points_per_orbit = 500;
+Default_Settings.plotting_coords = [1,3,2];
+Default_Settings.orbit_spacing = 0.002;
+Default_Settings.colour = get_plot_colours(5);
+Default_Settings.mesh_alpha = 1;
+
+settings = fieldnames(Default_Settings);
+num_settings = size(settings,1);
+for iSetting = 1:num_settings
+    setting = settings{iSetting};
+    if ~isfield(Plot_Opts,setting)
+        Plot_Opts.(setting) = Default_Settings.(setting);
+    end
+end
+%-------------------------------------------------------------------------%
+mesh_settings = {"EdgeColor","none","LineWidth",0.01,"FaceColor",Plot_Opts.colour,"FaceLighting","gouraud","FaceAlpha",Plot_Opts.mesh_alpha,"Tag","invariant_manifold"};
+grid_line_style = {"Color",[0.25,0.25,0.25,0.2*Plot_Opts.mesh_alpha],"LineWidth",0.2,"Tag","grid_line"};
+outline_style = {"Color",[0,0,0],"LineWidth",1,"Tag","outline"};
+%-------------------------------------------------------------------------%
 if isstring(Dyn_Data)
     Dyn_Data = initalise_dynamic_data(Dyn_Data);
 end
@@ -49,6 +61,7 @@ evec = Model.reduced_eigenvectors;
 num_modes = size(evec,2);
 num_dof = Model.num_dof;
 
+plotting_coords = Plot_Opts.plotting_coords;
 num_coords = size(plotting_coords,2);
 disp_coord_index = plotting_coords <= num_dof;
 disp_coords = plotting_coords(disp_coord_index);
@@ -57,6 +70,7 @@ vel_coords = plotting_coords(~disp_coord_index) - num_dof;
 Sol = Dyn_Data.load_solution(sol_num);
 num_orbits = Sol.num_orbits;
 
+points_per_orbit = Plot_Opts.points_per_orbit;
 sol_points = zeros(num_orbits,points_per_orbit+1,3);
 orbit_counter = 0;
 for iOrbit = 1:num_orbits
@@ -153,7 +167,7 @@ last_orbit = zeros(3,points_per_orbit+1);
 for iOrbit = 1:(num_orbits-1)
     orbit = squeeze(sol_points(iOrbit,:,:))';
     [~,max_distance] = orbit_distance(orbit,last_orbit);
-    if max_distance < orbit_spacing
+    if max_distance < Plot_Opts.orbit_spacing
         continue
     end
     plot3(ax,sol_points(iOrbit,:,1),sol_points(iOrbit,:,2),sol_points(iOrbit,:,3),grid_line_style{:})

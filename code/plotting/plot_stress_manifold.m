@@ -1,4 +1,4 @@
-function plot_stress_manifold(Dyn_Data,L_modes,varargin)
+function ax = plot_stress_manifold(Dyn_Data,L_modes,varargin)
 ALT_MODE = 0;
 PLOT_H_R = 0;
 PLOT_RESOLUTION = 51;
@@ -28,6 +28,7 @@ orbit_id = [];
 solution_num = [];
 comparison_orbit_id = [];
 comparison_solution_num = [];
+ax = [];
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
@@ -41,6 +42,8 @@ for arg_counter = 1:num_args/2
             comparison_orbit_data = keyword_values{arg_counter};
             comparison_solution_num = comparison_orbit_data(1);
             comparison_orbit_id = comparison_orbit_data(2);
+        case "axes"
+            ax = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -106,8 +109,10 @@ h_L = linspace(h_L_lim(1),h_L_lim(2),PLOT_RESOLUTION);
 x_tilde = Rom.Physical_Displacement_Polynomial.evaluate_polynomial(r);
 num_dofs = size(x_tilde,1);
 
-figure
-box on
+if isempty(ax)
+    figure
+    box on
+end
 hold on
 if PHYSICAL_COORDINATES
     xlabel("x_3")
