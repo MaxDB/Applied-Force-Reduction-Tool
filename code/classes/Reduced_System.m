@@ -166,6 +166,24 @@ classdef Reduced_System
             % x_dot = x_dot + h_evec*h_dot + G_h_dot_prod + G_dr_r_dot_h_prod;
         end
         %-----------------------------------------------------------------%
+        function x_dot = get_physical_velocity(obj,r,r_dot,output_dofs)
+            Phy_Poly = obj.Physical_Displacement_Polynomial;
+            Phy_Poly = Phy_Poly.subpoly(output_dofs);
+            Phy_dr_Poly = differentiate_polynomial(Phy_Poly);
+            
+            
+            num_points = size(r,2);
+            num_outputs = size(output_dofs,2);
+            x_dot = zeros(num_outputs,num_points);
+            for iPoint = 1:num_points
+                r_i = r(:,iPoint);
+                r_dot_i = r_dot(:,iPoint);
+                x_dr_i = Phy_dr_Poly.evaluate_polynomial(r_i);
+                x_dot(:,iPoint) = x_dr_i*r_dot_i; 
+            end
+            
+        end
+        %-----------------------------------------------------------------%
         function beta_bar = get_beta_bar(obj,Poly_1,Poly_2)
             if nargin == 2
                 Poly_2 = Poly_1;

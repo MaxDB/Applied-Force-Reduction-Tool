@@ -1,6 +1,4 @@
-function compare_solutions(type,varargin)
-PLOT_LEGEND = 1;
-
+function ax = compare_solutions(type,varargin)
 %-------------------------------------------------------------------------%
 num_args = length(varargin);
 if mod(num_args,2) == 1
@@ -8,6 +6,9 @@ if mod(num_args,2) == 1
 end
 keyword_args = varargin(1:2:num_args);
 keyword_values = varargin(2:2:num_args);
+
+ax = [];
+plot_legend = 1;
 
 dyn_data_names = cell(0,1);
 solution_index = cell(0,1);
@@ -22,6 +23,10 @@ for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
         case "validation"
             validation = keyword_values{arg_counter};
+        case "axes"
+            ax = keyword_values{arg_counter};
+        case "legend"
+            plot_legend = keyword_values{arg_counter};
         otherwise
             system_counter = system_counter + 1;
             dyn_data_names{1,system_counter} = keyword_args{arg_counter};
@@ -41,7 +46,6 @@ if num_solutions == 1
 else
     colour_numbers = 1:8;
 end
-ax = [];
 legend_lines = zeros(1,num_solutions);
 legend_modes = cell(1,num_solutions);
 for iSol = 1:num_solutions
@@ -110,7 +114,7 @@ for iSol = 1:num_solutions
             end
         end
     end
-    if PLOT_LEGEND
+    if plot_legend
         if iscell(ax)
             ax_legend = ax{1,1};
         else
@@ -135,7 +139,7 @@ for iSol = 1:num_solutions
     end
 end
 
-if PLOT_LEGEND
+if plot_legend
     
     legend_names = cellfun(@(x) "\{" + join(string(x),", ") + "\}",legend_modes);
     legend(legend_lines,legend_names,"Location","best")

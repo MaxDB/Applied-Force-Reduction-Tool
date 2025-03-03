@@ -527,6 +527,20 @@ classdef Polynomial
             poly_two.coefficients = new_coeffs;
         end
         %-----------------------------------------------------------------%
+        function obj = subpoly(obj,index)
+            %overloading was problematic with function calls
+            obj.coefficients = obj.coefficients(:,index);
+            obj.output_dimension = length(index);
+            obj.modeled_outputs = obj.modeled_outputs(index);
+            obj.num_fitted_coefficients = obj.num_independent_element_coefficients * obj.output_dimension;
+        end
+        % function poly_sub = subsref(obj,index)
+        % 
+        % end
+        % function poly_sub = subsindex(obj,index)
+        % 
+        % end
+        %-----------------------------------------------------------------%
 
         %Helpers
         %-----------------------------------------------------------------%
