@@ -2,6 +2,9 @@ function [r,theta,f,E,additional_data,sep_id] = ...
     add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,add_data_type,clean_data,Model,job_id,initial_load,restart_type)
 
 JOB_NAME = "static_analysis";
+RESET_TO_ZERO = 1;
+
+
 num_dimensions = get_num_node_dimensions(Model);
 project_path = get_project_path;
 
@@ -138,7 +141,32 @@ for iLine = 1:length(geometry)
     end
 end
 
+if RESET_TO_ZERO
+    % rest to zero displacement after each SEP
+    boundary_conditions = get_boundary_conditions(geometry);
+    geometry = add_whole_set(geometry,instance_name);
+    zero_id = fopen(project_path + "\fe_templates\abaqus\reset_model.inp");
+    zero_template=textscan(zero_id,'%s','delimiter','\n');
+    fclose(zero_id);
+    zero_template = zero_template{1,1};
 
+    for iLine = 1:length(zero_template)
+        if strfind(zero_template{iLine,1},"**RESET_BOUNDARIES_HERE")
+            zero_template(iLine,:) = [];
+            bc_dimension = num2cell((1:num_dimensions)');
+            zero_bc_input= cellfun(@(iCell) convertStringsToChars("set-all, " + iCell + ", " + iCell),bc_dimension,"UniformOutput",false);
+            zero_template = [zero_template(1:(iLine-1));zero_bc_input;zero_template(iLine:end)];
+        end
+    end
+    for iLine = 1:length(zero_template)
+        if strfind(zero_template{iLine,1},"**INITIAL_BOUNDARIES_HERE")
+            zero_template(iLine,:) = [];
+            zero_template = [zero_template(1:(iLine-1));boundary_conditions;zero_template(iLine:end)];
+        end
+    end
+
+    zero_step_def_lines = find(startsWith(zero_template,"*Step","IgnoreCase",true));
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Create forcing tempate
 force_label = strings(all_dofs,1);
@@ -197,6 +225,9 @@ switch add_data_type
         perturbation_steps = [perturbation_steps;perturbation_template((loadcase_end_line+1):end)];
 end
 
+if RESET_TO_ZERO
+    total_steps = total_steps + num_seps - 1;
+end
 step_type = strings(total_steps,1);
 sep_ends = zeros(num_seps,1);
 
@@ -297,6 +328,18 @@ try
             end
         end
         sep_ends(iSep) = load_step_counter;
+        if RESET_TO_ZERO && iSep ~= num_seps
+            zero_step = zero_template;
+            for iZero = 1:size(zero_step_def_lines,1)
+                zero_step_def_line = zero_step_def_lines(iZero);
+                zero_step{zero_step_def_line} = convertStringsToChars(strrep(zero_step(zero_step_def_line),"STEP_NUM",string(iSep)));
+            end
+            fprintf(input_ID,'%s\r\n',zero_step{:,1});
+            total_step_counter = total_step_counter + 1;
+            step_type(total_step_counter,1) = "zero";
+            total_step_counter = total_step_counter + 1;
+            step_type(total_step_counter,1) = "zero";
+        end
     end
 catch caught_error
     fclose(input_ID); %ensures file is always closed
