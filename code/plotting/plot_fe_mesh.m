@@ -1,14 +1,16 @@
 function plot_fe_mesh(Model,displacement,colour_map)
-input_file = nargin == 1;
+%input_file = nargin == 1;?
+input_file = 0;
 
 if input_file
     geometry = Model;
-    mesh_data = get_mesh_data(geometry);
-    mesh_data = mesh_data{1};
-    is_3d = mesh_data.type == "continuous 3D";
 else
     geometry = load_geometry(Model);
 end
+mesh_data = get_mesh_data(geometry);
+mesh_data = mesh_data{1};
+is_3d = mesh_data.type == "continuous 3D";
+
 node_position = read_abaqus_node_position(geometry);
 element_members = read_abaqus_element_membership(geometry);
 

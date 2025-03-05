@@ -8,9 +8,9 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "ic_demo";
 energy_limit = 2.5;
-initial_modes = [1,3];
-x_spring_stiffness = 5e4;
-y_spring_stiffness = 1e3;
+initial_modes = [1,4];
+x_spring_stiffness = 1e3;
+y_spring_stiffness = 1e8;
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%

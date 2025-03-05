@@ -19,7 +19,11 @@ classdef Validated_Backbone_Solution
         function obj = Validated_Backbone_Solution(Rom,BB_Sol,Validated_BB_Settings)
             
             Validation_Opts.validation_algorithm = "h_frequency";
-            Validation_Opts.get_stability = 1;
+            Validation_Opts.get_stability = "auto";
+            if isstring(Validation_Opts.get_stability) && Validation_Opts.get_stability == "auto"
+                num_L_modes = size(Validated_BB_Settings.L_modes,2);
+                Validation_Opts.get_stability = num_L_modes == 1;   
+            end
             obj = obj.update_validation_opts(Validation_Opts);
             
             solution_num = Validated_BB_Settings.solution_num;
