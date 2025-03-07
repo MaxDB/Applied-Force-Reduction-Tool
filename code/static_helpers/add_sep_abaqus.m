@@ -2,7 +2,7 @@ function [r,theta,f,E,additional_data,sep_id] = ...
     add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,add_data_type,clean_data,Model,job_id,initial_load,restart_type)
 
 JOB_NAME = "static_analysis";
-RESET_TO_ZERO = 1;
+RESET_TO_ZERO = 0;
 
 
 num_dimensions = get_num_node_dimensions(Model);
