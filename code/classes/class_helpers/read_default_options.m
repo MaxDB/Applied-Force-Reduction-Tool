@@ -1,5 +1,7 @@
-function Default_Opts = read_default_options(options_name)
-project_path = get_project_path;
+function Default_Opts = read_default_options(options_name,project_path)
+if nargin == 1
+    project_path = get_project_path;
+end
 options_path = project_path + "\settings\" + options_name + "_options.txt";
 opts_id = fopen(options_path);
 options_data = textscan(opts_id,'%s','delimiter','\n');
@@ -25,7 +27,11 @@ for iLine = 1:num_lines
         option_value = strip(option_value,"left",'[');
         option_value = strip(option_value,"right",']');
         option_value = split(option_value,";");
-        option_value = str2double(option_value);
+        if isempty(option_value{1})
+            option_value = [];
+        else
+            option_value = str2double(option_value);
+        end
     else
         option_value = str2double(option_value);
     end

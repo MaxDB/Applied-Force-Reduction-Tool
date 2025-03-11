@@ -301,22 +301,42 @@ classdef Polynomial
 
         end
         %-----------------------------------------------------------------%
-        function plot_polynomial(obj,ax,plotted_outputs)
+        function plot_polynomial(obj,varargin)
+
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            ax = [];
+            tag = "";
+            plotted_outputs = (1:obj.output_dimension)';
+            Potential_Poly = [];
+            energy_limit = [];
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "axes"
+                        ax = keyword_values{arg_counter};
+                    case "tag"
+                        tag = keyword_values{arg_counter};
+                    case "outputs"
+                        plotted_outputs = keyword_values{arg_counter};
+                    case "potential"
+                        potential_data = keyword_values{arg_counter};
+                        Potential_Poly = potential_data{1};
+                        energy_limit = potential_data{2};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %------------
+
+
             PLOT_RESOLUTION = 101;
 
-            if ~exist("plotted_outputs","var")
-                plotted_outputs = (1:obj.output_dimension)';
-            end
-
-            if exist("ax","var") && isempty(ax)
-                clear ax
-            end
-
-            if exist("ax","var") && ~iscell(ax)
-                ax_scalar = ax;
-                ax = cell(1,1);
-                ax{1,1} = ax_scalar;
-            end
 
 
 
@@ -360,30 +380,13 @@ classdef Polynomial
                     end
 
                 case 2
- 
-                    num_points = PLOT_RESOLUTION^2;
-
-                    poly_bound = polyshape(limits');
-                    [x_lim,y_lim] = boundingbox(poly_bound);
-
-
-                    x = linspace(x_lim(1),x_lim(2),PLOT_RESOLUTION);
-                    y = linspace(y_lim(1),y_lim(2),PLOT_RESOLUTION);
-                    [X,Y] = meshgrid(x,y);
-
-                    X_BC = nan(PLOT_RESOLUTION);
-                    Y_BC = nan(PLOT_RESOLUTION);
-                    for iCol = 1:PLOT_RESOLUTION
-                        x_vec = [X(:,iCol),Y(:,iCol)];
-                        valid_point = isinterior(poly_bound,x_vec);
-                        X_BC(valid_point,iCol) = X(valid_point,iCol);
-                        Y_BC(valid_point,iCol) = Y(valid_point,iCol);
-                    end
-                
-
-                    if ~exist("ax","var")
+                    [x_grid,y_grid] = get_2d_plotting_data(obj,Potential_Poly,energy_limit);
+                    num_points = numel(x_grid);
+                    
+                    if isempty(ax)
                         figure
                         tiledlayout(1,num_plotted_outputs)
+                        ax = cell(num_plotted_outputs);
                         for iOutput = 1:num_plotted_outputs
                             ax{iOutput} = nexttile;
                             xlabel("x_1")
@@ -398,17 +401,15 @@ classdef Polynomial
                     end
 
                     for iOutput = 1:num_plotted_outputs
-
                         plotted_output = plotted_outputs(iOutput,:);
 
-
-                        X_array = reshape(X_BC,1,num_points);
-                        Y_array = reshape(Y_BC,1,num_points);
-                        Z_array = obj.evaluate_polynomial([X_array;Y_array],plotted_output);
-                        Z_BC = reshape(Z_array,size(X_BC));
+                        x_lin = reshape(x_grid,1,num_points);
+                        y_lin = reshape(y_grid,1,num_points);
+                        z_lin = obj.evaluate_polynomial([x_lin;y_lin],plotted_output);
+                        z_grid = reshape(z_lin',size(x_grid));
                         
                         hold(ax{iOutput},"on")
-                        mesh(ax{iOutput},X_BC,Y_BC,Z_BC)
+                        mesh(ax{iOutput},x_grid,y_grid,z_grid)
                         hold(ax{iOutput},"off")
                     end
             end

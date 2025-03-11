@@ -141,10 +141,10 @@ leg.Interpreter = "latex";
 end
 %-------------------------------------------------------------------------%
 function ax = plot_manifold(ax,Dyn_Data,Plot_Settings,colour)
-PLOT_RESOLUTION = 21;
+PLOT_MODE = "ellipse";
 MESH_ALPHA = 0.5;
 LINE_WIDTH = 2;
-
+PLOT_RESOLUTION = 21;
 
 
 mesh_settings = {"EdgeColor",colour,"EdgeAlpha",MESH_ALPHA,"LineWidth",1,"FaceColor","interp","FaceLighting","gouraud","FaceAlpha",MESH_ALPHA};
@@ -168,44 +168,54 @@ switch num_r_modes
 
         plot3(ax,x_tilde(plot_order(1),:),x_tilde(plot_order(2),:),x_tilde(plot_order(3),:),line_settings{:},"tag",manifold_name);
     case 2
-        num_points = PLOT_RESOLUTION^2;
-
-        limits = Rom.Physical_Displacement_Polynomial.input_limit;
-        poly_bound = polyshape(limits');
-        [x_lim,y_lim] = boundingbox(poly_bound);
-
-
-        x = linspace(x_lim(1),x_lim(2),PLOT_RESOLUTION);
-        y = linspace(y_lim(1),y_lim(2),PLOT_RESOLUTION);
-        [X,Y] = meshgrid(x,y);
-
-        if Plot_Settings.energy_limit
-            X_BC = nan(PLOT_RESOLUTION);
-            Y_BC = nan(PLOT_RESOLUTION);
-            for iCol = 1:PLOT_RESOLUTION
-                x_vec = [X(:,iCol),Y(:,iCol)];
-                valid_point = isinterior(poly_bound,x_vec);
-                X_BC(valid_point,iCol) = X(valid_point,iCol);
-                Y_BC(valid_point,iCol) = Y(valid_point,iCol);
-            end
-        else
-            X_BC = X;
-            Y_BC = Y;
+        switch PLOT_MODE
+            case "rectangle"
+                Z_BC = rectangle_manifold_mesh(Rom,Plot_Settings);
+            case "ellipse"
+                Z_BC = ellipse_manifold_mesh(Rom,Plot_Settings);
         end
-
-        X_array = reshape(X_BC,1,num_points);
-        Y_array = reshape(Y_BC,1,num_points);
-        Z_array = Rom.Physical_Displacement_Polynomial.evaluate_polynomial([X_array;Y_array]);
-        num_dof = size(Z_array,1);
-        Z_BC = reshape(Z_array,[num_dof,size(X_BC)]);
-        Z_BC = permute(Z_BC,[2,3,1]);
-
         colour_data = ones([size(Z_BC,[1,2]),3]).*reshape(colour,[1,1,3]);
-        
-
         mesh(ax,Z_BC(:,:,plot_order(1)),Z_BC(:,:,plot_order(2)),Z_BC(:,:,plot_order(3)),colour_data,mesh_settings{:},"tag",manifold_name);
 end
 hold(ax,"off")
+end
+%--
+
+
+%--
+function Z_BC = rectangle_manifold_mesh(Rom,Plot_Settings)
+PLOT_RESOLUTION = 21;
+num_points = PLOT_RESOLUTION^2;
+
+limits = Rom.Physical_Displacement_Polynomial.input_limit;
+poly_bound = polyshape(limits');
+[x_lim,y_lim] = boundingbox(poly_bound);
+
+
+x = linspace(x_lim(1),x_lim(2),PLOT_RESOLUTION);
+y = linspace(y_lim(1),y_lim(2),PLOT_RESOLUTION);
+[X,Y] = meshgrid(x,y);
+
+if Plot_Settings.energy_limit
+    X_BC = nan(PLOT_RESOLUTION);
+    Y_BC = nan(PLOT_RESOLUTION);
+    for iCol = 1:PLOT_RESOLUTION
+        x_vec = [X(:,iCol),Y(:,iCol)];
+        valid_point = isinterior(poly_bound,x_vec);
+        X_BC(valid_point,iCol) = X(valid_point,iCol);
+        Y_BC(valid_point,iCol) = Y(valid_point,iCol);
+    end
+else
+    X_BC = X;
+    Y_BC = Y;
+end
+
+X_array = reshape(X_BC,1,num_points);
+Y_array = reshape(Y_BC,1,num_points);
+Z_array = Rom.Physical_Displacement_Polynomial.evaluate_polynomial([X_array;Y_array]);
+num_dof = size(Z_array,1);
+Z_BC = reshape(Z_array,[num_dof,size(X_BC)]);
+Z_BC = permute(Z_BC,[2,3,1]);
 end
 %-------------------------------------------------------------------------%
 function ax = plot_orbit(ax,Dyn_Data,orbit_data,Plot_Settings,validation_orbit_plotting,validation_manifold_plotting)
