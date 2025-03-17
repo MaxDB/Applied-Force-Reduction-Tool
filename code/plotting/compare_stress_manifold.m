@@ -1,5 +1,4 @@
 function ax = compare_stress_manifold(manifolds,varargin)
-PLOT_LEGEND = 1;
 %-------------------------------------------------------------------------%
 num_args = length(varargin);
 if mod(num_args,2) == 1
@@ -25,6 +24,22 @@ if isempty(ax)
     fig = figure;
     ax = axes(fig);
 end
+if ~isfield(Plot_Settings,"light_on")
+    Plot_Settings.light_on = 0;
+end
+if ~isfield(Plot_Settings,"energy_limit")
+    Plot_Settings.energy_limit = 0;
+end
+
+if ~isfield(Plot_Settings,"legend")
+    Plot_Settings.legend = 1;
+end
+
+if ~isfield(Plot_Settings,"mesh_alpha")
+    Plot_Settings.mesh_alpha = 1;
+end
+
+
 colours = get_plot_colours(1);
 
 num_manifolds = length(manifolds);
@@ -90,12 +105,7 @@ xlabel(ax,labels(1));
 ylabel(ax,labels(2))
 zlabel(ax,labels(3))
 
-if ~isprop(Plot_Settings,"light_on")
-    Plot_Settings.light_on = 1;
-end
-if ~isprop(Plot_Settings,"energy_limit")
-    Plot_Settings.energy_limit = 1;
-end
+
 
 
 if Plot_Settings.light_on
@@ -103,7 +113,7 @@ if Plot_Settings.light_on
 end
 % daspect([1 1 1])
 %-------------------------------------------------------------------------%
-if ~PLOT_LEGEND
+if ~Plot_Settings.legend
     return %#ok<*UNRCH>
 end
 lines = ax.Children;
@@ -119,6 +129,11 @@ for iLine = 1:num_lines
         continue
     end
     tag_id = split(line_tag,"-");
+    switch tag_id{1}
+        case {"outline","grid_line"}
+            line.HandleVisibility = "off";
+            continue
+    end
     manifold_def = "_{" + tag_id{2} + "}";
     switch tag_id{1}
         case "m"
@@ -142,12 +157,12 @@ end
 %-------------------------------------------------------------------------%
 function ax = plot_manifold(ax,Dyn_Data,Plot_Settings,colour)
 PLOT_MODE = "ellipse";
-MESH_ALPHA = 0.5;
+mesh_alpha = Plot_Settings.mesh_alpha;
 LINE_WIDTH = 2;
 PLOT_RESOLUTION = 21;
 
 
-mesh_settings = {"EdgeColor",colour,"EdgeAlpha",MESH_ALPHA,"LineWidth",1,"FaceColor","interp","FaceLighting","gouraud","FaceAlpha",MESH_ALPHA};
+mesh_settings = {"EdgeColor","none","EdgeAlpha",0,"LineWidth",1,"FaceColor","interp","FaceLighting","gouraud","FaceAlpha",mesh_alpha};
 line_settings = {"k-","linewidth",LINE_WIDTH};
 
 Rom = Dyn_Data.Dynamic_Model;
@@ -162,7 +177,14 @@ switch num_r_modes
     case 1
         r_lim = Rom.reduced_displacement_limits;
         r = linspace(r_lim(1),r_lim(2),PLOT_RESOLUTION);
-
+        if Plot_Settings.energy_limit ~= 0
+            potential = Rom.Potential_Polynomial.evaluate_polynomial(r);
+            energy_lim = Plot_Settings.energy_limit;
+            positive_limit = interp1(potential(sign(r) == 1),r(sign(r) == 1),energy_lim);
+            negative_limit = interp1(potential(sign(r) == -1),r(sign(r) == -1),energy_lim);
+            r(potential > energy_lim) = [];
+            r = [negative_limit,r,positive_limit];
+        end
         x_tilde = Rom.Physical_Displacement_Polynomial.evaluate_polynomial(r);
 
 
@@ -171,11 +193,32 @@ switch num_r_modes
         switch PLOT_MODE
             case "rectangle"
                 Z_BC = rectangle_manifold_mesh(Rom,Plot_Settings);
+                z_grid = Z_BC(:,:,plot_order);
             case "ellipse"
-                Z_BC = ellipse_manifold_mesh(Rom,Plot_Settings);
+                Phy_Poly = Rom.Physical_Displacement_Polynomial;
+                Potential_Poly = Rom.Potential_Polynomial;
+                energy_lim = Plot_Settings.energy_limit;
+                [x_grid,y_grid] = get_2d_plotting_data(Phy_Poly,Potential_Poly,energy_lim);
+                num_points = numel(x_grid);
+                x_lin = reshape(x_grid,1,num_points);
+                y_lin = reshape(y_grid,1,num_points);
+                z_lin = Phy_Poly.evaluate_polynomial([x_lin;y_lin],plot_order);
+                z_grid = reshape(z_lin',size(x_grid,1),size(x_grid,2),3);
         end
-        colour_data = ones([size(Z_BC,[1,2]),3]).*reshape(colour,[1,1,3]);
-        mesh(ax,Z_BC(:,:,plot_order(1)),Z_BC(:,:,plot_order(2)),Z_BC(:,:,plot_order(3)),colour_data,mesh_settings{:},"tag",manifold_name);
+        colour_data = ones([size(z_grid,[1,2]),3]).*reshape(colour,[1,1,3]);
+        mesh(ax,z_grid(:,:,1),z_grid(:,:,2),z_grid(:,:,3),colour_data,mesh_settings{:},"tag",manifold_name);
+
+        switch PLOT_MODE
+            case "ellipse"
+                grid_line_style = {"Color",[0.25,0.25,0.25,0.2],"LineWidth",0.2,"Tag","grid_line"};
+                outline_style = {"LineWidth",1,"Tag","outline","Color","k"};
+                num_radii = size(z_grid,2);
+                for iRadius = 1:(num_radii-1)
+                    plot3(ax,z_grid(:,iRadius,1),z_grid(:,iRadius,2),z_grid(:,iRadius,3),grid_line_style{:})
+                end
+                plot3(ax,z_grid(:,end,1),z_grid(:,end,2),z_grid(:,end,3),outline_style{:})
+
+        end
 end
 hold(ax,"off")
 end
