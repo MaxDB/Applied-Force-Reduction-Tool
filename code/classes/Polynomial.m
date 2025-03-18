@@ -53,20 +53,20 @@ classdef Polynomial
             end
             
             %---------------------
-            if coupling_type == "stiffness"
-                
-                output_shape = size(output_data);
-                num_rows = output_shape(1);
-                for iRow = 1:num_rows
-                    for iCol = (iRow+1):num_rows
-                        element_1 = squeeze(output_data(iRow,iCol,:));
-                        element_2 = squeeze(output_data(iCol,iRow,:));
-                        mean_element = (element_1 + element_2)/2;
-                        output_data(iRow,iCol,:) = mean_element;
-                        output_data(iCol,iRow,:) = mean_element;
-                    end
-                end
-            end
+            % if coupling_type == "stiffness"
+            % 
+            %     output_shape = size(output_data);
+            %     num_rows = output_shape(1);
+            %     for iRow = 1:num_rows
+            %         for iCol = (iRow+1):num_rows
+            %             element_1 = squeeze(output_data(iRow,iCol,:));
+            %             element_2 = squeeze(output_data(iCol,iRow,:));
+            %             mean_element = (element_1 + element_2)/2;
+            %             output_data(iRow,iCol,:) = mean_element;
+            %             output_data(iCol,iRow,:) = mean_element;
+            %         end
+            %     end
+            % end
             output_reshaped = ndims(output_data) == 3;
             if output_reshaped
                 output_shape = size(output_data);
@@ -118,23 +118,24 @@ classdef Polynomial
             
             %---------------------
             Constraint = obj.parse_constraint(constraint_type);
-            
+            Constraint.coupling = coupling_type;
             %---------------------
+            [coeffs,Num_Unconstrained_Terms] = obj.fit_polynomial(input_data,output_data,Constraint);
             switch coupling_type
-                case {"stiffness","none"}
-                    [coeffs,num_unconstrained_terms] = obj.fit_polynomial(input_data,output_data,Constraint);
-                    obj.num_independent_element_coefficients = num_unconstrained_terms.regression_size;
-                    obj.num_fitted_coefficients = num_unconstrained_terms.regression_size*size(coeffs,2);
+                case "none"
+                    obj.num_independent_element_coefficients = Num_Unconstrained_Terms.regression_size;
+                    obj.num_fitted_coefficients = Num_Unconstrained_Terms.regression_size*size(coeffs,2);
                 case "force"
-                    Coupling = obj.get_force_coupling;
-                    [coeffs,num_unconstrained_terms] = obj.fit_coupled_polynomial(input_data,output_data,Constraint,Coupling);
-                    obj.num_independent_element_coefficients = num_unconstrained_terms.coupling_size;
-                    obj.num_fitted_coefficients = num_unconstrained_terms.regression_size;
+                    obj.num_independent_element_coefficients = Num_Unconstrained_Terms.coupling_size;
+                    obj.num_fitted_coefficients = Num_Unconstrained_Terms.regression_size;
+                case "stiffness"
+                    obj.num_independent_element_coefficients = Num_Unconstrained_Terms.regression_size;
+                    obj.num_fitted_coefficients = Num_Unconstrained_Terms.regression_size*Num_Unconstrained_Terms.coupling_size;
             end
             %---------------------
             if output_reshaped
                 obj.output_dimension = output_shape(1:2);
-                coeffs = reshape(coeffs,[size(coeffs,1),output_shape(1:2)]);
+                coeffs = reshape(coeffs,[output_shape(1:2),size(coeffs,2)]);
             end
 
 
@@ -143,108 +144,28 @@ classdef Polynomial
             
         end
         %-----------------------------------------------------------------%
-        function [coeffs,num_unconstrained_terms] = fit_polynomial(obj,input_data,output_data,Constraint)
-            %no coefficient coupling
+        function [coeffs,Num_Unconstrained_Terms] = fit_polynomial(obj,input_data,output_data,Constraint)
             scale_factor = obj.scaling_factor;
             shift_factor = obj.shifting_factor;
 
             %--------------
-            transformed_data = scale_factor.*(input_data - shift_factor); 
+            transformed_data = scale_factor.*(input_data + shift_factor); 
             
             %--------------
-            [unconstrained_input_matrix,output_correction] = obj.apply_constraints(transformed_data,Constraint);
-
-            %--------------
-            output_data = output_data' + output_correction;
+            [unconstrained_input_matrix,output_correction,Coeff_Data] = obj.apply_constraints(transformed_data,Constraint);
+            output_data = output_data + output_correction;
+            
+            %-------------
+            [output_data,unconstrained_input_matrix,Coupling_Data] = obj.apply_coupling(output_data,unconstrained_input_matrix,Constraint);
 
             %-------------
-            coeffs = lsqminnorm(unconstrained_input_matrix,output_data,'warn');
-            num_unconstrained_terms.regression_size = size(coeffs,1);
-            %--------------
-            if ~isempty(Constraint.terms)
-                coeffs = obj.reconstruct_coefficients(coeffs,Constraint);
+            coeffs = lsqminnorm(unconstrained_input_matrix',output_data','warn')';
+            Num_Unconstrained_Terms.regression_size = size(coeffs,2);
+            if ~isempty(Coupling_Data)
+                Num_Unconstrained_Terms.coupling_size = Coupling_Data.couping_size;
             end
-        end
-        %-----------------------------------------------------------------%
-        function [coeffs,num_unconstrained_terms] = fit_coupled_polynomial(obj,input_data,output_data,Constraint,Coupling)
-            %conservative coefficient coupling
-            input_index = obj.input_order;
-            scale_factor = obj.scaling_factor;
-            shift_factor = obj.shifting_factor;
-
             %--------------
-            transformed_data = scale_factor.*(input_data - shift_factor); 
-            
-            %--------------
-            [unconstrained_input_matrix,output_correction] = obj.apply_constraints(transformed_data,Constraint);
-            
-            %--------------
-            output_data = output_data' + output_correction;
-
-
-            %--------------
-            %coupling
-            coupling_pattern = Coupling.coupling_pattern;
-            coupling_scale_factors = Coupling.coupling_scale_factors;
-            num_inputs = size(input_index,2);
-            if ~isempty(Constraint.terms)
-                constrained_terms = Constraint.terms;
-                coupling_pattern(constrained_terms,:) = [];
-                coupling_scale_factors(constrained_terms,:) = [];
-            end
-
-            coupling_pattern = Polynomial.relabel_coupling_pattern(coupling_pattern);
-            num_unique_coeffs = max(coupling_pattern,[],"all");
-            num_points = size(unconstrained_input_matrix,1);
-            coupled_input_matrix = zeros(num_inputs*num_points,num_unique_coeffs);
-
-            combination_scaling = zeros(num_unique_coeffs,num_inputs);
-            new_coupling_scale_factors = zeros(size(coupling_scale_factors));
-            for iCoeff = 1:num_unique_coeffs
-                [term,input] = find(coupling_pattern == iCoeff);
-                input_col = zeros(num_points,num_inputs);
-                col_scale = zeros(2,num_inputs);
-                num_coupled_terms = length(input);
-                for iInput = 1:num_coupled_terms
-
-                    col_scale(1,input(iInput)) = coupling_scale_factors(term(iInput),input(iInput));
-                    % col_scale(2,input(iInput)) = 1/coeff_scaling(term(iInput));
-                    col_scale(2,input(iInput)) = scale_factor(input(iInput));
-
-                    input_col(:,input(iInput)) = unconstrained_input_matrix(:,term(iInput));
-
-                end
-                
-                if isscalar(input)
-                    combination_scaling(iCoeff,input) = 1;
-                    coupling_scale_factors(term(iInput),input(iInput)) = 1;
-                    new_coupling_scale_factors(term(iInput),input(iInput)) = 1;
-                else
-                    col_prod = prod(col_scale);
-                    combination_scaling(iCoeff,:) = col_prod./mean(col_prod);
-                    for iInput = 1:num_coupled_terms
-                        new_coupling_scale_factors(term(iInput),input(iInput)) = col_prod(input(iInput))./mean(col_prod);
-                    end
-                end
-                scaled_input_col = input_col.*combination_scaling(iCoeff,:);
-                coupled_input_matrix(:,iCoeff) = reshape(scaled_input_col,num_inputs*num_points,1);
-            end
-            
-            coupled_output_data = reshape(output_data,numel(output_data),1);
-
-           
-            %-------------
-            coupled_coeffs = lsqminnorm(coupled_input_matrix,coupled_output_data,'warn');
-            num_unconstrained_terms.coupling_size = size(coupling_pattern,1);
-            num_unconstrained_terms.regression_size = size(coupled_coeffs,1);
-            %--------------
-            %Reconstruct coupling
-            coeffs = coupled_coeffs(coupling_pattern).*new_coupling_scale_factors;
-             
-            % Reconstruct constraints
-            if ~isempty(Constraint.terms)
-                coeffs = obj.reconstruct_coefficients(coeffs,Constraint);
-            end
+            coeffs = obj.reconstruct_coefficients(coeffs,Constraint,Coeff_Data,Coupling_Data);
         end
         %-----------------------------------------------------------------%
         
@@ -259,49 +180,49 @@ classdef Polynomial
             
             shift_factor = obj.shifting_factor;
             scale_factor = obj.scaling_factor;
-            input_data = scale_factor.*(input_data-shift_factor);
+            input_data = scale_factor.*(input_data+shift_factor);
 
             input_matrix = Polynomial.get_input_matrix(input_data,input_index);
             
             outputs = obj.output_dimension;
             if nargin == 2
                 if isscalar(outputs)
-                    output_data = input_matrix*coeffs;
+                    output_data = coeffs*input_matrix;
                 else
-                    output_data = squeeze(tensorprod(input_matrix,coeffs,2,1));
+                    output_data = squeeze(tensorprod(coeffs,input_matrix,ndims(coeffs),1));
                 end
 
             else
 
                 if isscalar(outputs)
-                    output_data = input_matrix*coeffs(:,output);
+                    output_data = coeffs(output,:)*input_matrix;
 
                 else
                     switch size(output,2)
                         case 1
                             coeff_size = size(coeffs);
 
-                            coeffs = reshape(coeffs,coeff_size(1),prod(coeff_size(2:3)));
-                            output_data = input_matrix*coeffs(:,output);
+                            coeffs = reshape(coeffs,prod(coeff_size(1:2)),coeff_size(3));
+                            output_data = coeffs(output,:)*input_matrix;
                         case 2
-                            output_data = squeeze(tensorprod(input_matrix,coeffs(:,output(:,1),output(:,2)),2,1));
+                            output_data = squeeze(tensorprod(coeffs(output(:,1),output(:,2),:),input_matrix,ndims(coeffs),1));
                     end
                 end
             end
 
             
-            if size(output_data,1) ~= obj.output_dimension(1)
-                switch ndims(output_data)
-                    case 2
-                        output_data = output_data';
-                    case 3
-                      
-                end
-            end
+            % if size(output_data,1) ~= obj.output_dimension(1)
+            %     switch ndims(output_data)
+            %         case 2
+            %             output_data = output_data';
+            %         case 3
+            % 
+            %     end
+            % end
 
         end
         %-----------------------------------------------------------------%
-        function plot_polynomial(obj,varargin)
+        function ax = plot_polynomial(obj,varargin)
 
             num_args = length(varargin);
             if mod(num_args,2) == 1
@@ -312,7 +233,8 @@ classdef Polynomial
 
             ax = [];
             tag = "";
-            plotted_outputs = (1:obj.output_dimension)';
+            total_outputs = prod(obj.output_dimension);
+            plotted_outputs = (1:total_outputs)';
             Potential_Poly = [];
             energy_limit = [];
 
@@ -436,17 +358,18 @@ classdef Polynomial
             % int_input_size = size(int_input_index);
             integrated_terms = reshape(permute(int_input_index,[1,3,2]),[size(int_input_index,1)*size(int_input_index,3),size(int_input_index,2)]);
             integrated_terms = num2cell(integrated_terms,2);
-
-            int_coeffs = (obj.coefficients./squeeze(int_scale_factor)).*(1./obj.scaling_factor');
+            
+            int_scale_factor = squeeze(int_scale_factor)';
+            int_coeffs = (obj.coefficients./int_scale_factor)./obj.scaling_factor;
 
     
             
-            coeffs_int = zeros(Poly_Int.num_element_coefficients,Poly_Int.output_dimension);
+            coeffs_int = zeros(Poly_Int.output_dimension,Poly_Int.num_element_coefficients);
             for iTerm_int = 2:Poly_Int.num_element_coefficients
                 term = Poly_Int.input_order(iTerm_int,:);
                 % [test,term_index] = ismember(term,integrated_terms,'rows');
                 matching_terms = cellfun(@(term_row) isequal(term_row,term),integrated_terms);
-                coeff_index = reshape(matching_terms,size(int_coeffs));
+                coeff_index = reshape(matching_terms,flip(size(int_coeffs)))';
                 matched_coeffs = int_coeffs(coeff_index);
 
                 if isscalar(uniquetol(matched_coeffs))
@@ -459,7 +382,7 @@ classdef Polynomial
 
             Poly_Int.coefficients = coeffs_int;
             int_constant = Poly_Int.evaluate_polynomial(zeros(Poly_Int.input_dimension,1));
-            Poly_Int.coefficients(1,:) = -int_constant; 
+            Poly_Int.coefficients(:,1) = -int_constant; 
         end
         %-----------------------------------------------------------------%
         function Poly_Diff = differentiate_polynomial(obj)
@@ -477,32 +400,34 @@ classdef Polynomial
             % differentiated_terms = num2cell(differentiated_terms,2);
             
             diff_coeffs = obj.coefficients;
+            
+            diff_index = size(Poly_Diff.output_dimension,2);
 
 
-
-            coeffs_size = num2cell([Poly_Diff.num_element_coefficients,Poly_Diff.output_dimension]);
+            coeffs_size = num2cell([Poly_Diff.output_dimension,Poly_Diff.num_element_coefficients]);
             coeffs_diff = zeros(coeffs_size{:});
             coeffs_index = cell(size(coeffs_size));
             for iDim = 1:length(coeffs_size)
                 coeffs_index{1,iDim} = 1:coeffs_size{1,iDim};
             end
             for iTerm_diff = 1:Poly_Diff.num_element_coefficients
-                coeffs_index{1,1} = iTerm_diff;
+                coeffs_index{1,end} = iTerm_diff;
                 term = Poly_Diff.input_order(iTerm_diff,:);
 
                 for iDiff = 1:Poly_Diff.input_dimension
-                    coeffs_index{1,end} = iDiff;
+                    coeffs_index{1,diff_index} = iDiff;
 
                     [~,term_index] = ismember(term,diff_input_index(:,:,iDiff),'rows');
+                    
 
-                    matched_coeffs = diff_coeffs(term_index,:,:)*diff_scale_factor(term_index,1,iDiff)*obj.scaling_factor(iDiff);
+                    matched_coeffs = diff_coeffs(:,term_index)*diff_scale_factor(term_index,1,iDiff)*obj.scaling_factor(iDiff);
                     
                     coeffs_diff(coeffs_index{:}) = matched_coeffs;
                 end
 
-                % term_index = mod(term_index,int_input_size(1));
-            end
 
+            end
+            
             Poly_Diff.coefficients = coeffs_diff;
         end
         %-----------------------------------------------------------------%
@@ -559,140 +484,223 @@ classdef Polynomial
                     Constraint.terms = [];
                 case "constant"
                     Constraint.terms = 1;
-                    Constraint.values = constraint_type{1,2}';
+                    Constraint.values = constraint_type{1,2};
                 case "linear_disp"
                     Constraint.terms = 1:(num_inputs+1);
-                    Constraint.values = zeros(num_inputs+1,num_outputs);
+                    Constraint.values = zeros(num_outputs,num_inputs+1);
                     constraint_value = constraint_type{1,2};
                     
                     if isscalar(constraint_value)
-                        constraint_value = ones(num_inputs,num_outputs)*constraint_value;
-                    elseif size(constraint_value,1) == num_outputs
-                        constraint_value = constraint_value';
+                        constraint_value = ones(num_outputs,num_inputs)*constraint_value;
                     end
 
                     for iMode = 1:num_inputs
-                        Constraint.values(iMode+1,:) = constraint_value(iMode,:)/scale_factor(iMode);
+                        Constraint.values(:,iMode+1) = constraint_value(:,iMode)/scale_factor(iMode);
                     end
                 case "linear_force"
                     Constraint.terms = 1:(num_inputs+1);
                     constraint_values = constraint_type{1,2};
 
                     for iMode = 1:num_inputs
-                        Constraint.values(1,iMode) = 0;
-                        Constraint.values(1+iMode,iMode) = constraint_values(iMode)/scale_factor(iMode);
+                        Constraint.values(iMode,1) = 0;
+                        Constraint.values(iMode,1+iMode) = constraint_values(iMode)/scale_factor(iMode);
                     end
 
             end
         end
         %-----------------------------------------------------------------%
-        function [unconstrained_input_matrix,output_correction] = apply_constraints(obj,transformed_data,Constraint)
+        function [unconstrained_input_matrix,output_correction,Coeff_Data] = apply_constraints(obj,transformed_data,Constraint)
             input_index = obj.input_order;
-            num_inputs = obj.input_dimension;
-            num_outputs = obj.output_dimension;
             scale_factor = obj.scaling_factor;
             shift_factor = obj.shifting_factor;
-            
-            num_terms = size(input_index,1);
             num_loadcases = size(transformed_data,2);
-
-            terms = 1:num_terms;
-            unconstrained_terms = terms;
-            if ~isempty(Constraint.terms)
-                constrained_terms = Constraint.terms;
-                unconstrained_terms(constrained_terms) = [];
-            else
-                constrained_terms = [];
-            end
-            
+            num_outputs = obj.output_dimension;
+            num_inputs = obj.input_dimension;
+            num_terms = size(input_index,1);
+     
             input_matrix = Polynomial.get_input_matrix(transformed_data,input_index);
-            output_correction = zeros(num_loadcases,num_outputs);
-
+            
             if isempty(Constraint.terms)
+                output_correction = zeros(num_loadcases,num_outputs);
                 unconstrained_input_matrix = input_matrix;
                 return
             end
-
-            
-            constraint_values = Constraint.values;
-            transformation_prod = -scale_factor.*shift_factor;
-            % constant constraint
-            constrained_input_matrix = input_matrix(:,1);
-            unconstrained_input_matrix = input_matrix(:,2:end); 
-
-            trans_prod_input_matrix = Polynomial.get_input_matrix(transformation_prod,input_index);
-            unconstrained_scaling = -trans_prod_input_matrix(2:end);
-            constrained_scaling = trans_prod_input_matrix(1);
-
-            constrained_term_col = constrained_input_matrix(:,constrained_scaling == 1);
-            unconstrained_input_matrix = unconstrained_input_matrix + constrained_term_col.*unconstrained_scaling;
-            for iOutput = 1:num_outputs
-                output_correction(:,iOutput) = output_correction(:,iOutput) - constrained_term_col*constraint_values(constrained_scaling==1,iOutput);
-            end
-            
-            if isscalar(Constraint.terms)
-                return
-            end
-            % linear constraint
-            constrained_input_matrix = [constrained_input_matrix,unconstrained_input_matrix(:,1:num_inputs)];
-            unconstrained_input_matrix = unconstrained_input_matrix(:,(num_inputs+1):end); 
-            [diff_input_index,diff_scale_factor] = Polynomial.differentiate_input_index(input_index,1:num_inputs);
-            for iDiff = 1:num_inputs
-                di_input_index = diff_input_index(:,:,iDiff);
-                diff_input_matrix = Polynomial.get_input_matrix(transformation_prod,di_input_index);
-                diff_input_matrix(isnan(diff_input_matrix)) = 0;
-                linear_constraint_scaling = diff_input_matrix.*(squeeze(diff_scale_factor(:,1,iDiff))');
-                unconstrained_scaling = -linear_constraint_scaling(unconstrained_terms);
-                constrained_scaling = linear_constraint_scaling(constrained_terms);
-
-                constrained_term_col = constrained_input_matrix(:,constrained_scaling == 1);
-                unconstrained_input_matrix = unconstrained_input_matrix + constrained_term_col.*unconstrained_scaling;
-                for iOutput = 1:num_outputs
-                    output_correction(:,iOutput) = output_correction(:,iOutput) - constrained_term_col*constraint_values(constrained_scaling==1,iOutput);
-                end
-            end
-        end
-        %-----------------------------------------------------------------%
-        function coeffs = reconstruct_coefficients(obj,coeffs,Constraint)
-            input_index = obj.input_order;
-            num_terms = size(input_index,1);
-            num_inputs = obj.input_dimension;
-            num_outputs = obj.output_dimension;
-            scale_factor = obj.scaling_factor;
-            shift_factor = obj.shifting_factor;
-
-            terms = 1:num_terms;
-            unconstrained_terms = terms;
-
+            % a_constrained = A + a_unconstrained * B
             constrained_terms = Constraint.terms;
+            num_constrained_terms = size(constrained_terms,2);
+            
+            unconstrained_terms = 1:num_terms;
             unconstrained_terms(constrained_terms) = [];
 
 
-            transformation_prod = -scale_factor.*shift_factor;
-            % linear constraint
-            if ~isscalar(Constraint.terms)
-                lin_coeffs = zeros(num_inputs,num_outputs);
-                lin_constraint = Constraint.values(2:end,:);
+            transformation_prod = scale_factor.*shift_factor;
+            trans_prod_input = Polynomial.get_input_matrix(transformation_prod,input_index);
+            switch num_constrained_terms
+                case 1
+                    A = Constraint.values;
+                    B = - trans_prod_input(unconstrained_terms);
+                    
+                    output_correction = - A;
+                    unconstrained_input_matrix = input_matrix(unconstrained_terms,:) + B;
 
-                [diff_input_index,diff_scale_factor] = Polynomial.differentiate_input_index(input_index,1:num_inputs);
-                for iDiff = 1:num_inputs
-                    di_input_index = diff_input_index(:,:,iDiff);
-                    diff_input_matrix = Polynomial.get_input_matrix(transformation_prod,di_input_index);
-                    diff_input_matrix(isnan(diff_input_matrix)) = 0;
-                    linear_constraint_scaling = diff_input_matrix.*(squeeze(diff_scale_factor(:,1,iDiff))');
-                    unconstrained_scaling = -linear_constraint_scaling(unconstrained_terms);
-                    lin_coeffs(iDiff,:) = lin_constraint(iDiff,:) + unconstrained_scaling*coeffs;
-                end
-                coeffs = [lin_coeffs;coeffs];
+                case (1+num_inputs)
+                    trans_prod_diff_input = Polynomial.get_diff_input_matrix(transformation_prod,input_index);
+                    trans_prod_input = [trans_prod_input,trans_prod_diff_input];
+                    
+                    constrained_trans_prod_input = trans_prod_input(constrained_terms,:);
+                    A = Constraint.values/constrained_trans_prod_input;
+
+                    unconstrained_trans_prod_input = trans_prod_input(unconstrained_terms,:);
+                    B = - unconstrained_trans_prod_input/constrained_trans_prod_input;
+
+                    output_correction = -A *input_matrix(constrained_terms,:);
+                    unconstrained_input_matrix = input_matrix(unconstrained_terms,:) + B*input_matrix(constrained_terms,:);
             end
-            % constraint constraint
-            
-            const_constraint = Constraint.values(1,:);
-            trans_prod_input_matrix = Polynomial.get_input_matrix(transformation_prod,input_index);
-            unconstrained_scaling = -trans_prod_input_matrix(2:end);
-            const_coeffs = const_constraint + unconstrained_scaling*coeffs;
+            Coeff_Data.constrained_coefficient = A;
+            Coeff_Data.unconstrained_coefficient = B;
 
-            coeffs = [const_coeffs;coeffs];
+        end
+        %-----------------------------------------------------------------%
+        function [coupled_output_data,coupled_input_matrix,Coupling_Data] = apply_coupling(obj,output_data,unconstrained_input_matrix,Constraint)
+            switch Constraint.coupling
+                case "none"
+                    coupled_output_data = output_data;
+                    coupled_input_matrix = unconstrained_input_matrix;
+                    Coupling_Data = [];
+                case "force"
+                    scale_factor = obj.scaling_factor;
+
+                    constrained_terms = Constraint.terms;
+                    num_constrained_terms = size(constrained_terms,2);
+                    num_unconstrained_terms = size(unconstrained_input_matrix,1);
+                    num_terms = num_unconstrained_terms + num_constrained_terms;
+
+                    unconstrained_terms = 1:num_terms;
+                    unconstrained_terms(constrained_terms) = [];
+
+                    num_outputs = obj.output_dimension;
+                    num_inputs = obj.input_dimension;
+
+                    num_potential_coeffs = Polynomial.input_combinations(obj.polynomial_degree+1,num_inputs);
+                    switch num_constrained_terms
+                        case 1
+                            num_potential_coeffs = num_potential_coeffs - Polynomial.input_combinations(1,num_inputs);
+                        case (1 + num_inputs)
+                            num_potential_coeffs = num_potential_coeffs - Polynomial.input_combinations(2,num_inputs);
+                    end
+                    %----
+
+                    Coupling = obj.get_force_coupling;
+                    
+
+                    coupling_pattern = Coupling.coupling_pattern(unconstrained_terms,:);
+                    coupling_pattern = coupling_pattern - min(coupling_pattern,[],"all") + 1;
+                    
+                    coupling_scale_factors = Coupling.coupling_scale_factors(unconstrained_terms,:);
+                    
+                    num_loadcases = size(output_data,2);
+                    coupled_input_matrix = zeros(num_potential_coeffs,num_loadcases*num_outputs);
+                    
+                    coupling_col = zeros(1,num_outputs*num_unconstrained_terms);
+                    coupling_row = zeros(1,num_outputs*num_unconstrained_terms);
+                    coupling_value = zeros(1,num_outputs*num_unconstrained_terms);
+                    for iOutput = 1:num_outputs
+                        coupling_col_i = 1:num_unconstrained_terms;
+                        coupling_row_i = coupling_pattern(coupling_col_i,iOutput);
+                        coupling_value_i = coupling_scale_factors(coupling_col_i ,iOutput)*scale_factor(iOutput);
+                        C_i = sparse(coupling_row_i,coupling_col_i,coupling_value_i,num_potential_coeffs,num_unconstrained_terms);
+
+                        coupling_span = (num_loadcases*(iOutput-1) + 1):(num_loadcases*iOutput);
+                        coupled_input_matrix(:,coupling_span) = C_i*unconstrained_input_matrix;
+
+                        sparse_span = (num_unconstrained_terms*(iOutput-1) +1):(num_unconstrained_terms*iOutput);
+                        coupling_col(sparse_span) = sparse_span;
+                        coupling_row(sparse_span) = coupling_row_i;
+                        coupling_value(sparse_span) = coupling_value_i;
+                    end
+                    Coupling_Data.C = sparse(coupling_row,coupling_col,coupling_value,num_potential_coeffs,num_unconstrained_terms*num_outputs);
+                    Coupling_Data.couping_size = size(coupling_pattern,1);
+                    %----
+                    coupled_output_data = reshape(output_data',1,num_loadcases*num_outputs);
+                case "stiffness"
+                    num_terms = size(output_data,1);
+                    matrix_dim = sqrt(num_terms);
+                    num_unique_terms = matrix_dim*(matrix_dim+1)/2;
+
+                    coupling = zeros(matrix_dim);
+                    term_counter = 0;
+                    for iRow = 1:matrix_dim
+                        for iCol = iRow:matrix_dim
+                            term_counter = term_counter + 1;
+                            coupling(iRow,iCol) = term_counter;
+                            coupling(iCol,iRow) = term_counter;
+                        end
+                    end
+                    coupling_vec = reshape(coupling',num_terms,1);
+                    
+                    coupling_row = 1:num_terms;
+                    coupling_col = coupling_vec(coupling_row);
+                    coupling_value = ones(1,num_terms);
+
+                    Coupling_Data.C = sparse(coupling_row,coupling_col,coupling_value,num_terms,num_unique_terms);
+                    Coupling_Data.couping_size = num_unique_terms;
+                    %---
+                    coupled_input_matrix = unconstrained_input_matrix;
+                    
+                    %--
+                    %check output data symmetry
+                    num_loadcases = size(output_data,2);
+                    coupled_output_data = zeros(num_unique_terms,num_loadcases);
+                    for iTerm = 1:num_unique_terms
+                        term_index = coupling_vec == iTerm;
+                        coupled_data = output_data(term_index,:);
+                        if nnz(term_index) > 1
+                            is_symmetric = isapprox(coupled_data(1,:),coupled_data(2,:),"veryloose");
+                            if any(~is_symmetric)
+                                asymmetric_terms = coupled_data(:,~is_symmetric);
+                                if size(asymmetric_terms,2) > num_loadcases/2
+                                    warning("tangent stiffness not symmetric")
+                                end
+                            end
+                            coupled_data = mean(coupled_data,1);
+                        end
+
+                        coupled_output_data(iTerm,:) = coupled_data;
+                    end
+            end
+
+        end
+        %-----------------------------------------------------------------%
+        function coeffs = reconstruct_coefficients(obj,fitted_coeffs,Constraint,Coeff_Data,Coupling_Data)
+            if isempty(Constraint.terms)
+                coeffs = fitted_coeffs;
+                return
+            end
+
+            switch Constraint.coupling
+                case "force"
+                    coupled_coeffs = fitted_coeffs;
+                    fitted_coeffs = coupled_coeffs*Coupling_Data.C;
+                    fitted_coeffs = reshape(fitted_coeffs,[],obj.output_dimension)';
+                case "stiffness"
+                    coupled_coeffs = fitted_coeffs;
+                    fitted_coeffs = Coupling_Data.C*coupled_coeffs;
+            end
+
+            constraind_coeffs = Coeff_Data.constrained_coefficient + fitted_coeffs*Coeff_Data.unconstrained_coefficient;
+            
+            num_constrained_coeffs = size(constraind_coeffs,2);
+            num_fitted_coeffs = size(fitted_coeffs,2);
+            num_terms = num_fitted_coeffs + num_constrained_coeffs;
+            num_outputs = size(fitted_coeffs,1);
+            coeffs = zeros(num_outputs,num_terms);
+
+            terms = 1:num_terms;
+            unconstrained_terms = terms;
+            unconstrained_terms(Constraint.terms) = [];
+            coeffs(:,Constraint.terms) = constraind_coeffs;
+            coeffs(:,unconstrained_terms) = fitted_coeffs;
+
         end
         %-----------------------------------------------------------------%
         function Coupling = get_force_coupling(obj)
@@ -819,11 +827,24 @@ classdef Polynomial
             num_points = size(input_data,1);
             num_terms = size(input_index,1);
 
-            input_matrix = zeros(num_points,num_terms);
+            input_matrix = zeros(num_terms,num_points);
             for iTerm = 1:num_terms
                 term_powers = input_index(iTerm,:);
                 term_data = prod(input_data.^(term_powers),2);
-                input_matrix(:,iTerm) = term_data;
+                input_matrix(iTerm,:) = term_data';
+            end
+        end
+        %-----------------------------------------------------------------%
+        function diff_input_matrix = get_diff_input_matrix(input_data,input_index)
+            num_inputs = size(input_index,2);
+            num_terms = size(input_index,1);
+            [diff_input_index,diff_scale_factor] = Polynomial.differentiate_input_index(input_index,1:num_inputs);
+            diff_input_matrix = zeros(num_terms,num_inputs);
+            for iDiff = 1:num_inputs
+                di_input_index = diff_input_index(:,:,iDiff);
+                unscaled_diff_input_matrix = Polynomial.get_input_matrix(input_data,di_input_index);
+                unscaled_diff_input_matrix(isnan(unscaled_diff_input_matrix)) = 0;
+                diff_input_matrix(:,iDiff) = unscaled_diff_input_matrix.*(squeeze(diff_scale_factor(:,1,iDiff)));
             end
         end
         %-----------------------------------------------------------------%
@@ -871,11 +892,11 @@ classdef Polynomial
                 scale_factor = ones(num_inputs,1);
             end
             if shift
-                shift_factor = mean(input_data,2);
+                shift_factor = -mean(input_data,2);
             else
                 shift_factor = zeros(num_inputs,1);
             end
-            % transformed_data = scale_factor.*(input_data - shift_factor);
+            % transformed_data = scale_factor.*(input_data + shift_factor);
         end
         %-----------------------------------------------------------------%
         function [diff_input_index,diff_scale_factor] = differentiate_input_index(input_index,diff_inputs)

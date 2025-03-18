@@ -13,7 +13,7 @@ r_dot = xcn((num_modes+1):end,:);   %velocity
 scale_factor = Disp_Data.scale_factor;
 shift_factor = Disp_Data.shift_factor;
 %assumes force and coupling from same dataset
-r_transformed = scale_factor.*(r - shift_factor);
+r_transformed = scale_factor.*(r + shift_factor);
 
 num_coeffs = size(Disp_Data.beta_bar,2);
 

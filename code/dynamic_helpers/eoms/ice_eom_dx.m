@@ -11,7 +11,7 @@ scale_factor = Force_Data.scale_factor;
 shift_factor = Force_Data.shift_factor;
 %assumes force and coupling from same dataset
 
-r_transformed = scale_factor.*(r - shift_factor);
+r_transformed = scale_factor.*(r + shift_factor);
 
 vel_span = disp_span + num_modes;
 

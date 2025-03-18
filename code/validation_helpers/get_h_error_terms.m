@@ -14,7 +14,7 @@ scale_factor = Eom_Input.scale_factor;
 shift_factor = Eom_Input.shift_factor;
 %assumes force and coupling from same dataset
 
-r_transformed = scale_factor.*(r - shift_factor);
+r_transformed = scale_factor.*(r + shift_factor);
 
 h_disp_beta_bar = Eom_Input.Beta_Bar_Data.h_disp;
 h_disp_r_disp_beta_bar = Eom_Input.Beta_Bar_Data.h_disp_r_disp;

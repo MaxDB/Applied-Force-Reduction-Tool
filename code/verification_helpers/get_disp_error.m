@@ -7,7 +7,7 @@ function error = get_disp_error(disp,Rom_One,Rom_Two,force_ratio,Disp_Error_Inpu
 
     scale_factor = Rom_One.Force_Polynomial.scaling_factor;
     shift_factor = Rom_One.Force_Polynomial.shifting_factor;
-    r_transformed = scale_factor.*(disp - shift_factor);
+    r_transformed = scale_factor.*(disp + shift_factor);
 
     num_disp_coeffs = [size(beta_bar_one,1),size(beta_bar_two,1)];
     num_force_coeffs = [Rom_One.Force_Polynomial.num_element_coefficients,Rom_Two.Force_Polynomial.num_element_coefficients];
@@ -36,8 +36,8 @@ function error = get_disp_error(disp,Rom_One,Rom_Two,force_ratio,Disp_Error_Inpu
         r_products_force_two = r_power_products(1:num_force_coeffs(2),:);
     
         %----------
-        force_one = Rom_One.Force_Polynomial.coefficients'*r_products_force_one;
-        force_two = Rom_Two.Force_Polynomial.coefficients'*r_products_force_two;
+        force_one = Rom_One.Force_Polynomial.coefficients*r_products_force_one;
+        force_two = Rom_Two.Force_Polynomial.coefficients*r_products_force_two;
 
         %---------
         inertia_one = r_dr_products_disp_one'*beta_bar_one*r_dr_products_disp_one;

@@ -3,7 +3,7 @@ close all
 set_visualisation_level(1)
 set_logging_level(2)
 
-system_name = "exhaust_1";
+system_name = "exhaust_17";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
@@ -31,7 +31,7 @@ Continuation_Opts.energy_limit_multiplier = 1;
 
 Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 compare_validation(Dyn_Data,"energy",1,"all")
-Dyn_Data = Dyn_Data.validate_solution(1,"all");
+% Dyn_Data = Dyn_Data.validate_solution(1,"all");
 % Dyn_Data = Dyn_Data.get_fe_output("periodicity",1,"X");
 % Dyn_Data = Dyn_Data.get_max_disp_stress(1,46);
 

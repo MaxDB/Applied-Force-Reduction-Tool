@@ -212,11 +212,13 @@ for iIteration = 1:(max_iterations+1)
         % end
     end
     error_time = toc(error_time_start);
-            %------------------------------------------------------------------
-    [~,degree_index] = min(max(maximum_disp_pair_errors,maximum_force_pair_errors)); 
+    %------------------------------------------------------------------
+    [~,force_degree_index] = min(maximum_force_pair_errors);
+    [~,disp_degree_index] = min(maximum_disp_pair_errors);
+    [~,degree_index] = min(max(maximum_disp_pair_errors,maximum_force_pair_errors));
     Extra_Point_Data = verification_data{1,degree_index};
-    force_degree = Extra_Point_Data.degree(1);
-    disp_degree = Extra_Point_Data.degree(2);
+    force_degree = verification_data{1,force_degree_index}.degree(1);
+    disp_degree = verification_data{1,disp_degree_index}.degree(2);
 
     log_message = sprintf("Max force error: %.2f and max disp error: %.2f found in %.1f seconds" ,maximum_force_pair_errors(degree_index),maximum_disp_pair_errors(degree_index),error_time);
     logger(log_message,3)

@@ -48,12 +48,21 @@ classdef Reduced_System
             obj.reduced_displacement_limits = [min(r,[],2),max(r,[],2)];
            
             Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
-            % Condensed_Poly = Polynomial(r,theta,disp_degree,"constraint",{"linear_disp",0},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.MINIMUM_DISPLACEMENT);
             Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",evec_r},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
+            
+            % ax = plot_static_data("force",Static_Data);
+            % ax = Force_Poly.plot_polynomial("axes",ax);
+            % % 
+            % ax = plot_static_data("force",Static_Data);
+            % ax = Force_Poly.plot_polynomial("axes",ax);
 
             Potential_Poly = integrate_polynomial(Force_Poly);
             Reduced_Stiffness_Poly = differentiate_polynomial(Force_Poly);
 
+            % ax = plot_static_data("potential",Static_Data);
+            % ax = Potential_Poly.plot_polynomial("axes",ax);
+            % Reduced_Stiffness_Poly.plot_polynomial("outputs",[1,1]);
+            
             
 
             obj.Force_Polynomial = Force_Poly;
@@ -194,7 +203,7 @@ classdef Reduced_System
             mass = obj.Model.mass;
             switch ndims(coeffs_2)
                 case 2
-                    beta_bar = coeffs_1*mass*coeffs_2';
+                    beta_bar = coeffs_1'*mass*coeffs_2;
                 case 3
                     coeffs_2 = permute(coeffs_2,[2,3,1]);
                     pre_beta_bar = tensorprod(coeffs_1,full(mass),2,1);
@@ -228,19 +237,19 @@ classdef Reduced_System
 
             %reformat h_disp_coeffs to input differential form
             h_coeff_size = size(h_disp_coeff_diff);
-            num_coeffs = h_coeff_size(1);
-            num_dof = h_coeff_size(2);
-            num_validation_modes = h_coeff_size(3);
+            num_coeffs = h_coeff_size(3);
+            num_dof = h_coeff_size(1);
+            num_validation_modes = h_coeff_size(2);
             
             num_combined_coeffs = num_coeffs*num_validation_modes;
-            h_disp_coeff = zeros(num_combined_coeffs,num_dof);
+            h_disp_coeff = zeros(num_dof,num_combined_coeffs);
             for iMode = 1:num_validation_modes
                 mode_index = iMode:num_validation_modes:num_combined_coeffs;
-                h_disp_coeff(mode_index,:) = h_disp_coeff_diff(:,:,iMode);
+                h_disp_coeff(:,mode_index) = h_disp_coeff_diff(:,iMode,:);
             end
 
-            h_disp_h_disp = obj.get_beta_mode(h_disp_coeff,h_disp_coeff');
-            h_disp_r_disp = obj.get_beta_mode(h_disp_coeff,physical_disp_coeffs);
+            h_disp_h_disp = obj.get_beta_mode(h_disp_coeff',h_disp_coeff);
+            h_disp_r_disp = obj.get_beta_mode(h_disp_coeff',physical_disp_coeffs);
             
             num_physical_disp_coeffs = size(physical_disp_coeffs,2);
             h_disp_h_disp_diff = zeros(num_coeffs,num_validation_modes,num_validation_modes,num_coeffs);
@@ -277,7 +286,7 @@ classdef Reduced_System
                 case "coco_backbone"
                     input_order = obj.get_max_input_order;
 
-                    Force_Data.coeffs = obj.Force_Polynomial.coefficients';
+                    Force_Data.coeffs = obj.Force_Polynomial.coefficients;
                     Force_Data.scale_factor = obj.Force_Polynomial.scaling_factor;
                     Force_Data.shift_factor = obj.Force_Polynomial.shifting_factor;
                     Force_Diff_Data = obj.Force_Polynomial.get_diff_data(1);
@@ -302,15 +311,15 @@ classdef Reduced_System
                     scale_factor = obj.Force_Polynomial.scaling_factor;
                     shift_factor = obj.Force_Polynomial.shifting_factor;
                     
-                    Reduced_Force_Data.coeffs = obj.Force_Polynomial.coefficients';
+                    Reduced_Force_Data.coeffs = obj.Force_Polynomial.coefficients;
                      
                     Physical_Disp_Diff_Data = obj.Physical_Displacement_Polynomial.get_diff_data(2);
                     Physical_Disp_Data.diff_scale_factor = Physical_Disp_Diff_Data.diff_scale_factor;
                     Physical_Disp_Data.diff_mapping = Physical_Disp_Diff_Data.diff_mapping;
-                    physical_disp_coeffs = obj.Physical_Displacement_Polynomial.coefficients';
+                    physical_disp_coeffs = obj.Physical_Displacement_Polynomial.coefficients;
                     
                     H_Stiffness_Poly = obj.Low_Frequency_Stiffness_Polynomial;
-                    H_Force_Data.coeffs = permute(H_Stiffness_Poly.coefficients,[2,3,1]);
+                    H_Force_Data.coeffs = H_Stiffness_Poly.coefficients;
                     
                     H_Disp_Grad_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
                     h_disp_coeff = H_Disp_Grad_Poly.coefficients;
@@ -339,7 +348,7 @@ classdef Reduced_System
                     Physical_Disp_Data.diff_scale_factor = Physical_Disp_Diff_Data.diff_scale_factor;
                     Physical_Disp_Data.diff_mapping = Physical_Disp_Diff_Data.diff_mapping;
                     Physical_Disp_Data.Poly = obj.Physical_Displacement_Polynomial;
-                    physical_disp_coeffs = obj.Physical_Displacement_Polynomial.coefficients';
+                    physical_disp_coeffs = obj.Physical_Displacement_Polynomial.coefficients;
 
                     Potential_Poly = obj.Potential_Polynomial;
 

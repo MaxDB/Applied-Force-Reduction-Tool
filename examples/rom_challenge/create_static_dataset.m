@@ -8,7 +8,7 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "exhaust";
 energy_limit = 1.8;
-initial_modes = [1];
+initial_modes = [1,7];
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
@@ -25,11 +25,11 @@ Static_Opts.num_loadcases = 8;
 Static_Opts.maximum_loadcases = 15;
 %------------------------------------------%
 
-%--------- Static Validation Settings ---------%
+%--------- Static Verification Settings ---------%
 Verification_Opts.verification_algorithm = "sep_to_edge";
-Verification_Opts.maximum_iterations = 0;
+Verification_Opts.maximum_iterations = 3;
 Verification_Opts.maximum_interpolation_error = [1e-3,1e-2];
-Verification_Opts.num_added_points = 1;
+Verification_Opts.num_added_points = 3;
 %----------------------------------------------%
 
 Model = Dynamic_System(system_name,energy_limit,initial_modes,Calibration_Opts,Static_Opts);
