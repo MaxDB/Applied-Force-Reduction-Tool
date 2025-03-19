@@ -10,6 +10,14 @@ setup_time_start = tic;
 all_dofs = Model.node_mapping(end,1);
 num_loadcases = size(applied_force,2);
 
+deactivated_dofs = 0;
+if deactivated_dofs
+    % replace with real solution
+    EXCLUDED_DOF = 242*[1,3,4,5,6]; %#ok<UNRCH>
+    all_dofs = floor(all_dofs/num_dimensions)*num_dimensions +num_dimensions;
+end
+
+
 static_settings = zeros(1,4);
 Static_Opts = Model.Static_Options;
 static_settings(1) = Static_Opts.initial_time_increment;
@@ -200,8 +208,10 @@ try
         static_step = static_template;
         static_step{step_def_line,1} = "*Step, name=STATIC_STEP_" + load_step_counter + ", nlgeom=YES, extrapolation=NO, inc=" + max_inc;
 
-        
 
+        if deactivated_dofs
+            step_force_label(EXCLUDED_DOF) = [];
+        end
 
         fprintf(input_ID,'%s\r\n',static_step{1:(load_def_line-1),1});
         fprintf(input_ID,'%s\r\n',step_force_label(:));

@@ -88,11 +88,13 @@ M_bc(:,[ci;ci_zero]) = [];
 
 % Caclulate node mapping
 dof_bc = length(K_bc);
-dof = length(K) - length(ci_zero);
+% dof = length(K) - length(ci_zero);
+dof = length(K);
 
 node_map = zeros(dof,2);
 node_map(:,1) = (1:dof)';
-node_map(ci,:) = [];
+node_map([ci;ci_zero],:) = [];
+node_map(:,1) = node_map(:,1) - size(ci_zero,1);
 node_map(:,2) = (1:dof_bc)';
 
 data_processing_time = toc(data_processing_time_start);

@@ -15,7 +15,7 @@ all_dofs = Model.node_mapping(end,1);
 deactivated_dofs = 0;
 if deactivated_dofs
     % replace with real solution
-    EXCLUDED_DOF = 242*[4,5,6]; %#ok<UNRCH>
+    EXCLUDED_DOF = 242*[1,3,4,5,6]; %#ok<UNRCH>
     all_dofs = floor(all_dofs/num_dimensions)*num_dimensions +num_dimensions;
 end
 num_seps = size(force_ratio,2);
@@ -170,7 +170,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Create forcing tempate
 force_label = strings(all_dofs,1);
-num_nodes = (all_dofs/num_dimensions);
+num_nodes = all_dofs/num_dimensions;
+
 for iNode = 1:num_nodes
     node_label = instance_name + "." + iNode;
     force_label(iNode) = node_label;
@@ -180,6 +181,7 @@ for iNode = 1:num_nodes
         force_label(iNode+num_nodes*(iDimension-1),1) = node_label + dimension_label;
     end
 end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -297,7 +299,8 @@ try
             static_step{energy_print_line} = "*ENERGY PRINT, FREQUENCY = " + step_max_inc;
 
             if deactivated_dofs
-                step_force_label(EXCLUDED_DOF) = [];
+                % a{1}
+                % step_force_label(EXCLUDED_DOF) = [];
             end
 
             fprintf(input_ID,'%s\r\n',static_step{1:(load_def_line-1),1});

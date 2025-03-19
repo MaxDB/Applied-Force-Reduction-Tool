@@ -214,7 +214,12 @@ classdef Dynamic_System
 
                 otherwise
                     r_modes = obj.reduced_modes;
-                    [eVec,eVal] = eigs(K,M,max(r_modes),"smallestabs");
+                    try
+                        [eVec,eVal] = eigs(K,M,max(r_modes),"smallestabs");
+                    catch
+                        warning("zero linear stiffness")
+                        [eVec,eVal] = eigs(K,M,max(r_modes),1);
+                    end
 
             end
 
