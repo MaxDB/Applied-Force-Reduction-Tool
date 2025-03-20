@@ -2,25 +2,26 @@
 # "#" are ignored. "," are delimeters. format is [option_name,option_value,short description]. avoid whitespace. place string values in double quotation marks
 
 ## General
-static_solver, "abaqus", 	software for apply static loadcases    
+static_solver, "abaqus", 		software for apply static loadcases    
 solver_algorithm, "standard",	solver algorithm to implement (e.g. continuation) 
-num_loadcases, 10, 		initial target number of loadcases per SEP
-maximum_loadcases, 20, 		maxium number of loadcases per SEP
+num_loadcases, 10, 				initial target number of loadcases per SEP
+maximum_loadcases, 20, 			maxium number of loadcases per SEP
 minimum_displacement, 1e-16,	anything lower will be treated as zero when creating the ROM
 
 ## Abaqus
+output_format, "text",			human readable data file vs binary results file (Abaqus)
 maximum_step_increments, 100, 	maximum number of increments per step (Abaqus)
-initial_time_increment, 1, 	initial time increment in static step (Abaqus)
-total_step_time, 1, 		Estimated total step time (Abaqus) 
-minimum_time_increment, 0, 	minimum time increment in static step (Abaqus)
-maximum_time_increment, 1, 	maximum time increment in static step (Abaqus)
+initial_time_increment, 1, 		initial time increment in static step (Abaqus)
+total_step_time, 1, 			Estimated total step time (Abaqus) 
+minimum_time_increment, 0, 		minimum time increment in static step (Abaqus)
+maximum_time_increment, 1, 		maximum time increment in static step (Abaqus)
 
 ## Parallelisation
-num_fe_cpus, 1, 		number of cpus available for fe software. Will use more tokens in Abaqus
+num_fe_cpus, 1, 			number of cpus available for fe software. Will use more tokens in Abaqus
 max_parallel_jobs, 1, 		maximum jobs that can be submitted at once. Will use more tokens in Abaqus
 minimum_job_loadcases, 10, 	minimum number of loadcases per job when submitting in parallel
 
 ## Additional Data Requests
-additional_data, "none", 		additonal data to extract with each loadcase
-num_validation_modes, 10, 		add the first X modes as validation modes (Perturbation)
+additional_data, "none", 			additonal data to extract with each loadcase
+num_validation_modes, 10, 			add the first X modes as validation modes (Perturbation)
 perturbation_scale_factor, "auto", 	scale factor for perturbation load (Perturbation) 

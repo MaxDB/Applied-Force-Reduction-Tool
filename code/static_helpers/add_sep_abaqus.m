@@ -38,6 +38,12 @@ static_settings(2) = Static_Opts.total_step_time;
 static_settings(3) = Static_Opts.minimum_time_increment;
 static_settings(4) = Static_Opts.maximum_time_increment;
 
+switch Static_Opts.output_format 
+    case "text"
+        output_type = "PRINT";
+    case "binary"
+        output_type = "FILE";
+end
 
 new_job = JOB_NAME + "_" + job_id(1);
 
@@ -112,6 +118,11 @@ switch add_data_type
             if strfind(perturbation_template{iLine,1},'*End Load Case')
                 loadcase_end_line = iLine;
             end
+            if strfind(perturbation_template{iLine,1},'*NODE PRINT,SUMMARY=NO')
+                if output_type == "FILE"
+                    perturbation_template{iLine,1} = '*NODE FILE';
+                end
+            end
         end
 
         loadcase_template = perturbation_template(loadcase_start_line:loadcase_end_line,:);
@@ -140,6 +151,9 @@ for iLine = 1:length(geometry)
         instance_name = instance_def{1,1};
     end
 end
+if Static_Opts.output_format == "binary"
+    geometry{end+1} = "*FILE FORMAT, ASCII";
+end
 
 if RESET_TO_ZERO
     % rest to zero displacement after each SEP
@@ -164,7 +178,13 @@ if RESET_TO_ZERO
             zero_template = [zero_template(1:(iLine-1));boundary_conditions;zero_template(iLine:end)];
         end
     end
-
+    for iLine = 1:length(zero_template)
+        if strfind(zero_template{iLine,1},'*NODE PRINT,SUMMARY=NO,FREQUENCY = 0') || strfind(zero_template{iLine,1},'*ENERGY PRINT, FREQUENCY = 0')
+            if output_type == "FILE"
+                zero_template{iLine,1} = '*NODE FILE';
+            end
+        end
+    end
     zero_step_def_lines = find(startsWith(zero_template,"*Step","IgnoreCase",true));
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -295,8 +315,16 @@ try
             static_step{step_def_line,1} = "*Step, name=STATIC_STEP_" + load_step_counter + ", nlgeom=YES, extrapolation=NO, inc=" + step_max_inc;
 
             static_step{load_def_line-1} = "*Cload, OP = " + load_op;
-            static_step{disp_print_line} = "*NODE PRINT,SUMMARY=NO,FREQUENCY = " + step_max_inc;
-            static_step{energy_print_line} = "*ENERGY PRINT, FREQUENCY = " + step_max_inc;
+            
+            switch output_type
+                case "PRINT"
+                    static_step{disp_print_line} = "*NODE "+ output_type +",SUMMARY=NO,FREQUENCY = " + step_max_inc;
+                    static_step{energy_print_line} = "*ENERGY "+ output_type +", FREQUENCY = " + step_max_inc;
+                case "FILE"
+                    static_step{disp_print_line} = "*NODE "+ output_type +",FREQUENCY = " + step_max_inc;
+                    static_step{energy_print_line} = "*ENERGY "+ output_type +", FREQUENCY = " + step_max_inc;
+            end
+
 
             if deactivated_dofs
                 % a{1}
@@ -375,7 +403,12 @@ logger(log_message,3)
 
 data_processing_time_start = tic;
 
-[displacement,E,additional_data,additional_data_time] = read_abaqus_static_data(new_job,step_type,num_nodes,num_dimensions);
+switch Static_Opts.output_format
+    case "text"
+        [displacement,E,additional_data,additional_data_time] = read_abaqus_static_data(new_job,step_type,num_nodes,num_dimensions);
+    case "binary"
+        [displacement,E,additional_data,additional_data_time] = read_abaqus_fil_data(new_job,step_type,num_nodes,num_dimensions);
+end
 
 displacement_bc = displacement(Model.node_mapping(:,1),:);
 disp_transform = force_transform';
