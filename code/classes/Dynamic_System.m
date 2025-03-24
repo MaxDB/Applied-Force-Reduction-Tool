@@ -196,38 +196,46 @@ classdef Dynamic_System
             obj.stiffness = K;
             
             
-            switch obj.Static_Options.additional_data
-                case "perturbation"
-                    r_modes = obj.reduced_modes;
-                    L_modes = 1:obj.Static_Options.num_validation_modes;
-                    L_modes(ismember(L_modes,r_modes)) = [];
-                    obj.low_frequency_modes = L_modes;
-                    h_modes = [r_modes,L_modes];
+            if obj.Static_Options.load_custom_eigendata
+                
+                load("geometry\" + obj.system_name+"\custom_eigen_data.mat","custom_eval","custom_evec");
 
-                    [eVec,eVal] = eigs(K,M,max(h_modes),"smallestabs");
+                r_modes = obj.reduced_modes;
+                eval_r = custom_eval(r_modes);
+                evec_r = custom_evec(:,r_modes);
+                obj.reduced_eigenvalues = eval_r;
+                obj.reduced_eigenvectors = evec_r;
+            else
+                switch obj.Static_Options.additional_data
+                    case "perturbation"
+                        r_modes = obj.reduced_modes;
+                        L_modes = 1:obj.Static_Options.num_validation_modes;
+                        L_modes(ismember(L_modes,r_modes)) = [];
+                        obj.low_frequency_modes = L_modes;
+                        h_modes = [r_modes,L_modes];
 
-                    eVal_L = eVal(L_modes,L_modes)*ones(length(L_modes),1);
-                    eVec_L = eVec(:,L_modes);
+                        [evec,eval] = eigs(K,M,max(h_modes),"smallestabs");
 
-                    obj.low_frequency_eigenvalues = eVal_L;
-                    obj.low_frequency_eigenvectors = eVec_L;
+                        eVal_L = eval(L_modes,L_modes)*ones(length(L_modes),1);
+                        eVec_L = evec(:,L_modes);
 
-                otherwise
-                    r_modes = obj.reduced_modes;
-                    try
-                        [eVec,eVal] = eigs(K,M,max(r_modes),"smallestabs");
-                    catch
-                        warning("zero linear stiffness")
-                        [eVec,eVal] = eigs(K,M,max(r_modes),1);
-                    end
+                        obj.low_frequency_eigenvalues = eVal_L;
+                        obj.low_frequency_eigenvectors = eVec_L;
 
+                    otherwise
+                        r_modes = obj.reduced_modes;
+
+                        [evec,eval] = eigs(K,M,max(r_modes),"smallestabs");
+
+
+                end
+
+                eval_r = eval(r_modes,r_modes)*ones(length(r_modes),1);
+                evec_r = evec(:,r_modes);
+                obj.reduced_eigenvalues = eval_r;
+                obj.reduced_eigenvectors = evec_r;
             end
-
-            eVal_r = eVal(r_modes,r_modes)*ones(length(r_modes),1);
-            eVec_r = eVec(:,r_modes);
-
-            obj.reduced_eigenvalues = eVal_r;
-            obj.reduced_eigenvectors = eVec_r;
+            
         end
         %-----------------------------------------------------------------%
         function obj = calibrate_mode(obj,modes)

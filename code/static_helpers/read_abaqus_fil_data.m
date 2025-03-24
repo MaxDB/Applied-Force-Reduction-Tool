@@ -1,6 +1,7 @@
 function [displacement,energy,additional_data,additional_data_time] = read_abaqus_fil_data(file_name,step_types,num_nodes,num_dimensions)
 
 num_dofs = num_nodes*num_dimensions;
+step_types(step_types == "zero") = [];
 num_steps = length(step_types);
 num_static_steps = sum(step_types(:,1) == "static");
 
@@ -10,20 +11,29 @@ energy = zeros(1,num_static_steps);
 additional_data = [];
 additional_data_time = 0;
 %------------------------------------------------------------------------%
+
 fil_id = fopen("temp\" + file_name + ".fil");
 abaqus_data = textscan(fil_id,'%s','delimiter','*',"EndOfLine",""); %quicker to read all at once if there is enough memory
 fclose(fil_id);
 
+
+
 abaqus_data = regexprep(abaqus_data{1},'[\n\r]+',''); %update for nonwindows
+
+
 
 
 Model_Data.num_dimensions = num_dimensions;
 step_indicies = find(find_record_by_type(abaqus_data,["inc start","inc end"],Model_Data));
-if size(step_indicies,1) == 2*num_steps + 1
-    step_indicies(1) = [];
-else
-    error("")
+
+if diff(step_indicies((end-1):end)) == 1
+    step_indicies(end) = [];
 end
+if diff(step_indicies(1:2)) == 1
+    step_indicies(1) = [];
+end
+
+
 step_spans = zeros(num_steps,2);
 step_spans(:,1) = step_indicies(1:2:(2*num_steps));
 step_spans(:,2) = step_indicies(2:2:(2*num_steps));
@@ -34,20 +44,19 @@ for iStep = 1:num_steps
     switch step_type
         case "static"
             step_data = abaqus_data(step_span);
+            % step_data = abaqus_data;
+
             energy_index = find_record_by_type(step_data,"energy",Model_Data);
             step_energy = read_energy(step_data(energy_index));
-            
-            
-            disp_index = find_record_by_type(step_data,"displacement",Model_Data);
-            step_displacement = read_displacements(step_data(disp_index));
 
+            disp_index = find_record_by_type(step_data,"displacement",Model_Data);
+
+            step_displacement = read_displacements(step_data(disp_index),Model_Data);
+            
             energy(iStep) = step_energy;
             displacement(:,iStep)  = reshape(step_displacement',num_dofs,1);
     end
 end
-
-
-
 
 
 %------------------------------------------------------------------------%
@@ -137,22 +146,42 @@ record_indicies = startsWith(abaqus_data,record_pat);
 
 end
 %-------
-function displacement = read_displacements(disp_data)
-    disp_table = split(disp_data,["D","I"+wildcardPattern(2)]);
-    disp_mat = str2double(disp_table(:,4:end));
-    %node_id = disp_mat(:,1); %for debugging
-    
-    disp_mat_length = size(disp_mat,2);   
-    coefficient_index = 2:2:disp_mat_length;
-    exponent_index = 3:2:disp_mat_length;
+function displacement = read_displacements(disp_data,Model_Data)
+num_dimensions = Model_Data.num_dimensions;
+FLOAT_FIELD_WIDTH = 22;
 
-    displacement = disp_mat(:,coefficient_index).*10.^disp_mat(:,exponent_index);
+disp_pattern = @(line_length) "%" + (line_length - (FLOAT_FIELD_WIDTH*num_dimensions + (num_dimensions -1))) + "*s " + ...
+join(repmat("%" + FLOAT_FIELD_WIDTH + "f",[1,num_dimensions])," %*c ");
+
+% tic
+% [disp_table_1,test_2,test_3] = cellfun(@(line) scan_disp(line,disp_pattern),disp_data);
+% toc
+% % displacement = vertcat(disp_table{:});
+
+
+num_lines = size(disp_data,1);
+displacement = zeros(num_lines,num_dimensions);
+for iLine = 1:num_lines
+    data_line = disp_data{iLine};
+    disp_line = textscan(data_line,disp_pattern(size(data_line,2)),1,'Delimiter','');
+    displacement(iLine,:) = [disp_line{:}];
+end
+
+
+    % function [line_out_1,line_out_2,line_out_3]  = scan_disp(line_in,disp_pattern)
+    %     line_out = textscan(line_in,disp_pattern(size(line_in,2)),1,'Delimiter','');
+    %     % line_out = horzcat(line_out_cell{:});
+    %     line_out_1 = line_out{1};
+    %     line_out_2 = line_out{2};
+    %     line_out_3 = line_out{3};
+    % end
+
 end
 %-------
 function energy = read_energy(energy_data)
-    energy_table = split(energy_data,["D","I"+wildcardPattern(2)]);
-    energy_mat = str2double(energy_table(6:7));
-    energy = energy_mat(1)*10^energy_mat(2);
+line_length = size(energy_data{1},2);
+line_data = textscan(energy_data{1},"%*" + (line_length - 16*23) +"s %*c %*22f %*c %22f",1,"Delimiter",'');
+energy = line_data{1};
 end
 
 %-------

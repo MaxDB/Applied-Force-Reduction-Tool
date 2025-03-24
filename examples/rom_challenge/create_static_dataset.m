@@ -18,11 +18,12 @@ Calibration_Opts.Static_Opts.num_loadcases = 20;
 
 %--------- Static Solver Settings ---------%
 Static_Opts.static_solver = "abaqus";
-Static_Opts.additional_data = "perturbation";
+Static_Opts.additional_data = "none";
 Static_Opts.num_validation_modes = 18;
 Static_Opts.max_parallel_jobs = 1; %be careful!
 Static_Opts.num_loadcases = 8;
 Static_Opts.maximum_loadcases = 15;
+Static_Opts.output_format = "binary";
 %------------------------------------------%
 
 %--------- Static Verification Settings ---------%

@@ -1,8 +1,8 @@
 function [r,theta,f,E,additional_data,sep_id] = ...
-    add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,add_data_type,clean_data,Model,job_id,initial_load,restart_type)
+    add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,add_data_type,clean_data,Model,job_id,Initial_Data,restart_type)
 
 JOB_NAME = "static_analysis";
-RESET_TO_ZERO = 0;
+RESET_TO_ZERO = 1;
 
 
 num_dimensions = get_num_node_dimensions(Model);
@@ -28,9 +28,14 @@ if isscalar(num_loadcases)
     num_loadcases = ones(1,num_seps)*num_loadcases;
 end
 
-if ~exist("initial_load","var")
-    initial_load = zeros(size(force_ratio));
+
+if ~exist("Initial_Data","var")
+    Initial_Data.initial_load = zeros(size(force_ratio));
+    Initial_Data.initial_disp = [];
 end
+
+initial_load = Initial_Data.initial_load;
+initial_disp = Initial_Data.initial_disp;
 
 static_settings = zeros(1,4);
 static_settings(1) = Static_Opts.initial_time_increment;
@@ -152,7 +157,7 @@ for iLine = 1:length(geometry)
     end
 end
 if Static_Opts.output_format == "binary"
-    geometry{end+1} = "*FILE FORMAT, ASCII";
+    geometry{end+1} = '*FILE FORMAT, ASCII';
 end
 
 if RESET_TO_ZERO
@@ -166,10 +171,7 @@ if RESET_TO_ZERO
 
     for iLine = 1:length(zero_template)
         if strfind(zero_template{iLine,1},"**RESET_BOUNDARIES_HERE")
-            zero_template(iLine,:) = [];
-            bc_dimension = num2cell((1:num_dimensions)');
-            zero_bc_input= cellfun(@(iCell) convertStringsToChars("set-all, " + iCell + ", " + iCell),bc_dimension,"UniformOutput",false);
-            zero_template = [zero_template(1:(iLine-1));zero_bc_input;zero_template(iLine:end)];
+            bc_set_line = iLine;
         end
     end
     for iLine = 1:length(zero_template)
@@ -179,9 +181,17 @@ if RESET_TO_ZERO
         end
     end
     for iLine = 1:length(zero_template)
-        if strfind(zero_template{iLine,1},'*NODE PRINT,SUMMARY=NO,FREQUENCY = 0') || strfind(zero_template{iLine,1},'*ENERGY PRINT, FREQUENCY = 0')
+        if strfind(zero_template{iLine,1},'**NEW FORCE HERE')
+            bc_force_set_line = iLine;
+        end
+        if strfind(zero_template{iLine,1},'*NODE PRINT,SUMMARY=NO,FREQUENCY = 0')
             if output_type == "FILE"
-                zero_template{iLine,1} = '*NODE FILE';
+                zero_template{iLine,1} = '*NODE FILE, FREQUENCY = 0';
+            end
+        end
+        if strfind(zero_template{iLine,1},'*ENERGY PRINT, FREQUENCY = 0')
+            if output_type == "FILE"
+                zero_template{iLine,1} = '*ENERGY FILE, FREQUENCY = 0';
             end
         end
     end
@@ -248,7 +258,10 @@ switch add_data_type
 end
 
 if RESET_TO_ZERO
-    total_steps = total_steps + num_seps - 1;
+    total_steps = total_steps + 2*num_seps;
+    if isempty(initial_disp)
+        total_steps = total_steps - 2;
+    end
 end
 step_type = strings(total_steps,1);
 sep_ends = zeros(num_seps,1);
@@ -257,7 +270,7 @@ sep_ends = zeros(num_seps,1);
 load_step_counter = 0;
 total_step_counter = 0;
 
-try
+% try
     input_ID = fopen("temp\" + new_job + ".inp","w");
     fprintf(input_ID,'%s\r\n',geometry{:,1});
 
@@ -266,10 +279,12 @@ try
         applied_force = force_ratio/num_sep_loadcases;
         force_scale_factors = (1:num_sep_loadcases)';
 
-        if any(restart_type > 0)
-            %first "restart" step seems to be problematic
-            force_scale_factors = force_scale_factors - 1;
-        end
+        % if any(restart_type > 0)
+        %     %first "restart" step seems to be problematic
+        %     force_scale_factors = force_scale_factors - 1;
+        % end
+
+        
 
 
         sep_force = applied_force(:,iSep);
@@ -287,6 +302,64 @@ try
         physical_base_force = zeros(all_dofs,1);
         physical_base_force(Model.node_mapping(:,1),1) = physical_base_force_bc(Model.node_mapping(:,2),1);
 
+        if RESET_TO_ZERO && (iSep ~= 1 || ~isempty(initial_disp))
+            if ~isempty(initial_disp)
+                dims = string((1:num_dimensions)') +",";
+                
+                bc_end = repelem(dims,num_nodes,1);
+
+                bc_disp = zeros(all_dofs,1);
+                for iDim = 1:num_dimensions
+                    dim_span = (1:num_nodes)+(iDim-1)*num_nodes;
+                    bc_disp(dim_span,1) = initial_disp(coordinate_index+iDim,iSep);
+                end
+
+                zero_bc_input = force_label + bc_end + bc_disp;
+                fixed_dofs = 1:all_dofs;
+                fixed_dofs(Model.node_mapping(:,1)) = [];
+                mapped_dofs = zeros(size(fixed_dofs));
+                for iDof = 1:size(fixed_dofs,2)
+                    fixed_dof = fixed_dofs(iDof);
+                    iNode = floor( fixed_dof/num_dimensions) + 1;
+                    iDim =  fixed_dof - (iNode-1)*num_dimensions;
+                    if iDim == 0
+                        iDim = num_dimensions;
+                        iNode = iNode - 1;
+                    end
+                    mapped_dofs(iDof) = num_nodes*(iDim - 1) + iNode;
+                end
+                zero_bc_input(mapped_dofs) = [];
+
+                force_bc_input = strings(all_dofs,1);
+                for iDimension = 1:num_dimensions
+                    dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
+                    force_bc_input(dimension_span,1) = force_label(dimension_span,1) + physical_base_force(coordinate_index+iDimension,1);
+                end
+
+            else
+                bc_dimension = num2cell((1:num_dimensions)');
+                zero_bc_input= cellfun(@(iCell) convertStringsToChars("set-all, " + iCell + ", " + iCell),bc_dimension,"UniformOutput",false);
+                force_bc_input = [];
+            end
+            zero_step = zero_template;
+            for iZero = 1:size(zero_step_def_lines,1)
+                zero_step_def_line = zero_step_def_lines(iZero);
+                zero_step{zero_step_def_line} = convertStringsToChars(strrep(zero_step(zero_step_def_line),"STEP_NUM",string(iSep)));
+            end
+            fprintf(input_ID,'%s\r\n',zero_step{1:(bc_set_line-1),1});
+            fprintf(input_ID,'%s\r\n',zero_bc_input{:});
+            fprintf(input_ID,'%s\r\n',zero_step{(bc_set_line+1):(bc_force_set_line-1),1});
+            if ~isempty(force_bc_input)
+                fprintf(input_ID,'%s\r\n','*Cload, OP = NEW');
+                fprintf(input_ID,'%s\r\n',force_bc_input{:});
+            end
+            fprintf(input_ID,'%s\r\n',zero_step{(bc_force_set_line+1):(end),1});
+            total_step_counter = total_step_counter + 1;
+            step_type(total_step_counter,1) = "zero";
+            total_step_counter = total_step_counter + 1;
+            step_type(total_step_counter,1) = "zero";
+        end
+
         for iLoad = 1:num_sep_loadcases
             load_step_counter = load_step_counter + 1;
             total_step_counter = total_step_counter + 1;
@@ -301,7 +374,8 @@ try
             for iDimension = 1:num_dimensions
                 dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
                 step_force_label(dimension_span,1) = force_label(dimension_span,1) + step_force(coordinate_index+iDimension,1);
-             end
+            end
+
 
             if iLoad == 1
                 step_max_inc = max_inc + num_sep_loadcases;
@@ -323,12 +397,6 @@ try
                 case "FILE"
                     static_step{disp_print_line} = "*NODE "+ output_type +",FREQUENCY = " + step_max_inc;
                     static_step{energy_print_line} = "*ENERGY "+ output_type +", FREQUENCY = " + step_max_inc;
-            end
-
-
-            if deactivated_dofs
-                % a{1}
-                % step_force_label(EXCLUDED_DOF) = [];
             end
 
             fprintf(input_ID,'%s\r\n',static_step{1:(load_def_line-1),1});
@@ -359,23 +427,12 @@ try
             end
         end
         sep_ends(iSep) = load_step_counter;
-        if RESET_TO_ZERO && iSep ~= num_seps
-            zero_step = zero_template;
-            for iZero = 1:size(zero_step_def_lines,1)
-                zero_step_def_line = zero_step_def_lines(iZero);
-                zero_step{zero_step_def_line} = convertStringsToChars(strrep(zero_step(zero_step_def_line),"STEP_NUM",string(iSep)));
-            end
-            fprintf(input_ID,'%s\r\n',zero_step{:,1});
-            total_step_counter = total_step_counter + 1;
-            step_type(total_step_counter,1) = "zero";
-            total_step_counter = total_step_counter + 1;
-            step_type(total_step_counter,1) = "zero";
-        end
+        
     end
-catch caught_error
-    fclose(input_ID); %ensures file is always closed
-    rethrow(caught_error)
-end
+% catch caught_error
+%     fclose(input_ID); %ensures file is always closed
+%     rethrow(caught_error)
+% end
 fclose(input_ID);
 
 setup_time = toc(setup_time_start);
@@ -439,10 +496,10 @@ if clean_data
         end
     end
     
-    if all(restart_type ~= 0)
-        %first "restart" step seems to be problematic
-        remove_index(sep_starts) = 1;
-    end
+    % if all(restart_type ~= 0)
+    %     %first "restart" step seems to be problematic
+    %     remove_index(sep_starts) = 1;
+    % end
     
     r(:,remove_index) = [];
     theta(:,remove_index) = [];
@@ -459,45 +516,45 @@ point_distance = zeros(1,num_points);
 soft_restart_start = [];
 soft_restart_end = [];
 soft_restarted_seps_index = false(1,num_seps);
-for iSep = 1:num_seps
-    continue
-    if restart_type(iSep) ~= 0 % dont allow multiple softening restarts
-        continue
-    end
-    sep_index = find(sep_id == iSep);
-    sep_force = abs(f(1,sep_index));
-    [~,sep_order] = sort(sep_force,"ascend");
-    sep_index = sep_index(sep_order);
-    num_sep_points = length(sep_index);
-    previous_point = zeros(size(r,1),1); %NOT CORRECT FOR DOUBLE RESTART
-    previous_distance = inf;
-    restart_window = 0;
-    for iPoint = 1:num_sep_points
-        point = r(:,sep_index(iPoint));
-        distance = sum((point-previous_point).^2);
-        point_distance(sep_index(iPoint)) = distance;
-        
-        if previous_distance < distance
-            if ~restart_window
-                restart_window = 1;
-                soft_restarted_seps_index(iSep) = true;
-                soft_restart_start = [soft_restart_start,sep_index(iPoint-1)];
-                end_index = min(iPoint+1,num_sep_points);
-                soft_restart_end = [soft_restart_end,sep_index(end_index)];
-            else
-                end_index = min(iPoint+1,num_sep_points);
-                soft_restart_end(end) = sep_index(end_index);
-            end
-        else
-            if restart_window
-                restart_window = 0;
-            end
-        end
-
-        previous_distance = distance;
-        previous_point = point;
-    end
-end
+% for iSep = 1:num_seps
+%     continue
+%     if restart_type(iSep) ~= 0 % dont allow multiple softening restarts
+%         continue
+%     end
+%     sep_index = find(sep_id == iSep);
+%     sep_force = abs(f(1,sep_index));
+%     [~,sep_order] = sort(sep_force,"ascend");
+%     sep_index = sep_index(sep_order);
+%     num_sep_points = length(sep_index);
+%     previous_point = zeros(size(r,1),1); %NOT CORRECT FOR DOUBLE RESTART
+%     previous_distance = inf;
+%     restart_window = 0;
+%     for iPoint = 1:num_sep_points
+%         point = r(:,sep_index(iPoint));
+%         distance = sum((point-previous_point).^2);
+%         point_distance(sep_index(iPoint)) = distance;
+% 
+%         if previous_distance < distance
+%             if ~restart_window
+%                 restart_window = 1;
+%                 soft_restarted_seps_index(iSep) = true;
+%                 soft_restart_start = [soft_restart_start,sep_index(iPoint-1)];
+%                 end_index = min(iPoint+1,num_sep_points);
+%                 soft_restart_end = [soft_restart_end,sep_index(end_index)];
+%             else
+%                 end_index = min(iPoint+1,num_sep_points);
+%                 soft_restart_end(end) = sep_index(end_index);
+%             end
+%         else
+%             if restart_window
+%                 restart_window = 0;
+%             end
+%         end
+% 
+%         previous_distance = distance;
+%         previous_point = point;
+%     end
+% end
 % add points where the point_distance increases dramatically  ->
 % significant local softening
 
@@ -580,8 +637,17 @@ if restart_sep
     else
         job_id(2) = job_id(2) + 1;
     end
+    Initial_Data.initial_load = next_initial_load;
+    num_restarted_seps = size(restarted_seps,2);
+    initial_disp = zeros(all_dofs,num_restarted_seps);
+    for iSep = 1:num_restarted_seps
+        restarted_sep = restarted_seps(iSep);
+        last_disp = find(sep_id == restarted_sep,1,"last");
+        initial_disp(:,iSep) = displacement(:,last_disp);
+    end
+    Initial_Data.initial_disp = initial_disp;
     [r_restart,theta_restart,f_restart,E_restart,additional_data_restart,sep_id_restart] = add_sep_abaqus(restarted_loadcases, ...
-        num_restart_loadcases,Static_Opts,max_inc,add_data_type,clean_data,Model,job_id,next_initial_load,next_restart_type);
+        num_restart_loadcases,Static_Opts,max_inc,add_data_type,clean_data,Model,job_id,Initial_Data,next_restart_type);
     
     num_r = size(r,2);
     r_all = [r,r_restart];

@@ -25,3 +25,6 @@ minimum_job_loadcases, 10, 	minimum number of loadcases per job when submitting 
 additional_data, "none", 			additonal data to extract with each loadcase
 num_validation_modes, 10, 			add the first X modes as validation modes (Perturbation)
 perturbation_scale_factor, "auto", 	scale factor for perturbation load (Perturbation) 
+
+## Experimental
+load_custom_eigendata, 0,			

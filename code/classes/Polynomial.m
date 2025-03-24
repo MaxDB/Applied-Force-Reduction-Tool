@@ -274,9 +274,10 @@ classdef Polynomial
                     x = linspace(limits(1),limits(2),PLOT_RESOLUTION);
 
 
-                    if ~exist("ax","var")
+                    if isempty(ax)
                         figure
                         tiledlayout(1,num_plotted_outputs)
+                        ax = cell(num_plotted_outputs,1);
                         for iOutput = 1:num_plotted_outputs
                             ax{iOutput} = nexttile;
                             xlabel("x")
