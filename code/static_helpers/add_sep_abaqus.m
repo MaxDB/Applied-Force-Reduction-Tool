@@ -123,11 +123,11 @@ switch add_data_type
             if strfind(perturbation_template{iLine,1},'*End Load Case')
                 loadcase_end_line = iLine;
             end
-            if strfind(perturbation_template{iLine,1},'*NODE PRINT,SUMMARY=NO')
-                if output_type == "FILE"
-                    perturbation_template{iLine,1} = '*NODE FILE';
-                end
-            end
+            % if strfind(perturbation_template{iLine,1},'*NODE PRINT,SUMMARY=NO')
+            %     if output_type == "FILE" %doesn't work with multiple loadcases
+            %         perturbation_template{iLine,1} = '*NODE FILE';
+            %     end
+            % end
         end
 
         loadcase_template = perturbation_template(loadcase_start_line:loadcase_end_line,:);

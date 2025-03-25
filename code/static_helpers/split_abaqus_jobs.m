@@ -1,10 +1,11 @@
-function job_force_ratios = split_abaqus_jobs(force_ratios,num_loadcases,max_parallel_jobs,mininum_job_loadcases)
+function [job_force_ratios,job_index] = split_abaqus_jobs(force_ratios,num_loadcases,max_parallel_jobs,mininum_job_loadcases)
 
 num_seps = size(force_ratios,2);
 maximum_jobs = ceil(num_seps*num_loadcases/mininum_job_loadcases);
 num_parallel_jobs = min([maximum_jobs,max_parallel_jobs,num_seps]);
 
 job_force_ratios = cell(1,num_parallel_jobs);
+job_index = cell(1,num_parallel_jobs);
 
 remaining_seps = num_seps;
 remaining_groups = num_parallel_jobs;
@@ -13,6 +14,7 @@ for iJob = 1:num_parallel_jobs
     group_size = ceil(remaining_seps/remaining_groups);
     next_seps = last_sep + (1:group_size);
     job_force_ratios{1,iJob} = force_ratios(:,next_seps);
+    job_index{1,iJob} = next_seps;
     
     last_sep = next_seps(end);
     remaining_seps = remaining_seps - group_size;

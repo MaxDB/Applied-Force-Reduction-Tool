@@ -509,8 +509,17 @@ classdef Dynamic_System
                         abaqus_start = tic;
                         max_parallel_jobs = Static_Opts.max_parallel_jobs;
                         mininum_job_loadcases = Static_Opts.minimum_job_loadcases;
-                        force_groups = split_abaqus_jobs(applied_force,1,max_parallel_jobs,mininum_job_loadcases);
+                        [force_groups,job_index] = split_abaqus_jobs(applied_force,1,max_parallel_jobs,mininum_job_loadcases);
                         num_parallel_jobs = size(force_groups,2);
+                        closest_point_group = cell(size(force_groups));
+                        if ~isempty(Closest_Point)
+                            num_jobs = size(force_groups,2);
+                            for iJob = 1:num_jobs
+                                Job_Closest_Point.initial_disp = Closest_Point.initial_disp(:,job_index{iJob});
+                                Job_Closest_Point.initial_force = Closest_Point.initial_force(:,job_index{iJob});
+                                closest_point_group{iJob} = Job_Closest_Point;
+                            end
+                        end
 
                         log_message = sprintf("%i loadcases over %i jobs" ,[size(applied_force,2),num_parallel_jobs]);
                         logger(log_message,3)
@@ -524,8 +533,9 @@ classdef Dynamic_System
 
                         parfor iJob = 1:num_parallel_jobs
                             job_force = force_groups{1,iJob};
+                            Job_Closest_Point = closest_point_group{1,iJob};
                             [job_r,job_theta,job_f,job_E,job_additional_data] = ...
-                                add_point_abaqus(job_force,max_inc,additional_data_type,obj,iJob,job_closest_point);
+                                add_point_abaqus(job_force,max_inc,additional_data_type,obj,iJob,Job_Closest_Point);
 
                             reduced_disp_cell{1,iJob} = job_r;
                             condensed_disp_cell{1,iJob} = job_theta;

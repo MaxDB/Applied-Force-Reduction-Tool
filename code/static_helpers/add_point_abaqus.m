@@ -2,7 +2,7 @@ function [r,theta,f,E,additional_data] = ...
     add_point_abaqus(applied_force,max_inc,add_data_type,Model,job_id,Closest_Point)
 
 JOB_NAME = "static_analysis";
-RESET_TO_ZERO = 0;
+RESET_TO_ZERO = 1;
 
 
 num_dimensions = get_num_node_dimensions(Model);
