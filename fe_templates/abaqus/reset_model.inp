@@ -1,0 +1,20 @@
+*Step, name=All_zero_step-STEP_NUM, nlgeom=YES
+*Static
+1., 1., 1e-05, 1.
+*Cload, OP = NEW
+*Boundary
+**RESET_BOUNDARIES_HERE
+*NODE PRINT,SUMMARY=NO,FREQUENCY = 0
+U
+*ENERGY PRINT, FREQUENCY = 0
+*End Step
+** ----------------------------------------------------------------
+*Step, name=Initial_bcs-STEP_NUM, nlgeom=YES
+*Static
+1., 1., 1e-05, 1.
+**INITIAL_BOUNDARIES_HERE
+**NEW FORCE HERE
+*NODE PRINT,SUMMARY=NO,FREQUENCY = 0
+U
+*ENERGY PRINT, FREQUENCY = 0
+*End Step
