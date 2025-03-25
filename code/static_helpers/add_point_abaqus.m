@@ -1,7 +1,10 @@
 function [r,theta,f,E,additional_data] = ...
-    add_point_abaqus(applied_force,max_inc,add_data_type,Model,job_id)
+    add_point_abaqus(applied_force,max_inc,add_data_type,Model,job_id,Closest_Point)
 
 JOB_NAME = "static_analysis";
+RESET_TO_ZERO = 0;
+
+
 num_dimensions = get_num_node_dimensions(Model);
 project_path = get_project_path;
 
@@ -24,6 +27,10 @@ static_settings(1) = Static_Opts.initial_time_increment;
 static_settings(2) = Static_Opts.total_step_time;
 static_settings(3) = Static_Opts.minimum_time_increment;
 static_settings(4) = Static_Opts.maximum_time_increment;
+
+
+initial_disp = Closest_Point.initial_disp;
+
 
 new_job = JOB_NAME + "_" + job_id;
 
@@ -54,11 +61,21 @@ for iLine = 1:length(static_template)
     end
 
     if strfind(static_template{iLine,1},'*NODE PRINT,SUMMARY=NO,FREQUENCY = INC_HERE')
-        static_template{iLine,1} = "*NODE PRINT,SUMMARY=NO,FREQUENCY = " + max_inc;
+        switch Static_Opts.output_format
+            case "text"
+                static_template{iLine,1} = "*NODE PRINT,SUMMARY=NO,FREQUENCY = " + max_inc;
+            case "binary"
+                static_template{iLine,1} = "*NODE FILE,FREQUENCY = " + max_inc;
+        end
     end
 
     if strfind(static_template{iLine,1},'*ENERGY PRINT, FREQUENCY = INC_HERE')
-        static_template{iLine,1} = "*ENERGY PRINT, FREQUENCY = " + max_inc;
+        switch Static_Opts.output_format
+            case "text"
+                static_template{iLine,1} = "*ENERGY PRINT, FREQUENCY = " + max_inc;
+            case "binary"
+                static_template{iLine,1} = "*ENERGY FILE, FREQUENCY = " + max_inc;
+        end
     end
 end
 
@@ -122,7 +139,48 @@ for iLine = 1:length(geometry)
         instance_name = instance_def{1,1};
     end
 end
+if Static_Opts.output_format == "binary"
+    geometry{end+1} = '*FILE FORMAT, ASCII';
+end
 
+%-------------------------------------------------------------------------%
+if RESET_TO_ZERO
+    % reset to cloest displacement before each point
+    boundary_conditions = get_boundary_conditions(geometry);
+    geometry = add_whole_set(geometry,instance_name);
+    zero_id = fopen(project_path + "\fe_templates\abaqus\reset_model.inp");
+    zero_template=textscan(zero_id,'%s','delimiter','\n');
+    fclose(zero_id);
+    zero_template = zero_template{1,1};
+
+    for iLine = 1:length(zero_template)
+        if strfind(zero_template{iLine,1},"**RESET_BOUNDARIES_HERE")
+            bc_set_line = iLine;
+        end
+    end
+    for iLine = 1:length(zero_template)
+        if strfind(zero_template{iLine,1},"**INITIAL_BOUNDARIES_HERE")
+            zero_template(iLine,:) = [];
+            zero_template = [zero_template(1:(iLine-1));boundary_conditions;zero_template(iLine:end)];
+        end
+    end
+    for iLine = 1:length(zero_template)
+        if strfind(zero_template{iLine,1},'**NEW FORCE HERE')
+            bc_force_set_line = iLine;
+        end
+        if strfind(zero_template{iLine,1},'*NODE PRINT,SUMMARY=NO,FREQUENCY = 0')
+            if Static_Opts.output_format == "binary"
+                zero_template{iLine,1} = '*NODE FILE, FREQUENCY = 0';
+            end
+        end
+        if strfind(zero_template{iLine,1},'*ENERGY PRINT, FREQUENCY = 0')
+            if Static_Opts.output_format == "binary"
+                zero_template{iLine,1} = '*ENERGY FILE, FREQUENCY = 0';
+            end
+        end
+    end
+    zero_step_def_lines = find(startsWith(zero_template,"*Step","IgnoreCase",true));
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Create forcing tempate
@@ -145,6 +203,8 @@ coordinate_index = ((1:num_nodes)-1)*num_dimensions;
 
 
 total_static_steps = num_loadcases;
+
+
 modal_force = zeros(length(Model.reduced_modes),total_static_steps);
 
 switch add_data_type
@@ -177,6 +237,9 @@ switch add_data_type
         end
         perturbation_steps = [perturbation_steps;perturbation_template((loadcase_end_line+1):end)];
 end
+if RESET_TO_ZERO
+    total_steps = total_steps + 2*num_loadcases;
+end
 
 step_type = strings(total_steps,1);
 
@@ -185,13 +248,13 @@ load_step_counter = 0;
 total_step_counter = 0;
 
 
-try
+% try
     input_ID = fopen("temp\" + new_job + ".inp","w");
     fprintf(input_ID,'%s\r\n',geometry{:,1});
 
     for iLoad = 1:num_loadcases
         load_step_counter = load_step_counter + 1;
-        total_step_counter = total_step_counter + 1;
+        
 
         modal_force(:,load_step_counter) = applied_force(:,iLoad);
 
@@ -203,20 +266,79 @@ try
             dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
             step_force_label(dimension_span,1) = force_label(dimension_span,1) + step_force(coordinate_index+iDimension,1);
         end
+        
+        if RESET_TO_ZERO
+            if ~isempty(initial_disp)
+                initial_force_bc = force_transform*Closest_Point.initial_force(:,iLoad);
+                initial_force = zeros(all_dofs,1);
+                initial_force(Model.node_mapping(:,1),:) = initial_force_bc(Model.node_mapping(:,2),:);
 
+                initial_disp_all_dof = zeros(all_dofs,1);
+                initial_disp_all_dof(Model.node_mapping(:,1),:) = initial_disp(Model.node_mapping(:,2),iLoad);
+                dims = string((1:num_dimensions)') +",";
+                
+                bc_end = repelem(dims,num_nodes,1);
+
+                bc_disp = zeros(all_dofs,1);
+                for iDim = 1:num_dimensions
+                    dim_span = (1:num_nodes)+(iDim-1)*num_nodes;
+                    bc_disp(dim_span,1) = initial_disp_all_dof(coordinate_index+iDim);
+                end
+
+                zero_bc_input = force_label + bc_end + bc_disp;
+                fixed_dofs = 1:all_dofs;
+                fixed_dofs(Model.node_mapping(:,1)) = [];
+                mapped_dofs = zeros(size(fixed_dofs));
+                for iDof = 1:size(fixed_dofs,2)
+                    fixed_dof = fixed_dofs(iDof);
+                    iNode = floor( fixed_dof/num_dimensions) + 1;
+                    iDim =  fixed_dof - (iNode-1)*num_dimensions;
+                    if iDim == 0
+                        iDim = num_dimensions;
+                        iNode = iNode - 1;
+                    end
+                    mapped_dofs(iDof) = num_nodes*(iDim - 1) + iNode;
+                end
+                zero_bc_input(mapped_dofs) = [];
+
+                force_bc_input = strings(all_dofs,1);
+                for iDimension = 1:num_dimensions
+                    dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
+                    force_bc_input(dimension_span,1) = force_label(dimension_span,1) + initial_force(coordinate_index+iDimension,1);
+                end
+
+            else
+                bc_dimension = num2cell((1:num_dimensions)');
+                zero_bc_input= cellfun(@(iCell) convertStringsToChars("set-all, " + iCell + ", " + iCell),bc_dimension,"UniformOutput",false);
+                force_bc_input = [];
+            end
+            zero_step = zero_template;
+            for iZero = 1:size(zero_step_def_lines,1)
+                zero_step_def_line = zero_step_def_lines(iZero);
+                zero_step{zero_step_def_line} = convertStringsToChars(strrep(zero_step(zero_step_def_line),"STEP_NUM",string(iLoad)));
+            end
+            fprintf(input_ID,'%s\r\n',zero_step{1:(bc_set_line-1),1});
+            fprintf(input_ID,'%s\r\n',zero_bc_input{:});
+            fprintf(input_ID,'%s\r\n',zero_step{(bc_set_line+1):(bc_force_set_line-1),1});
+            if ~isempty(force_bc_input)
+                fprintf(input_ID,'%s\r\n','*Cload, OP = NEW');
+                fprintf(input_ID,'%s\r\n',force_bc_input{:});
+            end
+            fprintf(input_ID,'%s\r\n',zero_step{(bc_force_set_line+1):(end),1});
+            total_step_counter = total_step_counter + 1;
+            step_type(total_step_counter,1) = "zero";
+            total_step_counter = total_step_counter + 1;
+            step_type(total_step_counter,1) = "zero";
+        end
 
         static_step = static_template;
         static_step{step_def_line,1} = "*Step, name=STATIC_STEP_" + load_step_counter + ", nlgeom=YES, extrapolation=NO, inc=" + max_inc;
 
-
-        if deactivated_dofs
-            step_force_label(EXCLUDED_DOF) = [];
-        end
-
         fprintf(input_ID,'%s\r\n',static_step{1:(load_def_line-1),1});
         fprintf(input_ID,'%s\r\n',step_force_label(:));
         fprintf(input_ID,'%s\r\n',static_step{(load_def_line+1):end,1});
-
+        
+        total_step_counter = total_step_counter + 1;
         step_type(total_step_counter,1) = "static";
 
         switch add_data_type
@@ -242,10 +364,10 @@ try
     end
 
 
-catch caught_error
-    fclose(input_ID); %ensures file is always closed
-    rethrow(caught_error)
-end
+% catch caught_error
+%     fclose(input_ID); %ensures file is always closed
+%     rethrow(caught_error)
+% end
 fclose(input_ID);
 
 setup_time = toc(setup_time_start);
@@ -275,7 +397,13 @@ logger(log_message,3)
 
 data_processing_time_start = tic;
 
-[displacement,E,additional_data,additional_data_time] = read_abaqus_static_data(new_job,step_type,num_nodes,num_dimensions);
+
+switch Static_Opts.output_format
+    case "text"
+        [displacement,E,additional_data,additional_data_time] = read_abaqus_static_data(new_job,step_type,num_nodes,num_dimensions);
+    case "binary"
+        [displacement,E,additional_data,additional_data_time] = read_abaqus_fil_data(new_job,step_type,num_nodes,num_dimensions);
+end
 
 displacement_bc = displacement(Model.node_mapping(:,1),:);
 disp_transform = force_transform';

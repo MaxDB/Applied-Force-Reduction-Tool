@@ -159,7 +159,7 @@ end
 if Static_Opts.output_format == "binary"
     geometry{end+1} = '*FILE FORMAT, ASCII';
 end
-
+%-------------------------------------------------------------------------%
 if RESET_TO_ZERO
     % rest to zero displacement after each SEP
     boundary_conditions = get_boundary_conditions(geometry);
@@ -270,7 +270,7 @@ sep_ends = zeros(num_seps,1);
 load_step_counter = 0;
 total_step_counter = 0;
 
-% try
+try
     input_ID = fopen("temp\" + new_job + ".inp","w");
     fprintf(input_ID,'%s\r\n',geometry{:,1});
 
@@ -429,10 +429,10 @@ total_step_counter = 0;
         sep_ends(iSep) = load_step_counter;
         
     end
-% catch caught_error
-%     fclose(input_ID); %ensures file is always closed
-%     rethrow(caught_error)
-% end
+catch caught_error
+    fclose(input_ID); %ensures file is always closed
+    rethrow(caught_error)
+end
 fclose(input_ID);
 
 setup_time = toc(setup_time_start);

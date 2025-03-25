@@ -490,7 +490,7 @@ classdef Dynamic_System
         end
         %-----------------------------------------------------------------%
         function [reduced_disp,condensed_disp,restoring_force,energy,additional_data] = ...
-                add_point(obj,applied_force,additional_data_type)
+                add_point(obj,applied_force,additional_data_type,Closest_Point)
             
             if ~exist("additional_data_type","var")
                 additional_data_type = "none";
@@ -525,7 +525,7 @@ classdef Dynamic_System
                         parfor iJob = 1:num_parallel_jobs
                             job_force = force_groups{1,iJob};
                             [job_r,job_theta,job_f,job_E,job_additional_data] = ...
-                                add_point_abaqus(job_force,max_inc,additional_data_type,obj,iJob);
+                                add_point_abaqus(job_force,max_inc,additional_data_type,obj,iJob,job_closest_point);
 
                             reduced_disp_cell{1,iJob} = job_r;
                             condensed_disp_cell{1,iJob} = job_theta;
@@ -548,7 +548,7 @@ classdef Dynamic_System
                     else
 
                         [reduced_disp,condensed_disp,restoring_force,energy,additional_data] = ...
-                            add_point_abaqus(applied_force,max_inc,additional_data_type,obj,1);
+                            add_point_abaqus(applied_force,max_inc,additional_data_type,obj,1,Closest_Point);
                     end
                 case "matlab"
                     [reduced_disp,condensed_disp,restoring_force,energy,additional_data] = ...
