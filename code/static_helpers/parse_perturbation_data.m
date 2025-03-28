@@ -1,4 +1,7 @@
 function [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_perturbation_data(Static_Data,L_modes)
+CLEAN_DATA = 1;
+MIN_DISP = 1e-15;
+
 Model = Static_Data.Model;
 r_modes = Model.reduced_modes;
 num_r_modes = size(r_modes,2);
@@ -43,11 +46,12 @@ h_stiffness = zeros(num_h_modes,num_h_modes,num_loadcases);
 % parfor iLoad = 1:num_loadcases
 for iLoad = 1:num_loadcases
 
-    h_perturbation_i = x_perturbation(:,:,iLoad);
+    disp_hat = x_perturbation(:,:,iLoad);
+    if CLEAN_DATA
+        disp_hat(mean(abs(disp_hat),2) < MIN_DISP,:) = 0;
+    end
+    h_disp = h_disp_transform*disp_hat;
 
-    h_disp = h_disp_transform*h_perturbation_i;
-
-    disp_hat = h_perturbation_i;
     h_coupling_gradient(:,:,iLoad) = disp_hat/h_disp;
 
     h_stiffness(:,:,iLoad) =  F_h/h_disp;
@@ -55,10 +59,8 @@ for iLoad = 1:num_loadcases
 end
 
 stiffness = Model.stiffness;
-h_perturbation_0 = lambda.*(stiffness\(h_disp_transform'));
-h_0 = h_disp_transform*h_perturbation_0;
-h_0 = diag(diag(h_0));
-disp_hat_0 = h_perturbation_0;
+disp_hat_0 = lambda.*(stiffness\(h_disp_transform'));
+h_0 = h_disp_transform*disp_hat_0;
 
 h_coupling_gradient_0 = disp_hat_0/h_0;
 h_stiffness_0 =  F_h/h_0;

@@ -22,51 +22,53 @@ K_array = Static_Data.get_dataset_values("tangent_stiffness");
 is_fe_system = ~isnumeric(K_array);
 num_loadcases = size(K_array,3);
 mass = Model.mass;
-mass_product = mass*h_evec;
+h_disp_transform = h_evec'*mass;
 
-I_h = eye(num_h_modes);
+lambda_all = select_perturbation_scale_factor(Model);
+h_map = [1:num_r_modes,L_map+num_r_modes];
+lambda = lambda_all(h_map);
+
+F_h = lambda.*eye(num_h_modes);
 
 h_coupling_gradient = zeros(num_dofs,num_h_modes,num_loadcases);
 h_stiffness = zeros(num_h_modes,num_h_modes,num_loadcases);
-
-%%% TEST
-% Plot_Settings.plot_type = "physical";
-% Plot_Settings.coords = [3,2,1];
-% Manifold_One.system = "mass_spring_roller_1";
-% Manifold_Two.system = "mass_spring_roller_12";
-% ax = compare_stress_manifold({Manifold_One,Manifold_Two},"opts",Plot_Settings);
-% hold(ax,"on")
-% x_tilde = Static_Data.get_dataset_values("physical_displacement");
-%%%%
-
+%%%test
+% perturbation = zeros([size(h_disp_transform'),num_loadcases]);
+%%%
 for iLoad = 1:num_loadcases
     if is_fe_system
         K_i = K_array.get_matrix(iLoad);
     else
         K_i = K_array(:,:,iLoad);
     end
+    disp_hat = K_i\(h_disp_transform'*F_h);
+    %%%test
+    % perturbation(:,:,iLoad) = disp_hat;
+    %%%
 
-    perturbation = K_i\mass_product;
-    h_i = mass_product'*perturbation;
-    disp_hat_i = perturbation;
+    h_disp = h_disp_transform*disp_hat;
 
-    h_coupling_gradient(:,:,iLoad) = disp_hat_i/h_i;
-    h_stiffness(:,:,iLoad) =  I_h/h_i;
-
-
-    %%% TEST
-    % x_tilde_i = x_tilde(:,iLoad);
-    % x_i = disp_hat_i + x_tilde_i;
-    % x_minus_i = -disp_hat_i + x_tilde_i;
-    % % plot3([x_minus_i(3,1),x_i(3,1)],[x_minus_i(2,1),x_i(2,1)],[x_minus_i(1,1),x_i(1,1)])
-    % plot3([x_minus_i(3,2),x_i(3,2)],[x_minus_i(2,2),x_i(2,2)],[x_minus_i(1,2),x_i(1,2)])
+    h_coupling_gradient(:,:,iLoad) = disp_hat/h_disp;
+    h_stiffness(:,:,iLoad) =  F_h/h_disp;
 end
 
-stiffness = Model.stiffness;
-perturbation_0 = stiffness\mass_product;
-h_0 = mass_product'*perturbation_0;
-disp_0 = perturbation_0;
+%%%test
+% Static_Data.perturbation_displacement = perturbation;
+% Static_Data.perturbation_scale_factor = select_perturbation_scale_factor(Model);
+% 
+% Static_Data_P = load_static_data("clamped_beam_copy_1");
+% 
+% plot_outputs = [randi(1434,[9,1]),randi(10,[9,1])];
+% 
+% ax = plot_static_data("perturbation",Static_Data,"outputs",plot_outputs);
+% plot_static_data("perturbation",Static_Data_P,"outputs",plot_outputs,"axes",ax);
+%%%
 
-h_coupling_gradient_0 = disp_0/h_0;
-h_stiffness_0 =  I_h/h_0;
+
+stiffness = Model.stiffness;
+disp_hat_0 = stiffness\(h_disp_transform'*F_h);
+h_disp_0 = h_disp_transform*disp_hat_0;
+
+h_coupling_gradient_0 = disp_hat_0/h_disp_0;
+h_stiffness_0 =  F_h/h_disp_0;
 end

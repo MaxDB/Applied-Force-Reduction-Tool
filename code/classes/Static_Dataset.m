@@ -26,22 +26,24 @@ classdef Static_Dataset
     end
     methods
         function obj = Static_Dataset(Model,Verification_Opts,varargin)
-            
-            
+
+
             obj.additional_data_type = Model.Static_Options.additional_data;
 
-            if isstring(Model.Static_Options.perturbation_scale_factor) && Model.Static_Options.perturbation_scale_factor == "auto"
-                perturbation_sf = select_perturbation_scale_factor(Model);
-            else
-                perturbation_sf = Model.Static_Options.perturbation_scale_factor;
-                if isscalar(perturbation_sf)
-                    num_h_modes = size(Model.reduced_modes,2) + size(Model.low_frequency_modes,2);
-                    perturbation_sf = repmat(perturbation_sf,1,num_h_modes);
+            if obj.additional_data_type == "perturbation"
+                if isstring(Model.Static_Options.perturbation_scale_factor) && Model.Static_Options.perturbation_scale_factor == "auto"
+                    perturbation_sf = select_perturbation_scale_factor(Model);
+                else
+                    perturbation_sf = Model.Static_Options.perturbation_scale_factor;
+                    if isscalar(perturbation_sf)
+                        num_h_modes = size(Model.reduced_modes,2) + size(Model.low_frequency_modes,2);
+                        perturbation_sf = repmat(perturbation_sf,1,num_h_modes);
+                    end
                 end
+                obj.perturbation_scale_factor = perturbation_sf;
+                Model.Static_Options.perturbation_scale_factor = perturbation_sf;
             end
-            obj.perturbation_scale_factor = perturbation_sf;
-            Model.Static_Options.perturbation_scale_factor = perturbation_sf;
-
+            
             obj.Model = Model;
 
 
@@ -95,6 +97,23 @@ classdef Static_Dataset
             verification_time = toc(verification_time_start);
             log_message = sprintf("ROM Verified: %.1f seconds" ,verification_time);
             logger(log_message,1)
+        end
+        %-----------------------------------------------------------------%
+        function obj = add_additional_data(obj,Static_Opts)
+            if obj.Model.Static_Options.additional_data ~= "none"
+                error("adding to existing data not implemented")
+            end
+            obj.Model = obj.Model.update_static_opts(Static_Opts);
+
+            obj.additional_data_type = Static_Opts.additional_data;
+            
+            Closest_Point.initial_disp = obj.get_dataset_values("physical_displacement");
+            Closest_Point.initial_force = obj.get_dataset_values("restoring_force");
+            
+            dummy_loads = nan(size(Closest_Point.initial_force));
+
+            [~,~,~,~,additional_data] = obj.Model.add_point(dummy_loads,obj.additional_data_type,Closest_Point);
+            obj = obj.update_additional_data(additional_data);
         end
         %-----------------------------------------------------------------%
         function obj = add_validation_data(obj,L_modes,DEBUG)
@@ -291,10 +310,19 @@ classdef Static_Dataset
             else
                 obj.scaffold_points = [obj.scaffold_points,false(1,num_points)];
             end
-
+            
+            obj = update_additional_data(obj,additional_data);
+        end
+        %-----------------------------------------------------------------%
+        function obj = update_additional_data(obj,additional_data)
             switch obj.additional_data_type
                 case "stiffness"
-                    obj.tangent_stiffness = cat(3,obj.get_dataset_values("tangent_stiffness"),additional_data);
+                    current_stiffness = obj.get_dataset_values("tangent_stiffness");
+                    if isempty(current_stiffness)
+                        obj.tangent_stiffness = additional_data;
+                    else
+                        obj.tangent_stiffness = cat(3,current_stiffness,additional_data);
+                    end
                 case "perturbation"
                     obj.perturbation_displacement = cat(3,obj.get_dataset_values("perturbation_displacement"),additional_data);
             end
@@ -404,10 +432,11 @@ classdef Static_Dataset
             data_path = get_data_path(Static_Data);
             system_data_path = split(data_path,"\");
             system_data_path = join(system_data_path(1:(end-2)),"\") + "\";
-            if exist(system_data_path,"dir")
-                rmdir(system_data_path,"s")
+            if ~exist(system_data_path,"dir")
+                mkdir(data_path)
+                % rmdir(system_data_path,"s")
             end
-            mkdir(data_path)
+            % mkdir(data_path)
             
             num_properties = size(SEPERATELY_SAVED_PROPERTIES,2);
             for iProperty = 1:num_properties
@@ -423,6 +452,9 @@ classdef Static_Dataset
                     return
                 end
                 value = Static_Data.(static_data_property);
+                if isstring(value) && value == "unloaded"
+                    return %dont overwrite data with "unloadaed"
+                end
                 Static_Data.(static_data_property) = TEMP_PROPERTY_VALUE;
                 
                 file_path = get_data_path(Static_Data) + static_data_property + ".mat";

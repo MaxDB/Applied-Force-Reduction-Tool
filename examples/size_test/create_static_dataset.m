@@ -2,13 +2,13 @@ clear
 close all
 %--------- Software Settings ---------%
 set_logging_level(3)
-set_visualisation_level(3)
+set_visualisation_level(0)
 %-------------------------------------%
 
 %--------- System Settings ---------%
 system_name = "mems_arch";
-energy_limit = 2;
-initial_modes = [1,6];
+energy_limit = 1;
+initial_modes = [1];
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
@@ -19,8 +19,8 @@ Calibration_Opts.Static_Opts = struct([]);
 %--------- Static Solver Settings ---------%
 Static_Opts.additional_data = "none";
 Static_Opts.num_validation_modes = 10;
-Static_Opts.max_parallel_jobs = 1; %be careful!
-Static_Opts.output_format = "text";
+Static_Opts.max_parallel_jobs = 4; %be careful!
+Static_Opts.output_format = "binary";
 %------------------------------------------%
 
 %--------- Static Verification Settings ---------%

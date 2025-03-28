@@ -4,6 +4,7 @@ function [r,theta,f,E,additional_data] = ...
 JOB_NAME = "static_analysis";
 RESET_TO_ZERO = 1;
 
+additional_data_mode = all(isnan(applied_force));
 
 num_dimensions = get_num_node_dimensions(Model);
 project_path = get_project_path;
@@ -29,56 +30,54 @@ static_settings(3) = Static_Opts.minimum_time_increment;
 static_settings(4) = Static_Opts.maximum_time_increment;
 
 
-initial_disp = Closest_Point.initial_disp;
-
-
 new_job = JOB_NAME + "_" + job_id;
 
 %-------------------------------------------------------------------------%
 %Open Template
-t_id = fopen(project_path + "\fe_templates\abaqus\static_step.inp");
-static_template=textscan(t_id,'%s','delimiter','\n');
-fclose(t_id);
-static_template = static_template{1,1};
+if ~additional_data_mode
+    t_id = fopen(project_path + "\fe_templates\abaqus\static_step.inp");
+    static_template=textscan(t_id,'%s','delimiter','\n');
+    fclose(t_id);
+    static_template = static_template{1,1};
 
 
-for iLine = 1:length(static_template)
-    if strfind(static_template{iLine,1},'*Step, name=Static_Step-STEP_NUM, nlgeom=YES, extrapolation=NO, inc=INC_HERE')
-        step_def_line = iLine;
-    end
-
-    if strfind(static_template{iLine,1},'SETTINGS_HERE')
-        settings_string = "";
-        for iSetting = 1:length(static_settings)
-            settings_string = settings_string + static_settings(iSetting) + ","; %#ok<*AGROW>
+    for iLine = 1:length(static_template)
+        if strfind(static_template{iLine,1},'*Step, name=Static_Step-STEP_NUM, nlgeom=YES, extrapolation=NO, inc=INC_HERE')
+            step_def_line = iLine;
         end
-        static_template{iLine,1} = settings_string;
-    end
 
-    if strfind(static_template{iLine,1},'LOAD_HERE')
-        load_def_line = iLine;
-        static_step{load_def_line-1} = "*Cload, OP = NEW";
-    end
-
-    if strfind(static_template{iLine,1},'*NODE PRINT,SUMMARY=NO,FREQUENCY = INC_HERE')
-        switch Static_Opts.output_format
-            case "text"
-                static_template{iLine,1} = "*NODE PRINT,SUMMARY=NO,FREQUENCY = " + max_inc;
-            case "binary"
-                static_template{iLine,1} = "*NODE FILE,FREQUENCY = " + max_inc;
+        if strfind(static_template{iLine,1},'SETTINGS_HERE')
+            settings_string = "";
+            for iSetting = 1:length(static_settings)
+                settings_string = settings_string + static_settings(iSetting) + ","; %#ok<*AGROW>
+            end
+            static_template{iLine,1} = settings_string;
         end
-    end
 
-    if strfind(static_template{iLine,1},'*ENERGY PRINT, FREQUENCY = INC_HERE')
-        switch Static_Opts.output_format
-            case "text"
-                static_template{iLine,1} = "*ENERGY PRINT, FREQUENCY = " + max_inc;
-            case "binary"
-                static_template{iLine,1} = "*ENERGY FILE, FREQUENCY = " + max_inc;
+        if strfind(static_template{iLine,1},'LOAD_HERE')
+            load_def_line = iLine;
+            static_step{load_def_line-1} = "*Cload, OP = NEW";
+        end
+
+        if strfind(static_template{iLine,1},'*NODE PRINT,SUMMARY=NO,FREQUENCY = INC_HERE')
+            switch Static_Opts.output_format
+                case "text"
+                    static_template{iLine,1} = "*NODE PRINT,SUMMARY=NO,FREQUENCY = " + max_inc;
+                case "binary"
+                    static_template{iLine,1} = "*NODE FILE,FREQUENCY = " + max_inc;
+            end
+        end
+
+        if strfind(static_template{iLine,1},'*ENERGY PRINT, FREQUENCY = INC_HERE')
+            switch Static_Opts.output_format
+                case "text"
+                    static_template{iLine,1} = "*ENERGY PRINT, FREQUENCY = " + max_inc;
+                case "binary"
+                    static_template{iLine,1} = "*ENERGY FILE, FREQUENCY = " + max_inc;
+            end
         end
     end
 end
-
 
 %-------------------------------------------------------------------------%
 
@@ -144,7 +143,7 @@ if Static_Opts.output_format == "binary"
 end
 
 %-------------------------------------------------------------------------%
-if RESET_TO_ZERO
+if RESET_TO_ZERO || additional_data_mode
     % reset to cloest displacement before each point
     boundary_conditions = get_boundary_conditions(geometry);
     geometry = add_whole_set(geometry,instance_name);
@@ -241,6 +240,10 @@ if RESET_TO_ZERO
     total_steps = total_steps + 2*num_loadcases;
 end
 
+if additional_data_mode
+    total_steps = total_steps - total_static_steps;
+end
+
 step_type = strings(total_steps,1);
 
 
@@ -248,7 +251,7 @@ load_step_counter = 0;
 total_step_counter = 0;
 
 
-% try
+try
     input_ID = fopen("temp\" + new_job + ".inp","w");
     fprintf(input_ID,'%s\r\n',geometry{:,1});
 
@@ -256,25 +259,16 @@ total_step_counter = 0;
         load_step_counter = load_step_counter + 1;
         
 
-        modal_force(:,load_step_counter) = applied_force(:,iLoad);
-
-        step_force_bc = force_transform*applied_force(:,iLoad);
-        step_force = zeros(all_dofs,1);
-        step_force(Model.node_mapping(:,1),:) = step_force_bc(Model.node_mapping(:,2),:);
-        step_force_label = strings(all_dofs,1);
-        for iDimension = 1:num_dimensions
-            dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
-            step_force_label(dimension_span,1) = force_label(dimension_span,1) + step_force(coordinate_index+iDimension,1);
-        end
         
-        if RESET_TO_ZERO
-            if ~isempty(initial_disp)
+        
+        if RESET_TO_ZERO || additional_data_mode
+            if ~isempty(Closest_Point.initial_disp)
                 initial_force_bc = force_transform*Closest_Point.initial_force(:,iLoad);
                 initial_force = zeros(all_dofs,1);
                 initial_force(Model.node_mapping(:,1),:) = initial_force_bc(Model.node_mapping(:,2),:);
 
                 initial_disp_all_dof = zeros(all_dofs,1);
-                initial_disp_all_dof(Model.node_mapping(:,1),:) = initial_disp(Model.node_mapping(:,2),iLoad);
+                initial_disp_all_dof(Model.node_mapping(:,1),:) = Closest_Point.initial_disp(Model.node_mapping(:,2),iLoad);
                 dims = string((1:num_dimensions)') +",";
                 
                 bc_end = repelem(dims,num_nodes,1);
@@ -331,15 +325,28 @@ total_step_counter = 0;
             step_type(total_step_counter,1) = "zero";
         end
 
-        static_step = static_template;
-        static_step{step_def_line,1} = "*Step, name=STATIC_STEP_" + load_step_counter + ", nlgeom=YES, extrapolation=NO, inc=" + max_inc;
+        if ~additional_data_mode
+            modal_force(:,load_step_counter) = applied_force(:,iLoad);
 
-        fprintf(input_ID,'%s\r\n',static_step{1:(load_def_line-1),1});
-        fprintf(input_ID,'%s\r\n',step_force_label(:));
-        fprintf(input_ID,'%s\r\n',static_step{(load_def_line+1):end,1});
-        
-        total_step_counter = total_step_counter + 1;
-        step_type(total_step_counter,1) = "static";
+            step_force_bc = force_transform*applied_force(:,iLoad);
+            step_force = zeros(all_dofs,1);
+            step_force(Model.node_mapping(:,1),:) = step_force_bc(Model.node_mapping(:,2),:);
+            step_force_label = strings(all_dofs,1);
+            for iDimension = 1:num_dimensions
+                dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
+                step_force_label(dimension_span,1) = force_label(dimension_span,1) + step_force(coordinate_index+iDimension,1);
+            end
+
+            static_step = static_template;
+            static_step{step_def_line,1} = "*Step, name=STATIC_STEP_" + load_step_counter + ", nlgeom=YES, extrapolation=NO, inc=" + max_inc;
+
+            fprintf(input_ID,'%s\r\n',static_step{1:(load_def_line-1),1});
+            fprintf(input_ID,'%s\r\n',step_force_label(:));
+            fprintf(input_ID,'%s\r\n',static_step{(load_def_line+1):end,1});
+
+            total_step_counter = total_step_counter + 1;
+            step_type(total_step_counter,1) = "static";
+        end
 
         switch add_data_type
             case "stiffness"
@@ -364,10 +371,10 @@ total_step_counter = 0;
     end
 
 
-% catch caught_error
-%     fclose(input_ID); %ensures file is always closed
-%     rethrow(caught_error)
-% end
+catch caught_error
+    fclose(input_ID); %ensures file is always closed
+    rethrow(caught_error)
+end
 fclose(input_ID);
 
 setup_time = toc(setup_time_start);
@@ -405,16 +412,23 @@ switch Static_Opts.output_format
         [displacement,E,additional_data,additional_data_time] = read_abaqus_fil_data(new_job,step_type,num_nodes,num_dimensions);
 end
 
-displacement_bc = displacement(Model.node_mapping(:,1),:);
-disp_transform = force_transform';
+if ~additional_data_mode
+    displacement_bc = displacement(Model.node_mapping(:,1),:);
+    disp_transform = force_transform';
 
-r = disp_transform*displacement_bc;
-% theta = displacement_bc - Model.reduced_eigenvectors*r;
-theta = displacement_bc;
+    r = disp_transform*displacement_bc;
+    % theta = displacement_bc - Model.reduced_eigenvectors*r;
+    theta = displacement_bc;
 
-f = modal_force;
-step_list = 1:length(E);
-
+    f = modal_force;
+    step_list = 1:length(E);
+else
+    r = [];
+    theta = [];
+    f = [];
+    E = [];
+    step_list = 1:num_loadcases;
+end
 
 data_processing_time = toc(data_processing_time_start) - additional_data_time;
 log_message = sprintf("job " + job_id + ": Static data processed: %.1f seconds" ,data_processing_time);

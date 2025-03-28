@@ -84,8 +84,15 @@ switch type
         mat_size = size(y_data);
         vec_size = {mat_size(1)*mat_size(2),mat_size(3)};
         y_data = reshape(y_data,vec_size{:});
-        [~,h_eval,~] = Static_Data.get_current_h_data;
-        y_origin = reshape(diag(h_eval),vec_size{1},1);
+
+        Model = Static_Data.Model;
+        [~,~,v_modeshapes] = Static_Data.get_current_h_data;
+        h_transform = v_modeshapes'*Model.mass;
+
+        H_0 = h_transform*(Model.stiffness\(h_transform'));
+        stiffness_0 = eye(size(v_modeshapes,2))/H_0;
+
+        y_origin = reshape(stiffness_0,vec_size{1},1);
         y_label = "D";
     case "h_displacement_gradient"
         y_data = Static_Data.get_dataset_values("low_frequency_coupling_gradient");
@@ -93,10 +100,29 @@ switch type
         mat_size = size(y_data);
         vec_size = {mat_size(1)*mat_size(2),mat_size(3)};
         y_data = reshape(y_data,vec_size{:});
-        [~,~,h_evec] = Static_Data.get_current_h_data;
-        y_origin = reshape(h_evec,vec_size{1},1);
-        y_label = "G";
 
+        Model = Static_Data.Model;
+        [~,~,v_modeshapes] = Static_Data.get_current_h_data;
+        h_transform = v_modeshapes'*Model.mass;
+        X_0 = (Model.stiffness\(h_transform'));
+        H_0 = h_transform*X_0;
+        G_0 = X_0/H_0;
+
+        y_origin = reshape(G_0,vec_size{1},1);
+        y_label = "G";
+    case "perturbation"
+        y_data = Static_Data.get_dataset_values("perturbation_displacement");
+        is_matrix = 1;
+        mat_size = size(y_data);
+        vec_size = {mat_size(1)*mat_size(2),mat_size(3)};
+        y_data = reshape(y_data,vec_size{:});
+        lambda = Static_Data.perturbation_scale_factor;
+        Model = Static_Data.Model;
+        
+        v_modeshapes = [Model.reduced_eigenvectors,Model.low_frequency_eigenvectors];
+        x_0 = Model.stiffness\(Model.mass*v_modeshapes.*lambda);
+        y_origin = reshape(x_0,numel(x_0),1);
+        y_label = "\tilde{\mathbf x}^*";
     otherwise
         error("Plotting for '" + type + "' is not supported")
 end
@@ -109,6 +135,7 @@ if isempty(outputs)
         while length(unique(outputs)) < MAX_OUTPUTS
             outputs = randi(total_outputs,1,MAX_OUTPUTS);
         end
+        outputs = unique(outputs);
     else
         outputs = 1:total_outputs;
     end
@@ -192,21 +219,20 @@ for iOutput = 1:num_outputs
                 plot(s1,x_plot,y_plot,plot_settings{:})
                 plot(s1,x_origin,y_origin(iOutput),origin_plot_settings{:})
 
-                xlabel(s1,x_label + "_{" + r_modes + "}")
+                xlabel(s1,"$" + x_label + "_{" + r_modes + "}$","Interpreter","latex")
                 if ~is_matrix
                     y_output_label = y_label + "_{" + outputs(iOutput) + "}";
                 else
-                    output_row = ceil(outputs(iOutput)/mat_size(2));
-                    output_col = outputs(iOutput) - (output_row-1)*mat_size(2);
+                    [output_row,output_col] = ind2sub([mat_size(1),mat_size(2)],outputs(iOutput));
                     y_output_label = y_label + "_{(" + output_row + "," + output_col + ")}";
                 end
-                ylabel(s1,y_output_label)
+                ylabel(s1,"$" + y_output_label + "$","Interpreter","latex")
             case 2
                 plot3(s1,x_plot(1,:),x_plot(2,:),y_plot,plot_settings{:})
                 plot3(s1,x_origin(1,:),x_origin(2,:),y_origin(iOutput),origin_plot_settings{:})
 
-                xlabel(s1,x_label + "_{" + r_modes(1) + "}")
-                ylabel(s1,x_label + "_{" + r_modes(2) + "}")
+                xlabel(s1,"$" + x_label + "_{" + r_modes(1) + "}$","Interpreter","latex")
+                ylabel(s1,"$" + x_label + "_{" + r_modes(2) + "}$","Interpreter","latex")
                 if ~is_matrix
                     z_output_label = y_label + "_{" + outputs(iOutput) + "}";
                 else
@@ -214,7 +240,7 @@ for iOutput = 1:num_outputs
                     output_col = outputs(iOutput) - (output_row-1)*mat_size(2);
                     z_output_label = y_label + "_{(" + output_row + "," + output_col + ")}";
                 end
-                zlabel(s1,z_output_label)
+                zlabel(s1,"$" + z_output_label + "$","Interpreter","latex")
         end
     end
 

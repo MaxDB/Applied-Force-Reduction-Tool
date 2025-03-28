@@ -79,6 +79,9 @@ for iStep = 1:num_steps
         case "stiffness"
             add_data_step_start = tic;
             base_name = "temp\" + file_name + "_STIF";
+            if num_static_steps == 0
+                static_step_counter = static_step_counter + 1;
+            end
             movefile(base_name + iStep + ".mtx", base_name + static_step_counter + ".mtx")
             additional_data_time = additional_data_time + toc(add_data_step_start);
         case "perturbation"

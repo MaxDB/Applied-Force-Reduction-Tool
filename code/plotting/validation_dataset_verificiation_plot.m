@@ -17,13 +17,13 @@ Rom = Reduced_System(Static_Data);
 
 stiffness_outputs = randi(num_h_modes,[NUM_OUTPUT_PLOTS,2]);
 ax = plot_static_data("h_stiffness",Static_Data,"outputs",stiffness_outputs);
-Rom.Low_Frequency_Stiffness_Polynomial.plot_polynomial(ax,stiffness_outputs);
+Rom.Low_Frequency_Stiffness_Polynomial.plot_polynomial("axes",ax,"outputs",stiffness_outputs);
 
 disp_output_rows = randi(num_dofs,[NUM_OUTPUT_PLOTS,1]);
 disp_output_cols = randi(num_h_modes,[NUM_OUTPUT_PLOTS,1]);
 disp_outputs = [disp_output_rows,disp_output_cols];
 ax = plot_static_data("h_displacement_gradient",Static_Data,"outputs",disp_outputs);
-Rom.Low_Frequency_Coupling_Gradient_Polynomial.plot_polynomial(ax,disp_outputs);
+Rom.Low_Frequency_Coupling_Gradient_Polynomial.plot_polynomial("axes",ax,"outputs",disp_outputs);
 
 % ax = plot_static_data("energy",Static_Data);
 % Rom.Potential_Polynomial.plot_polynomial(ax);

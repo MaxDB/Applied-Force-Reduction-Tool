@@ -3,7 +3,7 @@ clear
 set_visualisation_level(1)
 set_logging_level(2)
 
-system_name = "arch_16";
+system_name = "mems_arch_16";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
@@ -22,7 +22,7 @@ Continuation_Opts.initial_discretisation_num = 20;
 Continuation_Opts.max_discretisation_num = 250;
 Continuation_Opts.min_discretisation_num = 20;
 Continuation_Opts.collation_degree = 6;
-Continuation_Opts.energy_limit_multiplier = 10;
+% Continuation_Opts.energy_limit_multiplier = 10;
 %-----------------------------------------%
 
 Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);

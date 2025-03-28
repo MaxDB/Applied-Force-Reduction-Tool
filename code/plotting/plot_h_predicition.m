@@ -110,7 +110,10 @@ switch type
         end
 
         if add_backbone
+            num_lines = size(ax.Children,1);
             ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0);
+            num_bb_lines = size(ax.Children,1) - num_lines;
+            uistack(ax.Children(1:num_bb_lines),"bottom")
         end
 
 
@@ -134,7 +137,7 @@ switch type
         switch type
             case "amplitude"
                 g_amp = Validated_Solution.corrected_low_modal_amplitude;
-                q_amp = Validated_Solution.low_modal_amplitude./g_amp;
+                q_amp = Validated_Solution.low_modal_amplitude;
             case "force amplitude"
                 q_amp = Validated_Solution.h_force_amplitude;
                 g_amp = Validated_Solution.r_force_amplitude;

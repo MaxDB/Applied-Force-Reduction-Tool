@@ -20,7 +20,7 @@ for iMode = 1:num_L_modes
 
     switch type
         case "energy"
-            plot_backbone = iMode == num_L_modes;
+            plot_backbone = iMode == 1;
         case "amplitude"
             plot_backbone = 0;
         case "force amplitude"

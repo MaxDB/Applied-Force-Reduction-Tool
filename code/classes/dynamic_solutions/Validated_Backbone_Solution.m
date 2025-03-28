@@ -22,7 +22,7 @@ classdef Validated_Backbone_Solution
             Validation_Opts.get_stability = "auto";
             if isstring(Validation_Opts.get_stability) && Validation_Opts.get_stability == "auto"
                 num_L_modes = size(Validated_BB_Settings.L_modes,2);
-                Validation_Opts.get_stability = num_L_modes == 1;   
+                Validation_Opts.get_stability = num_L_modes <= 3;   
             end
             obj = obj.update_validation_opts(Validation_Opts);
             

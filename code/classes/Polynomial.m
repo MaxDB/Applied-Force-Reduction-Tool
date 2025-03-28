@@ -658,9 +658,10 @@ classdef Polynomial
                         if nnz(term_index) > 1
                             is_symmetric = isapprox(coupled_data(1,:),coupled_data(2,:),"veryloose");
                             if any(~is_symmetric)
-                                asymmetric_terms = coupled_data(:,~is_symmetric);
-                                if size(asymmetric_terms,2) > num_loadcases/2
-                                    warning("tangent stiffness not symmetric")
+                                % coupled_data(:,~is_symmetric) = 0;
+                                % asymmetric_terms = coupled_data(:,~is_symmetric);
+                                if nnz(~is_symmetric) > num_loadcases/2
+                                    coupled_data(:,:) = 0;
                                 end
                             end
                             coupled_data = mean(coupled_data,1);

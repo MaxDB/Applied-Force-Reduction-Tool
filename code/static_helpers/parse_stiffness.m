@@ -30,12 +30,20 @@ Stiffness{1} = pre_K;
 nonzero_data = Stiffness.nonzero_data;
 % 
 keep_row = ~remove_row;
-parfor iStep = step_list(2:end)
-    pre_K = load(base_name + iStep + ".mtx");
-    nonzero_data(:,iStep) = pre_K(keep_row,3);
-    % pre_K = pre_K(:,3);
-    % pre_K(remove_row,:) = [];
-    % nonzero_data(:,iStep) = pre_K;
+
+if isempty(gcp('nocreate'))
+    for iStep = step_list(2:end)
+        pre_K = load(base_name + iStep + ".mtx");
+        nonzero_data(:,iStep) = pre_K(keep_row,3);
+    end
+else
+    parfor iStep = step_list(2:end)
+        pre_K = load(base_name + iStep + ".mtx");
+        nonzero_data(:,iStep) = pre_K(keep_row,3);
+        % pre_K = pre_K(:,3);
+        % pre_K(remove_row,:) = [];
+        % nonzero_data(:,iStep) = pre_K;
+    end
 end
 Stiffness.nonzero_data = nonzero_data;
 end

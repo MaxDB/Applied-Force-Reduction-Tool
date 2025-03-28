@@ -103,6 +103,8 @@ classdef Sparse_Stiffness_Array
             switch type
                 case "{}"
                     obj.nonzero_data(:,subs{1,1}) = stiffness(:,end);
+                case '.'
+                    obj.(subs) = stiffness;
             end
         end
     end
