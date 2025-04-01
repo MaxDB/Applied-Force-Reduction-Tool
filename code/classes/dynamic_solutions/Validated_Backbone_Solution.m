@@ -13,12 +13,13 @@ classdef Validated_Backbone_Solution
         r_force_amplitude
         h_abs_mean
         r_abs_mean
+        validation_error
     end
 
     methods
         function obj = Validated_Backbone_Solution(Rom,BB_Sol,Validated_BB_Settings)
             
-            Validation_Opts.validation_algorithm = "h_frequency";
+            % Validation_Opts.validation_algorithm = "h_time";
             Validation_Opts.get_stability = "auto";
             if isstring(Validation_Opts.get_stability) && Validation_Opts.get_stability == "auto"
                 num_L_modes = size(Validated_BB_Settings.L_modes,2);
@@ -87,11 +88,12 @@ classdef Validated_Backbone_Solution
             obj.r_force_amplitude = zeros(num_h_modes,num_orbits);
             obj.h_abs_mean = zeros(num_h_modes,num_orbits);
             obj.r_abs_mean = zeros(num_h_modes,num_orbits);
+            obj.validation_error = zeros(1,num_orbits);
 
         end
         %-----------------------------------------------------------------%
         function obj = analyse_h_solution(obj,Displacment,Velocity,Eom_Terms,orbit_stability,Validation_Analysis_Inputs,orbit_num)
-            
+            H_CUTOFF = 1e-4;
             get_amplitude = @(x) (max(x,[],2) - min(x,[],2))/2;
             %--
             r = Displacment.r;
@@ -171,8 +173,14 @@ classdef Validated_Backbone_Solution
             % r_force_amp((num_r_modes+1):num_h_modes) = get_amplitude(arrayfun(@norm,r_force));
             %--
             mean_abs = @(x) mean(abs(x),2);
-            mean_abs_h = mean_abs(h);
+            mean_abs_h = mean_abs(h);        
             mean_abs_r2 = mean_abs(g_h);
+            
+            r2_dist = sqrt(sum(g_h.^2,1));
+            h_dist = sqrt(sum(h.^2,1));
+            [max_r2_dist,dist_index] = max(r2_dist);
+            h_error = max(h_dist/max_r2_dist);
+            
 
             %--
             obj.h_amplitude(:,orbit_num) = h_amp;
@@ -184,6 +192,7 @@ classdef Validated_Backbone_Solution
             obj.r_force_amplitude(:,orbit_num) = r_force_amp;
             obj.h_abs_mean(:,orbit_num) = mean_abs_h;
             obj.r_abs_mean(:,orbit_num) = mean_abs_r2;
+            obj.validation_error(1,orbit_num) = h_error;
         end
         %-----------------------------------------------------------------%
         function obj = update_validation_opts(obj,Validation_Opts)

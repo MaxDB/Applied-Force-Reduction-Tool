@@ -69,9 +69,17 @@ if PLOT_STABILITY
 end
 
 switch type
-    case "energy"
-        energy_tilde = Solution.energy;
-        energy_hat = Validated_Solution.h_energy;
+    case {"energy","validation error"}
+        switch type
+            case "energy"
+                energy_tilde = Solution.energy;
+                energy_hat = Validated_Solution.h_energy;
+
+            case "validation error"
+                energy_hat = Validated_Solution.validation_error;
+                energy_tilde = zeros(size(energy_hat));
+        end
+
 
         if isempty(ax)
             figure
@@ -123,10 +131,19 @@ switch type
         max_e_tilde = max(energy_tilde);
 
         y_lim = min(max_e_tilde*3,max_e_hat);
-        ylim(ax,[0,y_lim])
+        if y_lim ~= 0
+            ylim(ax,[0,y_lim])
+        end
+
+        switch type
+            case "energy"
+                y_label = "Energy";
+            case "validation error"
+                y_label = "\epsilon";
+        end
 
         xlabel(ax,"Frequency (rad/s)")
-        ylabel(ax,"Energy")
+        ylabel(ax,y_label)
 
     case {"amplitude","force amplitude","mean error"}
         r_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;

@@ -27,6 +27,8 @@ for iMode = 1:num_L_modes
             plot_backbone = 1;
         case "mean error"
             plot_backbone = 1;
+        case "validation error"
+            plot_backbone = 0;
     end
            
     ax = plot_h_predicition(Dyn_Data,type,solution_num,"axes",ax,"colour",colour_num,"backbone",plot_backbone);

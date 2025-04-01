@@ -427,16 +427,23 @@ classdef Static_Dataset
                 "tangent_stiffness", ...
                 "perturbation_displacement", ...
                 "low_frequency_stiffness", ...
-                "low_frequency_coupling_gradient"];
+                "low_frequency_coupling_gradient", ...
+                "tangent_stiffness"];
 
             data_path = get_data_path(Static_Data);
             system_data_path = split(data_path,"\");
             system_data_path = join(system_data_path(1:(end-2)),"\") + "\";
-            if ~exist(system_data_path,"dir")
-                mkdir(data_path)
-                % rmdir(system_data_path,"s")
+            if exist(system_data_path,"dir")
+                % check if any data is unloaded
+                for iProp = 1:size(SEPERATELY_SAVED_PROPERTIES,2)
+                    saved_property = SEPERATELY_SAVED_PROPERTIES(iProp);
+                    if isstring(Static_Data.(saved_property)) && Static_Data.(saved_property) == "unloaded"
+                        Static_Data.(saved_property) = Static_Data.get_dataset_values(saved_property);
+                    end
+                end
+                rmdir(system_data_path,"s")
             end
-            % mkdir(data_path)
+            mkdir(data_path)
             
             num_properties = size(SEPERATELY_SAVED_PROPERTIES,2);
             for iProperty = 1:num_properties
