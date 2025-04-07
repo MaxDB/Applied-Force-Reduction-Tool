@@ -1,7 +1,10 @@
 classdef Validated_Backbone_Solution 
     properties
         validation_modes
+        low_frequency_eigenvalues
         Validation_Options
+        
+        additional_dynamic_output
 
         h_amplitude
         corrected_low_modal_amplitude
@@ -19,7 +22,7 @@ classdef Validated_Backbone_Solution
     methods
         function obj = Validated_Backbone_Solution(Rom,BB_Sol,Validated_BB_Settings)
             
-            % Validation_Opts.validation_algorithm = "h_time";
+            Validation_Opts.validation_algorithm = "h_frequency";
             Validation_Opts.get_stability = "auto";
             if isstring(Validation_Opts.get_stability) && Validation_Opts.get_stability == "auto"
                 num_L_modes = size(Validated_BB_Settings.L_modes,2);
@@ -27,7 +30,7 @@ classdef Validated_Backbone_Solution
             end
             obj = obj.update_validation_opts(Validation_Opts);
             
-            solution_num = Validated_BB_Settings.solution_num;
+
             L_modes = Validated_BB_Settings.L_modes;
 
             validation_start = tic;
@@ -49,13 +52,14 @@ classdef Validated_Backbone_Solution
             obj.validation_modes = L_modes;
             obj = obj.preallocate_analysis_outputs(BB_Sol);
             Validation_Rom = Reduced_System(Static_Data);
+            obj.low_frequency_eigenvalues = Validation_Rom.Model.low_frequency_eigenvalues;
 
             validation_rom_time = toc(validation_rom_start);
             log_message = sprintf("Validation ROM created: %.1f seconds" ,validation_rom_time);
             logger(log_message,2)
 
             validation_solution_start = tic;
-            obj = solve_h_prediction(obj,BB_Sol,Validation_Rom,solution_num);
+            obj = solve_h_prediction(obj,BB_Sol,Validation_Rom, Validated_BB_Settings);
             % switch H_ALGORITHM
             %     case "harmonic_balance"
             %         obj = h_harmonic_balance(BB_Sol,Validation_Rom,solution_num);
@@ -89,6 +93,7 @@ classdef Validated_Backbone_Solution
             obj.h_abs_mean = zeros(num_h_modes,num_orbits);
             obj.r_abs_mean = zeros(num_h_modes,num_orbits);
             obj.validation_error = zeros(1,num_orbits);
+            obj.additional_dynamic_output = zeros(size(BB_Sol.additional_dynamic_output));
 
         end
         %-----------------------------------------------------------------%
@@ -181,7 +186,19 @@ classdef Validated_Backbone_Solution
             [max_r2_dist,dist_index] = max(r2_dist);
             h_error = max(h_dist/max_r2_dist);
             
-
+            %---
+            Additional_Output = Validation_Analysis_Inputs.Additional_Output;
+            switch Additional_Output.output
+                case "physical displacement"
+                    x_h = x_r;
+                    for iT = 1:num_points
+                        G_dof = Validation_Analysis_Inputs.G_Grad_Poly.evaluate_polynomial(r(:,iT));
+                        x_h(Additional_Output.dof,iT) = x_h(Additional_Output.dof,iT) + G_dof*h(:,iT);
+                    end
+                    add_output = Additional_Output.output_func(x_h);
+                otherwise
+                    add_output = [];
+            end
             %--
             obj.h_amplitude(:,orbit_num) = h_amp;
             obj.corrected_low_modal_amplitude(:,orbit_num) = g_amp;
@@ -193,6 +210,9 @@ classdef Validated_Backbone_Solution
             obj.h_abs_mean(:,orbit_num) = mean_abs_h;
             obj.r_abs_mean(:,orbit_num) = mean_abs_r2;
             obj.validation_error(1,orbit_num) = h_error;
+            if Additional_Output.output ~= "none"
+                obj.additional_dynamic_output(:,orbit_num) = add_output;
+            end
         end
         %-----------------------------------------------------------------%
         function obj = update_validation_opts(obj,Validation_Opts)

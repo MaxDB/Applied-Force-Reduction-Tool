@@ -456,9 +456,14 @@ classdef Polynomial
         %-----------------------------------------------------------------%
         function obj = subpoly(obj,index)
             %overloading was problematic with function calls
-            obj.coefficients = obj.coefficients(:,index);
-            obj.output_dimension = length(index);
-            obj.modeled_outputs = obj.modeled_outputs(index);
+            obj.coefficients = obj.coefficients(index,:,:);
+
+            obj.output_dimension(1) = length(index);
+
+
+            if ~isempty(obj.modeled_outputs)
+                obj.modeled_outputs = obj.modeled_outputs(index);
+            end
             obj.num_fitted_coefficients = obj.num_independent_element_coefficients * obj.output_dimension;
         end
         % function poly_sub = subsref(obj,index)

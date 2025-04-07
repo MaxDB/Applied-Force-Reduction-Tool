@@ -105,7 +105,39 @@ classdef Sparse_Stiffness_Array
                     obj.nonzero_data(:,subs{1,1}) = stiffness(:,end);
                 case '.'
                     obj.(subs) = stiffness;
+                case "()"
+                    if numel(subs) == 3
+                        if subs{1} == ':' && subs{2} == ':'
+                            obj.nonzero_data(:,subs{end}) = stiffness;
+                        else
+                            error("Not implemented")
+                        end
+                    else
+                        error("Not implemented")
+                    end
             end
+        end
+        function output = subsref_dep(obj,Assignment)
+
+            type = Assignment.type;
+            subs = Assignment.subs;
+            switch type
+                case "()"
+                    if numel(subs) == 3
+                        if subs{1} == ':' && subs{2} == ':'
+                            obj.nonzero_data(:,subs{end}) = stiffness;
+                            output = obj;
+                        else
+                            error("Not implemented")
+                        end
+                    else
+                        error("Not implemented")
+                    end
+                case "."
+                    output = obj.(subs);
+
+            end
+
         end
     end
 

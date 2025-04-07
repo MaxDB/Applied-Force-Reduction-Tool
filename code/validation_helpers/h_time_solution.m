@@ -71,7 +71,7 @@ for iTime = 1:num_time_points
 
     B(harmonic_span(iTime),:) = B_j;
 end
-h_frequency_coefficients = lsqminnorm(B,reshape(h_force,num_time_points*num_h_modes,1));
+h_frequency_coefficients = lsqminnorm(B,reshape(h_force,num_time_points*num_h_modes,1),"warn");
 
 h_frequency = zeros(num_h_modes,num_coefficients);
 for iCoeff = 1:num_coefficients

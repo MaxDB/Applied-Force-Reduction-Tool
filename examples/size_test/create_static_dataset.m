@@ -17,10 +17,10 @@ Calibration_Opts.Static_Opts = struct([]);
 %----------------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.additional_data = "none";
-Static_Opts.num_validation_modes = 10;
 Static_Opts.max_parallel_jobs = 4; %be careful!
-Static_Opts.output_format = "binary";
+Static_Opts.additional_data = "perturbation";
+Static_Opts.num_validation_modes = 10;
+Static_Opts.output_format = "text";
 %------------------------------------------%
 
 %--------- Static Verification Settings ---------%
@@ -31,3 +31,5 @@ Model = Dynamic_System(system_name,energy_limit,initial_modes,Calibration_Opts,S
 
 Static_Data = Static_Dataset(Model,Verification_Opts);
 Static_Data.save_data;
+
+

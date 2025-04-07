@@ -379,6 +379,14 @@ classdef Reduced_System
                     Eom_Input.Beta_Bar_Data = Beta_Bar_Data;
                     Eom_Input.L_disp_transform = L_disp_transform;
 
+                    Additional_Output = varargin{1};
+                    Eom_Input.Additional_Output = Additional_Output;
+                    switch Additional_Output.output
+                        case "physical displacement"
+                            G_Disp_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
+                            Eom_Input.G_Grad_Poly = G_Disp_Poly.subpoly(Additional_Output.dof);
+                    end
+
                 case "coco_frf"
                     Eom_Input = obj.get_solver_inputs("coco_backbone");
                     Nc_Inputs = varargin{1,1};

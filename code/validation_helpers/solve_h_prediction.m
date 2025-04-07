@@ -1,5 +1,7 @@
-function Validation_Sol = solve_h_prediction(Validation_Sol,Solution,Validation_Rom,solution_num)
+function Validation_Sol = solve_h_prediction(Validation_Sol,Solution,Validation_Rom, Validated_BB_Settings)
 Validation_Opts = Validation_Sol.Validation_Options;
+solution_num = Validated_BB_Settings.solution_num;
+
 
 num_r_modes = length(Validation_Rom.Model.reduced_modes);
 disp_span = 1:num_r_modes;
@@ -22,7 +24,7 @@ switch orbit_type
         Validation_Input = Validation_Rom.get_solver_inputs("h_prediction");
         h_terms = @(r,r_dot,r_ddot) get_h_error_terms(r,r_dot,r_ddot,Validation_Input);
 
-        Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("h_analysis");
+        Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("h_analysis",Validated_BB_Settings.Additional_Output);
     case "forced"
         
         Nonconservative_Input = Solution.get_nonconservative_input(Validation_Rom.Model);
@@ -35,6 +37,7 @@ switch orbit_type
 
         Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("forced_h_analysis",Nonconservative_Input);
 end
+
 
 switch Validation_Opts.validation_algorithm
     case "h_time"
@@ -88,6 +91,12 @@ for iOrbit = 1:num_periodic_orbits
         solve_h_time = toc(solve_h_start);
     end
 
+    %%% DEBUG
+    % if iOrbit == 54
+    %     debug_validation(validation_eq_terms,t0,Validation_Orbit.h,Validation_Orbit.h_dot)
+    % end
+    %%%
+
     h_analysis_start = tic;
 
     if Validation_Opts.get_stability
@@ -134,3 +143,105 @@ fprintf("Mean time: %.3f, min time: %.3f, max time: %.3f \n",...
 end
 
 
+function debug_validation(varargin) %unfortunately perpetually needed
+[W_I,W_C,W_S,w_f] = varargin{1}{:};
+[t0,h,h_dot] = varargin{2:end};
+
+num_h_modes = size(varargin{1}{1},1);
+num_time_points = size(t0,2);
+
+h_ddot = zeros(num_h_modes,num_time_points);
+
+
+
+
+% for iMode = 1:num_h_modes
+%     h_coeff = h_frequency(iMode,:);
+%     h_i = zeros(1,num_time_points) + h_coeff(1);
+%     h_dot_i = zeros(1,num_time_points);
+%     h_ddot_i = zeros(1,num_time_points);
+%     for iHarmonic = 1:num_harmonics
+%         cos_index = 1+iHarmonic;
+%         sin_index = cos_index + num_harmonics;
+%         cos_omega_t = cos(iHarmonic*omega*t0);
+%         sin_omega_t = sin(iHarmonic*omega*t0);
+% 
+%         h_i = h_i + h_coeff(cos_index)*cos_omega_t + h_coeff(sin_index)*sin_omega_t;
+% 
+%         h_dot_i = h_dot_i + -omega*h_coeff(cos_index)*sin_omega_t + omega*h_coeff(sin_index)*cos_omega_t;
+% 
+%         h_ddot_i = h_ddot_i + -omega^2*h_coeff(cos_index)*cos_omega_t - omega^2*h_coeff(sin_index)*sin_omega_t;
+%     end
+%     h(iMode,:) = h_i;
+%     h_dot(iMode,:) = h_dot_i;
+%     h_ddot(iMode,:) = h_ddot_i;
+% end
+
+% h(t) and derivatives plot
+% figure
+% tiledlayout(num_h_modes,2)
+% 
+% for iMode = 1:num_h_modes
+%     nexttile
+%     plot(t0,h(iMode,:))
+%     nexttile
+%     plot(t0,h_dot(iMode,:))
+%     % nexttile
+%     % plot(t0,h_ddot(iMode,:))
+% end
+
+
+
+% EoM error plot
+acc_force = zeros(num_h_modes,num_time_points);
+conv_force = zeros(num_h_modes,num_time_points);
+stiff_force = zeros(num_h_modes,num_time_points);
+time_error = zeros(num_h_modes,num_time_points);
+for iT = 1:num_time_points
+    % acc_force(:,iT) = W_I(:,:,iT)*h_ddot(:,iT);
+    conv_force(:,iT) = W_C(:,:,iT)*h_dot(:,iT);
+    stiff_force(:,iT) = W_S(:,:,iT)*h(:,iT);
+
+    % time_error(:,iT) = acc_force(:,iT) + conv_force(:,iT) + stiff_force(:,iT) -w_f(:,iT);
+end
+
+figure
+tiledlayout(num_h_modes,1)
+for iMode = 1:num_h_modes
+    nexttile
+    hold on
+    % plot(t0,acc_force(iMode,:),"-r")
+    plot(t0,conv_force(iMode,:),"-g")
+    plot(t0,stiff_force(iMode,:),"-b")
+    plot(t0,w_f(iMode,:),"y")
+    % plot(t0,time_error(iMode,:),"k")
+    hold off
+end
+
+
+
+%Validation equation coefficient plot
+% for iQuantity = 1:4
+%     h_Q = varargin{1}{iQuantity};
+%     figure
+%     if iQuantity < 4
+%         tiledlayout(num_h_modes,num_h_modes)
+%     else
+%         tiledlayout(num_h_modes,1)
+%     end
+%     for iRow = 1:num_h_modes
+%         if iQuantity < 4
+%             for iCol = 1:num_h_modes
+%                 nexttile
+%                 plot(t0,squeeze(h_Q(iRow,iCol,:)))
+%             end
+%         else
+%             nexttile
+%             plot(t0,squeeze(h_Q(iRow,:)))
+%         end
+%     end
+% end
+
+
+
+end

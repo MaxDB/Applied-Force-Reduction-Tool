@@ -319,7 +319,7 @@ classdef Dynamic_Dataset
         %-----------------------------------------------------------------%
         % Validation
         %-----------------------------------------------------------------%
-        function  obj = validate_solution(obj,solution_num,L_modes)
+        function  [obj,Validated_BB_Sol] = validate_solution(obj,solution_num,L_modes)
             if isstring(solution_num)
                 if solution_num == "last"
                     solution_num = obj.num_solutions;
@@ -342,6 +342,7 @@ classdef Dynamic_Dataset
             end
             Validated_BB_Settings.solution_num = solution_num;
             Validated_BB_Settings.L_modes = L_modes;
+            Validated_BB_Settings.Additional_Output = obj.Additional_Output;
 
             Validated_BB_Sol = Validated_Backbone_Solution(Rom,BB_Sol,Validated_BB_Settings);
 
@@ -472,7 +473,7 @@ classdef Dynamic_Dataset
             obj.update_dyn_data;
         end
         %-----------------------------------------------------------------%
-        function [orbit,Validation_Orbit] = get_orbit(obj,solution_num,orbit_num,validated)
+        function [Orbit,Validation_Orbit,solution_name] = get_orbit(obj,solution_num,orbit_num,validated)
             if nargin == 3
                 validated = 0;
             end
@@ -485,20 +486,34 @@ classdef Dynamic_Dataset
             
             
             if isscalar(orbit_num)
-                orbit = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(orbit_num));
+                Orbit = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(orbit_num));
             else
                 num_orbits = length(orbit_num);
-                orbit = cell(num_orbits,1);
+                Orbit = cell(num_orbits,1);
                 for iOrbit = 1:num_orbits
-                    orbit{iOrbit,1} = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(orbit_num(iOrbit)));
+                    Orbit{iOrbit,1} = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(orbit_num(iOrbit)));
                 end
             end
 
+
             Validation_Orbit = [];
-            orbit_name = solution_name + "\sol" + orbit_num + "_v.mat";
-            if validated && isfile(orbit_name)
-                load(solution_name + "\sol" + orbit_num + "_v.mat","Validation_Orbit");
+            if isscalar(orbit_num)
+                orbit_name = solution_name + "\sol" + orbit_num + "_v.mat";
+                if validated && isfile(orbit_name)
+                    load(solution_name + "\sol" + orbit_num + "_v.mat","Validation_Orbit");
+                end
+            else
+                Validation_Orbits = cell(num_orbits,1);
+                for iOrbit = 1:num_orbits
+                    orbit_name = solution_name + "\sol" + orbit_num(iOrbit) + "_v.mat";
+                    if validated && isfile(orbit_name)
+                        load(solution_name + "\sol" + orbit_num(iOrbit) + "_v.mat","Validation_Orbit");
+                    end
+                    Validation_Orbits{iOrbit} = Validation_Orbit;
+                end
+                Validation_Orbit = Validation_Orbits;
             end
+            
         end
         %-----------------------------------------------------------------%
         function point_index = get_special_point(obj,solution_num,point_type)
