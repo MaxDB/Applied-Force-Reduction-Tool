@@ -1,4 +1,4 @@
-function x_dot = direct_eom(~,x,zeta,modal_restoring_force)
+function x_dot = direct_eom(t,x,zeta,modal_restoring_force)
 num_x = size(x,2);
 num_modes = size(x,1)/2;
 

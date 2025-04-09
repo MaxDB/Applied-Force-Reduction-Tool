@@ -97,6 +97,8 @@ node_map([ci;ci_zero],:) = [];
 node_map(:,1) = node_map(:,1) - size(ci_zero,1);
 node_map(:,2) = (1:dof_bc)';
 
+%need to account for coupling
+
 data_processing_time = toc(data_processing_time_start);
 log_message = sprintf("Matrices processed: %.1f seconds" ,data_processing_time);
 logger(log_message,3)

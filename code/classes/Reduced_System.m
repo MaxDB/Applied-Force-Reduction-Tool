@@ -135,13 +135,16 @@ classdef Reduced_System
         end
         %-----------------------------------------------------------------%
         function x_dot = expand_velocity(obj,r,r_dot,varargin)
-            r_evec = obj.Model.reduced_eigenvectors;
             x_Poly = obj.Physical_Displacement_Polynomial;
             x_dr_Poly = differentiate_polynomial(x_Poly);
-
-            x_dot = x_dr_Poly.evaluate_polynomial(r)*r_dot;
             
- 
+            num_time_points = size(r,2);
+            num_dof = obj.Model.num_dof;
+            x_dot = zeros(num_dof,num_time_points);
+            for iT = 1:num_time_points
+                x_dot(:,iT) = x_dr_Poly.evaluate_polynomial(r(:,iT))*r_dot(:,iT);
+            end
+
 
             % num_x = size(r,2);
             % num_modes = size(r,1);
@@ -276,7 +279,7 @@ classdef Reduced_System
                 degree(3) = obj.Low_Frequency_Stiffness_Polynomial.polynomial_degree;
                 degree(4) = obj.Low_Frequency_Coupling_Gradient_Polynomial.polynomial_degree;
             end
-            
+
             max_degree = max(degree);
             input_index = Polynomial.get_input_index(max_degree,num_modes);
         end
@@ -310,17 +313,17 @@ classdef Reduced_System
                     input_order = obj.get_max_input_order;
                     scale_factor = obj.Force_Polynomial.scaling_factor;
                     shift_factor = obj.Force_Polynomial.shifting_factor;
-                    
+
                     Reduced_Force_Data.coeffs = obj.Force_Polynomial.coefficients;
-                     
+
                     Physical_Disp_Diff_Data = obj.Physical_Displacement_Polynomial.get_diff_data(2);
                     Physical_Disp_Data.diff_scale_factor = Physical_Disp_Diff_Data.diff_scale_factor;
                     Physical_Disp_Data.diff_mapping = Physical_Disp_Diff_Data.diff_mapping;
                     physical_disp_coeffs = obj.Physical_Displacement_Polynomial.coefficients;
-                    
+
                     H_Stiffness_Poly = obj.Low_Frequency_Stiffness_Polynomial;
                     H_Force_Data.coeffs = H_Stiffness_Poly.coefficients;
-                    
+
                     H_Disp_Grad_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
                     h_disp_coeff = H_Disp_Grad_Poly.coefficients;
 
@@ -329,11 +332,11 @@ classdef Reduced_System
                     % Beta_Bar_Data.h_disp = obj.get_beta_mode(h_disp_coeff,permute(h_disp_coeff,[2,3,1]));
                     % Beta_Bar_Data.h_disp_r_disp = obj.get_beta_mode(h_disp_coeff,physical_disp_coeffs);
 
-                   
+
                     Eom_Input.input_order = input_order;
                     Eom_Input.scale_factor = scale_factor;
                     Eom_Input.shift_factor = shift_factor;
-                    
+
                     Eom_Input.Reduced_Force_Data = Reduced_Force_Data;
                     Eom_Input.H_Force_Data = H_Force_Data;
                     Eom_Input.Physical_Disp_Data = Physical_Disp_Data;
@@ -354,7 +357,7 @@ classdef Reduced_System
 
                     H_Stiff_Poly = obj.Low_Frequency_Stiffness_Polynomial;
                     Force_Poly = obj.Force_Polynomial;
-                    
+
                     H_Disp_Grad_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
                     h_disp_coeff = H_Disp_Grad_Poly.coefficients;
 
@@ -370,7 +373,7 @@ classdef Reduced_System
                     Eom_Input.input_order = input_order;
                     Eom_Input.scale_factor = scale_factor;
                     Eom_Input.shift_factor = shift_factor;
-                    
+
                     Eom_Input.H_Force_Poly = H_Stiff_Poly;
                     Eom_Input.Physical_Disp_Data = Physical_Disp_Data;
                     Eom_Input.Potential_Poly = Potential_Poly;
@@ -390,8 +393,8 @@ classdef Reduced_System
                 case "coco_frf"
                     Eom_Input = obj.get_solver_inputs("coco_backbone");
                     Nc_Inputs = varargin{1,1};
-                    
-                    displacement_coeffs = obj.Physical_Displacement_Polynomial.coefficients';
+
+                    displacement_coeffs = obj.Physical_Displacement_Polynomial.coefficients;
                     damping_beta = displacement_coeffs'*Nc_Inputs.damping*displacement_coeffs;
                     Eom_Input.Damping_Data.damping_beta = damping_beta;
 
@@ -429,8 +432,12 @@ classdef Reduced_System
 
                             h_disp_force_beta = displacement_coeffs'*Nc_Inputs.amplitude_shape;
                             Eom_Input.Applied_Force_Data.disp_force_beta = h_disp_force_beta;
+                        case "none"
+                            Eom_Input.Applied_Force_Data.period = 2*pi/Nc_Inputs.frequency;
+                            Eom_Input.Applied_Force_Data.amplitude = Nc_Inputs.amplitude;
+                            Eom_Input.Applied_Force_Data.type = Nc_Inputs.force_type;
 
-                        otherwise 
+                        otherwise
                             error("Unknown force type: '" + Nc_Inputs.force_type + "'")
                     end
                 case "forced_h_prediction"
@@ -446,7 +453,7 @@ classdef Reduced_System
                     damping_h_disp = tensorprod(full(damping),h_disp_coeff_T,2,1);
                     Beta_Damping.h_disp = obj.get_beta_mode(h_disp_coeff,damping_h_disp);
                     Beta_Damping.h_disp_r_disp = obj.get_beta_mode(h_disp_coeff,damping*displacement_coeffs);
- 
+
                     Eom_Input.Beta_Damping = Beta_Damping;
 
 
@@ -491,7 +498,7 @@ classdef Reduced_System
                 case "forced_h_analysis"
                     Eom_Input = obj.get_solver_inputs("h_analysis");
                     Nc_Inputs = varargin{1,1};
-                   
+
             end
         end
         %-----------------------------------------------------------------%
@@ -500,6 +507,79 @@ classdef Reduced_System
             all_L_modes = obj.Model.low_frequency_modes;
             [~,L_map] = ismember(L_modes,all_L_modes);
             L_eigenvectors = obj.Model.low_frequency_eigenvectors(:,L_map);
+        end
+        %-----------------------------------------------------------------%
+        function [eom,eom_dz,eom_dt] = get_equation_of_motion(obj,varargin)
+            %-------------------------------------------------------------------------%
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            Damping_Data = [];
+            Force_Data = [];
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "damping"
+                        Damping_Data = keyword_values{arg_counter};
+                    case "forcing"
+                        Force_Data = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %-------------------------------------------------------------------------%
+            conservative = (isempty(Damping_Data) && isempty(Force_Data));
+
+            if conservative
+                Eom_Input = obj.get_solver_inputs("coco_backbone");
+                eom = @(t,z) coco_eom(0,z,0,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data);
+                eom_dz = @(t,z) coco_eom_dx(0,z,0,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data);
+            else
+                if isempty(Force_Data)
+                    Force_Data.type = "none";
+                end
+
+
+                switch Damping_Data.damping_type
+                    case "rayleigh"
+                        damping = get_rayleigh_damping_matrix(Damping_Data,obj.Model);
+                        Nonconservative_Input.damping = damping;
+                end
+
+                switch Force_Data.type
+                    case "modal"
+                        mode_map = F_Data.mode_number == obj.Model.reduced_modes;
+                        Nonconservative_Input.mode_map = mode_map;
+                    case "point force"
+                        num_dofs = obj.Model.num_dof;
+                        dof_map = zeros(num_dofs,1);
+                        dof_map(obj.Model.node_mapping(:,1) == F_Data.dof) = 1;
+                        Nonconservative_Input.amplitude_shape = dof_map;
+                    case "none"
+                        Force_Data.amplitude = 0;
+                        Force_Data.frequency = 0;
+                end
+                Nonconservative_Input.amplitude = Force_Data.amplitude;
+                Nonconservative_Input.frequency = Force_Data.frequency;
+                Nonconservative_Input.force_type = Force_Data.type;
+
+   
+
+                Eom_Input = obj.get_solver_inputs("coco_frf",Nonconservative_Input);
+
+
+                T = Eom_Input.Applied_Force_Data.period;
+                amp = Eom_Input.Applied_Force_Data.amplitude;
+                eom = @(t,z) coco_forced_eom(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data);
+                eom_dz = @(t,z) coco_forced_eom_dx(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data);
+                eom_dt = @(t,z) coco_forced_eom_dt(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data);
+
+
+            end
         end
         %-----------------------------------------------------------------%
     end

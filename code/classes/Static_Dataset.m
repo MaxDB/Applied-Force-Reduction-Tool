@@ -106,6 +106,19 @@ classdef Static_Dataset
             obj.Model = obj.Model.update_static_opts(Static_Opts);
 
             obj.additional_data_type = Static_Opts.additional_data;
+            if obj.additional_data_type == "perturbation"
+                if isstring(obj.Model.Static_Options.perturbation_scale_factor) && obj.Model.Static_Options.perturbation_scale_factor == "auto"
+                    perturbation_sf = select_perturbation_scale_factor(obj.Model);
+                else
+                    perturbation_sf = obj.Model.Static_Options.perturbation_scale_factor;
+                    if isscalar(perturbation_sf)
+                        num_h_modes = size(obj.Model.reduced_modes,2) + size(obj.Model.low_frequency_modes,2);
+                        perturbation_sf = repmat(perturbation_sf,1,num_h_modes);
+                    end
+                end
+                obj.perturbation_scale_factor = perturbation_sf;
+                obj.Model.Static_Options.perturbation_scale_factor = perturbation_sf;
+            end
             
             Closest_Point.initial_disp = obj.get_dataset_values("physical_displacement");
             Closest_Point.initial_force = obj.get_dataset_values("restoring_force");

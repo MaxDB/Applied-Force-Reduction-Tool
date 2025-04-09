@@ -88,6 +88,9 @@ for iStep = 1:num_steps
             add_data_step_start = tic;
             step_span = step_start_lines(iStep):(step_start_lines(iStep+1)-1);
             step_data = abaqus_data(step_span,1);
+            if num_static_steps == 0
+                static_step_counter = static_step_counter + 1;
+            end
 
             % Displacement
             output_start_lines = find(startsWith(step_data,node_output_pattern,'IgnoreCase',true));

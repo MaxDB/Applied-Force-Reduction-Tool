@@ -96,6 +96,10 @@ for iX = 1:num_x
             applied_force_dx = tensorprod(amplitude_shape,force_shape_dx(:,:,iX),2,1);
             applied_force_dr = applied_force_dx(:,disp_span);
             applied_force_dr_dot = applied_force_dx(:,vel_span);
+        case "none"
+            applied_force = zeros(size(damping_term));
+            applied_force_dr = zeros(size(damping_term_dr));
+            applied_force_dr_dot = applied_force_dr;
 
     end
 

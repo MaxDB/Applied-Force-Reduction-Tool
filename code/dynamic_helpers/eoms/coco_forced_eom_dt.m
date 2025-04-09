@@ -48,6 +48,8 @@ for iX = 1:num_x
         case "point force"
             amplitude_shape = r_dr_products_coupling'*Applied_Force_Data.disp_force_beta;
             applied_force_dt = amplitude_shape*force_shape_dt(:,iX);
+        case "none"
+            applied_force_dt = zeros(size(r_i));
     end
     %--
     x_dot_dt(vel_span,iX) = inertia_term\applied_force_dt;

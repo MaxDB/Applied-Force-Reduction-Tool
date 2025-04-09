@@ -58,6 +58,8 @@ for iX = 1:num_x
         case "point force"
             amplitude_shape = r_dr_products_coupling'*Applied_Force_Data.disp_force_beta;
             applied_force = amplitude_shape*force_shape(:,iX);
+        case "none"
+            applied_force = zeros(size(damping_term));
     end
     %--
     x_dot(vel_span,iX) = -inertia_term\(convection_term+restoring_force + damping_term - applied_force);

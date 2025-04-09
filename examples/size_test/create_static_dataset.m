@@ -8,7 +8,7 @@ set_visualisation_level(0)
 %--------- System Settings ---------%
 system_name = "mems_arch";
 energy_limit = 1;
-initial_modes = [1];
+initial_modes = [1,5,6];
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
@@ -18,9 +18,9 @@ Calibration_Opts.Static_Opts = struct([]);
 
 %--------- Static Solver Settings ---------%
 Static_Opts.max_parallel_jobs = 4; %be careful!
-Static_Opts.additional_data = "perturbation";
+Static_Opts.additional_data = "none";
 Static_Opts.num_validation_modes = 10;
-Static_Opts.output_format = "text";
+% Static_Opts.output_format = "binary";
 %------------------------------------------%
 
 %--------- Static Verification Settings ---------%
@@ -32,4 +32,10 @@ Model = Dynamic_System(system_name,energy_limit,initial_modes,Calibration_Opts,S
 Static_Data = Static_Dataset(Model,Verification_Opts);
 Static_Data.save_data;
 
-
+% Static_Data = load_static_data("mems_arch_1");
+% Static_Opts.additional_data = "perturbation";
+% Static_Opts.num_validation_modes = 10;
+% Static_Opts.output_format = "text";
+% Static_Opts.max_parallel_jobs = 4; %be careful!
+% Static_Data = Static_Data.add_additional_data(Static_Opts);
+% Static_Data.save_data;

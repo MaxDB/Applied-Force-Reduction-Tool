@@ -8,10 +8,9 @@ element_def_lines = find(startsWith(geometry(1:assembly_def_line),ELEMENT_DEF,'I
 elements_def = geometry(element_def_lines);
 
 num_element_types = length(element_def_lines);
-if num_element_types > 1
-    warning("multiple element types detected")
-end
 
+
+element_defs = strings(0);
 mesh_data = cell(num_element_types,1);
 for iElement = 1:num_element_types
 
@@ -36,13 +35,23 @@ for iElement = 1:num_element_types
         otherwise
             error("Unsupported element type: " + element_def)
     end
+    
+    clear("Element_Data")
+    Element_Data.definition = element_def;
+    Element_Data.type = element_type;
+    Element_Data.dimension = element_dimension;
+    mesh_data{iElement} = Element_Data;
 
+    if ~ismember(element_def,element_defs)
+        element_defs(end+1) = element_def; %#ok<AGROW>
+    end
 end
 
-clear("Element_Data")
-Element_Data.definition = element_def;
-Element_Data.type = element_type;
-Element_Data.dimension = element_dimension;
-mesh_data{iElement} = Element_Data;
+num_different_elements = size(element_defs,2);
+
+if num_different_elements > 1
+    error("multiple element types detected")
+end
+mesh_data = mesh_data(1);
 
 end

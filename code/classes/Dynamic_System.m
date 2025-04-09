@@ -557,8 +557,16 @@ classdef Dynamic_System
                         condensed_disp = [condensed_disp_cell{1,:}];
                         restoring_force = [restoring_force_cell{1,:}];
                         energy = [energy_cell{1,:}];
-                        additional_data = cat(3,additional_data_cell{1,:});
-                        
+                        switch additional_data_type
+                            case "stiffness"
+                                additional_data = additional_data_cell{1,1};
+                                for iJob = 2:num_parallel_jobs
+                                    additional_data = cat(3,additional_data,additional_data_cell{1,iJob});
+                                end
+                            otherwise
+                                additional_data = cat(3,additional_data_cell{1,:});
+                        end
+                       
                         abaqus_time = toc(abaqus_start);
                         logger("---",3)
                         log_message = sprintf("Total FE time: %.1f seconds" ,abaqus_time);
@@ -667,7 +675,60 @@ classdef Dynamic_System
             end
         end
         %-----------------------------------------------------------------%
-    
+        
+        %-----------------------------------------------------------------%
+        function [eom,eom_dz] = get_equation_of_motion(obj,varargin)
+            Analytic_Eom = load_analytic_system("geometry\" + obj.system_name+ "\" + obj.system_name);
+            %-------------------------------------------------------------------------%
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            Damping_Data = [];
+            Force_Data = [];
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "damping"
+                        Damping_Data = keyword_values{arg_counter};
+                    case "forcing"
+                        Force_Data = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %-------------------------------------------------------------------------%
+            conservative = (isempty(Damping_Data) && isempty(Force_Data));
+
+            if conservative
+                Eom_Input = Analytic_Eom.get_solver_inputs("free");
+
+                eom = @(t,z) direct_eom(0,z,0,Eom_Input.modal_restoring_force);
+                eom_dz = @(t,z) direct_eom_dx(0,z,0,Eom_Input.modal_stiffness);
+            else
+                switch Damping_Data.damping_type
+                    case "rayleigh"
+                        damping = get_rayleigh_damping_matrix(Damping_Data,obj);
+                        % evec = obj.reduced_eigenvectors;
+                        % damping = evec'*damping*evec;
+                        %need to transform to modal coordinates
+                end
+                if ~isempty(Force_Data)
+                    error("forced full-order simulation not implemented")
+                end
+                Eom_Input = Analytic_Eom.get_solver_inputs("free");
+                %implement properly later
+
+                eom = @(t,z) direct_forced_eom(t,z,Eom_Input.modal_restoring_force,damping);
+
+            end
+
+        end
+        %-----------------------------------------------------------------%
+
         %-----------------------------------------------------------------%
         %%% Helpers %%%
         %-----------------------------------------------------------------%
@@ -693,5 +754,6 @@ classdef Dynamic_System
             obj.reduced_eigenvalues = obj.reduced_eigenvalues(mode_map,1);
             obj.reduced_eigenvectors = obj.reduced_eigenvectors(:,mode_map);
         end
+   
     end
 end
