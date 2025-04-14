@@ -168,9 +168,9 @@ h_ddot = zeros(num_h_modes,num_time_points);
 % 
 %         h_i = h_i + h_coeff(cos_index)*cos_omega_t + h_coeff(sin_index)*sin_omega_t;
 % 
-%         h_dot_i = h_dot_i + -omega*h_coeff(cos_index)*sin_omega_t + omega*h_coeff(sin_index)*cos_omega_t;
+%         h_dot_i = h_dot_i + -omega*iHarmonic*h_coeff(cos_index)*sin_omega_t + omega*iHarmonic*h_coeff(sin_index)*cos_omega_t;
 % 
-%         h_ddot_i = h_ddot_i + -omega^2*h_coeff(cos_index)*cos_omega_t - omega^2*h_coeff(sin_index)*sin_omega_t;
+%         h_ddot_i = h_ddot_i + -omega^2*iHarmonic^2*h_coeff(cos_index)*cos_omega_t - omega^2*iHarmonic^2*h_coeff(sin_index)*sin_omega_t;
 %     end
 %     h(iMode,:) = h_i;
 %     h_dot(iMode,:) = h_dot_i;

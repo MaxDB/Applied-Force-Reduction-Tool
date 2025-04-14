@@ -1,6 +1,6 @@
 function ax = plot_h_predicition(Dyn_Data,type,solution_num,varargin)
 PLOT_STABILITY = 1;
-STABILITY_LIMIT = 1.005;
+STABILITY_LIMIT = 1.01;
 
 LINE_STYLE = [":","-"]; %[unstable,stable]
 LINE_WIDTH = 1.5;

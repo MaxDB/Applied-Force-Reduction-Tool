@@ -1,6 +1,30 @@
-function ax = compare_validation(Dyn_Data,type,solution_num,h_modes)
-fig = figure;
-ax = axes(fig);
+function ax = compare_validation(Dyn_Data,type,solution_num,h_modes,varargin)
+%-------------------------------------------------------------------------%
+num_args = length(varargin);
+if mod(num_args,2) == 1
+    error("Invalid keyword/argument pairs")
+end
+keyword_args = varargin(1:2:num_args);
+keyword_values = varargin(2:2:num_args);
+
+ax = [];
+
+for arg_counter = 1:num_args/2
+    switch keyword_args{arg_counter}
+        case "axes"
+            ax = keyword_values{arg_counter};
+        otherwise
+            error("Invalid keyword: " + keyword_args{arg_counter})
+    end
+end
+%-------------------------------------------------------------------------%
+
+
+
+if isempty(ax)
+    fig = figure;
+    ax = axes(fig);
+end
 
 if isstring(Dyn_Data)
     Dyn_Data = initalise_dynamic_data(Dyn_Data);

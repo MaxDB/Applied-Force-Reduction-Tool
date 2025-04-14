@@ -8,7 +8,7 @@ set_visualisation_level(0)
 %--------- System Settings ---------%
 system_name = "mems_arch";
 energy_limit = 1;
-initial_modes = [1,5,6];
+initial_modes = [1,2,6];
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%

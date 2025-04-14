@@ -2,7 +2,7 @@ function ax = plot_backbone(Dyn_Data,type,solution_num,varargin)
 PLOT_BIFURCATIONS = 1;
 PLOT_SPECIAL_POINT = 1;
 
-STABILITY_LIMIT = 1.005;
+STABILITY_LIMIT = 1.01;
 
 LINE_STYLE = [":","-"]; %[unstable,stable]
 LINE_WIDTH = 1.5;

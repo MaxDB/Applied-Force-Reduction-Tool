@@ -38,21 +38,25 @@ else
         cos_t = cos(iHarmonic*omega*t0);
         sin_t = sin(iHarmonic*omega*t0);
 
-        h_cos = h_frequency(:,iHarmonic+1).*cos_t;
-        h_sin = h_frequency(:,iHarmonic+1 + num_harmonics).*sin_t;
+        alpha_index = iHarmonic + 1;
+        beta_index = alpha_index + num_harmonics;
+
+        h_cos = h_frequency(:,alpha_index).*cos_t;
+        h_sin = h_frequency(:,beta_index).*sin_t;
         h_n_plus_two = h_n_plus_two + h_cos + h_sin;
 
-        h_dot_sin = h_dot_frequency(:,iHarmonic+1).*sin_t;
-        h_dot_cos = h_dot_frequency(:,iHarmonic+1 + num_harmonics).*cos_t;
+        h_dot_sin = h_dot_frequency(:,alpha_index).*sin_t;
+        h_dot_cos = h_dot_frequency(:,beta_index).*cos_t;
         h_dot_n_plus_two = h_dot_n_plus_two + h_dot_cos + h_dot_sin;
 
-        h_ddot_cos = h_ddot_frequency(:,iHarmonic+1).*cos_t;
-        h_ddot_sin = h_ddot_frequency(:,iHarmonic+1 + num_harmonics).*sin_t;
+        h_ddot_cos = h_ddot_frequency(:,alpha_index).*cos_t;
+        h_ddot_sin = h_ddot_frequency(:,beta_index).*sin_t;
         h_ddot_n_plus_two = h_ddot_n_plus_two + h_ddot_cos + h_ddot_sin;
-
-        eom_error_n_plus_two = get_eom_error(h_n_plus_two,h_dot_n_plus_two,h_ddot_n_plus_two,h_inertia,h_conv,h_stiff,h_force,0);
         
-        convergence_error = get_convergence_error(eom_error_n,eom_error_n_plus_two);
+        debug = 0;
+        eom_error_n_plus_two = get_eom_error(h_n_plus_two,h_dot_n_plus_two,h_ddot_n_plus_two,h_inertia,h_conv,h_stiff,h_force,debug);
+        
+        % convergence_error = get_convergence_error(eom_error_n,eom_error_n_plus_two);
         % convergence_error = get_convergence_error(h_n,h_n_plus_two);
         convergence_error = eom_error_n_plus_two;
 
@@ -193,25 +197,26 @@ function convergence_error = get_convergence_error(x_1,x_2)
 convergence_error = abs(x_2 - x_1)./max(abs(x_2),[],2);
 end
 %--------------------
-function eom_error = get_eom_error(h,h_dot,h_ddot,h_inertia,h_conv,h_stiff,h_force,debug)
+function norm_eom_error = get_eom_error(h,h_dot,h_ddot,h_inertia,h_conv,h_stiff,h_force,debug)
 num_t_points = size(h,2);
 num_h_modes = size(h,1);
 
 eom_error = zeros(num_h_modes,num_t_points);
-norm_eom_error = zeros(num_h_modes,num_t_points);
 acc_force = zeros(num_h_modes,num_t_points);
 stiff_force = zeros(num_h_modes,num_t_points);
 conv_force = zeros(num_h_modes,num_t_points);
+
+max_force = max(abs(h_force),[],2);
 for iT = 1:num_t_points
     acc_force(:,iT) = h_inertia(:,:,iT)*h_ddot(:,iT);
     conv_force(:,iT) = h_conv(:,:,iT)*h_dot(:,iT);
     stiff_force(:,iT) = h_stiff(:,:,iT)*h(:,iT);
 
-    max_force = max(abs([acc_force(:,iT),conv_force(:,iT),stiff_force(:,iT),h_force(:,iT)]),[],2);
+    max_force = max([max_force,acc_force(:,iT),conv_force(:,iT),stiff_force(:,iT)],[],2);
 
     eom_error(:,iT) = (acc_force(:,iT) + conv_force(:,iT) + stiff_force(:,iT) - h_force(:,iT));
-    norm_eom_error(:,iT) = eom_error(:,iT)./max_force;
 end
+ norm_eom_error = eom_error./max_force;
 
 if ~debug
     return

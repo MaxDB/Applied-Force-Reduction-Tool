@@ -13,8 +13,8 @@ Additional_Output.dof = "all";
 Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
 % 
 %--------- Continuation Settings ---------%
-Continuation_Opts.initial_inc = 1e-1;
-Continuation_Opts.max_inc = 1e-1;
+Continuation_Opts.initial_inc = 1e0;
+Continuation_Opts.max_inc = 1e0;
 Continuation_Opts.min_inc = 1e-2;
 Continuation_Opts.forward_steps = 2500;
 Continuation_Opts.backward_steps = 0;
@@ -24,9 +24,9 @@ Continuation_Opts.min_discretisation_num = 20;
 Continuation_Opts.collation_degree = 6;
 %-----------------------------------------%
 
-% Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 
-initial_condition_sweep(Dyn_Data.Dynamic_Model)
+
 % compare_validation(Dyn_Data,"validation error",1,"all");
 % Dyn_Data = Dyn_Data.validate_solution(1,6);
 
@@ -77,7 +77,7 @@ initial_condition_sweep(Dyn_Data.Dynamic_Model)
 % Continuation_Opts.backward_steps = 174;
 % Continuation_Opts.parameter_range = period_range;
 % %-----------------------------------------%
-% Dyn_Data = Dyn_Data.restart_point(2,1,"IC","opts",Continuation_Opts);
+% Dyn_Data = Dyn_Data.restart_point(2,2,"IC","opts",Continuation_Opts);
 % 
 % 
 % %----------------------------------------------------------------------------%
@@ -93,8 +93,7 @@ initial_condition_sweep(Dyn_Data.Dynamic_Model)
 % Continuation_Opts.min_discretisation_num = 20;
 % Continuation_Opts.collation_degree = 6;
 % %-----------------------------------------%
-% Dyn_Data = Dyn_Data.restart_point(3,144,"frf_to_bb","opts",Continuation_Opts);
-% 
+% Dyn_Data = Dyn_Data.restart_point(4,97,"frf_to_bb","opts",Continuation_Opts);
 % 
 % %----------------------------------------------------------------------------%
 % %--------- Continuation Settings ---------%
@@ -109,4 +108,4 @@ initial_condition_sweep(Dyn_Data.Dynamic_Model)
 % Continuation_Opts.collation_degree = 6;
 % Continuation_Opts.energy_limit_multiplier = 1;
 % %-----------------------------------------%
-% Dyn_Data = Dyn_Data.restart_point(7,3,"po","opts",Continuation_Opts);
+% Dyn_Data = Dyn_Data.restart_point(5,2,"po","opts",Continuation_Opts);
