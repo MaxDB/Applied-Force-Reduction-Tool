@@ -69,7 +69,7 @@ if PLOT_STABILITY
 end
 
 switch type
-    case {"energy","validation error","physical amplitude"}
+    case {"energy","validation error","physical amplitude","stability"}
         switch type
             case "energy"
                 energy_tilde = Solution.energy;
@@ -82,6 +82,10 @@ switch type
             case "physical amplitude"
                 energy_hat = Validated_Solution.additional_dynamic_output;
                 energy_tilde = Solution.additional_dynamic_output;
+
+            case "stability"
+                energy_hat = Validated_Solution.h_stability;
+                energy_tilde = Solution.stability;
         end
 
 
@@ -146,6 +150,8 @@ switch type
                 y_label = "\epsilon";
             case "physical amplitude"
                 y_label = "X";
+            case "stability"
+                y_label = "max eig magnitude";
         end
 
         xlabel(ax,"Frequency (rad/s)")

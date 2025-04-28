@@ -83,7 +83,7 @@ else
                 if iHarmonic > Validation_Opts.maximum_harmonic
                     warning("Number of harmonics exceeded maximum")
                     solution_converged = 1;
-                    h = h_n;
+                    h = h_n_plus_two;
  
                     break
                 end

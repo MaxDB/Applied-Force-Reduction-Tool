@@ -164,7 +164,7 @@ end
 
 
 switch type
-    case {"energy","physical amplitude","stress"}
+    case {"energy","physical amplitude","stress","stability"}
         switch type
             case "energy"
                 energy = Solution.energy;
@@ -174,6 +174,8 @@ switch type
                 % stress_dof = Dyn_Data.Additional_Output.dof;
                 % stress_node = 1 + (stress_dof - mod(stress_dof,6))/6;
                 energy = max(Solution.max_displacement_stress,[],1);
+            case "stability"
+                energy = Solution.stability;
         end
         
 
@@ -324,6 +326,8 @@ switch type
             case "physical amplitude"
                 output_dof = Dyn_Data.Additional_Output.dof;
                 ylabel(ax,"X_{" + output_dof + "}");
+            case "stability"
+                ylabel(ax,"max eig magnitude")
         end
 
         
