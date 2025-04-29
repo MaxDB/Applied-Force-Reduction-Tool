@@ -367,7 +367,8 @@ switch type
                 plotted_modes(num_axes+iMode) = neglected_modes(iMode);
             end
         end
-
+        
+        
 
 
         for iMode = 1:num_modes

@@ -239,6 +239,7 @@ switch type
             end
 
             if add_backbone
+                
                 if PLOT_STABILITY
                     for iSection = 1:bb_num_sections
                         stab = bb_range_stability(iSection);
@@ -288,8 +289,9 @@ switch type
             end 
 
         end
-   
-
+        % if add_backbone
+        %     ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0);
+        % end
     
     otherwise
         error_msg = "Unrecognised plotting type: '" + type + "'";
