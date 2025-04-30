@@ -29,7 +29,7 @@ classdef Dynamic_System
         Parameters
     end
     methods
-        function obj = Dynamic_System(name,e_lim,modes,Calibration_Opts,Static_Opts,varargin)
+        function obj = Dynamic_System(name,e_lim,modes,varargin)
             model_init_start = tic;
 
             %Optional argumanents
@@ -39,13 +39,19 @@ classdef Dynamic_System
             end
             keyword_args = varargin(1:2:num_args);
             keyword_values = varargin(2:2:num_args);
-
+            
+            Calibration_Opts = struct([]);
+            Static_Opts = struct([]);
             load_cache = true; %load prestored mass and stiffness matrices if they exist
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
                     case "load_cache"
                         load_cache = keyword_values{arg_counter};
+                    case "static_opts"
+                        Static_Opts = keyword_values{arg_counter};
+                    case "calibration_opts"
+                        Calibration_Opts = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -331,50 +337,12 @@ classdef Dynamic_System
                     r_limit(1,iSep) = interp1(E_sep(bound_index),r_sep(bound_index),obj.energy_limit);
                     f_limit(1,iSep) = interp1(E_sep(bound_index),f_sep(bound_index),obj.energy_limit);
                 end
-                current_seps = [1,2]+2*(iMode-1);
-                % Min_Degree_Data = find_degree_limits(obj,r,x,f,E,sep_id,current_seps);
 
 
                 Force_Calibration.force_limit{1,calibration_id}(iMode+num_calibrated_modes,:) = f_limit;
                 Force_Calibration.calibrated_modes{1,calibration_id}(iMode+num_calibrated_modes,:) = mode;
-                % Force_Calibration.min_degree_data{1,calibration_id}{iMode+num_calibrated_modes} = Min_Degree_Data;
-                % f_limit = interp1(E,r,obj.energy_limit);
-
-                % r_limits = [min(r),max(r)];
                 %---------------------------------------------------------%
-                figure
-                tiledlayout(1,2)
-                nexttile
-                box on
-                xlabel("r_" + mode)
-                ylabel("f_" + mode)
-
-                hold on
-                for iSep = 1:2
-                    sep_span = sep_id == (iSep+2*(iMode-1));
-                    plot([0,r(mode_index,sep_span)],[0,f(mode_index,sep_span)],'.-')
-                end
-
-                for iSep = 1:2
-                    plot(gca().XLim,f_limit(iSep)*[1,1],'k-')
-                end
-                plot(0,0,'k.','MarkerSize',10)
-                hold off
-
-                nexttile
-                box on
-                xlabel("r_" + mode)
-                ylabel("V")
-                
-                hold on
-                
-                for iSep = 1:2
-                    sep_span = sep_id == (iSep+2*(iMode-1));
-                    plot([0,r(mode_index,sep_span)],[0,E(sep_span)],'.-')
-                end
-                plot(gca().XLim,obj.fitting_energy_limit*[1,1],'k-')
-                plot(0,0,'k.','MarkerSize',10)
-                hold off
+                model_calibration_plot(mode,sep_id,iMode,r(mode_index,:),f(mode_index,:),f_limit,E,obj)
                 %---------------------------------------------------------%
             end
             Force_Calibration.Parameters = obj.Parameters;
