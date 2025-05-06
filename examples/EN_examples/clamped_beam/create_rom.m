@@ -17,7 +17,7 @@ initial_modes = [1];
 %--------- Static Solver Settings ---------%
 Static_Opts.max_parallel_jobs = 4; %be careful!
 %------------------------------------------%
-
+gcp('nocreate');
 
 rom_one_base = zeros(1,num_iterations);
 rom_one_validation = zeros(1,num_iterations);
