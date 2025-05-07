@@ -51,7 +51,7 @@ min_freq = min(Sol.frequency);
 max_freq = max(Sol.frequency);
 
 for iMode = 1:num_L_modes
-    Dyn_Data.Additional_Output.output = "none";
+    % Dyn_Data.Additional_Output.output = "none";
     [Dyn_Data,Validated_BB_Sol] = Dyn_Data.validate_solution(solution_num,L_modes(iMode));
     colour_num = mod(iMode-1,num_colours)+1;
 

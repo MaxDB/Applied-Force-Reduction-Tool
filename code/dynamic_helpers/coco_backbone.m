@@ -50,7 +50,7 @@ prob = coco_set(prob, 'coll', 'NTSTMN',   Continuation_Settings.min_discretisati
 prob = coco_set(prob, 'coll', 'NTSTMX',   Continuation_Settings.max_discretisation_num);    % [100] %max number of discretisation intervals
 
 % cont_args = { 1, {'po.period', 'zet', 'ENERGY'}, [0,inf]};
-cont_args = { 1, {'po.period', 'zet'}, Continuation_Settings.parameter_range'};
+cont_args = { 1, {'po.period', 'zet'}, []};
 
 %ODE Settings
 prob = coco_set(prob, 'ode', 'RelTol', ODE_TOLERACE);
@@ -91,6 +91,13 @@ switch Additional_Output.output
         disp_points = Additional_Output.special_points;
         prob = coco_add_event(prob, 'X', 'special point','DISP',disp_points);
 end
+
+% Monitor frequency
+% coco_frequency_func = @(prob,data,u) coco_frequency(prob,data,u);
+% prob = coco_add_func(prob, 'frequency_monitor', coco_frequency_func, data, 'regular', 'FREQ', 'uidx', uidx,'remesh',@coco_energy_remesh);
+freq_func = @(prob,data,u) coco_frequency(prob,data,u);
+prob = coco_add_func(prob, 'frequency_monitor', freq_func, data, 'regular', 'FREQ', 'uidx', uidx,'remesh',@coco_energy_remesh);
+prob = coco_add_event(prob, 'EP','boundary','FREQ',Continuation_Settings.parameter_range);
 
 
 %Corrector Settings

@@ -211,6 +211,35 @@ classdef Dynamic_Dataset
             end
         end
         %-----------------------------------------------------------------%
+        function obj = add_orbits(obj,solution_num,orbit_span,varargin)
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            Continuation_Opts = struct([]);
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "opts"
+                        Continuation_Opts= keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+
+
+            %-------------------------------
+            Sol = obj.load_solution(solution_num);
+            freq_range = Sol.frequency(orbit_span);
+            freq_diff = 0.01*abs(diff(freq_range));
+            freq_range = [min(freq_range)-freq_diff,max(freq_range)+freq_diff];
+            Continuation_Opts.parameter_range = freq_range;
+            obj = obj.restart_point(solution_num,orbit_span(1),"po","opts",Continuation_Opts);
+        end
+        %-----------------------------------------------------------------%
         function obj = add_forced_response(obj,Force_Data,Damping_Data,varargin)
             num_args = length(varargin);
             if mod(num_args,2) == 1
