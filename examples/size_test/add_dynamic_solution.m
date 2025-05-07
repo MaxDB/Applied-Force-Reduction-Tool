@@ -99,7 +99,7 @@ Continuation_Opts.max_discretisation_num = 250;
 Continuation_Opts.min_discretisation_num = 20;
 Continuation_Opts.collation_degree = 6;
 %-----------------------------------------%
-Dyn_Data = Dyn_Data.restart_point(4,97,"frf_to_bb","opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.restart_point(4,96,"frf_to_bb","opts",Continuation_Opts);
 
 %----------------------------------------------------------------------------%
 %--------- Continuation Settings ---------%
@@ -113,5 +113,6 @@ Continuation_Opts.max_discretisation_num = 250;
 Continuation_Opts.min_discretisation_num = 20;
 Continuation_Opts.collation_degree = 6;
 Continuation_Opts.energy_limit_multiplier = 1;
+Continuation_Opts.parameter_range = frequency_range;
 %-----------------------------------------%
 Dyn_Data = Dyn_Data.restart_point(5,2,"po","opts",Continuation_Opts);
