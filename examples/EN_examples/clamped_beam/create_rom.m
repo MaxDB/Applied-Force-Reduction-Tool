@@ -15,19 +15,23 @@ initial_modes = [1];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.max_parallel_jobs = 4; %be careful!
+Static_Opts.max_parallel_jobs = 8; %be careful!
 %------------------------------------------%
-gcp('nocreate');
+if isempty(gcp('nocreate'))
+    parpool;
+end
 
 rom_one_base = zeros(1,num_iterations);
 rom_one_validation = zeros(1,num_iterations);
 
 for iCount = 1:num_iterations
+    delete_static_data(system_name+"_"+initial_modes);
     base_time_start = tic;
     Static_Opts.additional_data = "none";
     Static_Data_Base = one_mode_rom(system_name,energy_limit,initial_modes,Static_Opts);
     rom_one_base(iCount) = toc(base_time_start);
-
+    
+    delete_static_data(system_name+"_"+initial_modes);
     validation_time_start = tic;
     Static_Opts.additional_data = "stiffness";
     Static_Data_Validaition = one_mode_rom(system_name,energy_limit,initial_modes,Static_Opts);
