@@ -8,7 +8,11 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "mems_arch";
 energy_limit = 0.8;
+<<<<<<< HEAD
 initial_modes = [1,6];
+=======
+initial_modes = [1,6,11];
+>>>>>>> stash
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
@@ -25,7 +29,8 @@ Static_Opts.num_validation_modes = 14;
 %------------------------------------------%
 
 %--------- Static Verification Settings ---------%
-Verification_Opts.num_added_points = 1;
+Verification_Opts.num_added_points = 5;
+Verification_Opts.maximum_iterations = 1;
 %----------------------------------------------%
 
 Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
@@ -33,10 +38,10 @@ Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts"
 Static_Data = Static_Dataset(Model,Verification_Opts);
 Static_Data.save_data;
 
-% Static_Data = load_static_data("mems_arch_1");
+% Static_Data = load_static_data("mems_arch_1611");
 % Static_Opts.additional_data = "perturbation";
-% Static_Opts.num_validation_modes = 10;
+% Static_Opts.num_validation_modes = 14;
 % Static_Opts.output_format = "text";
-% Static_Opts.max_parallel_jobs = 4; %be careful!
+% Static_Opts.max_parallel_jobs = 1; %be careful!
 % Static_Data = Static_Data.add_additional_data(Static_Opts);
 % Static_Data.save_data;

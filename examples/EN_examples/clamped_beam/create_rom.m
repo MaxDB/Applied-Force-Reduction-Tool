@@ -12,6 +12,7 @@ set_visualisation_level(0)
 system_name = "clamped_beam";
 energy_limit = 0.01;
 initial_modes = [1];
+added_modes = [3];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
@@ -22,33 +23,142 @@ if isempty(gcp('nocreate'))
 end
 
 rom_one_base = zeros(1,num_iterations);
-rom_one_validation = zeros(1,num_iterations);
+rom_one_validation_data = zeros(1,num_iterations);
+rom_one_orbits = zeros(2,num_iterations);
+rom_one_orbit_validation = zeros(2,num_iterations);
+
+rom_two_base = zeros(1,num_iterations);
+rom_two_validation = zeros(1,num_iterations);
+rom_two_orbits = zeros(1,num_iterations);
+rom_two_orbit_validation = zeros(1,num_iterations);
 
 for iCount = 1:num_iterations
+    close all
     delete_static_data(system_name+"_"+initial_modes);
+    delete_cache(system_name,"force",energy_limit)
+    delete_cache(system_name,"matrices")
+
     base_time_start = tic;
     Static_Opts.additional_data = "none";
     Static_Data_Base = one_mode_rom(system_name,energy_limit,initial_modes,Static_Opts);
     rom_one_base(iCount) = toc(base_time_start);
-    
+
+    base_time_start = tic;
+    Static_Data_Base_2 = two_mode_rom(Static_Data_Base,added_modes);
+    rom_two_base(iCount) = toc(base_time_start);
+
+    clear("Static_Data_Base")
+    clear("Static_Data_Base_2")
     delete_static_data(system_name+"_"+initial_modes);
+    delete_cache(system_name,"force",energy_limit)
+    delete_cache(system_name,"matrices")
+
     validation_time_start = tic;
     Static_Opts.additional_data = "stiffness";
-    Static_Data_Validaition = one_mode_rom(system_name,energy_limit,initial_modes,Static_Opts);
-    rom_one_validation(iCount) = toc(validation_time_start);
+    Static_Data_Validation = one_mode_rom(system_name,energy_limit,initial_modes,Static_Opts);
+    rom_one_validation_data(iCount) = toc(validation_time_start);
+
+    orbit_time_start = tic;
+    Dyn_Data = one_mode_rom_orbits(system_name+"_"+initial_modes,1);
+    rom_one_orbits(1,iCount) = toc(orbit_time_start);
+
+    orbit_validation_start = tic;
+    Dyn_Data = one_mode_rom_validation(Dyn_Data,1);
+    rom_one_orbit_validation(1,iCount) = toc(orbit_validation_start);
+
+    orbit_time_start = tic;
+    Dyn_Data = one_mode_rom_orbits(Dyn_Data,2);
+    rom_one_orbits(2,iCount) = toc(orbit_time_start);
+
+    orbit_validation_start = tic;
+    Dyn_Data = one_mode_rom_validation(Dyn_Data,2);
+    rom_one_orbit_validation(2,iCount) = toc(orbit_validation_start);
+    
+    clear("Dyn_Data")
+    close all
+    %----------------------------------------------------------------
+    validation_time_start = tic;
+    Static_Data_Validation = two_mode_rom(Static_Data_Validation,added_modes);
+    rom_two_validation(1,iCount) = toc(validation_time_start);
+
+    orbit_time_start = tic;
+    Dyn_Data = two_mode_rom_orbits(system_name+"_"+initial_modes + added_modes);
+    rom_two_orbits(1,iCount) = toc(orbit_time_start);
+
+    orbit_validation_start = tic;
+    Dyn_Data = two_mode_rom_validation(Dyn_Data);
+    rom_two_orbit_validation(1,iCount) = toc(orbit_validation_start);
+    
+    %----------------------------------------------------------------
+    clear("Dyn_Data")
+    clear("Static_Data_Validation")
+   
 end
 
-
-
+print_mean_time(rom_one_base,"Static Data")
+print_mean_time(rom_one_validation_data,"Validation Data")
+print_mean_time(rom_one_validation_data-rom_one_base,"Data diff")
+print_mean_time(rom_one_orbits,"Orbits")
+print_mean_time(rom_one_orbit_validation,"Orbit validation")
 
 %-----------------------------------
 function Static_Data = one_mode_rom(system_name,energy_limit,initial_modes,Static_Opts)
 Verification_Opts.verification_algorithm = "sep_to_edge";
 
-delete_cache(system_name,"force",energy_limit)
-delete_cache(system_name,"matrices")
-
 Model = Dynamic_System(system_name,energy_limit,initial_modes,"static_opts",Static_Opts);
 Static_Data = Static_Dataset(Model,Verification_Opts);
 Static_Data.save_data;
+end
+
+function Dyn_Data = one_mode_rom_orbits(system_name,step)
+Dyn_Data = initalise_dynamic_data(system_name);
+
+%-------------------------------------------------------------------------%
+
+%--------- Continuation Settings ---------%
+Continuation_Opts.collation_degree = 8;
+Continuation_Opts.initial_discretisation_num = 20;
+Continuation_Opts.max_discretisation_num = 250;
+Continuation_Opts.min_discretisation_num = 20;
+%-----------------------------------------%
+switch step
+    case 1
+        Continuation_Opts.initial_inc = 1e-2;
+        Continuation_Opts.max_inc = 5e-2;
+        Continuation_Opts.min_inc = 1e-3;
+        Continuation_Opts.forward_steps = 100;
+        Continuation_Opts.backward_steps = 0;
+        %------
+        Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+    case 2
+        Continuation_Opts.initial_inc = 1e-3;
+        Continuation_Opts.min_inc = 1e-3;
+        Continuation_Opts.max_inc = 1e-4;
+        Continuation_Opts.forward_steps = 200;
+        Continuation_Opts.backward_steps = 0;
+        %------
+        Dyn_Data = Dyn_Data.add_orbits(1,[9,12],"opts",Continuation_Opts);
+end
+end
+
+function Dyn_Data = one_mode_rom_validation(Dyn_Data,step)
+
+switch step
+    case 1
+        compare_validation(Dyn_Data,"validation error",1,1:10);
+    case 2
+        compare_validation(Dyn_Data,"validation error",2,[3,6]);
+end
+
+end
+
+
+function Static_Data = two_mode_rom(Static_Data,added_modes)
+Static_Data = Static_Data.update_model(added_modes);
+Static_Data = Static_Data.create_dataset;
+Static_Data.save_data;
+end
+
+function Dyn_Data = two_mode_rom_orbits(system_name)
+
 end

@@ -374,7 +374,7 @@ classdef Static_Dataset
             end
             %-------------------------------------------------%
 
-            obj.Model = Dynamic_System(system_name,energy_limit,initial_modes,Calibration_Opts,Static_Opts);
+            obj.Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
 
 
             %-------------------------------------------------%

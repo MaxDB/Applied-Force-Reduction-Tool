@@ -15,7 +15,8 @@ switch class(system_name)
     case "string"
 
 end
-    file_path = "data\" + system_name + "\static_data";
+    % file_path = "data\" + system_name + "\static_data";
+    file_path = "data\" + system_name;
     if isfolder(file_path)
         rmdir(file_path,"s")
     end
