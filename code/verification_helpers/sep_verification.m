@@ -284,7 +284,7 @@ for iIteration = 1:(max_iterations+1)
     end
     
     validation_iteration_time = toc(validation_iteration_start);
-    log_message = sprintf("Validation step %i/%i completed: %i points added in %.1f seconds" ,[iIteration,max_iterations,num_extra_points,validation_iteration_time]);
+    log_message = sprintf("Verification step %i/%i completed: %i points added in %.1f seconds" ,[iIteration,max_iterations,num_extra_points,validation_iteration_time]);
     logger(log_message,2)
 
     if isempty(new_sep_id)

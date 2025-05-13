@@ -106,8 +106,8 @@ Dyn_Data = Dyn_Data.restart_point(4,96,"frf_to_bb","opts",Continuation_Opts);
 Continuation_Opts.initial_inc = 5e-2;
 Continuation_Opts.max_inc = 2e-1;
 Continuation_Opts.min_inc = 1e-2;
-Continuation_Opts.forward_steps = 300;
-Continuation_Opts.backward_steps = 300;
+Continuation_Opts.forward_steps = 100;
+Continuation_Opts.backward_steps = 00;
 Continuation_Opts.initial_discretisation_num = 20;
 Continuation_Opts.max_discretisation_num = 250;
 Continuation_Opts.min_discretisation_num = 20;
@@ -115,4 +115,4 @@ Continuation_Opts.collation_degree = 6;
 Continuation_Opts.energy_limit_multiplier = 1;
 Continuation_Opts.parameter_range = frequency_range;
 %-----------------------------------------%
-Dyn_Data = Dyn_Data.restart_point(5,2,"po","opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.restart_point(5,1,"po","opts",Continuation_Opts);

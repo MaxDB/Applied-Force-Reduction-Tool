@@ -20,7 +20,7 @@ Continuation_Opts.collation_degree = 8;
 Continuation_Opts.energy_limit_multiplier = 1;
 %-----------------------------------------%
 
-Dyn_Data = Dyn_Data.add_backbone(3,"opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 compare_validation(Dyn_Data,"validation error",1,3)
 % Dyn_Data = Dyn_Data.validate_solution(1,6);
 Continuation_Opts.initial_inc = 1e-3;

@@ -20,6 +20,7 @@ maximum_time_increment, 1, 		maximum time increment in static step (Abaqus)
 num_fe_cpus, 1, 			number of cpus available for fe software. Will use more tokens in Abaqus
 max_parallel_jobs, 1, 		maximum jobs that can be submitted at once. Will use more tokens in Abaqus
 minimum_job_loadcases, 10, 	minimum number of loadcases per job when submitting in parallel
+max_lines_per_job, 1.5e8,		maximum input file lines per job 
 
 ## Additional Data Requests
 additional_data, "none", 			additonal data to extract with each loadcase

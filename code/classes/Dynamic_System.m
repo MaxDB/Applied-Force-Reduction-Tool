@@ -387,9 +387,22 @@ classdef Dynamic_System
                 case "abaqus"
                     max_inc = Static_Opts.maximum_step_increments;
                     reset_temp_directory()
-                    if Static_Opts.max_parallel_jobs > 1
+                    num_dofs = obj.num_dof;
+                    num_seps = size(force_ratio,2);
+                    [num_sep_input_lines,additional_job_input_lines] = estimate_input_lines(num_dofs,Static_Opts);
+                    max_parallel_jobs = maximum_viable_jobs(num_seps,num_sep_input_lines,additional_job_input_lines,Static_Opts);
+
+                    current_pool = gcp("nocreate");
+                    if isempty(current_pool)
+                        current_pool = parpool(max_parallel_jobs);
+                    end
+                    if current_pool.NumWorkers ~= max_parallel_jobs
+                        delete(current_pool)
+                        current_pool = parpool(max_parallel_jobs);
+                    end
+                    
+                    if max_parallel_jobs > 1
                         abaqus_start = tic;
-                        max_parallel_jobs = Static_Opts.max_parallel_jobs;
                         mininum_job_loadcases = Static_Opts.minimum_job_loadcases;
                         force_ratio_groups = split_abaqus_jobs(force_ratio,Static_Opts.num_loadcases,max_parallel_jobs,mininum_job_loadcases);
                         num_parallel_jobs = size(force_ratio_groups,2);
@@ -446,9 +459,61 @@ classdef Dynamic_System
                         log_message = sprintf("Total FE time: %.1f seconds" ,abaqus_time);
                         logger(log_message,3)
                         
-                    else
+                    elseif max_parallel_jobs == 1
                         [reduced_disp,condensed_disp,restoring_force,energy,additional_data,sep_id] = ...
                         add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,obj,1);
+                    elseif  max_parallel_jobs < 1
+                           % go sep by SEP. For larger systems may have to
+                           % restart SEPs mid way
+                           abaqus_start = tic;
+
+                           reduced_disp_cell = cell(1,num_seps);
+                           condensed_disp_cell = cell(1,num_seps);
+                           restoring_force_cell = cell(1,num_seps);
+                           energy_cell = cell(1,num_seps);
+                           additional_data_cell = cell(1,num_seps);
+                           sep_id_cell = cell(1,num_seps);
+
+                           for iSep = 1:num_seps
+                               [job_r,job_x,job_f,job_E,job_additional_data,job_sep_id] = ...
+                                   add_sep_abaqus(force_ratio(:,iSep),num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,obj,iSep);
+
+                               reduced_disp_cell{1,iSep} = job_r;
+                               condensed_disp_cell{1,iSep} = job_x;
+                               restoring_force_cell{1,iSep} = job_f;
+                               energy_cell{1,iSep} = job_E;
+                               additional_data_cell{1,iSep} = job_additional_data;
+                               sep_id_cell{1,iSep} = job_sep_id;
+                           end
+                            
+                           reduced_disp = [reduced_disp_cell{1,:}];
+                           condensed_disp = [condensed_disp_cell{1,:}];
+                           restoring_force = [restoring_force_cell{1,:}];
+                           energy = [energy_cell{1,:}];
+                           switch additional_data_type
+                               case "stiffness"
+                                   additional_data = additional_data_cell{1,1};
+                                   for iJob = 2:num_seps
+                                       additional_data = cat(3,additional_data,additional_data_cell{1,iJob});
+                                   end
+                               otherwise
+                                   additional_data = cat(3,additional_data_cell{1,:});
+                           end
+
+
+
+                           sep_id_shift = max(sep_id_cell{1,1});
+                           for iSep = 2:num_seps
+                               sep_id_cell{1,iSep} = sep_id_cell{1,iSep} + sep_id_shift;
+                               sep_id_shift = max(sep_id_cell{1,iSep});
+                           end
+                           sep_id = [sep_id_cell{1,:}];
+
+
+                           abaqus_time = toc(abaqus_start);
+                           logger("---",3)
+                           log_message = sprintf("Total FE time: %.1f seconds" ,abaqus_time);
+                           logger(log_message,3)
                     end
 
 
