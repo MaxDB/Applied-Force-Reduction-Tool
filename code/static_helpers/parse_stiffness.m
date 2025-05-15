@@ -1,5 +1,6 @@
 function Stiffness = parse_stiffness(step_list,file_name,dofs)
 num_steps = length(step_list);
+% num_steps = max(step_list);
 base_name = "temp\" + file_name + "_STIF";
 dimensions = [dofs,dofs,num_steps];
 
@@ -32,12 +33,12 @@ nonzero_data = Stiffness.nonzero_data;
 keep_row = ~remove_row;
 
 if isempty(gcp('nocreate'))
-    for iStep = step_list(2:end)
+    for iStep = 2:num_steps
         pre_K = load(base_name + iStep + ".mtx");
         nonzero_data(:,iStep) = pre_K(keep_row,3);
     end
 else
-    parfor iStep = step_list(2:end)
+    parfor iStep = 2:num_steps
         pre_K = load(base_name + iStep + ".mtx");
         nonzero_data(:,iStep) = pre_K(keep_row,3);
         % pre_K = pre_K(:,3);

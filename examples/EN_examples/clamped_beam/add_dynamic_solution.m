@@ -21,7 +21,7 @@ Continuation_Opts.energy_limit_multiplier = 1;
 %-----------------------------------------%
 
 Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
-compare_validation(Dyn_Data,"validation error",1,3)
+compare_validation(Dyn_Data,"validation error",1,"all")
 % Dyn_Data = Dyn_Data.validate_solution(1,6);
 Continuation_Opts.initial_inc = 1e-3;
 Continuation_Opts.min_inc = 1e-3;

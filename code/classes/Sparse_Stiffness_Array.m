@@ -139,6 +139,12 @@ classdef Sparse_Stiffness_Array
             end
 
         end
+
+        function obj = stiffness_subsref(obj,index)
+            obj.nonzero_data = obj.nonzero_data(:,index);
+            obj.dimensions(3) = length(index);
+            obj.num_load_cases = length(index);
+        end
     end
 
 end

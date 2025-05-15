@@ -16,7 +16,7 @@ added_modes = [3];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.max_parallel_jobs = 8; %be careful!
+Static_Opts.max_parallel_jobs = 4; %be careful!
 %------------------------------------------%
 if isempty(gcp('nocreate'))
     parpool;
@@ -154,6 +154,8 @@ end
 
 
 function Static_Data = two_mode_rom(Static_Data,added_modes)
+Static_Opts.max_parallel_jobs = 1;
+Static_Data.Model = Static_Data.Model.update_static_opts(Static_Opts);
 Static_Data = Static_Data.update_model(added_modes);
 Static_Data = Static_Data.create_dataset;
 Static_Data.save_data;

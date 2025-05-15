@@ -393,12 +393,14 @@ classdef Dynamic_System
                     max_parallel_jobs = maximum_viable_jobs(num_seps,num_sep_input_lines,additional_job_input_lines,Static_Opts);
 
                     current_pool = gcp("nocreate");
-                    if isempty(current_pool)
+                    if isempty(current_pool) && max_parallel_jobs > 1
                         current_pool = parpool(max_parallel_jobs);
                     end
-                    if current_pool.NumWorkers ~= max_parallel_jobs
+                    if ~isempty(current_pool) && current_pool.NumWorkers ~= max_parallel_jobs
                         delete(current_pool)
-                        current_pool = parpool(max_parallel_jobs);
+                        if max_parallel_jobs > 1
+                            current_pool = parpool(max_parallel_jobs);
+                        end
                     end
                     
                     if max_parallel_jobs > 1
