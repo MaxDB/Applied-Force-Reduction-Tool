@@ -7,7 +7,7 @@ dimensions = [dofs,dofs,num_steps];
 first_step = step_list(1);
 num_loadcases = size(step_list,2);
 
-pre_K = load(base_name + first_step + ".mtx");
+pre_K = load_mtx(base_name + first_step + ".mtx");
 
 indicies = pre_K(pre_K(:,3) == 1e36,1:2);
 removed_section = indicies(:,1);
@@ -34,12 +34,12 @@ keep_row = ~remove_row;
 
 if isempty(gcp('nocreate'))
     for iStep = 2:num_steps
-        pre_K = load(base_name + iStep + ".mtx");
+        pre_K = load_mtx(base_name + iStep + ".mtx");
         nonzero_data(:,iStep) = pre_K(keep_row,3);
     end
 else
     parfor iStep = 2:num_steps
-        pre_K = load(base_name + iStep + ".mtx");
+        pre_K = load_mtx(base_name + iStep + ".mtx");
         nonzero_data(:,iStep) = pre_K(keep_row,3);
         % pre_K = pre_K(:,3);
         % pre_K(remove_row,:) = [];
