@@ -16,9 +16,9 @@ added_modes = [3];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.max_parallel_jobs = 4; %be careful!
+Static_Opts.max_parallel_jobs = 8; %be careful!
 %------------------------------------------%
-if isempty(gcp('nocreate'))
+if isempty(gcp('nocreate')) && Static_Opts.max_parallel_jobs > 1
     parpool;
 end
 
@@ -101,6 +101,12 @@ print_mean_time(rom_one_validation_data-rom_one_base,"Data diff")
 print_mean_time(rom_one_orbits,"Orbits")
 print_mean_time(rom_one_orbit_validation,"Orbit validation")
 
+print_mean_time(rom_two_base,"Static Data")
+print_mean_time(rom_two_validation,"Validation Data")
+print_mean_time(rom_two_validation-rom_two_base,"Data diff")
+print_mean_time(rom_two_orbits,"Orbits")
+print_mean_time(rom_two_orbit_validation,"Orbit validation")
+
 %-----------------------------------
 function Static_Data = one_mode_rom(system_name,energy_limit,initial_modes,Static_Opts)
 Verification_Opts.verification_algorithm = "sep_to_edge";
@@ -154,13 +160,27 @@ end
 
 
 function Static_Data = two_mode_rom(Static_Data,added_modes)
-Static_Opts.max_parallel_jobs = 1;
-Static_Data.Model = Static_Data.Model.update_static_opts(Static_Opts);
 Static_Data = Static_Data.update_model(added_modes);
 Static_Data = Static_Data.create_dataset;
 Static_Data.save_data;
 end
 
 function Dyn_Data = two_mode_rom_orbits(system_name)
+Continuation_Opts.initial_inc = 1e-2;
+Continuation_Opts.max_inc = 5e-2;
+Continuation_Opts.min_inc = 1e-3;
+Continuation_Opts.forward_steps = 500;
+Continuation_Opts.backward_steps = 0;
+Continuation_Opts.initial_discretisation_num = 20;
+Continuation_Opts.max_discretisation_num = 250;
+Continuation_Opts.min_discretisation_num = 20;
+Continuation_Opts.collation_degree = 8;
+%-----------------------------------------%
+Dyn_Data = initalise_dynamic_data(system_name);
 
+Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+end
+
+function Dyn_Data = two_mode_rom_validation(Dyn_Data)
+compare_validation(Dyn_Data,"validation error",1,1:10);
 end
