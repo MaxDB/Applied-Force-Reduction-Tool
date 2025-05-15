@@ -53,18 +53,23 @@ data_processing_time_start = tic;
 M_file = "temp\" + file_name + "_MASS1.mtx";
 K_file = "temp\" + file_name + "_STIF1.mtx";
 
-pre_M = load(M_file);
-pre_K = load(K_file);
+
+pre_M = load_mtx(M_file);
+pre_K = load_mtx(K_file);
+
 
 cd(project_directory)
 
 % Apply boundary conditions
+
 K = sparse(pre_K(:,1),pre_K(:,2),pre_K(:,3));
 M = sparse(pre_M(:,1),pre_M(:,2),pre_M(:,3));
+
 
 %%% Added for Xiao Xiao's beam
 % zero stiffness but still appearing with sparse output?
 % due to constraint?
+
 zero_indicies = pre_K(pre_K(:,3) == 0,1:2);
 ci_zero = zero_indicies(:,1);
 %%
@@ -96,7 +101,6 @@ node_map(:,1) = (1:dof)';
 node_map([ci;ci_zero],:) = [];
 node_map(:,1) = node_map(:,1) - size(ci_zero,1);
 node_map(:,2) = (1:dof_bc)';
-
 %need to account for coupling
 
 data_processing_time = toc(data_processing_time_start);

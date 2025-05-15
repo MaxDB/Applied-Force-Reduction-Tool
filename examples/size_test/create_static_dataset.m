@@ -8,11 +8,8 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "mems_arch";
 energy_limit = 0.8;
-<<<<<<< HEAD
-initial_modes = [1,6];
-=======
-initial_modes = [1,6,11];
->>>>>>> stash
+initial_modes = [1];
+
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%

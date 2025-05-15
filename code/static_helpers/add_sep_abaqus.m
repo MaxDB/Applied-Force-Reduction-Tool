@@ -660,7 +660,12 @@ if restart_sep
     f = [f,f_restart(:,unique_restart_index)];
     E = [E,E_restart(:,unique_restart_index)];
     if ~isempty(additional_data_restart)
-        additional_data_restart = additional_data_restart.stiffness_subsref(unique_restart_index);
+        switch add_data_type
+            case "stiffness"
+                additional_data_restart = additional_data_restart.stiffness_subsref(unique_restart_index);
+            case "perturbation"
+                additional_data_restart = additional_data_restart(:,:,unique_restart_index);
+        end
     end
     additional_data = cat(3,additional_data,additional_data_restart);
     sep_id = [sep_id,restarted_seps(sep_id_restart(:,unique_restart_index))];
