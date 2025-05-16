@@ -439,10 +439,11 @@ classdef Dynamic_System
                         energy = [energy_cell{1,:}];
                         switch additional_data_type
                             case "stiffness"
-                                additional_data = additional_data_cell{1,1};
-                                for iJob = 2:num_parallel_jobs
-                                    additional_data = cat(3,additional_data,additional_data_cell{1,iJob});
-                                end
+                                additional_data = cat(3,additional_data_cell{1,:});
+                                % additional_data = additional_data_cell{1,1};
+                                % for iJob = 2:num_parallel_jobs
+                                %     additional_data = cat(3,additional_data,additional_data_cell{1,iJob});
+                                % end
                             otherwise
                                 additional_data = cat(3,additional_data_cell{1,:});
                         end

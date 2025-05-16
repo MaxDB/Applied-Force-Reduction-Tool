@@ -662,12 +662,14 @@ if restart_sep
     if ~isempty(additional_data_restart)
         switch add_data_type
             case "stiffness"
-                additional_data_restart = additional_data_restart.stiffness_subsref(unique_restart_index);
+                % additional_data_restart = additional_data_restart.stiffness_subsref(unique_restart_index);
+                additional_data = additional_data_restart;
             case "perturbation"
                 additional_data_restart = additional_data_restart(:,:,unique_restart_index);
+                additional_data = cat(3,additional_data,additional_data_restart);
         end
     end
-    additional_data = cat(3,additional_data,additional_data_restart);
+    
     sep_id = [sep_id,restarted_seps(sep_id_restart(:,unique_restart_index))];
 
 

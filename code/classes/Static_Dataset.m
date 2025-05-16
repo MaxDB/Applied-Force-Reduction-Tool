@@ -26,7 +26,7 @@ classdef Static_Dataset
     end
     methods
         function obj = Static_Dataset(Model,Verification_Opts,varargin)
-
+            
 
             obj.additional_data_type = Model.Static_Options.additional_data;
 
@@ -45,6 +45,10 @@ classdef Static_Dataset
             end
             
             obj.Model = Model;
+            data_path = get_data_path(obj);
+            if isfolder(data_path)
+                rmdir(data_path,"s")
+            end
 
 
 
@@ -332,10 +336,11 @@ classdef Static_Dataset
                 case "stiffness"
                     current_stiffness = obj.get_dataset_values("tangent_stiffness");
                     if isempty(current_stiffness)
-                        obj.tangent_stiffness = additional_data;
-                    else
-                        obj.tangent_stiffness = cat(3,current_stiffness,additional_data);
+                       data_path = get_data_path(obj);
+                       current_stiffness = Sparse_Stiffness_Pointer(obj.Model.num_dof,"path",data_path + "stiffness");
                     end
+                    obj.tangent_stiffness = cat(3,current_stiffness,additional_data);
+                    
                 case "perturbation"
                     obj.perturbation_displacement = cat(3,obj.get_dataset_values("perturbation_displacement"),additional_data);
             end
@@ -437,26 +442,28 @@ classdef Static_Dataset
         function save_data(Static_Data)
             SEPERATELY_SAVED_PROPERTIES = [
                 "physical_displacement", ...
-                "tangent_stiffness", ...
                 "perturbation_displacement", ...
                 "low_frequency_stiffness", ...
-                "low_frequency_coupling_gradient", ...
-                "tangent_stiffness"];
+                "low_frequency_coupling_gradient"];
 
             data_path = get_data_path(Static_Data);
             system_data_path = split(data_path,"\");
             system_data_path = join(system_data_path(1:(end-2)),"\") + "\";
-            if exist(system_data_path,"dir")
-                % check if any data is unloaded
-                for iProp = 1:size(SEPERATELY_SAVED_PROPERTIES,2)
-                    saved_property = SEPERATELY_SAVED_PROPERTIES(iProp);
-                    if isstring(Static_Data.(saved_property)) && Static_Data.(saved_property) == "unloaded"
-                        Static_Data.(saved_property) = Static_Data.get_dataset_values(saved_property);
-                    end
-                end
-                rmdir(system_data_path,"s")
+            % if exist(system_data_path,"dir")
+            %     % check if any data is unloaded
+            %     for iProp = 1:size(SEPERATELY_SAVED_PROPERTIES,2)
+            %         saved_property = SEPERATELY_SAVED_PROPERTIES(iProp);
+            %         if isstring(Static_Data.(saved_property)) && Static_Data.(saved_property) == "unloaded"
+            %             Static_Data.(saved_property) = Static_Data.get_dataset_values(saved_property);
+            %         end
+            %     end
+            %     rmdir(system_data_path,"s")
+            % end
+            % mkdir(data_path)
+
+            if ~isfolder(system_data_path)
+                mkdir(data_path)
             end
-            mkdir(data_path)
             
             num_properties = size(SEPERATELY_SAVED_PROPERTIES,2);
             for iProperty = 1:num_properties
@@ -478,7 +485,7 @@ classdef Static_Dataset
                 Static_Data.(static_data_property) = TEMP_PROPERTY_VALUE;
                 
                 file_path = get_data_path(Static_Data) + static_data_property + ".mat";
-                save(file_path,"value")
+                save(file_path,"value","-v7.3")
             end
         end
         %-----------------------------------------------------------------%

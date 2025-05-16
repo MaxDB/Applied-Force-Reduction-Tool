@@ -12,6 +12,21 @@ catch
     end
 end
 
+% if ~isfolder("sparse_temp")
+%     return
+% end
+% 
+% try
+%     rmdir('sparse_temp','s')
+% catch
+%     try
+%         pause(0.5)
+%         rmdir('sparse_temp','s')
+%     catch
+%         warning("Cannot delete all files in sparse temp directory")
+%     end
+% end
+
 % if isfolder('temp')
 %     iLoop = 1;
 %     while iLoop < 100
