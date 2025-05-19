@@ -27,7 +27,7 @@ Continuation_Opts.collation_degree = 6;
 Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 
 
-% compare_validation(Dyn_Data,"validation error",2,"all");
+compare_validation(Dyn_Data,"validation error",1,"all");
 % Dyn_Data = Dyn_Data.validate_solution(1,[6,11]);
 
 

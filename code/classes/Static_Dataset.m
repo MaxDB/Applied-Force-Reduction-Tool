@@ -74,8 +74,8 @@ classdef Static_Dataset
             
             
             obj = obj.create_scaffold;
-            
             obj = obj.verify_dataset;
+            obj = obj.add_perturbation_data;
 
             rom_data_time = toc(rom_data_time_start);
             log_message = sprintf("ROM Dataset Created: %.1f seconds" ,rom_data_time);
@@ -133,90 +133,101 @@ classdef Static_Dataset
             obj = obj.update_additional_data(additional_data);
         end
         %-----------------------------------------------------------------%
-        function obj = add_validation_data(obj,L_modes,DEBUG)
+        function obj = add_perturbation_data(obj)
+            if obj.additional_data_type ~= "stiffness"
+                return
+            end
+            perturbation_time_start = tic;
+            Static_Opts = obj.Model.Static_Options;
+
             if nargin == 2
-                DEBUG = 0;
+                if isempty(L_modes) || L_modes == 0
+                    return
+                end
+            elseif nargin == 1
+                L_modes = 1:Static_Opts.num_validation_modes;
             end
 
-            switch obj.additional_data_type
-                case "stiffness"
-                    r_modes = obj.Model.reduced_modes;
-                    L_modes(ismember(L_modes,r_modes)) = [];
 
-                    found_L_modes = obj.Model.low_frequency_modes;
-                    unknown_L_modes = setdiff(L_modes,found_L_modes);
-                    calc_eigenproblem = ~isempty(unknown_L_modes);
+            r_modes = obj.Model.reduced_modes;
+            L_modes(ismember(L_modes,r_modes)) = [];
 
-                    if calc_eigenproblem
-                        mass = obj.Model.mass;
-                        stiffness = obj.Model.stiffness;
+            found_L_modes = obj.Model.low_frequency_modes;
+            unknown_L_modes = setdiff(L_modes,found_L_modes);
+            calc_eigenproblem = ~isempty(unknown_L_modes);
 
-                        [full_evecs,full_evals] = eigs(stiffness,mass,max(L_modes),"smallestabs");
-                        full_evals = diag(full_evals);
+            if calc_eigenproblem
+                mass = obj.Model.mass;
+                stiffness = obj.Model.stiffness;
 
-                        new_L_modes = 1:max(L_modes);
-                        new_L_modes(ismember(new_L_modes,r_modes)) = [];
+                [full_evecs,full_evals] = eigs(stiffness,mass,max(L_modes),"smallestabs");
+                full_evals = diag(full_evals);
 
-                        obj.Model.low_frequency_modes = new_L_modes;
-                        obj.Model.low_frequency_eigenvalues = full_evals(new_L_modes);
-                        obj.Model.low_frequency_eigenvectors = full_evecs(:,new_L_modes);
+                new_L_modes = 1:max(L_modes);
+                new_L_modes(ismember(new_L_modes,r_modes)) = [];
 
-                    end
+                obj.Model.low_frequency_modes = new_L_modes;
+                obj.Model.low_frequency_eigenvalues = full_evals(new_L_modes);
+                obj.Model.low_frequency_eigenvectors = full_evecs(:,new_L_modes);
 
-                    if DEBUG
-                        [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_h_error_data_DEBUG(obj,L_modes);
-                    else
-                        [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_h_error_data(obj,L_modes);
-                    end
-                    
-                    obj.low_frequency_stiffness = h_stiffness;
-                    obj.low_frequency_coupling_gradient = h_coupling_gradient;
+            end
 
-                    obj.Dynamic_Validation_Data.current_L_modes = L_modes;
-                    obj.Dynamic_Validation_Data.h_stiffness_0 = h_stiffness_0;
-                    obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
+            obj = apply_small_force(obj,L_modes);
+            perturbation_time = toc(perturbation_time_start);
+            log_message = sprintf("Perturbation data created: %.1f seconds" ,perturbation_time);
+            logger(log_message,2)
+        end
+        %-----------------------------------------------------------------%
+        function obj = add_validation_data(obj,validation_modes)
 
-                    % obj = minimum_h_degree(obj);
-                    obj.verified_degree = repmat(obj.verified_degree,1,2);
-                case "perturbation"
-                    r_modes = obj.Model.reduced_modes;
-                    L_modes(ismember(L_modes,r_modes)) = [];
 
-                    found_L_modes = obj.Model.low_frequency_modes;
-                    unknown_L_modes = setdiff(L_modes,found_L_modes);
-                    if ~isempty(unknown_L_modes)
+            if isempty(obj.get_dataset_values("perturbation_displacement"))
+                error("Cannot find perturbation data")
+            end
+
+
+            r_modes = obj.Model.reduced_modes;
+            validation_modes(ismember(validation_modes,r_modes)) = [];
+
+            found_L_modes = obj.Model.low_frequency_modes;
+            unknown_L_modes = setdiff(validation_modes,found_L_modes);
+            if ~isempty(unknown_L_modes)
+                switch obj.additional_data_type
+                    case "perturbation"
                         error("Perturbations for mode(s) " + join(string(unknown_L_modes),", ") + " are not in static dataset")
-                    end
-                    if ~isempty(obj.Dynamic_Validation_Data)
-                        if isequal(obj.Dynamic_Validation_Data.current_L_modes,L_modes)
-                            return
-                        end
-                    end
-
-                    validation_data_start = tic;
-                    [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_perturbation_data(obj,L_modes);
-
-                    validation_data_time = toc(validation_data_start);
-                    log_message = sprintf("Processed validation data: %.1f seconds" ,validation_data_time);
-                    logger(log_message,3)
-
-                    obj.low_frequency_stiffness = h_stiffness;
-                    obj.low_frequency_coupling_gradient = h_coupling_gradient;
-
-                    obj.Dynamic_Validation_Data.current_L_modes = L_modes;
-                    obj.Dynamic_Validation_Data.h_stiffness_0 = h_stiffness_0;
-                    obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
-
-                    obj.verified_degree = repmat(obj.verified_degree,1,2);
-                    % minimum_degree_start = tic;
-                    % % obj = minimum_h_degree(obj);
-                    %
-                    %
-                    % minimum_degree_time = toc(minimum_degree_start);
-                    % log_message = sprintf("Validating validation polynomials: %.1f seconds" ,minimum_degree_time);
-                    % logger(log_message,3)
-
+                    case "stiffness"
+                        error("not implemented")
+                end
             end
+            if ~isempty(obj.Dynamic_Validation_Data)
+                if isequal(obj.Dynamic_Validation_Data.current_L_modes,validation_modes)
+                    return
+                end
+            end
+
+            validation_data_start = tic;
+            [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] = parse_perturbation_data(obj,validation_modes);
+
+            validation_data_time = toc(validation_data_start);
+            log_message = sprintf("Processed validation data: %.1f seconds" ,validation_data_time);
+            logger(log_message,3)
+
+            obj.low_frequency_stiffness = h_stiffness;
+            obj.low_frequency_coupling_gradient = h_coupling_gradient;
+
+            obj.Dynamic_Validation_Data.current_L_modes = validation_modes;
+            obj.Dynamic_Validation_Data.h_stiffness_0 = h_stiffness_0;
+            obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
+
+            obj.verified_degree = repmat(obj.verified_degree,1,2);
+            % minimum_degree_start = tic;
+            % % obj = minimum_h_degree(obj);
+            %
+            %
+            % minimum_degree_time = toc(minimum_degree_start);
+            % log_message = sprintf("Validating validation polynomials: %.1f seconds" ,minimum_degree_time);
+            % logger(log_message,3)
+
             validation_dataset_verificiation_plot(obj)
 
         end
@@ -337,7 +348,7 @@ classdef Static_Dataset
                     current_stiffness = obj.get_dataset_values("tangent_stiffness");
                     if isempty(current_stiffness)
                        data_path = get_data_path(obj);
-                       current_stiffness = Sparse_Stiffness_Pointer(obj.Model.num_dof,"path",data_path + "stiffness");
+                       current_stiffness = Sparse_Stiffness_Pointer(obj.Model,"path",data_path + "stiffness");
                     end
                     obj.tangent_stiffness = cat(3,current_stiffness,additional_data);
                     
@@ -442,7 +453,6 @@ classdef Static_Dataset
         function save_data(Static_Data)
             SEPERATELY_SAVED_PROPERTIES = [
                 "physical_displacement", ...
-                "perturbation_displacement", ...
                 "low_frequency_stiffness", ...
                 "low_frequency_coupling_gradient"];
 

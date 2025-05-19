@@ -2,6 +2,8 @@ classdef Sparse_Stiffness_Pointer
     properties
         degrees_of_freedom
         number_of_loadcases
+
+        matrix_boundary_conditions
         
         stiffness_name
         file_type
@@ -10,9 +12,9 @@ classdef Sparse_Stiffness_Pointer
     end
 
     methods
-        function obj = Sparse_Stiffness_Pointer(dofs,varargin)
+        function obj = Sparse_Stiffness_Pointer(Model,varargin)
+
             obj_name = "Sparse_Stiffness";
-            
 
             num_args = length(varargin);
             if mod(num_args,2) == 1
@@ -34,11 +36,10 @@ classdef Sparse_Stiffness_Pointer
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
             end
-            %-------------------------------------------------------------------------%
+            %-------------------------------------------------------------------------
+            dofs = Model.num_dof;
+            obj.matrix_boundary_conditions = Model.dof_boundary_conditions;
 
-
-
-            
             obj.object_name = obj_name;
             
             if ~isempty(job_id)
@@ -57,6 +58,7 @@ classdef Sparse_Stiffness_Pointer
                 mkdir(stiffness_path)
             end
 
+
             obj.degrees_of_freedom = dofs;
             obj.number_of_loadcases = 0;
 
@@ -73,9 +75,12 @@ classdef Sparse_Stiffness_Pointer
         function obj = add_loadcases(obj,base_file_name,step_list)
             num_loadcases = obj.number_of_loadcases;
             num_added_loadcases = size(step_list,2);
-            for iLoad = 1:num_added_loadcases
-                old_file_name = base_file_name + step_list(iLoad) + obj.file_type;
-                new_file_name = obj.data_dir + "\" + obj.stiffness_name  + (num_loadcases + iLoad) + obj.file_type;
+
+            file_type_one = obj.file_type;
+            file_path = obj.data_dir + "\" + obj.stiffness_name;
+            parfor iLoad = 1:num_added_loadcases
+                old_file_name = base_file_name + step_list(iLoad) + file_type_one;
+                new_file_name = file_path  + (num_loadcases + iLoad) + file_type_one;
                 movefile(old_file_name,new_file_name)
             end
             
@@ -96,10 +101,15 @@ classdef Sparse_Stiffness_Pointer
             num_old_loadcases = obj.number_of_loadcases;
             num_added_loadcases = obj_two.number_of_loadcases;
             
-            for iLoad = 1:num_added_loadcases
+            stiffness_path = current_path + "\" + obj_two.stiffness_name;
+            file_type_two = obj_two.file_type;
+
+            new_stiffness_path = destination_path + "\" + obj.stiffness_name;
+            file_type_one = obj.file_type;
+            parfor iLoad = 1:num_added_loadcases
                 new_load_label = iLoad + num_old_loadcases;
-                stiffness_file = current_path + "\" + obj_two.stiffness_name + iLoad + obj_two.file_type;
-                new_stiffness_file = destination_path + "\" + obj.stiffness_name + new_load_label + obj.file_type;
+                stiffness_file = stiffness_path + iLoad + file_type_two;
+                new_stiffness_file = new_stiffness_path + new_load_label +  file_type_one;
                 movefile(stiffness_file,new_stiffness_file)
             end
     
@@ -118,7 +128,20 @@ classdef Sparse_Stiffness_Pointer
         end
         %------
 
+        %-----------------------
+        function sparse_stiffness = get_matrix(obj,loadcase)
+            stiffness_path = obj.data_dir + "\" + obj.stiffness_name + loadcase + ".mtx";
+            stiffness_data = load_mtx(stiffness_path);
 
+            sparse_stiffness  = sparse(stiffness_data(:,1),stiffness_data(:,2),stiffness_data(:,3));
+
+            matrix_bc = obj.matrix_boundary_conditions;
+            sparse_stiffness(matrix_bc,:) = [];
+            sparse_stiffness(:,matrix_bc) = [];
+        end
+
+
+        %-----------------------
 
         %-----------------------
         % overloading
@@ -146,5 +169,5 @@ classdef Sparse_Stiffness_Pointer
     end
 
 
-    end
+end
    

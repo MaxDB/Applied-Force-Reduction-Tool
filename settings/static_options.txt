@@ -24,7 +24,7 @@ max_lines_per_job, 1.5e8,		maximum input file lines per job
 
 ## Additional Data Requests
 additional_data, "none", 			additonal data to extract with each loadcase
-num_validation_modes, 10, 			add the first X modes as validation modes (Perturbation)
+num_validation_modes, 10, 			add the first X modes as validation modes (Perturbation) or precompute x perturbations (Stiffness)
 perturbation_scale_factor, "auto", 	scale factor for perturbation load (Perturbation) 
 
 ## Experimental

@@ -441,7 +441,7 @@ switch add_data_type
         additional_data = [];
 
     case "stiffness"
-        additional_data = parse_stiffness(step_list,new_job,Model.num_dof);
+        additional_data = parse_stiffness(step_list,new_job,Model);
 
     case "perturbation"
         additional_data = additional_data(Model.node_mapping(:,1),:,:);

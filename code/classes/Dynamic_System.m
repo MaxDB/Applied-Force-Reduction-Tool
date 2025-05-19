@@ -13,7 +13,8 @@ classdef Dynamic_System
         Calibration_Options
         calibrated_forces
         calibrated_degree_limits
-
+        
+        dof_boundary_conditions
         node_mapping
         mass
         stiffness
@@ -179,12 +180,12 @@ classdef Dynamic_System
                     matrix_path = geometry_path + "matrices";
                     matrices_loaded = isfile(matrix_path + ".mat") && load_cache;
                     if matrices_loaded
-                        load(matrix_path,"M","K","node_map")
+                        load(matrix_path,"M","K","node_map","matrix_bcs")
 
                         logger("Matrices Loaded",3)
                     else
-                        [M,K,node_map] = matrices_abaqus(obj.system_name);
-                        save(matrix_path,"M","K","node_map")
+                        [M,K,node_map,matrix_bcs] = matrices_abaqus(obj.system_name);
+                        save(matrix_path,"M","K","node_map","matrix_bcs")
                     end
 
                 case "matlab"
@@ -200,6 +201,7 @@ classdef Dynamic_System
             obj.node_mapping = node_map;
             obj.mass = M;
             obj.stiffness = K;
+            obj.dof_boundary_conditions = matrix_bcs;
             
             
             if obj.Static_Options.load_custom_eigendata

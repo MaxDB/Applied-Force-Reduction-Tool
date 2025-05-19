@@ -1,4 +1,4 @@
-function Stiffness = parse_stiffness(step_list,file_name,dofs)
+function Stiffness = parse_stiffness(step_list,file_name,Model)
 num_steps = length(step_list);
 % num_steps = max(step_list);
 base_name = "temp\" + file_name + "_STIF";
@@ -11,7 +11,7 @@ end
 
 % dimensions = [dofs,dofs,num_steps];
 
-Stiffness = Sparse_Stiffness_Pointer(dofs,"job",job_id);
+Stiffness = Sparse_Stiffness_Pointer(Model,"job",job_id);
 Stiffness = Stiffness.add_loadcases(base_name,step_list);
 
 % first_step = step_list(1);

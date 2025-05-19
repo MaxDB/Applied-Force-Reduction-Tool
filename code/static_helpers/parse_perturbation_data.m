@@ -24,29 +24,19 @@ h_disp_transform = h_evec'*mass;
 lambda = Static_Data.perturbation_scale_factor(1,h_map);
 F_h = lambda.*eye(num_h_modes);
 
-x_perturbation = Static_Data.get_dataset_values("perturbation_displacement");
-x_perturbation = x_perturbation(:,h_map,:);
-num_loadcases = size(x_perturbation,3);
+Perturbation = Static_Data.get_dataset_values("perturbation_displacement");
+perturbation_disp = Perturbation.get_displacement(h_modes);
 
-%-- setup r perturbations
-% rom_degree = Static_Data.validated_degree;
-% rom_degree(3:4) = 1;
-% Rom = Reduced_System(Static_Data,rom_degree);
-% Stiffness_Poly = Rom.Reduced_Stiffness_Polynomial;
-% Theta_Tilde_Poly = Rom.Condensed_Displacement_Polynomial;
-% Theta_Gradient_Poly = Theta_Tilde_Poly.differentiate_polynomial;
-% F_r = lambda*eye(num_r_modes);
-% 
-% r = Static_Data.reduced_displacement;
-%--
+
+num_loadcases = size(perturbation_disp,3);
 
 
 h_coupling_gradient = zeros(num_dofs,num_h_modes,num_loadcases);
 h_stiffness = zeros(num_h_modes,num_h_modes,num_loadcases);
-% parfor iLoad = 1:num_loadcases
-for iLoad = 1:num_loadcases
+parfor iLoad = 1:num_loadcases
+    % for iLoad = 1:num_loadcases
 
-    disp_hat = x_perturbation(:,:,iLoad);
+    disp_hat = perturbation_disp(:,:,iLoad);
     if CLEAN_DATA
         disp_hat(mean(abs(disp_hat),2) < MIN_DISP,:) = 0;
     end

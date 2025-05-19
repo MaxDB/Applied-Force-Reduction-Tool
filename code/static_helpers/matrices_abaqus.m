@@ -1,4 +1,4 @@
-function [M_bc,K_bc,node_map] = matrices_abaqus(system_name)
+function [M_bc,K_bc,node_map,matrix_bcs] = matrices_abaqus(system_name)
 
 setup_time_start = tic;
 project_path = get_project_path;
@@ -78,14 +78,16 @@ ci_zero = zero_indicies(:,1);
 indicies = pre_K(pre_K(:,3) == 1e36,1:2);
 ci = indicies(:,1);
 
+matrix_bcs = [ci;ci_zero];
+
 K_bc = K;
-K_bc([ci;ci_zero],:) = [];
-K_bc(:,[ci;ci_zero]) = [];
+K_bc(matrix_bcs,:) = [];
+K_bc(:,matrix_bcs) = [];
 
 
 M_bc = M;
-M_bc([ci;ci_zero],:) = [];
-M_bc(:,[ci;ci_zero]) = [];
+M_bc(matrix_bcs,:) = [];
+M_bc(:,matrix_bcs) = [];
 
 
 
