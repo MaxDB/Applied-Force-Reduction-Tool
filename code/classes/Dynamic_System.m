@@ -15,7 +15,6 @@ classdef Dynamic_System
         calibrated_degree_limits
         
         dof_boundary_conditions
-        node_mapping
         mass
         stiffness
 
@@ -184,12 +183,12 @@ classdef Dynamic_System
                     matrix_path = geometry_path + "matrices";
                     matrices_loaded = isfile(matrix_path + ".mat") && load_cache;
                     if matrices_loaded
-                        load(matrix_path,"M","K","node_map","matrix_bcs")
+                        load(matrix_path,"M","K","matrix_bcs")
 
                         logger("Matrices Loaded",3)
                     else
-                        [M,K,node_map,matrix_bcs] = matrices_abaqus(obj.system_name);
-                        save(matrix_path,"M","K","node_map","matrix_bcs")
+                        [M,K,matrix_bcs] = matrices_abaqus(obj.system_name);
+                        save(matrix_path,"M","K","matrix_bcs")
                     end
 
                 case "matlab"
@@ -197,12 +196,9 @@ classdef Dynamic_System
                     M = Analytic_Eom.linear_mass;
                     K = Analytic_Eom.linear_stiffness;
 
-                    dofs = length(M);
-                    node_map = [(1:dofs)',(1:dofs)'];
 
             end
-            obj.num_dof = size(node_map,1);
-            obj.node_mapping = node_map;
+            obj.num_dof = size(M,1);
 
             matrix_data = whos("M");
             if matrix_data.bytes/1024 > obj.Static_Options.max_matrix_size

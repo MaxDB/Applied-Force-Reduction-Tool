@@ -1,6 +1,7 @@
-function additional_disp = additional_physical_displacement(input_disp,Disp_Poly,Additional_Output,node_map)
-num_dof = node_map(end,1);
-num_bc_dof = node_map(end,2);
+function additional_disp = additional_physical_displacement(input_disp,Disp_Poly,Additional_Output,num_bc_dof,dof_bcs)
+num_dof = num_bc_dof + numel(dof_bcs);
+node_map = 1:num_dof;
+node_map(dof_bcs) = [];
 input_dimension = size(input_disp,1);
 num_reduced_modes = Disp_Poly.input_dimension;
 
@@ -11,7 +12,7 @@ if isstring(Additional_Output.dof)
     end
 else
     fom_dof = Additional_Output.dof;
-    control_dof = node_map(node_map(:,1) == fom_dof,2);
+    control_dof = find(node_map == fom_dof);
 end
 
 

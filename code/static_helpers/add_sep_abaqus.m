@@ -10,7 +10,10 @@ project_path = get_project_path;
 
 setup_time_start = tic;
 
-all_dofs = Model.node_mapping(end,1);
+all_dofs = Model.num_dof + numel(Model.dof_boundary_conditions);
+node_map = 1:all_dofs;
+node_map(Model.dof_boundary_conditions) = [];
+
 % deactivated_dofs = mod(all_dofs,NUM_DIMENSIONS) ~= 0
 deactivated_dofs = 0;
 if deactivated_dofs
@@ -237,7 +240,7 @@ switch add_data_type
         %perturbation force template
         physical_perturbation_force_bc = validating_force;
         physical_perturbation_force = zeros(all_dofs,num_h_modes);
-        physical_perturbation_force(Model.node_mapping(:,1),:) = physical_perturbation_force_bc(Model.node_mapping(:,2),:);
+        physical_perturbation_force(node_map,:) = physical_perturbation_force_bc;
         
         perturbation_steps = perturbation_template(1:(loadcase_start_line-1));
         loadcase_name_line = zeros(num_h_modes,1);
@@ -296,11 +299,11 @@ try
         
         physical_force_bc = force_transform*sep_force;
         physical_force = zeros(all_dofs,1);
-        physical_force(Model.node_mapping(:,1),1) = physical_force_bc(Model.node_mapping(:,2),1);
+        physical_force(node_map,1) = physical_force_bc(:,1);
 
         physical_base_force_bc = force_transform*sep_base_force;
         physical_base_force = zeros(all_dofs,1);
-        physical_base_force(Model.node_mapping(:,1),1) = physical_base_force_bc(Model.node_mapping(:,2),1);
+        physical_base_force(node_map,1) = physical_base_force_bc(:,1);
 
         if RESET_TO_ZERO && (iSep ~= 1 || ~isempty(initial_disp))
             if ~isempty(initial_disp)
@@ -315,20 +318,20 @@ try
                 end
 
                 zero_bc_input = force_label + bc_end + bc_disp;
-                fixed_dofs = 1:all_dofs;
-                fixed_dofs(Model.node_mapping(:,1)) = [];
-                mapped_dofs = zeros(size(fixed_dofs));
-                for iDof = 1:size(fixed_dofs,2)
-                    fixed_dof = fixed_dofs(iDof);
-                    iNode = floor( fixed_dof/num_dimensions) + 1;
-                    iDim =  fixed_dof - (iNode-1)*num_dimensions;
-                    if iDim == 0
-                        iDim = num_dimensions;
-                        iNode = iNode - 1;
-                    end
-                    mapped_dofs(iDof) = num_nodes*(iDim - 1) + iNode;
-                end
-                zero_bc_input(mapped_dofs) = [];
+                fixed_dofs = Model.dof_boundary_conditions;
+                % mapped_dofs = zeros(size(fixed_dofs));
+                % for iDof = 1:size(fixed_dofs,2)
+                %     fixed_dof = fixed_dofs(iDof);
+                %     iNode = floor( fixed_dof/num_dimensions) + 1;
+                %     iDim =  fixed_dof - (iNode-1)*num_dimensions;
+                %     if iDim == 0
+                %         iDim = num_dimensions;
+                %         iNode = iNode - 1;
+                %     end
+                %     mapped_dofs(iDof) = num_nodes*(iDim - 1) + iNode;
+                % end
+                % zero_bc_input(mapped_dofs) = [];
+                zero_bc_input(fixed_dofs) = [];
 
                 force_bc_input = strings(all_dofs,1);
                 for iDimension = 1:num_dimensions
@@ -467,7 +470,7 @@ switch Static_Opts.output_format
         [displacement,E,additional_data,additional_data_time] = read_abaqus_fil_data(new_job,step_type,num_nodes,num_dimensions);
 end
 
-displacement_bc = displacement(Model.node_mapping(:,1),:);
+displacement_bc = displacement(node_map,:);
 disp_transform = force_transform';
 
 r = disp_transform*displacement_bc;
@@ -578,7 +581,7 @@ switch add_data_type
         additional_data = parse_stiffness(step_list,new_job,Model);
 
     case "perturbation"
-        additional_data = additional_data(Model.node_mapping(:,1),:,:);
+        additional_data = additional_data(node_map,:,:);
         if clean_data
             additional_data(:,:,remove_index) = [];
         end

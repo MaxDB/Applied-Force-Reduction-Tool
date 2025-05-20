@@ -25,9 +25,10 @@ classdef Dynamic_Dataset
             Rom = obj.Dynamic_Model;
             switch Additional_Output.output
                 case "physical displacement"
-                    node_map = Rom.Model.node_mapping;
+                    dof_bcs = Rom.Model.dof_boundary_conditions;
+                    num_dof = Rom.Model.num_dof;
                     Disp_Poly = Rom.Physical_Displacement_Polynomial;
-                    disp_func = @(input_disp) additional_physical_displacement(input_disp,Disp_Poly,Additional_Output,node_map);
+                    disp_func = @(input_disp) additional_physical_displacement(input_disp,Disp_Poly,Additional_Output,num_dof,dof_bcs);
 
                     Additional_Output.output_func = disp_func;
             end

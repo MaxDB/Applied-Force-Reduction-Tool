@@ -1,4 +1,4 @@
-function [M_bc,K_bc,node_map,matrix_bcs] = matrices_abaqus(system_name)
+function [M_bc,K_bc,matrix_bcs] = matrices_abaqus(system_name)
 
 setup_time_start = tic;
 project_path = get_project_path;
@@ -94,15 +94,15 @@ M_bc(:,matrix_bcs) = [];
 
 
 % Caclulate node mapping
-dof_bc = length(K_bc);
-% dof = length(K) - length(ci_zero);
-dof = length(K);
-
-node_map = zeros(dof,2);
-node_map(:,1) = (1:dof)';
-node_map([ci;ci_zero],:) = [];
-node_map(:,1) = node_map(:,1) - size(ci_zero,1);
-node_map(:,2) = (1:dof_bc)';
+% dof_bc = length(K_bc);
+% % dof = length(K) - length(ci_zero);
+% dof = length(K);
+% 
+% node_map = zeros(dof,2);
+% node_map(:,1) = (1:dof)';
+% node_map([ci;ci_zero],:) = [];
+% node_map(:,1) = node_map(:,1) - size(ci_zero,1);
+% node_map(:,2) = (1:dof_bc)';
 %need to account for coupling
 
 data_processing_time = toc(data_processing_time_start);
