@@ -195,6 +195,7 @@ classdef Dynamic_System
                     Analytic_Eom = load_analytic_system(geometry_path + obj.system_name);
                     M = Analytic_Eom.linear_mass;
                     K = Analytic_Eom.linear_stiffness;
+                    matrix_bcs = [];
 
 
             end

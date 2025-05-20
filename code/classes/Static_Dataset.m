@@ -353,8 +353,13 @@ classdef Static_Dataset
                 case "stiffness"
                     current_stiffness = obj.get_dataset_values("tangent_stiffness");
                     if isempty(current_stiffness)
-                       data_path = get_data_path(obj);
-                       current_stiffness = Sparse_Stiffness_Pointer(obj.Model,"path",data_path + "stiffness");
+                       
+                       if class(additional_data) == "Sparse_Stiffness_Point"
+                           data_path = get_data_path(obj);
+                           current_stiffness = Sparse_Stiffness_Pointer(obj.Model,"path",data_path + "stiffness");
+                       else
+                            current_stiffness = [];
+                       end
                     end
                     obj.tangent_stiffness = cat(3,current_stiffness,additional_data);
                     
