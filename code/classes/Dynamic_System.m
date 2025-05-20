@@ -100,6 +100,10 @@ classdef Dynamic_System
             if obj.energy_limit > 0
 
                 obj.reduced_modes = modes;
+                if isfolder(obj.get_data_path)
+                    rmdir(obj.get_data_path,"s")
+                end
+
                 %Update and set optional static solver settings
                 obj = obj.update_static_opts(Static_Opts);
 
@@ -199,8 +203,17 @@ classdef Dynamic_System
             end
             obj.num_dof = size(node_map,1);
             obj.node_mapping = node_map;
-            obj.mass = M;
-            obj.stiffness = K;
+
+            matrix_data = whos("M");
+            if matrix_data.bytes/1024 > obj.Static_Options.max_matrix_size
+                obj.mass = Large_Matrix_Pointer(M,matrix_path,"M","save",0);
+                obj.stiffness = Large_Matrix_Pointer(K,matrix_path,"K","save",0);
+            else
+                obj.mass = M;
+                obj.stiffness = K;
+            end
+
+            
             obj.dof_boundary_conditions = matrix_bcs;
             
             
@@ -211,8 +224,7 @@ classdef Dynamic_System
                 r_modes = obj.reduced_modes;
                 eval_r = custom_eval(r_modes);
                 evec_r = custom_evec(:,r_modes);
-                obj.reduced_eigenvalues = eval_r;
-                obj.reduced_eigenvectors = evec_r;
+                
             else
                 switch obj.Static_Options.additional_data
                     case "perturbation"
@@ -240,9 +252,15 @@ classdef Dynamic_System
 
                 eval_r = eval(r_modes,r_modes)*ones(length(r_modes),1);
                 evec_r = evec(:,r_modes);
-                obj.reduced_eigenvalues = eval_r;
-                obj.reduced_eigenvectors = evec_r;
+
             end
+            obj.reduced_eigenvalues = eval_r;
+            matrix_data = whos("evec_r");
+            if matrix_data.bytes/1024 > obj.Static_Options.max_matrix_size
+                data_path = obj.get_data_path;
+                evec_r = Large_Matrix_Pointer(evec_r,data_path,"reduced_eigenvectors");
+            end
+            obj.reduced_eigenvectors = evec_r;
             
         end
         %-----------------------------------------------------------------%
@@ -770,6 +788,12 @@ classdef Dynamic_System
         %-----------------------------------------------------------------%
         %%% Helpers %%%
         %-----------------------------------------------------------------%
+        function data_path = get_data_path(obj)
+            r_modes = obj.reduced_modes;
+            mode_id = join(string(r_modes),"");
+            data_path = "data\" + obj.system_name + "_" + mode_id + "\model_data\";
+        end
+        %-------------------------------------------
         function geometry = load_geometry(obj)
             switch obj.system_type
                 case "indirect"

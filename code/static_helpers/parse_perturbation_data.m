@@ -6,10 +6,13 @@ Model = Static_Data.Model;
 r_modes = Model.reduced_modes;
 num_r_modes = size(r_modes,2);
 r_evec = Model.reduced_eigenvectors;
+L_evec = Model.low_frequency_eigenvectors;
+r_evec = load_data(r_evec);
+L_evec = load_data(L_evec);
 
 all_L_modes = Model.low_frequency_modes;
 [~,L_map] = ismember(L_modes,all_L_modes);
-L_evec = Model.low_frequency_eigenvectors(:,L_map);
+L_evec = L_evec(:,L_map);
 
 h_modes = [r_modes,L_modes];
 num_h_modes = size(h_modes,2);

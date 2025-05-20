@@ -44,6 +44,7 @@ classdef Reduced_System
             displacement = Static_Data.get_dataset_values("physical_displacement");
             eval_r = Static_Data.Model.reduced_eigenvalues;
             evec_r = Static_Data.Model.reduced_eigenvectors;
+            evec_r = load_data(evec_r);
             
             obj.reduced_displacement_limits = [min(r,[],2),max(r,[],2)];
            
@@ -506,7 +507,8 @@ classdef Reduced_System
             L_modes = obj.Dynamic_Validation_Data.current_L_modes;
             all_L_modes = obj.Model.low_frequency_modes;
             [~,L_map] = ismember(L_modes,all_L_modes);
-            L_eigenvectors = obj.Model.low_frequency_eigenvectors(:,L_map);
+            L_evec_all = load_data(obj.Model.low_frequency_eigenvectors);
+            L_eigenvectors = L_evec_all(:,L_map);
         end
         %-----------------------------------------------------------------%
         function [eom,eom_dz,eom_dt] = get_equation_of_motion(obj,varargin)

@@ -168,8 +168,14 @@ classdef Static_Dataset
 
                 obj.Model.low_frequency_modes = new_L_modes;
                 obj.Model.low_frequency_eigenvalues = full_evals(new_L_modes);
-                obj.Model.low_frequency_eigenvectors = full_evecs(:,new_L_modes);
 
+                evec_L =  full_evecs(:,new_L_modes);
+                matrix_data = whos("evec_L");
+                if matrix_data.bytes/1024 > obj.Model.Static_Options.max_matrix_size
+                    data_path = obj.Model.get_data_path;
+                    evec_L = Large_Matrix_Pointer(evec_L,data_path,"validation_eigenvectors");
+                end
+                obj.Model.low_frequency_eigenvectors = evec_L;
             end
 
             obj = apply_small_force(obj,L_modes);

@@ -39,6 +39,7 @@ if isstring(solution_num) && solution_num == "last"
 end
 
 r_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
+r_modes = load_data(r_modes);
 L_modes = setdiff(h_modes,r_modes);
 
 num_L_modes = length(L_modes);
