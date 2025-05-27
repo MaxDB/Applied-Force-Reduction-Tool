@@ -1,11 +1,10 @@
 function [disp_sep,lambda_sep,potential_sep,stiffness_sep] = find_sep_system(System_Eqs,force_ratio,target_loadcases,energy_limit,varargin)
-TARGET_LOADCASES = 100; %approx number of points from origin to end of SEP
 % INITIAL_ARC_RADIUS = 1;
 
 MAX_LOADCASES = 1000;    %maximum points per SEP
 MAX_INCREMENTS = 1000;   %maximum interations for convergence
 
-CONVERGENCE_TOLERACE = 1e-5;
+CONVERGENCE_TOLERACE = 1e-4;
 PSI = 1;
 
 if nargin == 2

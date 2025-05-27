@@ -53,89 +53,98 @@ orbit_labels = Solution.orbit_labels;
 frequency = Solution.frequency;
 num_periodic_orbits = length(orbit_labels);
 
-num_harmonics = Validation_Opts.initial_harmonic;
-for iOrbit = 1:num_periodic_orbits
-    read_data_start = tic;
-    sol = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(iOrbit));
-    read_data_time = toc(read_data_start);
+num_jobs = 2;
+orbit_groups = split_orbit_jobs(num_periodic_orbits,num_jobs);
 
-    set_up_h_start = tic;
-    t0 = sol.tbp';
-    x = sol.xbp';
-    r = x(disp_span,:);
-    r_dot = x(vel_span,:);
-    omega = frequency(1,iOrbit);
+for iJob = 1:num_jobs
+    num_harmonics = Validation_Opts.initial_harmonic;
+    periodic_orbits_jobs = orbit_groups(iJob,1):orbit_groups(iJob,2);
+    num_periodic_orbits_jobs = size(periodic_orbits_jobs,2);
+    for iOrbit = 1:num_periodic_orbits_jobs
+        read_data_start = tic;
+        job_orbit = periodic_orbits_jobs(iOrbit);
+        sol = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(job_orbit));
+        read_data_time = toc(read_data_start);
 
-    switch orbit_type
-        case "free"
-            x_dot = reduced_eom(t0,x,zeros(size(t0)));
-            r_ddot  = x_dot(vel_span,:);
-            [h_inertia,h_conv,h_stiff,h_force] = h_terms(r,r_dot,r_ddot); %lots of scope to speed up
-        case "forced"
+        set_up_h_start = tic;
+        t0 = sol.tbp';
+        x = sol.xbp';
+        r = x(disp_span,:);
+        r_dot = x(vel_span,:);
+        omega = frequency(1,job_orbit);
 
-            period = 2*pi/omega;
-            x_dot = reduced_eom(t0,x,period);
-            r_ddot  = x_dot(vel_span,:);
-            [h_inertia,h_conv,h_stiff,h_force] = h_terms(t0,r,r_dot,r_ddot,period);
-    end
-    %h_inertia * h_ddot  +  h_conv * h_dot  +  h_stiff * h  =  h_force
-    set_up_h_time = toc(set_up_h_start);
+        switch orbit_type
+            case "free"
+                x_dot = reduced_eom(t0,x,zeros(size(t0)));
+                r_ddot  = x_dot(vel_span,:);
+                [h_inertia,h_conv,h_stiff,h_force] = h_terms(r,r_dot,r_ddot); %lots of scope to speed up
+            case "forced"
 
-    validation_eq_terms = {h_inertia,h_conv,h_stiff,h_force};
-    r_force = Validation_Rom.Force_Polynomial.evaluate_polynomial(r);
-    solution_converged = 0;
-    while ~solution_converged
-        solve_h_start = tic;
-        h_frequency = h_solver(validation_eq_terms,t0,omega,num_harmonics);
-        [solution_converged,num_harmonics,Validation_Orbit] = check_h_convergence(validation_eq_terms,r_force,h_frequency,t0,omega,num_harmonics,Validation_Opts);
-        solve_h_time = toc(solve_h_start);
-    end
+                period = 2*pi/omega;
+                x_dot = reduced_eom(t0,x,period);
+                r_ddot  = x_dot(vel_span,:);
+                [h_inertia,h_conv,h_stiff,h_force] = h_terms(t0,r,r_dot,r_ddot,period);
+        end
+        %h_inertia * h_ddot  +  h_conv * h_dot  +  h_stiff * h  =  h_force
+        set_up_h_time = toc(set_up_h_start);
 
-    %%% DEBUG
-    % if iOrbit == 54
-    %     debug_validation(validation_eq_terms,t0,Validation_Orbit.h,Validation_Orbit.h_dot)
-    % end
-    %%%
+        validation_eq_terms = {h_inertia,h_conv,h_stiff,h_force};
+        r_force = Validation_Rom.Force_Polynomial.evaluate_polynomial(r);
+        solution_converged = 0;
+        while ~solution_converged
+            solve_h_start = tic;
+            h_frequency = h_solver(validation_eq_terms,t0,omega,num_harmonics);
+            [solution_converged,num_harmonics,Validation_Orbit] = check_h_convergence(validation_eq_terms,r_force,h_frequency,t0,omega,num_harmonics,Validation_Opts);
+            solve_h_time = toc(solve_h_start);
+        end
 
-    h_analysis_start = tic;
 
-    if Validation_Opts.get_stability
-        [orbit_stab,orbit_evals] = get_h_stability(validation_eq_terms,t0);
-        Validation_Orbit.evals = orbit_evals;
-        % orbit_stab = h_infinite_determinant(validation_eq_terms,t0,omega,num_harmonics);
-        % orbit_stab = get_h_coco_stability(Validation_Orbit,validation_eq_terms,t0,omega,num_harmonics);
-    else
-        orbit_stab = 1;
-    end
+        %%% DEBUG
+        % if iOrbit == 54
+        %     debug_validation(validation_eq_terms,t0,Validation_Orbit.h,Validation_Orbit.h_dot)
+        % end
+        %%%
 
-    Displacement.r = r;
-    Displacement.h = Validation_Orbit.h;
+        h_analysis_start = tic;
 
-    Velocity.r_dot = r_dot;
-    Velocity.h_dot = Validation_Orbit.h_dot;
+        if Validation_Opts.get_stability
+            [orbit_stab,orbit_evals] = get_h_stability(validation_eq_terms,t0);
+            Validation_Orbit.evals = orbit_evals;
+            % orbit_stab = h_infinite_determinant(validation_eq_terms,t0,omega,num_harmonics);
+            % orbit_stab = get_h_coco_stability(Validation_Orbit,validation_eq_terms,t0,omega,num_harmonics);
+        else
+            orbit_stab = 1;
+        end
 
-    Eom_Terms.h_inertia = h_inertia;
-    Eom_Terms.h_convection = h_conv;
-    Eom_Terms.h_stiffness = h_stiff;
-    Eom_Terms.h_force = h_force;
+        Displacement.r = r;
+        Displacement.h = Validation_Orbit.h;
 
-    Validation_Sol = Validation_Sol.analyse_h_solution(Displacement,Velocity,Eom_Terms,orbit_stab,Validation_Analysis_Inputs,iOrbit);
-    h_analysis_time = toc(h_analysis_start);
-    orbit_time = read_data_time + set_up_h_time + solve_h_time + h_analysis_time;
-    total_time = total_time + orbit_time;
+        Velocity.r_dot = r_dot;
+        Velocity.h_dot = Validation_Orbit.h_dot;
 
-    if orbit_time < time_range(1)
-        time_range(1) = orbit_time;
-    end
-    if orbit_time > time_range(2)
-        time_range(2) = orbit_time;
-    end
-    fprintf("%i / %i. data: %.3f, setup: %.3f, solution: %.3f, analysis: %.3f. N_h = %i \n",...
-        iOrbit,num_periodic_orbits,read_data_time,set_up_h_time,solve_h_time,h_analysis_time,num_harmonics);
+        Eom_Terms.h_inertia = h_inertia;
+        Eom_Terms.h_convection = h_conv;
+        Eom_Terms.h_stiffness = h_stiff;
+        Eom_Terms.h_force = h_force;
 
-    if Validation_Opts.save_orbit
-        validation_name = solution_name + "\sol" + orbit_labels(iOrbit) + "_v.mat";
-        save(validation_name,"Validation_Orbit")
+        Validation_Sol = Validation_Sol.analyse_h_solution(Displacement,Velocity,Eom_Terms,orbit_stab,Validation_Analysis_Inputs,job_orbit);
+        h_analysis_time = toc(h_analysis_start);
+        orbit_time = read_data_time + set_up_h_time + solve_h_time + h_analysis_time;
+        total_time = total_time + orbit_time;
+
+        if orbit_time < time_range(1)
+            time_range(1) = orbit_time;
+        end
+        if orbit_time > time_range(2)
+            time_range(2) = orbit_time;
+        end
+        fprintf("%i / %i. data: %.3f, setup: %.3f, solution: %.3f, analysis: %.3f. N_h = %i \n",...
+            job_orbit,num_periodic_orbits,read_data_time,set_up_h_time,solve_h_time,h_analysis_time,num_harmonics);
+
+        if Validation_Opts.save_orbit
+            validation_name = solution_name + "\sol" + orbit_labels(job_orbit) + "_v.mat";
+            save(validation_name,"Validation_Orbit")
+        end
     end
 end
 fprintf("Mean time: %.3f, min time: %.3f, max time: %.3f \n",...

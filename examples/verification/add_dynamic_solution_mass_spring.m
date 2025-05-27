@@ -3,7 +3,7 @@ clear
 set_visualisation_level(1)
 set_logging_level(2)
 
-system_name = "cubic_mass_spring_12";
+system_name = "cubic_mass_spring_1";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
@@ -22,8 +22,10 @@ Continuation_Opts.initial_discretisation_num = 20;
 Continuation_Opts.max_discretisation_num = 250;
 Continuation_Opts.min_discretisation_num = 20;
 Continuation_Opts.collation_degree = 8;
+Continuation_Opts.energy_limit_multiplier = 2;
 %-----------------------------------------%
 Dyn_Data = Dyn_Data.add_backbone(1,"type","rom","opts",Continuation_Opts);
+% compare_validation(Dyn_Data,"validation error","last","all")
 
 Continuation_Opts.inertial_compensation = 0;
 Dyn_Data = Dyn_Data.add_backbone(1,"type","rom","opts",Continuation_Opts);
