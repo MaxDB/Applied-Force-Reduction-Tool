@@ -152,10 +152,18 @@ classdef Sparse_Stiffness_Pointer
             end
 
             num_arrays = size(varargin,2);
-            obj = varargin{1};
+            obj = [];
             
-            for iArray = 2:num_arrays
-                obj = obj.combine_data(varargin{iArray});
+            for iArray = 1:num_arrays
+                if class(obj) ~= "Sparse_Stiffness_Pointer"
+                    obj = varargin{iArray};
+                    continue
+                end
+                
+                next_obj = varargin{iArray};
+                if class(next_obj) == "Sparse_Stiffness_Pointer"
+                    obj = obj.combine_data(next_obj);
+                end
             end
             obj.save;
         end

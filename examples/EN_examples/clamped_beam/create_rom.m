@@ -16,7 +16,7 @@ added_modes = [3];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.max_parallel_jobs = 8; %be careful!
+Static_Opts.max_parallel_jobs = 4; %be careful!
 %------------------------------------------%
 if isempty(gcp('nocreate')) && Static_Opts.max_parallel_jobs > 1
     parpool;

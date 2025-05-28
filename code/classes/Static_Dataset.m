@@ -482,7 +482,7 @@ classdef Static_Dataset
             % end
             % mkdir(data_path)
 
-            if ~isfolder(system_data_path)
+            if ~isfolder(data_path)
                 mkdir(data_path)
             end
             
@@ -490,7 +490,8 @@ classdef Static_Dataset
             for iProperty = 1:num_properties
                 Static_Data = save_property_data(SEPERATELY_SAVED_PROPERTIES(iProperty),Static_Data);
             end
-
+            
+            
             
             save(data_path + "Static_Data.mat","Static_Data","-v7.3")
 
