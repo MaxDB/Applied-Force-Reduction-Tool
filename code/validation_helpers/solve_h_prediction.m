@@ -12,8 +12,8 @@ Solution_Type = Solution.Solution_Type;
 orbit_type = Solution_Type.orbit_type;
 solution_name = Validation_Rom.data_path + "dynamic_sol_" + solution_num;
 
-total_time = 0;
-time_range = [inf,0];
+
+
 %%% Set up h-problem
 
 switch orbit_type
@@ -53,17 +53,33 @@ orbit_labels = Solution.orbit_labels;
 frequency = Solution.frequency;
 num_periodic_orbits = length(orbit_labels);
 
-num_jobs = 2;
+num_jobs = 4;
 orbit_groups = split_orbit_jobs(num_periodic_orbits,num_jobs);
 
-for iJob = 1:num_jobs
-    num_harmonics = Validation_Opts.initial_harmonic;
-    periodic_orbits_jobs = orbit_groups(iJob,1):orbit_groups(iJob,2);
+
+Validation_Sols = repelem(Validation_Sol,1,num_jobs);
+
+
+initial_harmonic = Validation_Opts.initial_harmonic;
+Force_Polynomial = Validation_Rom.Force_Polynomial;
+time_ranges = zeros(2,num_jobs);
+job_time = zeros(1,num_jobs);
+num_job_orbits = zeros(1,num_jobs);
+
+parfor iJob = 1:num_jobs
+    time_range = [inf,0];
+    num_harmonics = initial_harmonic;
+    orbit_group = orbit_groups(iJob,:);
+    periodic_orbits_jobs = orbit_group(1):orbit_group(2);
     num_periodic_orbits_jobs = size(periodic_orbits_jobs,2);
+    num_job_orbits(iJob) = num_periodic_orbits_jobs;    
+
+    job_orbit_labels = orbit_labels(periodic_orbits_jobs);
+    job_frequency = frequency(periodic_orbits_jobs);
     for iOrbit = 1:num_periodic_orbits_jobs
         read_data_start = tic;
         job_orbit = periodic_orbits_jobs(iOrbit);
-        sol = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(job_orbit));
+        sol = po_read_solution('',convertStringsToChars(solution_name),job_orbit_labels(iOrbit));
         read_data_time = toc(read_data_start);
 
         set_up_h_start = tic;
@@ -71,7 +87,7 @@ for iJob = 1:num_jobs
         x = sol.xbp';
         r = x(disp_span,:);
         r_dot = x(vel_span,:);
-        omega = frequency(1,job_orbit);
+        omega = job_frequency(iOrbit);
 
         switch orbit_type
             case "free"
@@ -84,13 +100,21 @@ for iJob = 1:num_jobs
                 x_dot = reduced_eom(t0,x,period);
                 r_ddot  = x_dot(vel_span,:);
                 [h_inertia,h_conv,h_stiff,h_force] = h_terms(t0,r,r_dot,r_ddot,period);
+            otherwise
+                h_inertia = [];
+                h_conv = [];
+                h_stiff = [];
+                h_force = [];
+                error("")
         end
         %h_inertia * h_ddot  +  h_conv * h_dot  +  h_stiff * h  =  h_force
         set_up_h_time = toc(set_up_h_start);
 
         validation_eq_terms = {h_inertia,h_conv,h_stiff,h_force};
-        r_force = Validation_Rom.Force_Polynomial.evaluate_polynomial(r);
+        r_force = Force_Polynomial.evaluate_polynomial(r);
         solution_converged = 0;
+        solve_h_time = 0;
+        Validation_Orbit = [];
         while ~solution_converged
             solve_h_start = tic;
             h_frequency = h_solver(validation_eq_terms,t0,omega,num_harmonics);
@@ -116,21 +140,21 @@ for iJob = 1:num_jobs
             orbit_stab = 1;
         end
 
-        Displacement.r = r;
-        Displacement.h = Validation_Orbit.h;
 
-        Velocity.r_dot = r_dot;
-        Velocity.h_dot = Validation_Orbit.h_dot;
+               
+        Displacement = struct("r",r,"h",Validation_Orbit.h);
+        Velocity = struct("r_dot",r_dot,"h_dot",Validation_Orbit.h_dot);
+        
+        Eom_Terms = struct("h_inertia",h_inertia, ...
+                           "h_convection",h_conv, ...
+                           "h_stiffness",h_stiff, ...
+                           "h_force",h_force);
 
-        Eom_Terms.h_inertia = h_inertia;
-        Eom_Terms.h_convection = h_conv;
-        Eom_Terms.h_stiffness = h_stiff;
-        Eom_Terms.h_force = h_force;
 
-        Validation_Sol = Validation_Sol.analyse_h_solution(Displacement,Velocity,Eom_Terms,orbit_stab,Validation_Analysis_Inputs,job_orbit);
+        Validation_Sols(iJob) = Validation_Sols(iJob).analyse_h_solution(Displacement,Velocity,Eom_Terms,orbit_stab,Validation_Analysis_Inputs,job_orbit);
         h_analysis_time = toc(h_analysis_start);
         orbit_time = read_data_time + set_up_h_time + solve_h_time + h_analysis_time;
-        total_time = total_time + orbit_time;
+        job_time(iJob) = job_time(iJob) + orbit_time;
 
         if orbit_time < time_range(1)
             time_range(1) = orbit_time;
@@ -143,12 +167,18 @@ for iJob = 1:num_jobs
 
         if Validation_Opts.save_orbit
             validation_name = solution_name + "\sol" + orbit_labels(job_orbit) + "_v.mat";
-            save(validation_name,"Validation_Orbit")
+            save(validation_name,"-fromstruct",Validation_Orbit)
         end
     end
+    time_ranges(:,iJob) = time_range;
 end
+mean_time = job_time./num_job_orbits;
 fprintf("Mean time: %.3f, min time: %.3f, max time: %.3f \n",...
-    total_time/num_periodic_orbits,time_range(1),time_range(2));
+    mean(mean_time),min(time_ranges(1,:)),max(time_ranges(2,:)));
+
+fprintf("Total time: %.3f \n",max(job_time))
+
+Validation_Sol = combine_jobs(Validation_Sols);
 end
 
 

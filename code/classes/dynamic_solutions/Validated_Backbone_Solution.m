@@ -223,6 +223,31 @@ classdef Validated_Backbone_Solution
             Default_Continuation_Opts = read_default_options("validation");
             obj.Validation_Options = update_options(Default_Continuation_Opts,obj.Validation_Options,Validation_Opts);
         end
+        %-----------------------------------------------------------------%
+        function obj = combine_jobs(objs)
+            obj = objs(1);
+            num_jobs = size(objs,2);
+            num_time_points = size(obj.h_energy,2);
+
+            props = properties(obj);
+            num_props = size(props,1);
+            is_orbit_prop = false(num_props,1);
+            for iProp = 1:num_props
+                is_orbit_prop(iProp) = size(obj.(props{iProp}),2) == num_time_points;
+            end
+
+            orbit_props = props(is_orbit_prop);
+            num_orbit_props = size(orbit_props,1);
+            for iJob = 2:num_jobs
+                next_obj = objs(iJob);
+                orbit_index = next_obj.h_energy ~= 0;
+                for iProp = 1:num_orbit_props
+                    obj.(orbit_props{iProp})(:,orbit_index) = next_obj.(orbit_props{iProp})(:,orbit_index);
+                end
+
+            end
+
+        end
     end
 
 end
