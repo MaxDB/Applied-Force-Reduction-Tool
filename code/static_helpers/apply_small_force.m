@@ -46,7 +46,7 @@ parfor iLoad = 1:num_loadcases
     perturbation_disp(:,:,iLoad) = K_i\applied_force;
 end
 
-data_path = get_data_path(Static_Data) + "\perturbation";
+data_path = get_data_path(Static_Data) + "perturbation";
 Static_Data.perturbation_displacement = Perturbation_Pointer(Model,perturbation_disp,"path",data_path);
 end
 

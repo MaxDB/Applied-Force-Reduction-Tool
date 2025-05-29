@@ -73,7 +73,7 @@ for iCount = 1:num_iterations
     orbit_validation_start = tic;
     Dyn_Data = one_mode_rom_validation(Dyn_Data,2);
     rom_one_orbit_validation(2,iCount) = toc(orbit_validation_start);
-    
+
     clear("Dyn_Data")
     close all
     %----------------------------------------------------------------

@@ -354,7 +354,7 @@ classdef Static_Dataset
                     current_stiffness = obj.get_dataset_values("tangent_stiffness");
                     if isempty(current_stiffness)
                        
-                       if class(additional_data) == "Sparse_Stiffness_Point"
+                       if class(additional_data) == "Sparse_Stiffness_Pointer"
                            data_path = get_data_path(obj);
                            current_stiffness = Sparse_Stiffness_Pointer(obj.Model,"path",data_path + "stiffness");
                        else
@@ -402,7 +402,10 @@ classdef Static_Dataset
             %-------------------------------------------------%
 
             obj.Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
-
+            data_path = get_data_path(obj);
+            if isfolder(data_path)
+                rmdir(data_path,"s")
+            end
 
             %-------------------------------------------------%
             num_modes = size(initial_modes,2);
@@ -424,13 +427,27 @@ classdef Static_Dataset
             new_force(old_mode_map,:) = old_force;
             obj.restoring_force = new_force;
 
-            if obj.additional_data_type == "perturbation"
-                L_modes = obj.Model.low_frequency_modes;
-                h_modes = [obj.Model.reduced_modes,L_modes];
-                h_map = arrayfun(@(h_mode) find(old_h_modes == h_mode),h_modes);
-                perturbation_disp = obj.get_dataset_values("perturbation_displacement");
-                obj.perturbation_displacement = perturbation_disp(:,h_map,:);
+            switch obj.additional_data_type 
+                case "perturbation"
+                    L_modes = obj.Model.low_frequency_modes;
+                    h_modes = [obj.Model.reduced_modes,L_modes];
+                    h_map = arrayfun(@(h_mode) find(old_h_modes == h_mode),h_modes);
+                    perturbation_disp = obj.get_dataset_values("perturbation_displacement");
+                    obj.perturbation_displacement = perturbation_disp(:,h_map,:);
+                case "stiffness"
+                    data_path = obj.get_data_path;
+                    Old_Stiffness = obj.get_dataset_values("tangent_stiffness");
+                    Stiffness = Sparse_Stiffness_Pointer(obj.Model,"path",data_path + "stiffness");
+                    obj.tangent_stiffness = cat(3,Stiffness,Old_Stiffness,"copy");
+
+                    Old_Perturbation = obj.get_dataset_values("perturbation_displacement");
+                    Perturbation = Perturbation_Pointer(obj.Model,[],"path",data_path + "perturbation");
+                    obj.perturbation_displacement = cat(3,Perturbation,Old_Perturbation);
+
             end
+   
+
+
             %-------------------------------------------------%
            
         end

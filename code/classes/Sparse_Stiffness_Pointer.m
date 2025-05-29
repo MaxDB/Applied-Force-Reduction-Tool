@@ -88,7 +88,7 @@ classdef Sparse_Stiffness_Pointer
             obj.save;
         end
         %------
-        function obj = combine_data(obj,obj_two)
+        function obj = combine_data(obj,obj_two,copy)
             if obj.degrees_of_freedom ~= obj_two.degrees_of_freedom
                 error("Incompatable stiffness tensors")
             end
@@ -110,11 +110,16 @@ classdef Sparse_Stiffness_Pointer
                 new_load_label = iLoad + num_old_loadcases;
                 stiffness_file = stiffness_path + iLoad + file_type_two;
                 new_stiffness_file = new_stiffness_path + new_load_label +  file_type_one;
-                movefile(stiffness_file,new_stiffness_file)
+                if copy
+                    copyfile(stiffness_file,new_stiffness_file)
+                else
+                    movefile(stiffness_file,new_stiffness_file)
+                end
             end
     
-
-            rmdir(current_path,'s');
+            if ~copy
+                rmdir(current_path,'s');
+            end
             obj.number_of_loadcases = num_old_loadcases + num_added_loadcases;
         end
         %------
@@ -152,6 +157,15 @@ classdef Sparse_Stiffness_Pointer
             end
 
             num_arrays = size(varargin,2);
+            copy = 0;
+            if isstring(varargin{end})
+                num_arrays = num_arrays - 1;
+                setting = varargin{end};
+                switch setting
+                    case "copy"
+                        copy = 1;
+                end
+            end
             obj = [];
             
             for iArray = 1:num_arrays
@@ -162,7 +176,7 @@ classdef Sparse_Stiffness_Pointer
                 
                 next_obj = varargin{iArray};
                 if class(next_obj) == "Sparse_Stiffness_Pointer"
-                    obj = obj.combine_data(next_obj);
+                    obj = obj.combine_data(next_obj,copy);
                 end
             end
             obj.save;

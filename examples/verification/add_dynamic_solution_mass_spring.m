@@ -25,6 +25,9 @@ Continuation_Opts.collation_degree = 8;
 Continuation_Opts.energy_limit_multiplier = 2;
 %-----------------------------------------%
 Dyn_Data = Dyn_Data.add_backbone(1,"type","rom","opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.add_backbone(1,"type","fom","opts",Continuation_Opts);
+Continuation_Opts.max_inc = 1e-2;
+Dyn_Data = Dyn_Data.add_orbits(1,[30,27],"opts",Continuation_Opts);
 % compare_validation(Dyn_Data,"validation error","last","all")
 
 Continuation_Opts.inertial_compensation = 0;
