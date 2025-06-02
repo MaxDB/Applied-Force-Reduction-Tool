@@ -4,7 +4,13 @@ num_dofs = num_nodes*num_dimensions;
 step_types(step_types == "zero") = [];
 num_steps = length(step_types);
 num_static_steps = sum(step_types(:,1) == "static");
+num_stiffness_steps = sum(step_types(:,1) == "stiffness");
 
+if num_stiffness_steps >0 && num_stiffness_steps   ~= num_static_steps
+    error("Abaqus error")
+end
+
+num_output_steps = num_static_steps;
 %------------------------------------------------------------------------%
 displacement = zeros(num_dofs,num_static_steps);
 energy = zeros(1,num_static_steps);
@@ -34,15 +40,20 @@ if diff(step_indicies(1:2)) == 1
 end
 
 
-step_spans = zeros(num_steps,2);
-step_spans(:,1) = step_indicies(1:2:(2*num_steps));
-step_spans(:,2) = step_indicies(2:2:(2*num_steps));
+step_spans = zeros(num_output_steps,2);
+step_spans(:,1) = step_indicies(1:2:(2*num_output_steps));
+step_spans(:,2) = step_indicies(2:2:(2*num_output_steps));
 
+output_counter = 0;
+step_counter = 0;
 for iStep = 1:num_steps
-    step_span = step_spans(iStep,1):step_spans(iStep,2);
     step_type = step_types(iStep);
     switch step_type
         case "static"
+            output_counter = output_counter + 1;
+            step_counter = step_counter + 1;
+            step_span = step_spans(output_counter,1):step_spans(output_counter,2);
+
             step_data = abaqus_data(step_span);
             % step_data = abaqus_data;
 
@@ -53,8 +64,25 @@ for iStep = 1:num_steps
 
             step_displacement = read_displacements(step_data(disp_index),Model_Data);
             
-            energy(iStep) = step_energy;
-            displacement(:,iStep)  = reshape(step_displacement',num_dofs,1);
+            energy(output_counter ) = step_energy;
+            displacement(:,output_counter )  = reshape(step_displacement',num_dofs,1);
+        case "stiffness"
+            step_counter = step_counter + 1;
+            add_data_step_start = tic;
+            base_name = "temp\" + file_name + "_STIF";
+            if num_static_steps == 0
+                static_step_counter = static_step_counter + 1;
+            end
+            file_found = 0;
+            while ~file_found
+                stiffness_name = base_name + step_counter + ".mtx";
+                file_found = isfile(stiffness_name);
+                if ~file_found
+                    step_counter = step_counter + 1;
+                end
+            end
+            movefile(stiffness_name, base_name + output_counter + ".mtx")
+            additional_data_time = additional_data_time + toc(add_data_step_start);
     end
 end
 

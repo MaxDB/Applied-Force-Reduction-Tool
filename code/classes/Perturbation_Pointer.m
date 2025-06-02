@@ -94,11 +94,11 @@ classdef Perturbation_Pointer
             num_old_loadcases = obj.number_of_loadcases;
             num_added_loadcases = obj_two.number_of_loadcases;
             
-            perturbation_path = current_path + "\" + obj_two.perturbation_name;
-            file_type_two = obj_two.file_type;
-
-            new_perturbation_path = destination_path + "\" + obj.perturbation_name;
-            file_type_one = obj.file_type;
+            % perturbation_path = current_path + "\" + obj_two.perturbation_name;
+            % file_type_two = obj_two.file_type;
+            % 
+            % new_perturbation_path = destination_path + "\" + obj.perturbation_name;
+            % file_type_one = obj.file_type;
 
             num_modes = obj_two.num_validation_modes;
 
@@ -125,11 +125,10 @@ classdef Perturbation_Pointer
                 return
             end
             file_path =  obj.data_dir + "\" + obj.perturbation_name + "_";
-            % parfor iMode = 1:num_modes
-            for iMode = 1:num_modes
+            parfor iMode = 1:num_modes
                 perturbation_disp = squeeze(perturbation_displacements(:,iMode,:));
                 file_name = file_path + validation_modes(iMode);
-                save(file_name,"perturbation_disp")
+                save(file_name,"-fromstruct",struct("perturbation_disp",perturbation_disp))
             end 
         end
         %------

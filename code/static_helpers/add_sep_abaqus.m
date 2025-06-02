@@ -319,19 +319,18 @@ try
 
                 zero_bc_input = force_label + bc_end + bc_disp;
                 fixed_dofs = Model.dof_boundary_conditions;
-                % mapped_dofs = zeros(size(fixed_dofs));
-                % for iDof = 1:size(fixed_dofs,2)
-                %     fixed_dof = fixed_dofs(iDof);
-                %     iNode = floor( fixed_dof/num_dimensions) + 1;
-                %     iDim =  fixed_dof - (iNode-1)*num_dimensions;
-                %     if iDim == 0
-                %         iDim = num_dimensions;
-                %         iNode = iNode - 1;
-                %     end
-                %     mapped_dofs(iDof) = num_nodes*(iDim - 1) + iNode;
-                % end
-                % zero_bc_input(mapped_dofs) = [];
-                zero_bc_input(fixed_dofs) = [];
+                mapped_dofs = zeros(size(fixed_dofs));
+                for iDof = 1:size(fixed_dofs,1)
+                    fixed_dof = fixed_dofs(iDof);
+                    iNode = floor( fixed_dof/num_dimensions) + 1;
+                    iDim =  fixed_dof - (iNode-1)*num_dimensions;
+                    if iDim == 0
+                        iDim = num_dimensions;
+                        iNode = iNode - 1;
+                    end
+                    mapped_dofs(iDof) = num_nodes*(iDim - 1) + iNode;
+                end
+                zero_bc_input(mapped_dofs) = [];
 
                 force_bc_input = strings(all_dofs,1);
                 for iDimension = 1:num_dimensions
