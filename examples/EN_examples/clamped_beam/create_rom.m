@@ -17,6 +17,8 @@ added_modes = [3];
 
 %--------- Static Solver Settings ---------%
 Static_Opts.max_parallel_jobs = 4; %be careful!
+Static_Opts.output_format = "binary";
+Static_Opts.num_loadcases = 5;
 %------------------------------------------%
 if isempty(gcp('nocreate')) && Static_Opts.max_parallel_jobs > 1
     parpool;
@@ -101,11 +103,19 @@ print_mean_time(rom_one_validation_data-rom_one_base,"Data diff")
 print_mean_time(rom_one_orbits,"Orbits")
 print_mean_time(rom_one_orbit_validation,"Orbit validation")
 
+total_one = rom_one_validation_data + sum(rom_one_orbits,1) + sum(rom_one_orbit_validation,1);
+print_mean_time(total_one,"Total")
+fprintf("---\n\n");
+
 print_mean_time(rom_two_base,"Static Data")
 print_mean_time(rom_two_validation,"Validation Data")
 print_mean_time(rom_two_validation-rom_two_base,"Data diff")
 print_mean_time(rom_two_orbits,"Orbits")
 print_mean_time(rom_two_orbit_validation,"Orbit validation")
+
+total_two = rom_two_validation + rom_two_orbits + rom_two_orbit_validation;
+print_mean_time(total_two,"Total")
+fprintf("---\n\n");
 
 %-----------------------------------
 function Static_Data = one_mode_rom(system_name,energy_limit,initial_modes,Static_Opts)

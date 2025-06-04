@@ -530,14 +530,14 @@ classdef Dynamic_Dataset
             if isscalar(orbit_num)
                 orbit_name = solution_name + "\sol" + orbit_num + "_v.mat";
                 if validated && isfile(orbit_name)
-                    load(solution_name + "\sol" + orbit_num + "_v.mat","Validation_Orbit");
+                    Validation_Orbit = load(solution_name + "\sol" + orbit_num + "_v.mat");
                 end
             else
                 Validation_Orbits = cell(num_orbits,1);
                 for iOrbit = 1:num_orbits
                     orbit_name = solution_name + "\sol" + orbit_num(iOrbit) + "_v.mat";
                     if validated && isfile(orbit_name)
-                        load(solution_name + "\sol" + orbit_num(iOrbit) + "_v.mat","Validation_Orbit");
+                        Validation_Orbit = load(solution_name + "\sol" + orbit_num(iOrbit) + "_v.mat");
                     end
                     Validation_Orbits{iOrbit} = Validation_Orbit;
                 end

@@ -102,7 +102,6 @@ classdef Reduced_System
 
         %-----------------------------------------------------------------%
         function x = expand(obj,r,varargin)
-            r_evec = obj.Model.reduced_eigenvectors;
             x_Poly = obj.Physical_Displacement_Polynomial;
             x = x_Poly.evaluate_polynomial(r);
             
@@ -121,18 +120,15 @@ classdef Reduced_System
             end
             h = varargin{1,1};
 
-            L_evec = obj.get_current_L_eigenvectors;
-            h_evec = [r_evec,L_evec];
-
-            Theta_Hat_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
+            H_Grad_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
 
             num_x = size(r,2);
-            num_dof = size(h_evec,1);
+            num_dof = size(x,1);
             h_coupling = zeros(num_dof,num_x);
             for iX = 1:num_x   
-                h_coupling(:,iX) = Theta_Hat_Poly.evaluate_polynomial(r(:,iX))*h(:,iX);
+                h_coupling(:,iX) = H_Grad_Poly.evaluate_polynomial(r(:,iX))*h(:,iX);
             end
-            x = x + h_evec*h + h_coupling;
+            x = x + h_coupling;
         end
         %-----------------------------------------------------------------%
         function x_dot = expand_velocity(obj,r,r_dot,varargin)
