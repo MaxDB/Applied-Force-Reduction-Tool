@@ -27,6 +27,12 @@ if isfolder(geometry_path)
    rmdir(geometry_path,"s")
 end
 mkdir(geometry_path)
+
+data_path = previous_directory{1} + DIR_DELIMINATOR + "data";
+if isfolder(data_path)
+   rmdir(data_path,"s")
+end
+mkdir(data_path)
 copyfile(SYSTEM_NAME + ".inp",geometry_path)
 
 %-----------
