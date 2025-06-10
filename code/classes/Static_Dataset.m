@@ -560,7 +560,10 @@ classdef Static_Dataset
 
             switch Static_Data_Removed.additional_data_type
                 case "stiffness"
-                    Static_Data_Removed.tangent_stiffness = Static_Data_Removed.tangent_stiffness(:,:,removal_index);
+                    Tangent_Stiffness = Static_Data.tangent_stiffness;
+                    [Tangent_Stiffness,Tangent_Stiffness_Removed] = Tangent_Stiffness.remove_data(removal_index);
+                    Static_Data.tangent_stiffness = Tangent_Stiffness;
+                    Static_Data_Removed.tangent_stiffness = Tangent_Stiffness_Removed;
                 case "perturbation"
                     Static_Data_Removed.perturbation_displacement = Static_Data_Removed.perturbation_displacement(:,:,removal_index);
             end
@@ -575,7 +578,7 @@ classdef Static_Dataset
 
             switch Static_Data.additional_data_type
                 case "stiffness"
-                    Static_Data.tangent_stiffness = Static_Data.tangent_stiffness(:,:,~removal_index);
+                    % Static_Data.tangent_stiffness = Static_Data.tangent_stiffness(:,:,~removal_index);
                 case "perturbation"
                     Static_Data.perturbation_displacement = Static_Data.perturbation_displacement(:,:,~removal_index);
             end

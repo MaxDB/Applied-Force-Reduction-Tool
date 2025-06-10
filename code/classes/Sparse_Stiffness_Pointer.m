@@ -123,6 +123,65 @@ classdef Sparse_Stiffness_Pointer
             obj.number_of_loadcases = num_old_loadcases + num_added_loadcases;
         end
         %------
+        function [obj,Removed_Data] = remove_data(obj,removal_index)
+            Removed_Data = obj;
+            if isa(removal_index,"logical")
+                removal_index = find(removal_index);
+            end
+            Removed_Data.number_of_loadcases = 0;
+            Removed_Data.data_dir = Removed_Data.data_dir + "\removed";
+
+            if isfolder(Removed_Data.data_dir)
+                rmdir(Removed_Data.data_dir,"s")
+            end
+            mkdir(Removed_Data.data_dir)
+            save(Removed_Data)
+
+            [obj,Removed_Data] = obj.move_loadcases(Removed_Data,removal_index);
+        end
+        %------
+        function [obj_one,obj_two] = move_loadcases(obj_one,obj_two,loadcases)
+            num_destination_loadcases = obj_two.number_of_loadcases;
+            file_type_one = obj_one.file_type;
+            num_loadcases = size(loadcases,2);
+
+
+            current_path = obj_one.data_dir;
+            destination_path = obj_two.data_dir;
+
+            stiffness_path = current_path + "\" + obj_two.stiffness_name;
+            new_stiffness_path = destination_path + "\" + obj_one.stiffness_name;
+
+            for iLoad = 1:num_loadcases
+                new_load_label = iLoad + num_destination_loadcases;
+                stiffness_file = stiffness_path + loadcases(iLoad) + file_type_one;
+                new_stiffness_file = new_stiffness_path + new_load_label +  file_type_one;
+                movefile(stiffness_file,new_stiffness_file)
+            end
+
+            obj_two.number_of_loadcases = num_destination_loadcases + num_loadcases;
+            save(obj_two)
+
+            %relabel obj_one
+            for iLoad = 1:obj_one.number_of_loadcases
+                if ismember(iLoad,loadcases)
+                    continue
+                end
+                index_reduction = sum(iLoad > loadcases);
+                if index_reduction == 0
+                    continue
+                end
+
+                old_stiffness_file = stiffness_path + iLoad + file_type_one;
+                new_stiffness_file = stiffness_path + (iLoad - index_reduction) + file_type_one;
+                movefile(old_stiffness_file,new_stiffness_file);
+            end
+            
+            obj_one.number_of_loadcases = obj_one.number_of_loadcases - num_loadcases;
+            save(obj_one)
+
+        end
+        %------
         function save(Sparse_Stiffness)
             file_dir = Sparse_Stiffness.data_dir + "\" +Sparse_Stiffness.object_name+"_data";
             save(file_dir,Sparse_Stiffness.object_name);

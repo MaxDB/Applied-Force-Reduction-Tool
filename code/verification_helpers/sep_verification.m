@@ -245,7 +245,7 @@ for iIteration = 1:(max_iterations+1)
         end
         Closest_Point = get_closest_point(Static_Data,new_loads);
         [r,theta,f,E,additional_data] = Rom_One.Model.add_point(new_loads,Static_Data.additional_data_type,Closest_Point);
-        if data_available
+        if data_available && any(found_loadcases)
             r(:,~found_loadcases) = r;
             r(:,found_loadcases) = found_r;
 
