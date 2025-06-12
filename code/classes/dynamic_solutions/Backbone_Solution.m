@@ -18,7 +18,7 @@ classdef Backbone_Solution < Dynamic_Solution
             type = BB_Settings.type;
             initial_conditions = BB_Settings.initial_condition;
             Restart_Data = BB_Settings.Restart_Data;
-            if isempty(initial_conditions) && isempty(Restart_Data)
+            if isempty(initial_conditions) && Restart_Data.initial_solution_type == "initial_solution"
                 [t0,z0] = get_linear_solution(Rom,mode_num,type);
             elseif ~isempty(initial_conditions)
                 [t0,z0] = initial_conditions{:};

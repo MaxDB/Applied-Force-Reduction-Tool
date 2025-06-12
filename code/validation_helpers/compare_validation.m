@@ -47,14 +47,17 @@ num_r_modes = length(r_modes);
 num_colours = size(get_plot_colours,1);
 log_axis = 0;
 
-Sol = Dyn_Data.load_solution(solution_num);
-min_freq = min(Sol.frequency);
-max_freq = max(Sol.frequency);
+num_sols = size(solution_num,2);
+min_freq = inf;
+max_freq = 0;
+for iSol = 1:num_sols
+    Sol = Dyn_Data.load_solution(solution_num(iSol));
+    min_freq = min(min_freq,min(Sol.frequency));
+    max_freq = max(max_freq,max(Sol.frequency));
+end
 
 for iMode = 1:num_L_modes
     % Dyn_Data.Additional_Output.output = "none";
-    [Dyn_Data,Validated_BB_Sol] = Dyn_Data.validate_solution(solution_num,L_modes(iMode));
-    colour_num = mod(iMode-1,num_colours)+1;
 
     switch type
         case "energy"
@@ -69,18 +72,24 @@ for iMode = 1:num_L_modes
             plot_backbone = 0;
             log_axis = 1;
     end
-    
-    L_mode_index = L_modes(iMode) - (nnz(r_modes < L_modes(iMode)));
-    mode_frequency = sqrt(Validated_BB_Sol.low_frequency_eigenvalues(L_mode_index));
-    mode_details = sprintf("Last mode: %u - %.2g rad/s - [%.1fx - %.1fx]",[L_modes(iMode),mode_frequency,mode_frequency/max_freq,mode_frequency/min_freq]);
-    
-    ax = plot_h_predicition(Dyn_Data,type,solution_num,"axes",ax,"colour",colour_num,"backbone",plot_backbone);
-    if log_axis
-        ax.YScale = "log";
-    end
-    title(ax,mode_details,"FontWeight","normal")
 
-    drawnow
+    for iSol = 1:num_sols
+        [Dyn_Data,Validated_BB_Sol] = Dyn_Data.validate_solution(solution_num(iSol),L_modes(iMode));
+        colour_num = mod(iMode-1,num_colours)+1;
+
+
+        L_mode_index = L_modes(iMode) - (nnz(r_modes < L_modes(iMode)));
+        mode_frequency = sqrt(Validated_BB_Sol.low_frequency_eigenvalues(L_mode_index));
+        mode_details = sprintf("Last mode: %u - %.2g rad/s - [%.1fx - %.1fx]",[L_modes(iMode),mode_frequency,mode_frequency/max_freq,mode_frequency/min_freq]);
+
+        ax = plot_h_predicition(Dyn_Data,type,solution_num(iSol),"axes",ax,"colour",colour_num,"backbone",plot_backbone);
+        if log_axis
+            ax.YScale = "log";
+        end
+        title(ax,mode_details,"FontWeight","normal")
+
+        drawnow
+    end
 end
 % plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0);
 end
