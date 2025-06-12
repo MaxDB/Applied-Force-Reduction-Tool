@@ -50,6 +50,7 @@ classdef Dynamic_Dataset
             Continuation_Opts = struct([]);
             type = "rom";
             initial_condition = [];
+            Restart_Data.initial_solution_type = "initial_solution";
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
@@ -59,6 +60,8 @@ classdef Dynamic_Dataset
                         Continuation_Opts = keyword_values{arg_counter};
                     case "ic"
                         initial_condition = keyword_values{arg_counter};
+                    case "restart"
+                        Restart_Data = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -70,6 +73,7 @@ classdef Dynamic_Dataset
             BB_Settings.Continuation_Opts = Continuation_Opts;
             BB_Settings.Additional_Output = obj.Additional_Output;
             BB_Settings.initial_condition = initial_condition;
+            BB_Settings.Restart_Data = Restart_Data;
 
             Rom = obj.Dynamic_Model;
             BB_Sol = Backbone_Solution(Rom,BB_Settings);
@@ -125,19 +129,29 @@ classdef Dynamic_Dataset
                         z0 = orbit.xbp';
 
                         obj = obj.add_backbone(0,"opts",Continuation_Opts,"ic",{t0,z0});
-                    case "bp"
-
-                    case "PD"
-                        orbit = obj.get_orbit(solution_num,orbit_num(iOrbit));
-                        t_base = orbit.tbp';
-                        z_base = orbit.xbp';
-
-                        z0 = [z_base,z_base(:,2:end)];
+                    case "BP"
                         
-                        t_shift = t_base + t_base(end);
-                        t0 = [t_base, t_shift(2:end)];
+                    case "PD"
+                        pd_index = obj.get_special_point(solution_num,"PD");
+                        orbit_id = pd_index(orbit_num(iOrbit));
+                        Restart_Data.orbit_id = orbit_id;
+                        Restart_Data.sol_num = solution_num;
+                        Restart_Data.initial_solution_type = "period_doubling";
+           
 
-                        obj = obj.add_backbone(0,"opts",Continuation_Opts,"ic",{t0,z0},"type",Solution_Type.model_type);
+                        obj = obj.add_backbone(0,"opts",Continuation_Opts,"type",Solution_Type.model_type,"restart",Restart_Data);
+
+                        % pd_index = obj.get_special_point(solution_num,"PD");
+                        % orbit = obj.get_orbit(solution_num,pd_index(orbit_num(iOrbit)));
+                        % t_base = orbit.tbp';
+                        % z_base = orbit.xbp';
+                        % 
+                        % z0 = [z_base,z_base(:,2:end)];
+                        % 
+                        % t_shift = t_base + t_base(end);
+                        % t0 = [t_base, t_shift(2:end)];
+                        % 
+                        % obj = obj.add_backbone(0,"opts",Continuation_Opts,"ic",{t0,z0},"type",Solution_Type.model_type);
 
                     case "IC"
                         orbit = obj.get_orbit(solution_num,point_index(orbit_num(iOrbit)));

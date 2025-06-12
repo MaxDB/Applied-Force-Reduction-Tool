@@ -1,4 +1,23 @@
-function coco_backbone(t0,z0,Rom,type,Continuation_Settings,solution_number,Additional_Output)
+function coco_backbone(t0,z0,Rom,type,Continuation_Settings,solution_number,Additional_Output,varargin)
+%-------------------------------------------------------------------------%
+num_args = length(varargin);
+if mod(num_args,2) == 1
+    error("Invalid keyword/argument pairs")
+end
+keyword_args = varargin(1:2:num_args);
+keyword_values = varargin(2:2:num_args);
+
+Restart_Data.initial_solution_type = "initial_solution";
+
+for arg_counter = 1:num_args/2
+    switch keyword_args{arg_counter}
+        case "restart"
+            Restart_Data = keyword_values{arg_counter};
+        otherwise
+            error("Invalid keyword: " + keyword_args{arg_counter})
+    end
+end
+%-------------------------------------------------------------------------%
 %Calculates bb curves using coco.
 ODE_TOLERACE = 1e-9;
 
@@ -41,8 +60,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 prob = coco_prob();
 % prob = coco_set(prob, 'ode', 'autonomous', false);
-%Collation Settings
-coll_args = [funcs, {t0',z0', {'zet'}, 0}];
+
+
 
 prob = coco_set(prob, 'coll', 'NTST',   Continuation_Settings.initial_discretisation_num);  % [10] %initial number of discretisation intervals
 prob = coco_set(prob, 'coll', 'NCOL',   Continuation_Settings.collation_degree);            % [4] %degree of interpolating polynomial
@@ -56,9 +75,23 @@ cont_args = { 1, {'po.period', 'zet'}, []};
 prob = coco_set(prob, 'ode', 'RelTol', ODE_TOLERACE);
 prob = coco_set(prob, 'ode', 'AbsTol', ODE_TOLERACE*1e-2);
 
+switch Restart_Data.initial_solution_type
+    case "initial_solution"
+        prob = coco_set(prob, 'cont', 'NAdapt', 1);
+        %Collation Settings
+        coll_args = [funcs, {t0',z0', {'zet'}, 0}];
+        prob = ode_isol2po(prob, '', coll_args{:});
+    case "branch_point"
+        prob = coco_set(prob, 'cont', 'NAdapt', 5);
+        restarted_file_name = Rom.data_path + "dynamic_sol_" + Restart_Data.sol_num;
+        prob = ode_BP2po(prob, '', convertStringsToChars(restarted_file_name), Restart_Data.orbit_id);
+    case "period_doubling"
+        prob = coco_set(prob, 'cont', 'NAdapt', 5);
+        restarted_file_name = Rom.data_path + "dynamic_sol_" + Restart_Data.sol_num;
+        prob = ode_PD2po(prob, '', convertStringsToChars(restarted_file_name), Restart_Data.orbit_id);
+end
 
-prob = ode_isol2po(prob, '', coll_args{:});
-% Constrain period -> only necessary if set to non-autonomous 
+% Constrain period -> only necessary if set to non-autonomous
 % [data, uidx] = coco_get_func_data(prob, 'po.orb.coll', 'data', 'uidx');
 % maps = data.coll_seg.maps;
 % prob = coco_add_pars(prob, 'section', uidx(maps.x0_idx(1)), 'y0');
@@ -102,10 +135,10 @@ prob = coco_add_event(prob, 'EP','boundary','FREQ',Continuation_Settings.paramet
 
 %Corrector Settings
 prob = coco_set(prob,'corr','SubItMX', 10); % [4] number of damping steps
-prob = coco_set(prob,'corr','ItMX', 50);    % [10] Maximum number of retries for an iteration 
+prob = coco_set(prob,'corr','ItMX', 100);    % [10] Maximum number of retries for an iteration 
 
 %Continuation settings
-prob = coco_set(prob, 'cont', 'NAdapt', 1);
+
 prob = coco_set(prob, 'cont', 'NPR',    1);         % Number of steps between prints
 prob = coco_set(prob, 'cont', 'ItMX',   [inc_backward,inc_forward]);  	% Number of continuation steps [backwards,forwards]
 
