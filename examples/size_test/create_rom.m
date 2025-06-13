@@ -130,7 +130,7 @@ Dyn_Data = initalise_dynamic_data(system_name);
 
 Additional_Output.output = "physical displacement";
 Additional_Output.type = "max";
-Additional_Output.dof = "all";
+Additional_Output.dof = 66539;
 Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
 % 
 %--------- Continuation Settings ---------%
@@ -161,6 +161,11 @@ end
 
 function Dyn_Data = two_mode_rom_orbits(system_name)
 Dyn_Data = initalise_dynamic_data(system_name);
+Additional_Output.output = "physical displacement";
+Additional_Output.type = "max";
+Additional_Output.dof = 66539;
+Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
+%----
 
 Continuation_Opts.initial_inc = 1e0;
 Continuation_Opts.max_inc = 1e0;
