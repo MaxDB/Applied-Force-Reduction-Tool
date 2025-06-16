@@ -1,18 +1,20 @@
 function periodic_solution = initial_condition_sweep(Rom,frequency,ic_limits)
 sweep_resolution = 50;
-MAX_ERROR = 1e-6;
+step_reduction = 5.5;
+MAX_ERROR = 1e-12;
 
 Model = Rom.Model;
 num_modes = size(Model.reduced_modes,2);
-
+period = 2*pi/frequency;
 options = odeset(RelTol=1e-8,AbsTol=1e-10);
 eom = Rom.get_equation_of_motion();
-period = 2*pi/frequency;
+
 
 centre_point = zeros(num_modes,1);
 
 solution_converged = 0;
-
+figure
+hold on
 while ~solution_converged
 
     test_conditions = zeros(num_modes,sweep_resolution);
@@ -34,7 +36,9 @@ while ~solution_converged
     % periodic_solutions = {};
 
     periodicity_error = zeros(1,num_ics);
+    kinetic_energy = zeros(1,num_ics);
     initial_conditions = zeros(num_modes,num_ics);
+    max_ke = 0;
     for iCondition = 1:num_ics
         ic_counter = increment_counter(ic_counter,sweep_resolution);
 
@@ -53,6 +57,9 @@ while ~solution_converged
 
         Sol = ode45(@(t,z) eom(t,z),[0,period],initial_condition,options);
         periodicity_error(iCondition) = get_periodicity_error(Sol.y(:,end),initial_condition);
+        ke = 1/2*sum(Sol.y((num_modes+1):(2*num_modes),:).^2,1);
+        max_ke = max(max_ke,max(ke));
+        kinetic_energy(iCondition) = ke(end);
         % if ~isempty(Sol.ie)
         %     sol_counter = sol_counter+1;
         %     periodic_sol(sol_counter) = iCondition; %#ok<*AGROW>
@@ -62,28 +69,44 @@ while ~solution_converged
         %     periodic_solutions{sol_counter} = {Sol.x,Sol.y};
         % end
     end
-    figure
-    plot3(initial_conditions(1,:),initial_conditions(2,:),periodicity_error,"x");
+    
+    % plot3(initial_conditions(1,:),initial_conditions(2,:),periodicity_error,"x");
+    plot3(initial_conditions(1,:),initial_conditions(2,:),kinetic_energy,"x");
     ax = gca;
     ax.ZScale = "log";
     drawnow
 
-    [min_periodicity,min_index] = min(periodicity_error);
+    % [min_periodicity,min_index] = min(periodicity_error);
+    [min_error,min_index] = min(kinetic_energy);
     initial_condition = [initial_conditions(:,min_index);zeros(num_modes,1)];
     
-    if min_periodicity < MAX_ERROR
+    if min_error < max_ke*MAX_ERROR
         solution_converged = 1;
     end
     ic_step = diff(test_conditions(:,[1,2]),1,2);
     centre_point = initial_condition(1:num_modes);
 
     if ~any(ismember(abs(centre_point),ic_limits))
-        ic_limits = 2*ic_step;
+        ic_limits = step_reduction*ic_step;
     end
-    sweep_resolution = 15;
+    step_reduction = 2.5;
+    sweep_resolution = 11;
 end
-Sol = ode45(@(t,z) eom(t,z),[0,period],initial_condition,options);
-periodic_solution = {Sol.x,Sol.y};
+hold off
+num_output_points = 101;
+t_sol = linspace(0,period,num_output_points);
+
+[x,y] = ode45(@(t,z) eom(t,z),t_sol,initial_condition,options);
+y = y';
+x = x';
+
+% 
+% y_fourier = zeros(2*num_modes,num_output_points);
+% for iMode = 1:2*num_modes
+%     y_fourier(iMode,:) = [interpft(y(iMode,1:(end-1)),num_output_points-1),y(iMode,1)];
+% end
+
+periodic_solution = {x,y};
 % 
 % [~,sort_index] = sort(abs(sol_period-period));
 % potential_ics = sol_ics(:,sort_index);
@@ -129,7 +152,19 @@ disp_index = 1:(size(zStart,1)/2);
 periodicity_error = norm(zEnd(disp_index) - zStart(disp_index))/norm(zStart(disp_index));
 end
 
+function [kinetic_energy,is_terminal,direction] = energy_event_fun(t,z,target_period)
+is_terminal = 1;
+direction = 0;
 
+state_size = size(z,1);
+vel = z((state_size/2+1):state_size,:);
+kinetic_energy = 1/2* sum(vel.^2);
+
+if t< target_period*3/4
+    kinetic_energy = 1;
+end
+
+end
 
 
 
