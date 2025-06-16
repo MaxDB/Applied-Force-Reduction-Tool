@@ -95,25 +95,28 @@ for iCount = 1:num_iterations
     clear("Static_Data_Validation")
    
 end
+exclude_data = [];
+fprintf("\n\n1-ROM:\n");
 
-print_mean_time(rom_one_base,"Static Data")
-print_mean_time(rom_one_validation_data,"Validation Data")
-print_mean_time(rom_one_validation_data-rom_one_base,"Data diff")
-print_mean_time(rom_one_orbits,"Orbits")
-print_mean_time(rom_one_orbit_validation,"Orbit validation")
+print_mean_time(rom_one_base,"Static Data",exclude_data)
+print_mean_time(rom_one_validation_data,"Validation Data",exclude_data)
+print_mean_time(rom_one_validation_data-rom_one_base,"Data diff",exclude_data)
+print_mean_time(rom_one_orbits,"Orbits",exclude_data)
+print_mean_time(rom_one_orbit_validation,"Orbit validation",exclude_data)
 
 total_one = rom_one_validation_data + sum(rom_one_orbits,1) + sum(rom_one_orbit_validation,1);
-print_mean_time(total_one,"Total")
+print_mean_time(total_one,"Total",exclude_data)
 fprintf("---\n\n");
+fprintf("{1,6}-ROM:\n");
 
-print_mean_time(rom_two_base,"Static Data")
-print_mean_time(rom_two_validation,"Validation Data")
-print_mean_time(rom_two_validation-rom_two_base,"Data diff")
-print_mean_time(rom_two_orbits,"Orbits")
-print_mean_time(rom_two_orbit_validation,"Orbit validation")
+print_mean_time(rom_two_base,"Static Data",exclude_data)
+print_mean_time(rom_two_validation,"Validation Data",exclude_data)
+print_mean_time(rom_two_validation-rom_two_base,"Data diff",exclude_data)
+print_mean_time(rom_two_orbits,"Orbits",exclude_data)
+print_mean_time(rom_two_orbit_validation,"Orbit validation",exclude_data)
 
 total_two = rom_two_validation + rom_two_orbits + rom_two_orbit_validation;
-print_mean_time(total_two,"Total")
+print_mean_time(total_two,"Total",exclude_data)
 fprintf("---\n\n");
 
 %-----------------------------------

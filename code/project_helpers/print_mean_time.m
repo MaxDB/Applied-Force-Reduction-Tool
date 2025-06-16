@@ -1,4 +1,9 @@
-function print_mean_time(time,name)
+function print_mean_time(time,name,exclude_data)
+if narargin == 2
+    exclude_data = [];
+end
+time(exclude_data) = [];
+
 num_time_points = size(time,2);
 num_outputs = size(time,1);
 
