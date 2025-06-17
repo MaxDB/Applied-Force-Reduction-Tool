@@ -19,7 +19,7 @@ Calibration_Opts.calibration_scale_factor = 1.5;
 %----------------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.max_parallel_jobs = 4; %be careful!
+Static_Opts.max_parallel_jobs = 8; %be careful!
 Static_Opts.additional_data = "stiffness";
 Static_Opts.num_validation_modes = 20;
 Static_Opts.output_format = "binary";

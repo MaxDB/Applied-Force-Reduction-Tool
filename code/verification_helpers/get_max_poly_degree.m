@@ -12,17 +12,20 @@ switch type
         %must be odd
         degree_shift = 1;
         step_back = @(n_fail) 3 + mod(n_fail,2);
+        information_per_point = num_r_modes;
     case "displacement"
         % step_back = @(n_fail) 3;
         step_back = @(n_fail) 3 + mod(n_fail,2);
         degree_shift = 0;
+        information_per_point = 1;
 end
 
 num_coeffs = 0;
 for iTerm = 1:num_degrees
     degree = degrees(iTerm);
     num_coeffs = num_coeffs + nchoosek(degree + degree_shift +(num_r_modes-1),num_r_modes-1);
-    if num_coeffs > num_points
+    required_points = ceil(num_coeffs/information_per_point);
+    if required_points > num_points
         max_fitting_degree = degrees(iTerm-step_back(degree));
         break
     elseif iTerm == num_degrees
