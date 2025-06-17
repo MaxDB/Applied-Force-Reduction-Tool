@@ -119,7 +119,7 @@ print_mean_time(rom_two_validation-rom_two_base,"Data diff",exclude_data)
 print_mean_time(rom_two_orbits,"Orbits",exclude_data)
 print_mean_time(rom_two_orbit_validation,"Orbit validation",exclude_data)
 
-total_two = rom_two_validation + rom_two_orbits + rom_two_orbit_validation;
+total_two = rom_two_validation + sum(rom_two_orbits,1) + sum(rom_two_orbit_validation,1);
 print_mean_time(total_two,"Total",exclude_data)
 fprintf("---\n\n");
 

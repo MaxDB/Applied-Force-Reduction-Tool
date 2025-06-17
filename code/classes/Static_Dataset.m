@@ -403,9 +403,7 @@ classdef Static_Dataset
 
             obj.Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
             data_path = get_data_path(obj);
-            if isfolder(data_path)
-                rmdir(data_path,"s")
-            end
+           
 
             %-------------------------------------------------%
             num_modes = size(initial_modes,2);
@@ -445,7 +443,20 @@ classdef Static_Dataset
                     obj.perturbation_displacement = cat(3,Perturbation,Old_Perturbation);
 
             end
-   
+            path_parts = split(data_path,"\");
+            system_path = join(path_parts(1:2),"\") +"\";
+            if isfile(system_path+"dyn_data.mat")
+                is_folder = 1;
+                iFolder = 1;
+                while is_folder
+                    if ~isfolder(system_path+"dynamic_sol_" + iFolder)
+                        break
+                    end
+                    rmdir(system_path+"dynamic_sol_" + iFolder,"s")
+                    iFolder = iFolder + 1;
+                end
+                delete(system_path+"dyn_data.mat")
+            end
 
 
             %-------------------------------------------------%
