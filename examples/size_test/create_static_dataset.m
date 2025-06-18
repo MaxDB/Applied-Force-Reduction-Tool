@@ -7,7 +7,7 @@ set_visualisation_level(3)
 
 %--------- System Settings ---------%
 system_name = "mems_arch";
-energy_limit = 0.8;
+energy_limit = 0.75;
 initial_modes = [1,6,11];
 
 %-----------------------------------%
@@ -23,11 +23,12 @@ Static_Opts.max_parallel_jobs = 8; %be careful!
 Static_Opts.additional_data = "stiffness";
 Static_Opts.num_validation_modes = 20;
 Static_Opts.output_format = "binary";
+% Static_Opts.num_loadcases = 3;
 %------------------------------------------%
 
 %--------- Static Verification Settings ---------%
 Verification_Opts.num_added_points = 1;
-Verification_Opts.maximum_iterations = 3;
+Verification_Opts.maximum_iterations = 1;
 %----------------------------------------------%
 
 Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
