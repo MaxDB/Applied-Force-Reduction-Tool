@@ -53,7 +53,7 @@ orbit_labels = Solution.orbit_labels;
 frequency = Solution.frequency;
 num_periodic_orbits = length(orbit_labels);
 
-num_jobs = 4;
+num_jobs= gcp("nocreate").NumWorkers;
 orbit_groups = split_orbit_jobs(num_periodic_orbits,num_jobs);
 
 
@@ -66,6 +66,7 @@ time_ranges = zeros(2,num_jobs);
 job_time = zeros(1,num_jobs);
 num_job_orbits = zeros(1,num_jobs);
 
+% for iJob = 1:num_jobs
 parfor iJob = 1:num_jobs
     time_range = [inf,0];
     num_harmonics = initial_harmonic;
@@ -117,7 +118,7 @@ parfor iJob = 1:num_jobs
         Validation_Orbit = [];
         while ~solution_converged
             solve_h_start = tic;
-            h_frequency = h_solver(validation_eq_terms,t0,omega,num_harmonics);
+            [h_frequency,hill_matrix] = h_solver(validation_eq_terms,t0,omega,num_harmonics);
             [solution_converged,num_harmonics,Validation_Orbit] = check_h_convergence(validation_eq_terms,r_force,h_frequency,t0,omega,num_harmonics,Validation_Opts);
             solve_h_time = toc(solve_h_start);
         end
@@ -132,7 +133,7 @@ parfor iJob = 1:num_jobs
         h_analysis_start = tic;
 
         if Validation_Opts.get_stability
-            [orbit_stab,orbit_evals] = get_h_stability(validation_eq_terms,t0);
+            [orbit_stab,orbit_evals] = get_h_stability(validation_eq_terms,t0,num_harmonics);
             Validation_Orbit.evals = orbit_evals;
             % orbit_stab = h_infinite_determinant(validation_eq_terms,t0,omega,num_harmonics);
             % orbit_stab = get_h_coco_stability(Validation_Orbit,validation_eq_terms,t0,omega,num_harmonics);

@@ -1,4 +1,4 @@
-function h_frequency_alt = h_harmonic_balance(h_terms,t0,omega,num_harmonics)
+function [h_frequency_alt,upsilon] = h_harmonic_balance(h_terms,t0,omega,num_harmonics)
 
 [h_inertia,h_conv,h_stiff,h_force] = h_terms{:};
 num_h_modes = size(h_force,1);

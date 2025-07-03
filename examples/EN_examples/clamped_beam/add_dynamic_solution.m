@@ -2,19 +2,19 @@ clear
 % close all
 set_visualisation_level(1)
 
-system_name = "clamped_beam_1";
+system_name = "clamped_beam_13";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
 
 %--------- Continuation Settings ---------%
-Continuation_Opts.initial_inc = 1e-2;
-Continuation_Opts.max_inc = 5e-2;
+Continuation_Opts.initial_inc = 1e-3;
+Continuation_Opts.max_inc = 5e-3;
 Continuation_Opts.min_inc = 1e-3;
 Continuation_Opts.forward_steps = 2500;
 Continuation_Opts.backward_steps = 0;
 Continuation_Opts.initial_discretisation_num = 20;
-Continuation_Opts.max_discretisation_num = 250;
+Continuation_Opts.max_discretisation_num = 1000;
 Continuation_Opts.min_discretisation_num = 20;
 Continuation_Opts.collation_degree = 8;
 Continuation_Opts.energy_limit_multiplier = 1;
