@@ -117,7 +117,7 @@ switch STABILITY_METHOD
         num_matrices = size(hill_matrix,1)/matrix_size;
         max_harmonics = (num_matrices-1)/2;
 
-        left_lin_map = padarray(eye(matrix_size),[0,matrix_size*max_harmonics],"both");
+        left_lin_map = [zeros(matrix_size,matrix_size*max_harmonics),eye(matrix_size),zeros(matrix_size,matrix_size*max_harmonics)];
         right_lin_map = repmat(eye(matrix_size),[num_matrices,1]);
 
         monodromy_mat = left_lin_map*expm(hill_matrix*period)*right_lin_map;
