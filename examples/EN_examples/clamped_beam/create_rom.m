@@ -16,9 +16,9 @@ added_modes = [3];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.max_parallel_jobs = 4; %be careful!
+Static_Opts.max_parallel_jobs = 8; %be careful!
 Static_Opts.output_format = "binary";
-Static_Opts.num_loadcases = 5;
+Static_Opts.num_loadcases = 6;
 %------------------------------------------%
 if isempty(gcp('nocreate')) && Static_Opts.max_parallel_jobs > 1
     parpool;
@@ -100,8 +100,10 @@ end
 print_mean_time(rom_one_base,"Static Data")
 print_mean_time(rom_one_validation_data,"Validation Data")
 print_mean_time(rom_one_validation_data-rom_one_base,"Data diff")
-print_mean_time(rom_one_orbits,"Orbits")
-print_mean_time(rom_one_orbit_validation,"Orbit validation")
+print_mean_time(rom_one_orbits(1,:),"Orbits 1")
+print_mean_time(rom_one_orbit_validation(1,:),"Orbits 1 validation")
+print_mean_time(rom_one_orbits(2,:),"Orbits 2")
+print_mean_time(rom_one_orbit_validation(2,:),"Orbits 2 validation")
 
 total_one = rom_one_validation_data + sum(rom_one_orbits,1) + sum(rom_one_orbit_validation,1);
 print_mean_time(total_one,"Total")
@@ -141,7 +143,7 @@ switch step
     case 1
         Continuation_Opts.initial_inc = 5e-2;
         Continuation_Opts.max_inc = 5e-2;
-        Continuation_Opts.min_inc = 5e-2;;
+        Continuation_Opts.min_inc = 5e-2;
         Continuation_Opts.forward_steps = 100;
         Continuation_Opts.backward_steps = 0;
         %------

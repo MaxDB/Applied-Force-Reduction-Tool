@@ -374,6 +374,10 @@ classdef Static_Dataset
             system_name = obj.Model.system_name;
             energy_limit = obj.Model.energy_limit;
             initial_modes = sort([obj.Model.reduced_modes,added_modes],"ascend");
+            removed_data_path = obj.get_data_path(system_name,initial_modes);
+            removed_system_name = split(removed_data_path,"\");
+            delete_static_data(removed_system_name(2));
+
             old_mode_map = ismember(initial_modes,obj.Model.reduced_modes);
             old_L_modes = obj.Model.low_frequency_modes;
             old_h_modes = [obj.Model.reduced_modes,old_L_modes];
@@ -552,10 +556,20 @@ classdef Static_Dataset
             value = static_property_data.value;
         end
         %-----------------------------------------------------------------%
-        function data_path = get_data_path(obj)
-            r_modes = obj.Model.reduced_modes;
+        function data_path = get_data_path(obj,varargin)
+            switch nargin
+                case 1
+                    Dyn_System = obj.Model;
+                case 2
+                    Dyn_System = varargin{1};
+                case 3
+                    Dyn_System.system_name = varargin{1};
+                    Dyn_System.reduced_modes = varargin{2};
+            end
+            r_modes = Dyn_System.reduced_modes;
             mode_id = join(string(r_modes),"");
-            data_path = "data\" + obj.Model.system_name + "_" + mode_id + "\static_data\";
+            data_path = "data\" + Dyn_System.system_name + "_" + mode_id + "\static_data\";
+
         end
         %-----------------------------------------------------------------%
         function[Static_Data,Static_Data_Removed] = remove_loadcases(Static_Data,removal_index)
