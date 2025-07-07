@@ -1,6 +1,6 @@
 clear
 num_evals = 6;
-num_steps = 2;
+num_steps = 10;
 
 max_seed_size = 0.01; %(7,000 dofs)
 min_seed_size = 0.00129; %(1,000,000 dofs)
@@ -65,6 +65,19 @@ for iStep = 1:num_steps
 end
 
 
+min_convergence_error = 0.001;
 
 figure;
-semilogx(num_dofs,natural_frequency)
+tiledlayout("flow")
+for iStep = 1:num_evals
+    final_value = natural_frequency(iStep,end);
+    min_converge = final_value*(1-min_convergence_error);
+    max_converge = final_value*(1+min_convergence_error);
+    ax = nexttile;
+    hold(ax,"on")
+    semilogx(num_dofs,natural_frequency(iStep,:));
+    semilogx(num_dofs([1,end]),min_converge*[1,1],"r--")
+    semilogx(num_dofs([1,end]),max_converge*[1,1],"r--")
+    hold(ax,"off")
+    title(ax,string(iStep))
+end
