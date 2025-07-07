@@ -96,7 +96,7 @@ classdef Dynamic_System
                 Static_Opts.static_solver = "matlab";
             end
 
-            if obj.energy_limit > 0
+            
 
                 obj.reduced_modes = modes;
                 if isfolder(obj.get_data_path)
@@ -118,18 +118,18 @@ classdef Dynamic_System
                 matrix_time = toc(matrix_time_start);
                 log_message = sprintf("Eigenvectors: %.1f seconds" ,matrix_time);
                 logger(log_message,2)
-
-                %Find single modal forcing required to reach energy limit
-                calibration_time_start = tic;
-                obj = obj.update_static_opts(obj.Calibration_Options.Static_Opts);
-                obj = obj.calibrate_mode(modes);
-                obj.Static_Options = struct([]);
-                obj = obj.update_static_opts(Static_Opts);
-                calibration_time = toc(calibration_time_start);
-                log_message = sprintf("Mode Calibration: %.1f seconds" ,calibration_time);
-                logger(log_message,2)
-                %--------------------%
-            end
+                if obj.energy_limit > 0
+                    %Find single modal forcing required to reach energy limit
+                    calibration_time_start = tic;
+                    obj = obj.update_static_opts(obj.Calibration_Options.Static_Opts);
+                    obj = obj.calibrate_mode(modes);
+                    obj.Static_Options = struct([]);
+                    obj = obj.update_static_opts(Static_Opts);
+                    calibration_time = toc(calibration_time_start);
+                    log_message = sprintf("Mode Calibration: %.1f seconds" ,calibration_time);
+                    logger(log_message,2)
+                    %--------------------%
+                end
 
             model_init_time = toc(model_init_start);
             log_message = sprintf("Model Initialised: %.1f seconds" ,model_init_time);
