@@ -65,7 +65,7 @@ for iStep = 1:num_steps
 end
 
 
-min_convergence_error = 0.001;
+min_convergence_error = 0.01;
 
 figure;
 tiledlayout("flow")
