@@ -1,4 +1,11 @@
 function node_position = read_abaqus_node_position(geometry)
+if isstring(geometry) && endsWith(geometry,".inp")
+    G_ID =fopen(geometry);
+    geometry = textscan(G_ID,'%s','delimiter','\n');
+    fclose(G_ID);
+    geometry = geometry{1,1};
+end
+
 NUM_LINEAR_DIMENSIONS = 3;
 
 SECTION_START_PATTERN = "*";

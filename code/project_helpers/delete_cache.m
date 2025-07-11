@@ -17,6 +17,10 @@ switch type
             return
         end
         load(file_path,"Force_Calibration")
+        if nargin == 2
+            delete(file_path)
+            return
+        end
         energy_limit = varargin{1};
         energy_index = find(Force_Calibration.energy_limit == energy_limit);
 
@@ -38,4 +42,9 @@ switch type
             end
         end
         save(file_path,"Force_Calibration")
+    case "mesh_data"
+        file_path = geometry_path + "mesh_data.mat";
+        if isfile(file_path)
+            delete(file_path)
+        end
 end

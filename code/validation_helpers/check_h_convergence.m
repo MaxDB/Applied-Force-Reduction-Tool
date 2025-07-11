@@ -4,6 +4,8 @@ max_r_force = max(abs(r_force),[],2);
 num_r_modes = size(max_r_force,1);
 solution_converged = 0;
 validated_h_terms = max(abs(h_force/max(max_r_force)),[],2) >= Validation_Opts.minimum_validation_force;
+
+num_time_points = size(t0,2);
 % validated_h_terms(1:num_r_modes) = true;
 if ~any(validated_h_terms)
     solution_converged = 1;
@@ -81,12 +83,21 @@ else
                 break
             else
                 if iHarmonic > Validation_Opts.maximum_harmonic
-                    warning("Number of harmonics exceeded maximum")
+                    warning("Number of harmonics exceeded maximum - error: " + max_error)
                     solution_converged = 1;
                     h = h_n_plus_two;
  
                     break
                 end
+
+                if iHarmonic > floor((num_time_points-1)/2)
+                    warning("Insufficient time points - error: " + max_error)
+                    solution_converged = 1;
+                    h = h_n_plus_two;
+
+                    break
+                end
+
                  h_n = h_n_plus_two;
                  h_dot_n = h_dot_n_plus_two;
                  h_ddot_n = h_ddot_n_plus_two;

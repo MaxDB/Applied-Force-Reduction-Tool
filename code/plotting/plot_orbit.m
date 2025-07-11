@@ -1,6 +1,6 @@
 function ax = plot_orbit(Dyn_Data,type,solution_num,orbit_num,varargin)
-
-LINE_WIDTH = 1;
+STABILITY_LIMIT = 1.01;
+LINE_WIDTH = 2;
 %-------------------------------------------------------------------------%
 num_args = length(varargin);
 if mod(num_args,2) == 1
@@ -14,6 +14,7 @@ colour_num = 1;
 normalise = 1;
 orbit_shift = 1;
 validated = 1;
+stability = 1;
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
@@ -27,6 +28,8 @@ for arg_counter = 1:num_args/2
             orbit_shift = keyword_values{arg_counter};
         case {"validation"}
             validated = keyword_values{arg_counter};
+        case {"stability"}
+            stability = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -78,6 +81,9 @@ modal_transform = known_evec'*Model.mass;
 time = Orbit.tbp';
 state = Orbit.xbp';
 state_size = size(state,1);
+
+orbit_stability = Sol.stability(orbit_num);
+
 
 num_modes = state_size/2;
 disp_index = 1:num_modes;
@@ -134,6 +140,8 @@ for iType = 1:plot_dimension
             plotted_state = [q;q_vel] + [Validated_Orbit.h;Validated_Orbit.h_dot];
             plotted_output_size = size(q,1);
             label = label + plot_type;
+
+            orbit_stability = Sol_v.h_stability(orbit_num);
         case "x"
             %plotted_state = expands...
         case "t"
@@ -173,6 +181,18 @@ if isempty(ax)
     ax = axes(fig);
     box(ax,"on")
 end
+
+
+if stability 
+    if orbit_stability < STABILITY_LIMIT
+        line_style = "-";
+    else
+        line_style = ":";
+    end
+    line_plot_settings = [line_plot_settings,{"LineStyle",line_style}];
+end
+
+
 hold(ax,"on")
 switch plot_dimension
     case 2

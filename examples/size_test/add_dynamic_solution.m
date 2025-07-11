@@ -31,6 +31,19 @@ Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 potential_ic = initial_condition_sweep(Dyn_Data.Dynamic_Model,2.69e6,[1e-7,7.5e-8]);
 Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
 
+%--
+Continuation_Opts.initial_inc = 5e-2;
+Continuation_Opts.max_inc = 5e-2;
+Continuation_Opts.min_inc = 5e-2;
+Continuation_Opts.forward_steps = 500;
+Continuation_Opts.backward_steps = 0;
+Continuation_Opts.initial_discretisation_num = 20;
+Continuation_Opts.max_discretisation_num = 250;
+Continuation_Opts.min_discretisation_num = 20;
+Continuation_Opts.collation_degree = 6;
+%--
+Dyn_Data = Dyn_Data.add_orbits(2,[5,8],"opts",Continuation_Opts);
+
 % -----------------------------------------%
 Dyn_Data_16 = initalise_dynamic_data("mems_arch_16");
 Orbit = Dyn_Data_16.get_orbit(2,1);
@@ -52,26 +65,29 @@ r_dot = transform*x_dot;
 orbit_ic = {t,[r;r_dot]};
 
 % -----------------------------------------%
-Continuation_Opts.forward_steps = 0;
-Continuation_Opts.backward_steps = 100;
+Continuation_Opts.initial_inc = 5e-1;
+Continuation_Opts.max_inc = 5e-1;
+Continuation_Opts.min_inc = 1e-2;
+Continuation_Opts.forward_steps = 100;
+Continuation_Opts.backward_steps = 0;
 
 Dyn_Data = Dyn_Data.add_backbone(1,"ic",orbit_ic,"opts",Continuation_Opts);
 % -----------------------------------------%
-Continuation_Opts.initial_inc = 1e1;
-Continuation_Opts.max_inc = 1e1;
-Continuation_Opts.min_inc = 1e1;
-Continuation_Opts.forward_steps = 10;
-Continuation_Opts.backward_steps = 0;
-
-Dyn_Data = Dyn_Data.restart_point(2,40,"po","opts",Continuation_Opts);
-% -----------------------------------------%
 Continuation_Opts.initial_inc = 1e0;
 Continuation_Opts.max_inc = 1e0;
+Continuation_Opts.min_inc = 1e0;
+Continuation_Opts.forward_steps = 0;
+Continuation_Opts.backward_steps = 10;
+
+Dyn_Data = Dyn_Data.restart_point(2,15,"po","opts",Continuation_Opts);
+% -----------------------------------------%
+Continuation_Opts.initial_inc = 5e-1;
+Continuation_Opts.max_inc = 5e-1;
 Continuation_Opts.min_inc = 1e-2;
 Continuation_Opts.forward_steps = 100;
 Continuation_Opts.backward_steps = 100;
 
-Dyn_Data = Dyn_Data.restart_point(3,3,"po","opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.restart_point(3,4,"po","opts",Continuation_Opts);
 Dyn_Data = Dyn_Data.remove_solution(3);
 
 %

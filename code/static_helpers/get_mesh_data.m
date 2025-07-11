@@ -1,4 +1,12 @@
 function mesh_data = get_mesh_data(geometry)
+if isstring(geometry) && endsWith(geometry,".inp")
+    G_ID =fopen(geometry);
+    geometry = textscan(G_ID,'%s','delimiter','\n');
+    fclose(G_ID);
+    geometry = geometry{1,1};
+end
+
+
 ELEMENT_DEF = "*Element";
 ASSEMBLY_DEF = "*Assembly";
 TYPE_DEF = 'type=';

@@ -16,7 +16,7 @@ added_modes = [3];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.max_parallel_jobs = 8; %be careful!
+Static_Opts.max_parallel_jobs = 4; %be careful!
 Static_Opts.output_format = "binary";
 Static_Opts.num_loadcases = 6;
 %------------------------------------------%
@@ -120,79 +120,4 @@ print_mean_time(total_two,"Total")
 fprintf("---\n\n");
 
 %-----------------------------------
-function Static_Data = one_mode_rom(system_name,energy_limit,initial_modes,Static_Opts)
-Verification_Opts.verification_algorithm = "sep_to_edge";
 
-Model = Dynamic_System(system_name,energy_limit,initial_modes,"static_opts",Static_Opts);
-Static_Data = Static_Dataset(Model,Verification_Opts);
-Static_Data.save_data;
-end
-
-function Dyn_Data = one_mode_rom_orbits(system_name,step)
-Dyn_Data = initalise_dynamic_data(system_name);
-
-%-------------------------------------------------------------------------%
-
-%--------- Continuation Settings ---------%
-Continuation_Opts.collation_degree = 6;
-Continuation_Opts.initial_discretisation_num = 20;
-Continuation_Opts.max_discretisation_num = 200;
-Continuation_Opts.min_discretisation_num = 20;
-%-----------------------------------------%
-switch step
-    case 1
-        Continuation_Opts.initial_inc = 5e-2;
-        Continuation_Opts.max_inc = 5e-2;
-        Continuation_Opts.min_inc = 5e-2;
-        Continuation_Opts.forward_steps = 100;
-        Continuation_Opts.backward_steps = 0;
-        %------
-        Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
-    case 2
-        Continuation_Opts.initial_inc = 1e-3;
-        Continuation_Opts.min_inc = 1e-3;
-        Continuation_Opts.max_inc = 1e-3;
-        Continuation_Opts.forward_steps = 0;
-        Continuation_Opts.backward_steps = 250;
-        %------
-        Dyn_Data = Dyn_Data.add_orbits(1,[6,10],"opts",Continuation_Opts);
-end
-end
-
-function Dyn_Data = one_mode_rom_validation(Dyn_Data,step)
-
-switch step
-    case 1
-        compare_validation(Dyn_Data,"validation error",1,1:10);
-    case 2
-        compare_validation(Dyn_Data,"validation error",2,[3,6]);
-end
-
-end
-
-
-function Static_Data = two_mode_rom(Static_Data,added_modes)
-Static_Data = Static_Data.update_model(added_modes);
-Static_Data = Static_Data.create_dataset;
-Static_Data.save_data;
-end
-
-function Dyn_Data = two_mode_rom_orbits(system_name)
-Continuation_Opts.initial_inc = 1e-2;
-Continuation_Opts.max_inc = 5e-2;
-Continuation_Opts.min_inc = 1e-3;
-Continuation_Opts.forward_steps = 500;
-Continuation_Opts.backward_steps = 0;
-Continuation_Opts.initial_discretisation_num = 20;
-Continuation_Opts.max_discretisation_num = 250;
-Continuation_Opts.min_discretisation_num = 20;
-Continuation_Opts.collation_degree = 6;
-%-----------------------------------------%
-Dyn_Data = initalise_dynamic_data(system_name);
-
-Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
-end
-
-function Dyn_Data = two_mode_rom_validation(Dyn_Data)
-compare_validation(Dyn_Data,"validation error",1,1:10);
-end

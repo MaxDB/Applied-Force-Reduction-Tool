@@ -8,6 +8,7 @@ keyword_values = varargin(2:2:num_args);
 
 ax = [];
 plot_legend = 1;
+stability = 1;
 colour_num = [];
 
 
@@ -30,6 +31,8 @@ for arg_counter = 1:num_args/2
             plot_legend = keyword_values{arg_counter};
         case {"color","colour"}
             colour_num = keyword_values{arg_counter};
+        case {"stability"}
+            stability = keyword_values{arg_counter};
         otherwise
             system_counter = system_counter + 1;
             dyn_data_names{1,system_counter} = keyword_args{arg_counter};
@@ -82,7 +85,7 @@ for iSystem = 1:system_counter
     
     num_orbits = length(orbit_num);
     for iOrbit = 1:num_orbits
-        ax = plot_orbit(Dyn_Data,type,solution_num(iOrbit),orbit_num(iOrbit),"axes",ax,"colour",orbit_colour);
+        ax = plot_orbit(Dyn_Data,type,solution_num(iOrbit),orbit_num(iOrbit),"axes",ax,"colour",orbit_colour,"stability",stability);
     end
 end
 
