@@ -15,6 +15,9 @@ Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
 Continuation_Opts.initial_inc = 1e0;
 Continuation_Opts.max_inc = 1e0;
 Continuation_Opts.min_inc = 1e0;
+Continuation_Opts.initial_inc = 5e-2;
+Continuation_Opts.max_inc = 5e-2;
+Continuation_Opts.min_inc = 5e-2;
 Continuation_Opts.forward_steps = 2500;
 Continuation_Opts.backward_steps = 0;
 Continuation_Opts.initial_discretisation_num = 20;
@@ -43,6 +46,26 @@ Continuation_Opts.min_discretisation_num = 20;
 Continuation_Opts.collation_degree = 6;
 %--
 Dyn_Data = Dyn_Data.add_orbits(2,[5,8],"opts",Continuation_Opts);
+
+
+
+%----
+%high denisty backbone
+% --------- Continuation Settings ---------%
+Continuation_Opts.initial_inc = 1e-1;
+Continuation_Opts.max_inc = 1e-1;
+Continuation_Opts.min_inc = 1e-2;
+Continuation_Opts.forward_steps = 2500;
+Continuation_Opts.backward_steps = 0;
+Continuation_Opts.initial_discretisation_num = 20;
+Continuation_Opts.max_discretisation_num = 250;
+Continuation_Opts.min_discretisation_num = 20;
+Continuation_Opts.collation_degree = 6;
+% -----------------------------------------%
+
+Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.restart_point(2,3,"po","opts",Continuation_Opts);
+
 
 % -----------------------------------------%
 Dyn_Data_16 = initalise_dynamic_data("mems_arch_16");

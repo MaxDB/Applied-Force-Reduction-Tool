@@ -118,7 +118,7 @@ parfor iJob = 1:num_jobs
         Validation_Orbit = [];
         while ~solution_converged
             solve_h_start = tic;
-            [h_frequency,hill_matrix] = h_solver(validation_eq_terms,t0,omega,num_harmonics);
+            [h_frequency] = h_solver(validation_eq_terms,t0,omega,num_harmonics);
             [solution_converged,num_harmonics,Validation_Orbit] = check_h_convergence(validation_eq_terms,r_force,h_frequency,t0,omega,num_harmonics,Validation_Opts);
             solve_h_time = toc(solve_h_start);
         end
@@ -131,6 +131,7 @@ parfor iJob = 1:num_jobs
         %%%
 
         h_analysis_start = tic;
+        
 
         if Validation_Opts.get_stability
             [orbit_stab,orbit_evals] = get_h_stability(validation_eq_terms,t0,num_harmonics);

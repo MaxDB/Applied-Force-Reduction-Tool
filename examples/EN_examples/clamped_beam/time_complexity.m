@@ -104,3 +104,53 @@ for iStep = 1:num_seed_sizes
 
      disp(iStep + "/" + num_seed_sizes)
 end
+
+
+Beam_Time.seed_size = seed_sizes;
+Beam_Time.mesh_dof = mesh_dof;
+Beam_Time.rom_one_base = rom_one_base;
+Beam_Time.rom_one_validation_data = rom_one_validation_data;
+Beam_Time.rom_one_orbits = rom_one_orbits;
+Beam_Time.rom_one_orbit_validation = rom_one_orbit_validation;
+
+Beam_Time.rom_two_base = rom_two_base;
+Beam_Time.rom_two_validation = rom_two_validation;
+Beam_Time.rom_two_orbits = rom_two_orbits;
+Beam_Time.rom_two_orbit_validation = rom_two_orbit_validation;
+save("Beam_Time","Beam_Time")
+
+%----------------
+dof = Beam_Time.mesh_dof(2,:);
+
+figure
+semilogx(dof,Beam_Time.rom_one_base)
+hold on
+semilogx(dof,Beam_Time.rom_one_validation_data)
+hold off
+
+figure
+semilogx(dof,Beam_Time.rom_one_orbits(1,:))
+hold on
+semilogx(dof,Beam_Time.rom_one_orbit_validation(1,:),"r")
+hold off
+
+
+figure
+semilogx(dof,Beam_Time.rom_one_orbits(2,:))
+hold on
+semilogx(dof,Beam_Time.rom_one_orbit_validation(2,:),"r")
+hold off
+%---
+
+figure
+semilogx(dof,Beam_Time.rom_two_base)
+hold on
+semilogx(dof,Beam_Time.rom_two_validation)
+hold off
+
+figure
+semilogx(dof,Beam_Time.rom_two_orbits)
+hold on
+semilogx(dof,Beam_Time.rom_two_orbit_validation,"r")
+hold off
+

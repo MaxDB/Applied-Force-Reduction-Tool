@@ -1,7 +1,7 @@
 # ROM Validation Settings
 
 ## General
-validation_algorithm, "h_time",		algorithm to find validated orbits
+validation_algorithm, "h_frequency",		algorithm to find validated orbits
 initial_harmonic, 5, 		  	initial cut-off harmonic
 maximum_harmonic, 150, 			maximum cut-off harmonic
 maximum_convergence_error, 1e-2, 	increase cut-off harmonic until change in answer is less than maximum

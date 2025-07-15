@@ -68,7 +68,7 @@ switch STABILITY_METHOD
 
 
     case "koopman-hill"
-
+        disp("test")
         period = t0(end);
 
         num_harmonics = num_orbit_harmonics;
