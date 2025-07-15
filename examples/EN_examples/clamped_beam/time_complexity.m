@@ -13,7 +13,7 @@ set_visualisation_level(0)
 %-------------------------------------%
 
 %--------- System Settings ---------%
-system_name = "clamped_beam";
+system_name = "clamped_beam_mesh";
 energy_limit = 0.01;
 initial_modes = [1];
 added_modes = [3];
