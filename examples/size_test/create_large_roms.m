@@ -32,6 +32,7 @@ end
 
 Static_Data_16 = load_static_data("mems_arch_16");
 Static_Data_16 = Static_Data_16.update_verification_opts(Verification_Opts);
+Static_Data_16.Model = Static_Data_16.Model.update_static_opts(Static_Opts);
 
 
 rom_three_name = "mems_arch_1611";
