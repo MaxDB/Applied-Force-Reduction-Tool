@@ -34,11 +34,26 @@ switch type
             num_energy_calibrations = length(energy_index);
             for iCalibration = 1:num_energy_calibrations
                 index = energy_index(iCalibration);
-                if isequal(Force_Calibration.calibrated_modes{index},delete_modes)
+                calibrated_modes = Force_Calibration.calibrated_modes{index};
+                calibrated_forces = Force_Calibration.force_limit{index};
+                num_modes = size(calibrated_modes,1);
+                for iMode = 1:num_modes
+                    jMode = (num_modes+1) - iMode;
+                    if isequal(calibrated_modes(jMode),delete_modes)
+                        calibrated_modes(jMode) = [];
+                        calibrated_forces(jMode,:) = [];
+                    end
+                end
+
+                if isempty(calibrated_modes)
                     Force_Calibration.energy_limit(index) = [];
                     Force_Calibration.force_limit(index) = [];
-                    Force_Calibration.calibrated_modes(index) = [];
+                    Force_Calibration.calibrated_modes(index) = []; 
+                else
+                    Force_Calibration.force_limit{index} = calibrated_forces;
+                    Force_Calibration.calibrated_modes{index} = calibrated_modes;
                 end
+
             end
         end
         save(file_path,"Force_Calibration")

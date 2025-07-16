@@ -75,6 +75,7 @@ for iIteration = 1:(max_iterations+1)
     max_pair_error = inf;
 
     verification_data = cell(1,num_degree_pairs);
+    error_calculation_failed = 0;
     error_time_start = tic;
     for iDegree_pair = 1:num_degree_pairs
         maximum_force_pair_error = 0;
@@ -107,6 +108,10 @@ for iIteration = 1:(max_iterations+1)
 
             force_ratio = scaled_force_ratios(:,iSep);
             [disp_sep,lambda_sep] = find_sep_rom(Rom_One,force_ratio,3*max_sep_points);
+            if isempty(lambda_sep)
+                error_calculation_failed = 1;
+                break
+            end
             lambda_step = lambda_sep(end)/max_sep_points;
 
             tested_sep_index = zeros(1,max_sep_points);
@@ -213,6 +218,7 @@ for iIteration = 1:(max_iterations+1)
     end
     error_time = toc(error_time_start);
     %------------------------------------------------------------------
+    if ~error_calculation_failed
     [~,force_degree_index] = min(maximum_force_pair_errors);
     [~,disp_degree_index] = min(maximum_disp_pair_errors);
     [~,degree_index] = min(max(maximum_disp_pair_errors,maximum_force_pair_errors));
@@ -233,6 +239,12 @@ for iIteration = 1:(max_iterations+1)
     added_point_index = sort_index(1:num_extra_points);
     new_loads = new_loads(:,added_point_index);
     new_sep_id = new_sep_id(:,added_point_index);
+
+    else
+        log_message = sprintf("Error calculation failed. Could not follow SEPs");
+        logger(log_message,1)
+        break
+    end
 
     if iIteration > max_iterations
         break
