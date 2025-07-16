@@ -118,13 +118,17 @@ fprintf("{1,6}-ROM:\n");
 print_mean_time(rom_two_base,"Static Data",exclude_data)
 print_mean_time(rom_two_validation,"Validation Data",exclude_data)
 print_mean_time(rom_two_validation-rom_two_base,"Data diff",exclude_data)
-print_mean_time(rom_two_orbits,"Orbits",exclude_data)
-print_mean_time(rom_two_orbit_validation,"Orbit validation",exclude_data)
+print_mean_time(rom_two_orbits(1,:),"Orbits 1",exclude_data)
+print_mean_time(rom_two_orbits(2,:),"Orbits 2",exclude_data)
+print_mean_time(rom_two_orbits(3,:),"Orbits 3",exclude_data)
+print_mean_time(rom_two_orbits(4,:),"Orbits 4",exclude_data)
+print_mean_time(rom_two_orbit_validation(1,:),"Orbit validation 1",exclude_data)
+print_mean_time(rom_two_orbit_validation(2,:),"Orbit validation 2",exclude_data)
+print_mean_time(rom_two_orbit_validation(3,:),"Orbit validation 3",exclude_data)
 
 total_two = rom_two_validation + sum(rom_two_orbits,1) + sum(rom_two_orbit_validation,1);
 print_mean_time(total_two,"Total",exclude_data)
 fprintf("---\n\n");
-
 %-----------------------------------
 function Static_Data = one_mode_rom(system_name,energy_limit,initial_modes,Static_Opts,Verification_Opts,Calibration_Opts)
 

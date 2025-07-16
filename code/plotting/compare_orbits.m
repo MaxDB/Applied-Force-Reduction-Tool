@@ -10,7 +10,7 @@ ax = [];
 plot_legend = 1;
 stability = 1;
 colour_num = [];
-
+tag = "";
 
 dyn_data_names = cell(0,1);
 orbit_indices = cell(0,1);
@@ -33,6 +33,8 @@ for arg_counter = 1:num_args/2
             colour_num = keyword_values{arg_counter};
         case {"stability"}
             stability = keyword_values{arg_counter};
+        case "tag"
+            tag = keyword_values{arg_counter}; 
         otherwise
             system_counter = system_counter + 1;
             dyn_data_names{1,system_counter} = keyword_args{arg_counter};
@@ -85,7 +87,7 @@ for iSystem = 1:system_counter
     
     num_orbits = length(orbit_num);
     for iOrbit = 1:num_orbits
-        ax = plot_orbit(Dyn_Data,type,solution_num(iOrbit),orbit_num(iOrbit),"axes",ax,"colour",orbit_colour,"stability",stability);
+        ax = plot_orbit(Dyn_Data,type,solution_num(iOrbit),orbit_num(iOrbit),"axes",ax,"colour",orbit_colour,"stability",stability,"tag",tag);
     end
 end
 

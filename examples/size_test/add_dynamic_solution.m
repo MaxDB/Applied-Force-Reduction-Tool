@@ -36,7 +36,7 @@ Continuation_Opts.initial_inc = 5e-2;
 Continuation_Opts.max_inc = 5e-2;
 Continuation_Opts.min_inc = 5e-2;
 Continuation_Opts.forward_steps = 500;
-Continuation_Opts.backward_steps = 0;
+Continuation_Opts.backward_steps = 00;
 Continuation_Opts.initial_discretisation_num = 20;
 Continuation_Opts.max_discretisation_num = 250;
 Continuation_Opts.min_discretisation_num = 20;
@@ -61,6 +61,8 @@ Continuation_Opts.collation_degree = 6;
 % -----------------------------------------%
 
 Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+
+Continuation_Opts.backward_steps = 2;
 Dyn_Data = Dyn_Data.restart_point(2,3,"po","opts",Continuation_Opts);
 
 

@@ -15,6 +15,7 @@ normalise = 1;
 orbit_shift = 1;
 validated = 1;
 stability = 1;
+tag = "";
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
@@ -30,13 +31,15 @@ for arg_counter = 1:num_args/2
             validated = keyword_values{arg_counter};
         case {"stability"}
             stability = keyword_values{arg_counter};
+        case "tag"
+            tag = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
 end
 %-------------------------------------------------------------------------%
 line_colour = get_plot_colours(colour_num);
-line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour,"DisplayName","r"};
+line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour,"DisplayName","r","Tag",tag};
 
 if validated
     validated_line_colour = get_plot_colours(colour_num+1);
