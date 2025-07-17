@@ -193,11 +193,14 @@ classdef Validated_Backbone_Solution
             Additional_Output = Validation_Analysis_Inputs.Additional_Output;
             switch Additional_Output.output
                 case "physical displacement"
-                    x_h = x_r;
+                    
                     add_dof = Additional_Output.dof;
                     if isstring(add_dof) && add_dof == "all"
-                        add_dof = 1:size(x_h,1);
+                        add_dof = 1:size(x_r,1);
+                    else
+                        add_dof = Additional_Output.control_dof;
                     end
+                    x_h = x_r;
                     for iT = 1:num_points
                         G_dof = Validation_Analysis_Inputs.G_Grad_Poly.evaluate_polynomial(r(:,iT));
                         x_h(add_dof,iT) = x_h(add_dof,iT) + G_dof*h(:,iT);

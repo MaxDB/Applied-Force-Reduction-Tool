@@ -1,7 +1,7 @@
 clear
 close all
 
-num_iterations = 1;
+num_iterations = 10;
 
 %--------- Software Settings ---------%
 set_logging_level(3)
@@ -14,7 +14,7 @@ energy_limit = 0.8;
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.max_parallel_jobs = 4; %be careful!
+Static_Opts.max_parallel_jobs = 8; %be careful!
 Static_Opts.output_format = "binary";
 Static_Opts.num_loadcases = 3;
 Static_Opts.num_validation_modes = 20;
@@ -74,12 +74,12 @@ for iCount = 1:num_iterations
 
     validation_time_start = tic;
     Static_Opts.additional_data = "stiffness";
-    Static_Data_Validation = three_mode_rom(system_name,energy_limit,initial_modes,Static_Opts,Verification_Opts,Calibration_Opts);
+    Static_Data_Validation = three_mode_rom(system_name,energy_limit,rom_three.modes,Static_Opts,Verification_Opts,Calibration_Opts);
     rom_three.validation_data(iCount) = toc(validation_time_start);
 
     validation_time_start = tic;
     Static_Opts.additional_data = "stiffness";
-    Static_Data_Validation = four_mode_rom(system_name,energy_limit,initial_modes,Static_Opts,Verification_Opts,Calibration_Opts);
+    Static_Data_Validation = four_mode_rom(system_name,energy_limit,rom_four.modes,Static_Opts,Verification_Opts,Calibration_Opts);
     rom_four.validation_data(iCount) = toc(validation_time_start);
 
 end
@@ -99,12 +99,12 @@ fprintf("---\n\n");
 fprintf("{1,5,6,11}-ROM:\n");
 
 print_mean_time(rom_four.base,"Static Data",exclude_data)
-print_mean_time(rom_four.validation,"Validation Data",exclude_data)
-print_mean_time(rom_four.validation-rom_four.base,"Data diff",exclude_data)
+print_mean_time(rom_four.validation_data,"Validation Data",exclude_data)
+print_mean_time(rom_four.validation_data-rom_four.base,"Data diff",exclude_data)
 print_mean_time(rom_four.orbits,"Orbits",exclude_data)
 print_mean_time(rom_four.orbit_validation,"Orbit validation",exclude_data)
 
-rom_four.total = rom_four.validation + sum(rom_four.orbits,1) + sum(rom_four.orbit_validation,1);
+rom_four.total = rom_four.validation_data + sum(rom_four.orbits,1) + sum(rom_four.orbit_validation,1);
 print_mean_time(rom_four.total,"Total",exclude_data)
 fprintf("---\n\n");
 

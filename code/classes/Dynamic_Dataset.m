@@ -31,6 +31,13 @@ classdef Dynamic_Dataset
                     disp_func = @(input_disp) additional_physical_displacement(input_disp,Disp_Poly,Additional_Output,num_dof,dof_bcs);
 
                     Additional_Output.output_func = disp_func;
+                    
+                    if isnumeric(Additional_Output.dof)
+                        node_map = 1:(Rom.Model.num_dof + numel(dof_bcs));
+                        node_map(dof_bcs) = [];
+                        control_dof = find(node_map == Additional_Output.dof);
+                        Additional_Output.control_dof = control_dof;
+                    end
             end
             obj.Additional_Output = Additional_Output;
         end

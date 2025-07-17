@@ -384,7 +384,7 @@ classdef Reduced_System
                     switch Additional_Output.output
                         case "physical displacement"
                             G_Disp_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
-                            Eom_Input.G_Grad_Poly = G_Disp_Poly.subpoly(Additional_Output.dof);
+                            Eom_Input.G_Grad_Poly = G_Disp_Poly.subpoly(Additional_Output.control_dof);
                     end
 
                 case "coco_frf"
