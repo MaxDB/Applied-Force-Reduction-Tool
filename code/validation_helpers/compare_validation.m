@@ -114,7 +114,7 @@ for iMode = 1:num_L_modes
 
     for iSol = 1:num_sols
         [Dyn_Data,Validated_BB_Sol] = Dyn_Data.validate_solution(solution_num(iSol),L_modes(iMode));
-        colour_num = mod(iMode-1,num_colours)+1;
+        colour_num = L_modes(iMode);
 
 
         L_mode_index = L_modes(iMode) - (nnz(r_modes < L_modes(iMode)));
@@ -122,7 +122,7 @@ for iMode = 1:num_L_modes
         mode_details = sprintf("Last mode: %u - %.2g rad/s - [%.1fx - %.1fx]",[L_modes(iMode),mode_frequency,mode_frequency/max_freq,mode_frequency/min_freq]);
         
         for iOutput = 1:num_outputs
-            plot_h_predicition(Dyn_Data,type(iOutput),solution_num(iSol),"axes",ax(iOutput),"colour",colour_num,"backbone",0);
+            plot_h_predicition(Dyn_Data,type(iOutput),solution_num(iSol),"axes",ax(iOutput),"colour",colour_num,"backbone",0,"tag",string(L_modes(iMode)));
             if iOutput < num_outputs
                 ax(iOutput).XTickLabel = repmat("",size(ax(iOutput).XTickLabel));
             end

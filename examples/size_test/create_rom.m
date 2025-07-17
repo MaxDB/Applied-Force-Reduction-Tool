@@ -210,6 +210,8 @@ switch state
         Continuation_Opts.max_inc = 1e-1;
         Continuation_Opts.min_inc = 1e-2;
         Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+
+        Continuation_Opts.backward_steps = 2;
         Dyn_Data = Dyn_Data.restart_point(2,3,"po","opts",Continuation_Opts);
 end
 end

@@ -17,6 +17,7 @@ keyword_values = varargin(2:2:num_args);
 ax = [];
 colour_num = 1;
 add_backbone = 1;
+tag = "";
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
@@ -26,6 +27,8 @@ for arg_counter = 1:num_args/2
             colour_num = keyword_values{arg_counter};
         case {"backbone"}
             add_backbone = keyword_values{arg_counter};
+        case "tag"
+            tag = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -55,7 +58,7 @@ validation_modes = Validated_Solution.validation_modes;
 mode_string = "[" + join(string(validation_modes),", ") + "]";
 
 line_colour = get_plot_colours(colour_num);
-line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour};
+line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour,"Tag",tag};
 
 if PLOT_STABILITY
     stability = Validated_Solution.h_stability; %#ok<*UNRCH>
