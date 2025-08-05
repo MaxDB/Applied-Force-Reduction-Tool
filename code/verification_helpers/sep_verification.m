@@ -287,7 +287,7 @@ for iIteration = 1:(max_iterations+1)
             new_sep_id(:,removal_index) = [];
             switch Static_Data.additional_data_type
                 case {"stiffness","perturbation"}
-                    additional_data(:,:,removal_index) = [];
+                    additional_data = additional_data.remove_data(removal_index);
                 case "none"
             end
         end

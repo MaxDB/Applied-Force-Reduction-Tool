@@ -17,7 +17,6 @@ Calibration_Opts.Static_Opts.num_loadcases = 20;
 %----------------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.static_solver = "abaqus";
 Static_Opts.additional_data = "stiffness";
 Static_Opts.num_validation_modes = 18;
 Static_Opts.max_parallel_jobs = 4; %be careful!

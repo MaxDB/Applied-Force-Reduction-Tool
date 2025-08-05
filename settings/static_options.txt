@@ -10,7 +10,7 @@ minimum_displacement, 1e-16,	anything lower will be treated as zero when creatin
 max_matrix_size, 1,				matrices larger than x KB will be stored seperately
 
 ## Abaqus
-output_format, "text",			human readable data file vs binary results file (Abaqus)
+output_format, "binary",		human readable data file vs binary results file (Abaqus)
 maximum_step_increments, 100, 	maximum number of increments per step (Abaqus)
 initial_time_increment, 1, 		initial time increment in static step (Abaqus)
 total_step_time, 1, 			Estimated total step time (Abaqus) 
