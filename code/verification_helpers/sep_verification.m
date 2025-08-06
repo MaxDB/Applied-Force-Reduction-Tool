@@ -39,7 +39,7 @@ force_degree = INITIAL_FORCE_DEGREE;
 disp_degree = INITIAL_DISPLACEMENT_DEGREE;
 sep_density = 1;
 for iIteration = 1:(max_iterations+1)
-    sep_density = sep_density + 2;
+    sep_density = sep_density + 1;
     new_unit_force_ratios = add_sep_ratios(num_r_modes,sep_density,found_force_ratios);
     unit_force_ratios = [unit_force_ratios,new_unit_force_ratios]; %#ok<AGROW>
 

@@ -492,6 +492,12 @@ classdef Polynomial
                 case "constant"
                     Constraint.terms = 1;
                     Constraint.values = constraint_type{1,2};
+                case "linear"
+                    Constraint.terms = 1:(num_inputs+1);
+                    Constraint.values = constraint_type{1,2};
+                    if isscalar(Constraint.values)
+                        Constraint.values = ones(obj.output_dimension,num_inputs+1)*Constraint.values;
+                    end
                 case "linear_disp"
                     Constraint.terms = 1:(num_inputs+1);
                     Constraint.values = zeros(num_outputs,num_inputs+1);
@@ -528,8 +534,9 @@ classdef Polynomial
             input_matrix = Polynomial.get_input_matrix(transformed_data,input_index);
             
             if isempty(Constraint.terms)
-                output_correction = zeros(num_loadcases,num_outputs);
+                output_correction = zeros(num_outputs,num_loadcases);
                 unconstrained_input_matrix = input_matrix;
+                Coeff_Data = [];
                 return
             end
             % a_constrained = A + a_unconstrained * B

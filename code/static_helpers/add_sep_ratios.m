@@ -1,4 +1,4 @@
-function force_ratios = add_sep_ratios(r_num,density,found_force_ratios)
+function force_ratios = add_sep_ratios(r_num,index,found_force_ratios)
 
 if r_num == 1
     force_ratios = [1,-1];
@@ -8,7 +8,7 @@ if r_num == 1
     return
 end
 
-phi_length = 3 + 2*density;
+phi_length = 2^index + 1;
 theta_length = 2*(phi_length - 1);
 
 phi = linspace(0,1,phi_length);
