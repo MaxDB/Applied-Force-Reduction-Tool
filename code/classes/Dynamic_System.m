@@ -97,6 +97,8 @@ classdef Dynamic_System
             end
 
 
+           
+
 
             obj.reduced_modes = modes;
             if isfolder(obj.get_data_path)
@@ -105,6 +107,22 @@ classdef Dynamic_System
 
             %Update and set optional static solver settings
             obj = obj.update_static_opts(Static_Opts);
+            if isstring(obj.Static_Options.num_loadcases) && obj.Static_Options.num_loadcases == "auto"
+                switch size(obj.reduced_modes,2)
+                    case 1
+                        num_loadcases = 2;
+                    case 2
+                        num_loadcases = 5;
+                    case 3
+                        num_loadcases = 9;
+                    case 4
+                        num_loadcases = 16;
+                    otherwise
+                        num_loadcases = 20;
+                end
+                Static_Opts.num_loadcases = num_loadcases;
+                obj = obj.update_static_opts(Static_Opts);
+            end
 
             %Update and set optional calibration settings
             obj = obj.update_calibration_opts(Calibration_Opts);
@@ -130,6 +148,7 @@ classdef Dynamic_System
                 logger(log_message,2)
                 %--------------------%
             end
+
 
             model_init_time = toc(model_init_start);
             log_message = sprintf("Model Initialised: %.1f seconds" ,model_init_time);
