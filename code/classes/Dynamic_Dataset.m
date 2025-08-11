@@ -524,6 +524,10 @@ classdef Dynamic_Dataset
             obj.update_dyn_data;
         end
         %-----------------------------------------------------------------%
+        function Dyn_Data = remove_orbits(obj,solution_num,orbit_num)
+
+        end
+        %-----------------------------------------------------------------%
         function [Orbit,Validation_Orbit,solution_name] = get_orbit(obj,solution_num,orbit_num,validated)
             if nargin == 3
                 validated = 0;

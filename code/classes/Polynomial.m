@@ -237,11 +237,15 @@ classdef Polynomial
             plotted_outputs = (1:total_outputs)';
             Potential_Poly = [];
             energy_limit = [];
+            colour_num = 1;
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
                     case "axes"
                         ax = keyword_values{arg_counter};
+                        if ~iscell(ax)
+                            ax = {ax};
+                        end
                     case "tag"
                         tag = keyword_values{arg_counter};
                     case "outputs"
@@ -250,6 +254,8 @@ classdef Polynomial
                         potential_data = keyword_values{arg_counter};
                         Potential_Poly = potential_data{1};
                         energy_limit = potential_data{2};
+                    case {"color","colour"}
+                        colour_num = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -296,9 +302,9 @@ classdef Polynomial
 
 
                         y = obj.evaluate_polynomial(x,plotted_output);
-
+                        
                         hold(ax{iOutput},"on")
-                        plot(ax{iOutput},x,y)
+                        plot(ax{iOutput},x,y,"Color",get_plot_colours(colour_num))
                         hold(ax{iOutput},"off")
                     end
 

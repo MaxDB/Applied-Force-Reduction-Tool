@@ -1,4 +1,4 @@
-function model_calibration_plot(mode,sep_id,iMode,r,f,f_limit,E,obj)
+function model_calibration_plot(mode,sep_id,iMode,r,f,f_limit,E,F_Poly,V_Poly,obj)
 PLOT_LEVEL = 1;
 
 load("data\plot_level.mat","plotting_level")
@@ -9,33 +9,36 @@ end
 
 figure
 tiledlayout(1,2)
-nexttile
+ax = nexttile;
 box on
 xlabel("r_" + mode)
 ylabel("f_" + mode)
 
-hold on
+
+F_Poly.plot_polynomial("axes",ax);
+hold(ax,"on")
 for iSep = 1:2
     sep_span = sep_id == (iSep+2*(iMode-1));
-    plot([0,r(:,sep_span)],[0,f(:,sep_span)],'.-')
+    plot(ax,r(:,sep_span),f(:,sep_span),'x')
 end
 
 for iSep = 1:2
-    plot(gca().XLim,f_limit(iSep)*[1,1],'k-')
+    plot(ax,ax.XLim,f_limit(iSep)*[1,1],'k-')
 end
-plot(0,0,'k.','MarkerSize',10)
-hold off
+plot(ax,0,0,'k.','MarkerSize',10)
+hold(ax,"off")
 
-nexttile
+ax = nexttile;
 box on
 xlabel("r_" + mode)
 ylabel("V")
 
-hold on
 
+V_Poly.plot_polynomial("axes",ax);
+hold on
 for iSep = 1:2
     sep_span = sep_id == (iSep+2*(iMode-1));
-    plot([0,r(:,sep_span)],[0,E(sep_span)],'.-')
+    plot(r(:,sep_span),E(sep_span),'x')
 end
 plot(gca().XLim,obj.fitting_energy_limit*[1,1],'k-')
 plot(0,0,'k.','MarkerSize',10)

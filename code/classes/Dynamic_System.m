@@ -13,7 +13,7 @@ classdef Dynamic_System
         Calibration_Options
         calibrated_forces
         calibrated_degree_limits
-        
+
         dof_boundary_conditions
         mass
         stiffness
@@ -39,7 +39,7 @@ classdef Dynamic_System
             end
             keyword_args = varargin(1:2:num_args);
             keyword_values = varargin(2:2:num_args);
-            
+
             Calibration_Opts = struct([]);
             Static_Opts = struct([]);
             load_cache = true; %load prestored mass and stiffness matrices if they exist
@@ -96,40 +96,40 @@ classdef Dynamic_System
                 Static_Opts.static_solver = "matlab";
             end
 
-            
 
-                obj.reduced_modes = modes;
-                if isfolder(obj.get_data_path)
-                    rmdir(obj.get_data_path,"s")
-                end
 
-                %Update and set optional static solver settings
+            obj.reduced_modes = modes;
+            if isfolder(obj.get_data_path)
+                rmdir(obj.get_data_path,"s")
+            end
+
+            %Update and set optional static solver settings
+            obj = obj.update_static_opts(Static_Opts);
+
+            %Update and set optional calibration settings
+            obj = obj.update_calibration_opts(Calibration_Opts);
+
+            %Extract  data from input file
+            obj = obj.set_problem_data;
+
+            %Find mass and stiffness matricies and find eigenvectors
+            matrix_time_start = tic;
+            obj = obj.eigenanalysis(load_cache);
+            matrix_time = toc(matrix_time_start);
+            log_message = sprintf("Eigenvectors: %.1f seconds" ,matrix_time);
+            logger(log_message,2)
+            if obj.energy_limit > 0
+                %Find single modal forcing required to reach energy limit
+                calibration_time_start = tic;
+                obj = obj.update_static_opts(obj.Calibration_Options.Static_Opts);
+                obj = obj.calibrate_mode(modes);
+                obj.Static_Options = struct([]);
                 obj = obj.update_static_opts(Static_Opts);
-
-                %Update and set optional calibration settings
-                obj = obj.update_calibration_opts(Calibration_Opts);
-
-                %Extract  data from input file
-                obj = obj.set_problem_data;
-
-                %Find mass and stiffness matricies and find eigenvectors
-                matrix_time_start = tic;
-                obj = obj.eigenanalysis(load_cache);
-                matrix_time = toc(matrix_time_start);
-                log_message = sprintf("Eigenvectors: %.1f seconds" ,matrix_time);
+                calibration_time = toc(calibration_time_start);
+                log_message = sprintf("Mode Calibration: %.1f seconds" ,calibration_time);
                 logger(log_message,2)
-                if obj.energy_limit > 0
-                    %Find single modal forcing required to reach energy limit
-                    calibration_time_start = tic;
-                    obj = obj.update_static_opts(obj.Calibration_Options.Static_Opts);
-                    obj = obj.calibrate_mode(modes);
-                    obj.Static_Options = struct([]);
-                    obj = obj.update_static_opts(Static_Opts);
-                    calibration_time = toc(calibration_time_start);
-                    log_message = sprintf("Mode Calibration: %.1f seconds" ,calibration_time);
-                    logger(log_message,2)
-                    %--------------------%
-                end
+                %--------------------%
+            end
 
             model_init_time = toc(model_init_start);
             log_message = sprintf("Model Initialised: %.1f seconds" ,model_init_time);
@@ -137,13 +137,13 @@ classdef Dynamic_System
         end
         %-----------------------------------------------------------------%
         function obj = update_static_opts(obj,Static_Opts)
-            Default_Static_Opts = read_default_options("static");            
+            Default_Static_Opts = read_default_options("static");
             obj.Static_Options = update_options(Default_Static_Opts,obj.Static_Options,Static_Opts);
         end
         %-----------------------------------------------------------------%
         function obj = update_calibration_opts(obj,Calibration_Opts)
-            Default_Calibration_Opts = read_default_options("calibration"); 
-            
+            Default_Calibration_Opts = read_default_options("calibration");
+
 
             New_Calibration_Opts = update_options(Default_Calibration_Opts,obj.Calibration_Options,Calibration_Opts);
             if ~isstruct(New_Calibration_Opts.Static_Opts)
@@ -153,7 +153,7 @@ classdef Dynamic_System
             obj.fitting_energy_limit = obj.energy_limit*New_Calibration_Opts.energy_overfit;
         end
         %-----------------------------------------------------------------%
-        
+
         %-----------------------------------------------------------------%
         %%% Setup
         %-----------------------------------------------------------------%
@@ -165,10 +165,10 @@ classdef Dynamic_System
                 return
             end
 
-            
+
             geometry = load_geometry(obj);
             mesh_data = get_mesh_data(geometry);
-            
+
             %------------ save data
             data_path = "geometry\" + obj.system_name + "\mesh_data";
             save(data_path,"mesh_data")
@@ -210,18 +210,18 @@ classdef Dynamic_System
                 obj.stiffness = K;
             end
 
-            
+
             obj.dof_boundary_conditions = matrix_bcs;
-            
-            
+
+
             if obj.Static_Options.load_custom_eigendata
-                
+
                 load("geometry\" + obj.system_name+"\custom_eigen_data.mat","custom_eval","custom_evec");
 
                 r_modes = obj.reduced_modes;
                 eval_r = custom_eval(r_modes);
                 evec_r = custom_evec(:,r_modes);
-                
+
             else
                 switch obj.Static_Options.additional_data
                     case "perturbation"
@@ -258,7 +258,7 @@ classdef Dynamic_System
                 evec_r = Large_Matrix_Pointer(evec_r,data_path,"reduced_eigenvectors");
             end
             obj.reduced_eigenvectors = evec_r;
-            
+
         end
         %-----------------------------------------------------------------%
         function obj = calibrate_mode(obj,modes)
@@ -266,6 +266,15 @@ classdef Dynamic_System
             Calibration_Opts = obj.Calibration_Options;
             if Calibration_Opts.disable_calibration
                 return
+            end
+
+            %static settings
+            Static_Opts = obj.Static_Options;
+            if isstring(Static_Opts.num_loadcases) && Static_Opts.num_loadcases == "auto"
+                %fit up to an 11 degree polynomial
+                Static_Opts.num_loadcases = 5;
+                force_degree = 11;
+                obj = obj.update_static_opts(Static_Opts);
             end
 
             %check if already calibrated
@@ -294,18 +303,18 @@ classdef Dynamic_System
                 Force_Calibration.calibrated_modes = {};
                 calibration_id = 1;
             end
-            
+
             %calibrate force scale factors
             num_calibrated_modes = length(calibrated_modes);
             num_uncalibrated_modes = length(uncalibrated_modes);
-           
-            
+
+
             r_modes = obj.reduced_modes;
             num_r_modes = length(r_modes);
             r_eigenvalues = obj.reduced_eigenvalues;
 
             num_matching_calibrated_modes = length(intersect(r_modes,calibrated_modes));
-            
+
             log_message = sprintf("%u/%u modes precalibrated",[num_matching_calibrated_modes,num_r_modes]);
             logger(log_message,3)
 
@@ -330,6 +339,13 @@ classdef Dynamic_System
             for iMode = 1:num_uncalibrated_modes
                 mode = uncalibrated_modes(iMode);
                 mode_index = mode == modes;
+                
+                sep_span = (sep_id == 2*iMode-1 | sep_id == 2*iMode);
+                r_mode = r(iMode,sep_span);
+                f_mode = f(iMode,sep_span);
+                eval_mode = obj.reduced_eigenvalues(iMode);
+                Force_Poly = Polynomial(r_mode,f_mode,force_degree,"constraint",{"linear_force",eval_mode},"coupling","force","shift",1,"scale",1);
+                Potential_Poly = integrate_polynomial(Force_Poly);
 
                 num_seps = 2;
                 r_limit = zeros(1,num_seps);
@@ -351,20 +367,28 @@ classdef Dynamic_System
                     [~,max_index] = min(E_upper);
                     bound_index = [min_index,max_index];
 
-                    r_limit(1,iSep) = interp1(E_sep(bound_index),r_sep(bound_index),obj.energy_limit);
-                    f_limit(1,iSep) = interp1(E_sep(bound_index),f_sep(bound_index),obj.energy_limit);
+                    r_bound = r_sep(bound_index);
+                    r_interp = linspace(r_bound(1),r_bound(2));
+                    v_interp = Potential_Poly.evaluate_polynomial(r_interp);
+                    [~,min_index] = min(abs(v_interp - obj.energy_limit));
+                    
+                    f_interp = Force_Poly.evaluate_polynomial(r_interp);
+
+
+                    r_limit(1,iSep) = r_interp(min_index);
+                    f_limit(1,iSep) = f_interp(min_index);
                 end
 
 
                 Force_Calibration.force_limit{1,calibration_id}(iMode+num_calibrated_modes,:) = f_limit;
                 Force_Calibration.calibrated_modes{1,calibration_id}(iMode+num_calibrated_modes,:) = mode;
                 %---------------------------------------------------------%
-                model_calibration_plot(mode,sep_id,iMode,r(mode_index,:),f(mode_index,:),f_limit,E,obj)
+                model_calibration_plot(mode,sep_id,iMode,r(mode_index,:),f(mode_index,:),f_limit,E,Force_Poly,Potential_Poly,obj)
                 %---------------------------------------------------------%
             end
             Force_Calibration.Parameters = obj.Parameters;
             save(GEOMETRY_PATH + "force_calibration","Force_Calibration")
-            
+
             calibrated_modes = Force_Calibration.calibrated_modes{1,calibration_id};
             obj.calibrated_forces = zeros(num_r_modes,2);
             % obj.calibrated_degree_limits = Force_Calibration.min_degree_data{1,calibration_id};
@@ -375,12 +399,12 @@ classdef Dynamic_System
                 % obj.calibrated_degree_limits{iMode}.force_applied_force = obj.calibrated_degree_limits{iMode}.force_applied_force./obj.calibrated_forces(iMode,:)';
                 % obj.calibrated_degree_limits{iMode}.disp_applied_force = obj.calibrated_degree_limits{iMode}.disp_applied_force./obj.calibrated_forces(iMode,:)';
             end
-            
-            
+
+
 
         end
         %-----------------------------------------------------------------%
-        
+
         %-----------------------------------------------------------------%
         %%% Simulation
         %-----------------------------------------------------------------%
@@ -419,7 +443,7 @@ classdef Dynamic_System
                             current_pool = parpool(max_parallel_jobs);
                         end
                     end
-                    
+
                     if max_parallel_jobs > 1
                         abaqus_start = tic;
                         mininum_job_loadcases = Static_Opts.minimum_job_loadcases;
@@ -429,7 +453,7 @@ classdef Dynamic_System
                         log_message = sprintf("%i SEPs over %i jobs" ,[size(force_ratio,2),num_parallel_jobs]);
                         logger(log_message,3)
                         logger("---",3)
-                        
+
                         reduced_disp_cell = cell(1,num_parallel_jobs);
                         condensed_disp_cell = cell(1,num_parallel_jobs);
                         restoring_force_cell = cell(1,num_parallel_jobs);
@@ -441,15 +465,15 @@ classdef Dynamic_System
                             job_force = force_ratio_groups{1,iJob};
                             [job_r,job_theta,job_f,job_E,job_additional_data,job_sep_id] = ...
                                 add_sep_abaqus(job_force,num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,obj,iJob);
-                            
+
                             reduced_disp_cell{1,iJob} = job_r;
                             condensed_disp_cell{1,iJob} = job_theta;
                             restoring_force_cell{1,iJob} = job_f;
                             energy_cell{1,iJob} = job_E;
-                            additional_data_cell{1,iJob} = job_additional_data; 
+                            additional_data_cell{1,iJob} = job_additional_data;
                             sep_id_cell{1,iJob} = job_sep_id;
                         end
-                        
+
                         reduced_disp = [reduced_disp_cell{1,:}];
                         condensed_disp = [condensed_disp_cell{1,:}];
                         restoring_force = [restoring_force_cell{1,:}];
@@ -464,76 +488,76 @@ classdef Dynamic_System
                             otherwise
                                 additional_data = cat(3,additional_data_cell{1,:});
                         end
-                        
-                        
-                        
+
+
+
                         sep_id_shift = max(sep_id_cell{1,1});
                         for iSep = 2:num_parallel_jobs
                             sep_id_cell{1,iSep} = sep_id_cell{1,iSep} + sep_id_shift;
                             sep_id_shift = max(sep_id_cell{1,iSep});
                         end
                         sep_id = [sep_id_cell{1,:}];
-                        
+
                         abaqus_time = toc(abaqus_start);
                         logger("---",3)
                         log_message = sprintf("Total FE time: %.1f seconds" ,abaqus_time);
                         logger(log_message,3)
-                        
+
                     elseif max_parallel_jobs == 1
                         [reduced_disp,condensed_disp,restoring_force,energy,additional_data,sep_id] = ...
-                        add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,obj,1);
+                            add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,obj,1);
                     elseif  max_parallel_jobs < 1
-                           % go sep by SEP. For larger systems may have to
-                           % restart SEPs mid way
-                           abaqus_start = tic;
+                        % go sep by SEP. For larger systems may have to
+                        % restart SEPs mid way
+                        abaqus_start = tic;
 
-                           reduced_disp_cell = cell(1,num_seps);
-                           condensed_disp_cell = cell(1,num_seps);
-                           restoring_force_cell = cell(1,num_seps);
-                           energy_cell = cell(1,num_seps);
-                           additional_data_cell = cell(1,num_seps);
-                           sep_id_cell = cell(1,num_seps);
+                        reduced_disp_cell = cell(1,num_seps);
+                        condensed_disp_cell = cell(1,num_seps);
+                        restoring_force_cell = cell(1,num_seps);
+                        energy_cell = cell(1,num_seps);
+                        additional_data_cell = cell(1,num_seps);
+                        sep_id_cell = cell(1,num_seps);
 
-                           for iSep = 1:num_seps
-                               [job_r,job_x,job_f,job_E,job_additional_data,job_sep_id] = ...
-                                   add_sep_abaqus(force_ratio(:,iSep),num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,obj,iSep);
+                        for iSep = 1:num_seps
+                            [job_r,job_x,job_f,job_E,job_additional_data,job_sep_id] = ...
+                                add_sep_abaqus(force_ratio(:,iSep),num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,obj,iSep);
 
-                               reduced_disp_cell{1,iSep} = job_r;
-                               condensed_disp_cell{1,iSep} = job_x;
-                               restoring_force_cell{1,iSep} = job_f;
-                               energy_cell{1,iSep} = job_E;
-                               additional_data_cell{1,iSep} = job_additional_data;
-                               sep_id_cell{1,iSep} = job_sep_id;
-                           end
-                            
-                           reduced_disp = [reduced_disp_cell{1,:}];
-                           condensed_disp = [condensed_disp_cell{1,:}];
-                           restoring_force = [restoring_force_cell{1,:}];
-                           energy = [energy_cell{1,:}];
-                           switch additional_data_type
-                               case "stiffness"
-                                   additional_data = additional_data_cell{1,1};
-                                   for iJob = 2:num_seps
-                                       additional_data = cat(3,additional_data,additional_data_cell{1,iJob});
-                                   end
-                               otherwise
-                                   additional_data = cat(3,additional_data_cell{1,:});
-                           end
+                            reduced_disp_cell{1,iSep} = job_r;
+                            condensed_disp_cell{1,iSep} = job_x;
+                            restoring_force_cell{1,iSep} = job_f;
+                            energy_cell{1,iSep} = job_E;
+                            additional_data_cell{1,iSep} = job_additional_data;
+                            sep_id_cell{1,iSep} = job_sep_id;
+                        end
 
-
-
-                           sep_id_shift = max(sep_id_cell{1,1});
-                           for iSep = 2:num_seps
-                               sep_id_cell{1,iSep} = sep_id_cell{1,iSep} + sep_id_shift;
-                               sep_id_shift = max(sep_id_cell{1,iSep});
-                           end
-                           sep_id = [sep_id_cell{1,:}];
+                        reduced_disp = [reduced_disp_cell{1,:}];
+                        condensed_disp = [condensed_disp_cell{1,:}];
+                        restoring_force = [restoring_force_cell{1,:}];
+                        energy = [energy_cell{1,:}];
+                        switch additional_data_type
+                            case "stiffness"
+                                additional_data = additional_data_cell{1,1};
+                                for iJob = 2:num_seps
+                                    additional_data = cat(3,additional_data,additional_data_cell{1,iJob});
+                                end
+                            otherwise
+                                additional_data = cat(3,additional_data_cell{1,:});
+                        end
 
 
-                           abaqus_time = toc(abaqus_start);
-                           logger("---",3)
-                           log_message = sprintf("Total FE time: %.1f seconds" ,abaqus_time);
-                           logger(log_message,3)
+
+                        sep_id_shift = max(sep_id_cell{1,1});
+                        for iSep = 2:num_seps
+                            sep_id_cell{1,iSep} = sep_id_cell{1,iSep} + sep_id_shift;
+                            sep_id_shift = max(sep_id_cell{1,iSep});
+                        end
+                        sep_id = [sep_id_cell{1,:}];
+
+
+                        abaqus_time = toc(abaqus_start);
+                        logger("---",3)
+                        log_message = sprintf("Total FE time: %.1f seconds" ,abaqus_time);
+                        logger(log_message,3)
                     end
 
 
@@ -552,7 +576,7 @@ classdef Dynamic_System
         %-----------------------------------------------------------------%
         function [reduced_disp,condensed_disp,restoring_force,energy,additional_data] = ...
                 add_point(obj,applied_force,additional_data_type,Closest_Point)
-            
+
             if ~exist("additional_data_type","var")
                 additional_data_type = "none";
             end
@@ -561,12 +585,12 @@ classdef Dynamic_System
             Static_Opts = obj.Static_Options;
             switch Static_Opts.static_solver
                 case "abaqus"
-                    
+
                     reset_temp_directory()
                     max_inc = Static_Opts.maximum_step_increments*Static_Opts.num_loadcases;
 
                     if Static_Opts.max_parallel_jobs > 1
-                        
+
                         abaqus_start = tic;
                         max_parallel_jobs = Static_Opts.max_parallel_jobs;
                         mininum_job_loadcases = Static_Opts.minimum_job_loadcases;
@@ -603,7 +627,7 @@ classdef Dynamic_System
                             restoring_force_cell{1,iJob} = job_f;
                             energy_cell{1,iJob} = job_E;
                             additional_data_cell{1,iJob} = job_additional_data;
- 
+
                         end
 
                         reduced_disp = [reduced_disp_cell{1,:}];
@@ -619,7 +643,7 @@ classdef Dynamic_System
                             otherwise
                                 additional_data = cat(3,additional_data_cell{1,:});
                         end
-                       
+
                         abaqus_time = toc(abaqus_start);
                         logger("---",3)
                         log_message = sprintf("Total FE time: %.1f seconds" ,abaqus_time);
@@ -650,10 +674,10 @@ classdef Dynamic_System
                     reset_temp_directory()
                 end
             end
-            
+
             switch Static_Opts.static_solver
                 case "abaqus"
-                    
+
 
                     if Static_Opts.max_parallel_jobs > 1
                         abaqus_start = tic;
@@ -668,7 +692,7 @@ classdef Dynamic_System
                         x_dot = cell(1,num_parallel_jobs);
                         energy = cell(1,num_parallel_jobs);
                         parfor (iJob = 1:num_parallel_jobs,Static_Opts.max_parallel_jobs)
-                        % for iJob = 1:num_parallel_jobs
+                            % for iJob = 1:num_parallel_jobs
                             [t_job,x_job,x_dot_job,energy_job] = dynamic_simulation_abaqus(x_0(:,iJob),x_dot_0(:,iJob),f_r_0(:,iJob),period(iJob),num_periods,min_incs(iJob),initial_time(iJob),FE_Force_Data,obj,iJob);
 
                             t{1,iJob} = t_job;
@@ -690,7 +714,7 @@ classdef Dynamic_System
         end
         %-----------------------------------------------------------------%
         function [stress,stress_labels,section_points] = stress_simulation(obj,x_0,x_dot_0,f_r_0)
-            
+
             Static_Opts = obj.Static_Options;
             % Static_Opts.max_parallel_jobs = 1;
             switch Static_Opts.static_solver
@@ -714,7 +738,7 @@ classdef Dynamic_System
                             stress_labels{1,iJob} = stress_labels_job;
                             section_points{1,iJob} = section_points_job;
                         end
-                        
+
                         abaqus_time = toc(abaqus_start);
                         logger("---",3)
                         log_message = sprintf("Total FE time: %.1f seconds" ,abaqus_time);
@@ -723,12 +747,12 @@ classdef Dynamic_System
                         [stress,stress_labels,section_points] = stress_simulation_abaqus(x_0,x_dot_0,f_r_0,obj,1);
                     end
                 case "matlab"
-                    
+
 
             end
         end
         %-----------------------------------------------------------------%
-        
+
         %-----------------------------------------------------------------%
         function [eom,eom_dz] = get_equation_of_motion(obj,varargin)
             Analytic_Eom = load_analytic_system("geometry\" + obj.system_name+ "\" + obj.system_name);
@@ -813,6 +837,6 @@ classdef Dynamic_System
             obj.reduced_eigenvalues = obj.reduced_eigenvalues(mode_map,1);
             obj.reduced_eigenvectors = obj.reduced_eigenvectors(:,mode_map);
         end
-   
+
     end
 end

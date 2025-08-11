@@ -12,12 +12,10 @@ initial_modes = [1,3];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.output_format = "binary";
-Static_Opts.additional_data = "stiffness";
+Static_Opts.additional_data = "none";
 Static_Opts.num_validation_modes = 10;
-Static_Opts.max_parallel_jobs =  4; %be careful!
-Static_Opts.num_loadcases = 5;
-Static_Opts.maximum_loadcases = 20;
+Static_Opts.max_parallel_jobs =  1; %be careful!
+Static_Opts.num_loadcases = 3;
 %------------------------------------------%
 
 %--------- Calibration Settings ---------%
