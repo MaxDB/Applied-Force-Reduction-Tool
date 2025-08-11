@@ -5,7 +5,7 @@ JOB_NAME = "static_analysis";
 RESET_TO_ZERO = 1;
 
 
-num_dimensions = get_num_node_dimensions(Model);
+[num_dimensions,model_dimension] = get_num_node_dimensions(Model);
 project_path = get_project_path;
 
 setup_time_start = tic;
@@ -14,6 +14,16 @@ all_dofs = Model.num_dof + numel(Model.dof_boundary_conditions);
 node_map = 1:all_dofs;
 node_map(Model.dof_boundary_conditions) = [];
 
+
+%----
+switch model_dimension
+    case 2
+        dimension_map = [1,2,6];
+    case 3
+        dimension_map = 1:6;
+
+end
+%----
 % deactivated_dofs = mod(all_dofs,NUM_DIMENSIONS) ~= 0
 deactivated_dofs = 0;
 if deactivated_dofs
@@ -23,13 +33,16 @@ if deactivated_dofs
 end
 num_seps = size(force_ratio,2);
 
+%----
 if ~exist("restart_type","var")
     restart_type = zeros(1,num_seps);
 end
 
+%----
 if isscalar(num_loadcases)
     num_loadcases = ones(1,num_seps)*num_loadcases;
 end
+%----
 
 
 if ~exist("Initial_Data","var")
@@ -210,7 +223,8 @@ for iNode = 1:num_nodes
     force_label(iNode) = node_label;
     
     for iDimension = 1:num_dimensions
-        dimension_label = "," + iDimension + ",";
+        node_dim = dimension_map(iDimension);
+        dimension_label = "," + node_dim + ",";
         force_label(iNode+num_nodes*(iDimension-1),1) = node_label + dimension_label;
     end
 end
@@ -273,7 +287,7 @@ sep_ends = zeros(num_seps,1);
 load_step_counter = 0;
 total_step_counter = 0;
 
-try
+% try
     input_ID = fopen("temp\" + new_job + ".inp","w");
     fprintf(input_ID,'%s\r\n',geometry{:,1});
 
@@ -307,7 +321,7 @@ try
 
         if RESET_TO_ZERO && (iSep ~= 1 || ~isempty(initial_disp))
             if ~isempty(initial_disp)
-                dims = string((1:num_dimensions)') +",";
+                dims = string((dimension_map)') +",";
                 
                 bc_end = repelem(dims,num_nodes,1);
 
@@ -431,10 +445,10 @@ try
         sep_ends(iSep) = load_step_counter;
         
     end
-catch caught_error
-    fclose(input_ID); %ensures file is always closed
-    rethrow(caught_error)
-end
+% catch caught_error
+%     fclose(input_ID); %ensures file is always closed
+%     rethrow(caught_error)
+% end
 fclose(input_ID);
 
 setup_time = toc(setup_time_start);

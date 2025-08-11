@@ -6,14 +6,20 @@ if isstring(geometry) && endsWith(geometry,".inp")
     geometry = geometry{1,1};
 end
 
-
+NODE_DEF = "*Node";
 ELEMENT_DEF = "*Element";
 ASSEMBLY_DEF = "*Assembly";
 TYPE_DEF = 'type=';
 
+node_def_line = find(startsWith(geometry,NODE_DEF,'IgnoreCase',true),1);
 assembly_def_line = find(startsWith(geometry,ASSEMBLY_DEF,'IgnoreCase',true),1,"last");
 element_def_lines = find(startsWith(geometry(1:assembly_def_line),ELEMENT_DEF,'IgnoreCase',true));
 elements_def = geometry(element_def_lines);
+
+
+first_node = geometry{node_def_line+1};
+node_parts = split(first_node,",");
+node_dimensions = length(node_parts) - 1;
 
 num_element_types = length(element_def_lines);
 
@@ -33,13 +39,23 @@ for iElement = 1:num_element_types
     switch element_def(1)
         case 'C'
             element_type = "continuous 3D";
-            element_dimension = 3;
+            element_dimension = node_dimensions;
         case 'B'
             element_type = "beam";
-            element_dimension = 6;
+            switch node_dimensions
+                case 2
+                    element_dimension = 3;
+                case 3
+                    element_dimension = 6;
+            end
         case 'S'
             element_type = "shell";
-            element_dimension = 6;
+            switch node_dimensions
+                case 2
+                    element_dimension = 3;
+                case 3
+                    element_dimension = 6;
+            end
         otherwise
             error("Unsupported element type: " + element_def)
     end
@@ -48,6 +64,7 @@ for iElement = 1:num_element_types
     Element_Data.definition = element_def;
     Element_Data.type = element_type;
     Element_Data.dimension = element_dimension;
+    Element_Data.model_dimension = node_dimensions;
     mesh_data{iElement} = Element_Data;
 
     if ~ismember(element_def,element_defs)

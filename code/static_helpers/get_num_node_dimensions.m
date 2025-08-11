@@ -1,7 +1,8 @@
-function num_dimensions = get_num_node_dimensions(Model)
+function [num_dimensions,model_dimensions] = get_num_node_dimensions(Model)
 mesh_data_path = "geometry\" + Model.system_name + "\mesh_data";
 load(mesh_data_path,"mesh_data");
 % mesh_data = m
 
 num_dimensions = mesh_data{1}.dimension;
+model_dimensions = mesh_data{1}.model_dimension;
 end

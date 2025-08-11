@@ -6,7 +6,7 @@ RESET_TO_ZERO = 1;
 
 additional_data_mode = all(isnan(applied_force));
 
-num_dimensions = get_num_node_dimensions(Model);
+[num_dimensions,model_dimension] = get_num_node_dimensions(Model);
 project_path = get_project_path;
 
 setup_time_start = tic;
@@ -16,6 +16,16 @@ node_map = 1:all_dofs;
 node_map(Model.dof_boundary_conditions) = [];
 num_loadcases = size(applied_force,2);
 
+
+%----
+switch model_dimension
+    case 2
+        dimension_map = [1,2,6];
+    case 3
+        dimension_map = 1:6;
+end
+
+%---
 deactivated_dofs = 0;
 if deactivated_dofs
     % replace with real solution
@@ -23,7 +33,7 @@ if deactivated_dofs
     all_dofs = floor(all_dofs/num_dimensions)*num_dimensions +num_dimensions;
 end
 
-
+%--
 static_settings = zeros(1,4);
 Static_Opts = Model.Static_Options;
 static_settings(1) = Static_Opts.initial_time_increment;
@@ -192,7 +202,8 @@ for iNode = 1:num_nodes
     force_label(iNode) = node_label;
 
     for iDimension = 1:num_dimensions
-        dimension_label = "," + iDimension + ",";
+        node_dim = dimension_map(iDimension);
+        dimension_label = "," + node_dim + ",";
         force_label(iNode+num_nodes*(iDimension-1),1) = node_label + dimension_label;
     end
 end
@@ -271,7 +282,7 @@ try
 
                 initial_disp_all_dof = zeros(all_dofs,1);
                 initial_disp_all_dof(node_map,:) = Closest_Point.initial_disp(:,iLoad);
-                dims = string((1:num_dimensions)') +",";
+                dims = string((dimension_map)') +",";
                 
                 bc_end = repelem(dims,num_nodes,1);
 
