@@ -8,6 +8,8 @@ switch message_level
         prefix = "\t";
     case 3
         prefix = "\t\t";
+    case 4
+        prefix = "\t\t\t";
     otherwise
         prefix = "";
 end

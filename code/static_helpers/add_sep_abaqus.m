@@ -18,9 +18,14 @@ node_map(Model.dof_boundary_conditions) = [];
 %----
 switch model_dimension
     case 2
-        dimension_map = [1,2,6];
+        switch num_dimensions
+            case 2
+                dimensio_mapS = [1,2];
+            case 3
+                dimension_map = [1,2,6];
+        end
     case 3
-        dimension_map = 1:6;
+        dimension_map = 1:num_dimensions;
 
 end
 %----

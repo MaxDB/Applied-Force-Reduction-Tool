@@ -196,231 +196,27 @@ classdef Dynamic_System
         function obj = eigenanalysis(obj,load_cache)
             %extract mass and stiffness matricies and solve generalised
             %eigenvalue problem
-            geometry_path = "geometry\" + obj.system_name + "\";
-            switch obj.Static_Options.static_solver
-                case "abaqus"
-                    matrix_path = geometry_path + "matrices";
-                    matrices_loaded = isfile(matrix_path + ".mat") && load_cache;
-                    if matrices_loaded
-                        load(matrix_path,"M","K","matrix_bcs")
-
-                        logger("Matrices Loaded",3)
-                    else
-                        [M,K,matrix_bcs] = matrices_abaqus(obj.system_name);
-                        save(matrix_path,"M","K","matrix_bcs")
-                    end
-
-                case "matlab"
-                    Analytic_Eom = load_analytic_system(geometry_path + obj.system_name);
-                    M = Analytic_Eom.linear_mass;
-                    K = Analytic_Eom.linear_stiffness;
-                    matrix_bcs = [];
-
-
-            end
-            obj.num_dof = size(M,1);
-
-            matrix_data = whos("M");
-            if matrix_data.bytes/1024 > obj.Static_Options.max_matrix_size
-                obj.mass = Large_Matrix_Pointer(M,matrix_path,"M","save",0);
-                obj.stiffness = Large_Matrix_Pointer(K,matrix_path,"K","save",0);
-            else
-                obj.mass = M;
-                obj.stiffness = K;
-            end
-
-
-            obj.dof_boundary_conditions = matrix_bcs;
-
-
-            if obj.Static_Options.load_custom_eigendata
-
-                load("geometry\" + obj.system_name+"\custom_eigen_data.mat","custom_eval","custom_evec");
-
-                r_modes = obj.reduced_modes;
-                eval_r = custom_eval(r_modes);
-                evec_r = custom_evec(:,r_modes);
-
-            else
-                switch obj.Static_Options.additional_data
-                    case "perturbation"
-                        r_modes = obj.reduced_modes;
-                        L_modes = 1:obj.Static_Options.num_validation_modes;
-                        L_modes(ismember(L_modes,r_modes)) = [];
-                        obj.low_frequency_modes = L_modes;
-                        h_modes = [r_modes,L_modes];
-
-                        [evec,eval] = eigs(K,M,max(h_modes),"smallestabs");
-
-                        eVal_L = eval(L_modes,L_modes)*ones(length(L_modes),1);
-                        eVec_L = evec(:,L_modes);
-
-                        obj.low_frequency_eigenvalues = eVal_L;
-                        obj.low_frequency_eigenvectors = eVec_L;
-
-                    otherwise
-                        r_modes = obj.reduced_modes;
-
-                        [evec,eval] = eigs(K,M,max(r_modes),"smallestabs");
-
-
-                end
-
-                eval_r = eval(r_modes,r_modes)*ones(length(r_modes),1);
-                evec_r = evec(:,r_modes);
-
-            end
-            obj.reduced_eigenvalues = eval_r;
-            matrix_data = whos("evec_r");
-            if matrix_data.bytes/1024 > obj.Static_Options.max_matrix_size
-                data_path = obj.get_data_path;
-                evec_r = Large_Matrix_Pointer(evec_r,data_path,"reduced_eigenvectors");
-            end
-            obj.reduced_eigenvectors = evec_r;
+            obj = model_eigenanalysis(obj,load_cache);
+            
 
         end
         %-----------------------------------------------------------------%
         function obj = calibrate_mode(obj,modes)
             %finds static forces that reach the potential energy limit
-            Calibration_Opts = obj.Calibration_Options;
-            if Calibration_Opts.disable_calibration
+            
+            
+            if obj.Calibration_Options.disable_calibration
                 return
             end
 
             %static settings
             Static_Opts = obj.Static_Options;
             if isstring(Static_Opts.num_loadcases) && Static_Opts.num_loadcases == "auto"
-                %fit up to an 11 degree polynomial
                 Static_Opts.num_loadcases = 5;
-                force_degree = 11;
                 obj = obj.update_static_opts(Static_Opts);
             end
 
-            %check if already calibrated
-            GEOMETRY_PATH = "geometry\" + obj.system_name + "\";
-            if isfile(GEOMETRY_PATH + "force_calibration.mat")
-                load(GEOMETRY_PATH + "force_calibration.mat","Force_Calibration");
-            end
-
-            if isfile(GEOMETRY_PATH + "force_calibration.mat") && isequal(Force_Calibration.Parameters,obj.Parameters)
-                calibrated_energy = Force_Calibration.energy_limit;
-                if ismember(obj.energy_limit,calibrated_energy)
-                    calibration_id = find(calibrated_energy == obj.energy_limit);
-                    calibrated_modes = Force_Calibration.calibrated_modes{1,calibration_id};
-                    uncalibrated_modes = setdiff(modes,calibrated_modes);
-                else
-                    calibration_id = length(calibrated_energy) + 1;
-                    Force_Calibration.energy_limit(calibration_id) = obj.energy_limit;
-                    uncalibrated_modes = modes;
-                    calibrated_modes = [];
-                end
-            else
-                uncalibrated_modes = modes;
-                calibrated_modes = [];
-                Force_Calibration.energy_limit = obj.energy_limit;
-                Force_Calibration.force_limit = {};
-                Force_Calibration.calibrated_modes = {};
-                calibration_id = 1;
-            end
-
-            %calibrate force scale factors
-            num_calibrated_modes = length(calibrated_modes);
-            num_uncalibrated_modes = length(uncalibrated_modes);
-
-
-            r_modes = obj.reduced_modes;
-            num_r_modes = length(r_modes);
-            r_eigenvalues = obj.reduced_eigenvalues;
-
-            num_matching_calibrated_modes = length(intersect(r_modes,calibrated_modes));
-
-            log_message = sprintf("%u/%u modes precalibrated",[num_matching_calibrated_modes,num_r_modes]);
-            logger(log_message,3)
-
-            initial_force_ratio = zeros(num_r_modes,num_uncalibrated_modes*2);
-            for iMode = 1:num_uncalibrated_modes
-                mode = uncalibrated_modes(iMode);
-                mode_index = mode == modes;
-
-                force_ratio = zeros(num_r_modes,2);
-                force_ratio(mode_index,:) = [1,-1];
-
-                %start with linear approximation
-                force_scale_factor = Calibration_Opts.calibration_scale_factor*sqrt(2*r_eigenvalues(mode_index)*obj.fitting_energy_limit);
-                initial_force_ratio(:,[2*iMode-1,2*iMode]) = force_ratio*force_scale_factor;
-
-            end
-
-            if num_uncalibrated_modes > 0
-                [r,x,f,E,sep_id] = obj.add_sep(initial_force_ratio);
-            end
-
-            for iMode = 1:num_uncalibrated_modes
-                mode = uncalibrated_modes(iMode);
-                mode_index = mode == modes;
-                
-                sep_span = (sep_id == 2*iMode-1 | sep_id == 2*iMode);
-                r_mode = r(iMode,sep_span);
-                f_mode = f(iMode,sep_span);
-                eval_mode = obj.reduced_eigenvalues(iMode);
-                Force_Poly = Polynomial(r_mode,f_mode,force_degree,"constraint",{"linear_force",eval_mode},"coupling","force","shift",1,"scale",1);
-                Potential_Poly = integrate_polynomial(Force_Poly);
-
-                num_seps = 2;
-                r_limit = zeros(1,num_seps);
-                f_limit = zeros(1,num_seps);
-                for iSep = 1:num_seps
-                    sep_span = sep_id == (iSep+2*(iMode-1));
-                    E_sep = E(sep_span);
-                    r_sep = r(mode_index,sep_span);
-                    f_sep = f(mode_index,sep_span);
-
-                    E_diff = E_sep - obj.energy_limit;
-                    E_upper = E_diff;
-                    E_lower = E_diff;
-
-                    E_upper(E_upper < 0) = inf;
-                    E_lower(E_lower > 0) = -inf;
-
-                    [~,min_index] = max(E_lower);
-                    [~,max_index] = min(E_upper);
-                    bound_index = [min_index,max_index];
-
-                    r_bound = r_sep(bound_index);
-                    r_interp = linspace(r_bound(1),r_bound(2));
-                    v_interp = Potential_Poly.evaluate_polynomial(r_interp);
-                    [~,min_index] = min(abs(v_interp - obj.energy_limit));
-                    
-                    f_interp = Force_Poly.evaluate_polynomial(r_interp);
-
-
-                    r_limit(1,iSep) = r_interp(min_index);
-                    f_limit(1,iSep) = f_interp(min_index);
-                end
-
-
-                Force_Calibration.force_limit{1,calibration_id}(iMode+num_calibrated_modes,:) = f_limit;
-                Force_Calibration.calibrated_modes{1,calibration_id}(iMode+num_calibrated_modes,:) = mode;
-                %---------------------------------------------------------%
-                model_calibration_plot(mode,sep_id,iMode,r(mode_index,:),f(mode_index,:),f_limit,E,Force_Poly,Potential_Poly,obj)
-                %---------------------------------------------------------%
-            end
-            Force_Calibration.Parameters = obj.Parameters;
-            save(GEOMETRY_PATH + "force_calibration","Force_Calibration")
-
-            calibrated_modes = Force_Calibration.calibrated_modes{1,calibration_id};
-            obj.calibrated_forces = zeros(num_r_modes,2);
-            % obj.calibrated_degree_limits = Force_Calibration.min_degree_data{1,calibration_id};
-
-            for iMode = 1:num_r_modes
-                mode = r_modes(iMode);
-                obj.calibrated_forces(iMode,:) = Force_Calibration.force_limit{1,calibration_id}(mode == calibrated_modes,:)*Calibration_Opts.force_overcalibration;
-                % obj.calibrated_degree_limits{iMode}.force_applied_force = obj.calibrated_degree_limits{iMode}.force_applied_force./obj.calibrated_forces(iMode,:)';
-                % obj.calibrated_degree_limits{iMode}.disp_applied_force = obj.calibrated_degree_limits{iMode}.disp_applied_force./obj.calibrated_forces(iMode,:)';
-            end
-
-
-
+            obj = modal_calibration(obj,modes);
         end
         %-----------------------------------------------------------------%
 

@@ -23,6 +23,8 @@ check_error = 0;
 r_0 = 0;
 lambda_0 = 0;
 
+limit_type = "fitting";
+
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
         case "check error"
@@ -37,12 +39,21 @@ for arg_counter = 1:num_args/2
             initial_condition = keyword_values{arg_counter};
             r_0 = initial_condition{1};
             lambda_0 = initial_condition{2};
+        case "limit_type"
+            limit_type = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
 end
 %-------------------------------------------------------------------------%
+switch limit_type
+    case "fitting"
+        energy_limit = Rom.Model.fitting_energy_limit;
+    case "base"
+        energy_limit = Rom.Model.energy_limit;
+end
 
+%---
 
 K = Rom.Reduced_Stiffness_Polynomial;
 f = Rom.Force_Polynomial;
@@ -132,7 +143,7 @@ for iLoad = 1:MAX_LOADCASES
     lambda_diff = lambda-lambda_0;
     lambda_0 = lambda;
 
-    if V.evaluate_polynomial(r_0) > Rom.Model.fitting_energy_limit
+    if V.evaluate_polynomial(r_0) > energy_limit
         include_end = 0;
         break
     end

@@ -78,12 +78,21 @@ for iIteration = 1:(max_iterations+1)
     error_calculation_failed = 0;
     error_time_start = tic;
     for iDegree_pair = 1:num_degree_pairs
+       
         maximum_force_pair_error = 0;
         maximum_disp_pair_error = 0;
 
         force_degree_two = force_degree + 2;
         disp_degree_two = disp_degree + 2;
 
+
+
+        log_message = sprintf("Comparing %s and %s degree force polynomials" , ...
+            ordinal_suffix(force_degree),ordinal_suffix(force_degree_two));
+        logger(log_message,4)
+        log_message = sprintf("Comparing %s and %s degree displacement polynomials" , ...
+            ordinal_suffix(disp_degree),ordinal_suffix(disp_degree_two));
+        logger(log_message,4)
 
         Rom_Two = Reduced_System(Static_Data,[force_degree_two,disp_degree_two]);
 
@@ -102,6 +111,9 @@ for iIteration = 1:(max_iterations+1)
         new_sep_id = cell(1,num_verified_seps);
         new_loads = cell(1,num_verified_seps);
         new_error = cell(1,num_verified_seps);
+
+        log_message = sprintf("Checking %d SEPs..." ,num_verified_seps);
+        logger(log_message,4)
         
         for iSep = 1:num_verified_seps
             validation_iteration_start = tic;
@@ -184,6 +196,9 @@ for iIteration = 1:(max_iterations+1)
 
         maximum_force_pair_errors(iDegree_pair) = maximum_force_pair_error;
         maximum_disp_pair_errors(iDegree_pair) = maximum_disp_pair_error;
+
+        log_message = sprintf("Max force error: %.2f and max disp error: %.2f" ,maximum_force_pair_error,maximum_disp_pair_error);
+        logger(log_message,4)
 
         %if the error starts going up terminate early
         last_max_pair_error = max_pair_error;
