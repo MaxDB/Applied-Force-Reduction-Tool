@@ -26,7 +26,6 @@ num_original_seps = size(found_force_ratios,2);
 
 
 
-unit_force_ratios = found_force_ratios;
 
 scaffold_points = Static_Data.scaffold_points;
 data_available = any(scaffold_points == 0);
@@ -37,14 +36,24 @@ end
 
 force_degree = INITIAL_FORCE_DEGREE;
 disp_degree = INITIAL_DISPLACEMENT_DEGREE;
-sep_density = 1;
 for iIteration = 1:(max_iterations+1)
-    sep_density = sep_density + 1;
-    new_unit_force_ratios = add_sep_ratios(num_r_modes,sep_density,found_force_ratios);
-    unit_force_ratios = [unit_force_ratios,new_unit_force_ratios]; %#ok<AGROW>
+    adjacent_sep_ratios = get_adjacent_sep_ratios(Static_Data.unit_sep_ratios);
+
+
+    unit_force_ratios = [Static_Data.unit_sep_ratios,adjacent_sep_ratios];
+    [~,~,reorder_index] = uniquetol(unit_force_ratios', "ByRows",1);
+    removal_indicies = false(1,size(unit_force_ratios,2));
+    for iIndex = 1:max(reorder_index)
+        matching_indices = reorder_index == iIndex;
+        if nnz(matching_indices) > 1
+            repeated_index = find(matching_indices);
+            repeated_index(1) = [];
+            removal_indicies(repeated_index) = 1;
+        end
+    end
+    unit_force_ratios(:,removal_indicies) = [];
 
     scaled_force_ratios = scale_sep_ratios(unit_force_ratios,Static_Data.Model.calibrated_forces);
-    found_force_ratios = unit_force_ratios;
     num_verified_seps = size(unit_force_ratios,2);
     
     validated_seps = (1:num_verified_seps);
@@ -57,13 +66,14 @@ for iIteration = 1:(max_iterations+1)
     max_degree = max(max_force_degree,max_disp_degree);
     next_max_degree = min(MAXIMUM_DEGREE,max_degree + 2);
     data_size = size(Static_Data);
-    max_iteration_loadcases = get_max_added_points(next_max_degree,data_size,...
-        max_iteration_loadcases_setting);
+    % max_iteration_loadcases = get_max_added_points(next_max_degree,data_size,...
+    % max_iteration_loadcases_setting);
+    max_iteration_loadcases = num_verified_seps - 2*num_r_modes;
 
     if num_added_points == 0
         continue
     end
-    
+
     force_converged = zeros(1,num_verified_seps);
     disp_converged = zeros(1,num_verified_seps);
 
@@ -111,6 +121,7 @@ for iIteration = 1:(max_iterations+1)
         new_sep_id = cell(1,num_verified_seps);
         new_loads = cell(1,num_verified_seps);
         new_error = cell(1,num_verified_seps);
+        new_sep_ratio = cell(1,num_verified_seps);
 
         log_message = sprintf("Checking %d SEPs..." ,num_verified_seps);
         logger(log_message,4)
@@ -144,11 +155,24 @@ for iIteration = 1:(max_iterations+1)
             disp_error = get_disp_error(tested_disp,Rom_One,Rom_Two,force_ratio,Disp_Error_Inputs);
 
             %---------------
-            Potential_One = Rom_One.Potential_Polynomial.evaluate_polynomial(tested_disp);
-            in_energy_limit = Potential_One <= energy_limit;
+            potential_one = Rom_One.Potential_Polynomial.evaluate_polynomial(tested_disp);
+            in_energy_limit = potential_one <= energy_limit;
 
             norm_force_error = force_error/max_interpolation_error(1);
             norm_disp_error = disp_error/max_interpolation_error(2);
+    
+
+            Plot_Data(1).displacement = disp_sep;
+            Plot_Data(1).lambda = lambda_sep;
+            Plot_Data(1).Rom = Rom_One;
+            Plot_Data(1).force_ratio = force_ratio;
+            Plot_Data(1).tested_index = tested_sep_index;
+            Plot_Data(2).Rom = Rom_Two;
+        
+            Plot_Error.force_error = norm_force_error;
+            Plot_Error.disp_error = norm_disp_error;
+
+            sep_error_plot(Plot_Data,Static_Data,Plot_Error,Disp_Error_Inputs)
             
             if all(norm_force_error(in_energy_limit) < 1)
                 force_converged(1,iSep) = 1;
@@ -183,11 +207,13 @@ for iIteration = 1:(max_iterations+1)
                 new_sep_id{1,iSep} = ones(1,num_extra_points)*validated_seps(iSep);
                 new_loads{1,iSep} = tested_force(:,error_index);
                 new_error{1,iSep} = worst_errors;
+                new_sep_ratio{1,iSep} = unit_force_ratios(:,iSep);
             end
         end
 
 
         Extra_Point_Data.new_sep_id = new_sep_id;
+        Extra_Point_Data.new_sep_ratios = new_sep_ratio;
         Extra_Point_Data.new_loads = new_loads;
         Extra_Point_Data.new_error = new_error;
         Extra_Point_Data.degree = [force_degree,disp_degree];
@@ -234,26 +260,28 @@ for iIteration = 1:(max_iterations+1)
     error_time = toc(error_time_start);
     %------------------------------------------------------------------
     if ~error_calculation_failed
-    [~,force_degree_index] = min(maximum_force_pair_errors);
-    [~,disp_degree_index] = min(maximum_disp_pair_errors);
-    [~,degree_index] = min(max(maximum_disp_pair_errors,maximum_force_pair_errors));
-    Extra_Point_Data = verification_data{1,degree_index};
-    force_degree = verification_data{1,force_degree_index}.degree(1);
-    disp_degree = verification_data{1,disp_degree_index}.degree(2);
+        [~,force_degree_index] = min(maximum_force_pair_errors);
+        [~,disp_degree_index] = min(maximum_disp_pair_errors);
+        [~,degree_index] = min(max(maximum_disp_pair_errors,maximum_force_pair_errors));
+        Extra_Point_Data = verification_data{1,degree_index};
+        force_degree = verification_data{1,force_degree_index}.degree(1);
+        disp_degree = verification_data{1,disp_degree_index}.degree(2);
 
-    log_message = sprintf("Max force error: %.2f and max disp error: %.2f found in %.1f seconds" ,maximum_force_pair_errors(degree_index),maximum_disp_pair_errors(degree_index),error_time);
-    logger(log_message,3)
+        log_message = sprintf("Max force error: %.2f and max disp error: %.2f found in %.1f seconds" ,maximum_force_pair_errors(force_degree_index),maximum_disp_pair_errors(disp_degree_index),error_time);
+        logger(log_message,3)
 
-    new_sep_id = [Extra_Point_Data.new_sep_id{1,:}];
-    new_loads = [Extra_Point_Data.new_loads{1,:}];
-    new_error = [Extra_Point_Data.new_error{1,:}];
+        new_sep_id = [Extra_Point_Data.new_sep_id{1,:}];
+        new_loads = [Extra_Point_Data.new_loads{1,:}];
+        new_error = [Extra_Point_Data.new_error{1,:}];
+        new_sep_ratios = [Extra_Point_Data.new_sep_ratios{1,:}];
 
-    [~,sort_index] = sort(new_error,"descend");
+        [~,sort_index] = sort(new_error,"descend");
 
-    num_extra_points = min(max_iteration_loadcases,size(new_sep_id,2));
-    added_point_index = sort_index(1:num_extra_points);
-    new_loads = new_loads(:,added_point_index);
-    new_sep_id = new_sep_id(:,added_point_index);
+        num_extra_points = min(max_iteration_loadcases,size(new_sep_id,2));
+        added_point_index = sort_index(1:num_extra_points);
+        new_loads = new_loads(:,added_point_index);
+        new_sep_id = new_sep_id(:,added_point_index);
+        new_sep_ratios = new_sep_ratios(:,added_point_index);
 
     else
         log_message = sprintf("Error calculation failed. Could not follow SEPs");
@@ -306,8 +334,8 @@ for iIteration = 1:(max_iterations+1)
                 case "none"
             end
         end
-
-        Static_Data = Static_Data.update_data(r,theta,f,E,new_sep_id-num_original_seps,additional_data);
+        added_sep_ratios = setdiff(new_sep_ratios',Static_Data.unit_sep_ratios',"rows")';
+        Static_Data = Static_Data.update_data(r,theta,f,E,new_sep_id-num_original_seps,additional_data,"new_unit_sep_ratios",added_sep_ratios);
     end
     
     validation_iteration_time = toc(validation_iteration_start);

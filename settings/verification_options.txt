@@ -3,9 +3,9 @@
 ## General
 verification_algorithm, "sep_to_edge",	algorithm to converge static dataset
 minimum_degree, 3, 		  	minimum interpolating polynomial degree
-maximum_iterations, 3, 			maximum validation iterations
-maximum_interpolation_error, [1e-3;1e-2], 	maximum error when comparing polynomial interpolation [force,displacement]
+maximum_iterations, 5, 			maximum validation iterations
+maximum_interpolation_error, [5e-3;1e-2], 	maximum error when comparing polynomial interpolation [force,displacement]
 maximum_fitting_error, 1e-3, 		maximum error when predicting known values
-num_added_points, 5, 			maximum number of point added per sep per iteration
+num_added_points, 1, 			maximum number of point added per sep per iteration
 max_added_points, 500,			maximum number of points added to data set per iteration
 initial_energy_frac, 1,			initial energy limit fraction to start verification

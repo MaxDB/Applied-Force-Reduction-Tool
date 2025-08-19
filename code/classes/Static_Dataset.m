@@ -284,7 +284,7 @@ classdef Static_Dataset
 
                     [r,theta,f,E,sep_id,additional_data] = obj.Model.add_sep(scaled_force_ratios,obj.additional_data_type,1);
 
-                    obj = obj.update_data(r,theta,f,E,sep_id,additional_data,unit_force_ratios);
+                    obj = obj.update_data(r,theta,f,E,sep_id,additional_data,"found_force_ratios",unit_force_ratios);
                     scaf_points = obj.scaffold_points == 1;
                     obj.static_equilibrium_path_id(scaf_points) = sep_map(obj.static_equilibrium_path_id(scaf_points));
                     obj.unit_sep_ratios(:,sep_map) = obj.unit_sep_ratios;
@@ -327,7 +327,31 @@ classdef Static_Dataset
 
         end
         %-----------------------------------------------------------------%
-        function obj = update_data(obj,r,x,f,V,sep_id,additional_data,found_force_ratios)
+        function obj = update_data(obj,r,x,f,V,sep_id,additional_data,varargin)
+            %-------------------------------------------------------------------------%
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            found_force_ratios = [];
+            new_unit_sep_ratios = [];
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "found_force_ratios"
+                        found_force_ratios = keyword_values{arg_counter};
+                    case "new_unit_sep_ratios"
+                        new_unit_sep_ratios = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %-------------------------------------------------------------------------%
+
+
             obj.reduced_displacement = [obj.get_dataset_values("reduced_displacement"),r];
             obj.physical_displacement = [obj.get_dataset_values("physical_displacement"),x];
             obj.restoring_force = [obj.get_dataset_values("restoring_force"),f];
@@ -338,11 +362,15 @@ classdef Static_Dataset
             obj.static_equilibrium_path_id = [obj.static_equilibrium_path_id,sep_id+sep_id_shift];
 
             num_points = size(V,2);
-            if nargin == 8
+            if ~isempty(found_force_ratios)
                 obj.unit_sep_ratios = [obj.unit_sep_ratios,found_force_ratios];
                 obj.scaffold_points = [obj.scaffold_points,true(1,num_points)];
             else
                 obj.scaffold_points = [obj.scaffold_points,false(1,num_points)];
+            end
+
+            if ~isempty(new_unit_sep_ratios)
+                obj.unit_sep_ratios = [obj.unit_sep_ratios,new_unit_sep_ratios];
             end
             
             obj = update_additional_data(obj,additional_data);
