@@ -2,6 +2,10 @@ function adjacent_sep_ratios = get_adjacent_sep_ratios(used_sep_ratios)
 % find the adjacent, sep_order SEPs to used_sep_ratios
 num_sep_ratios = size(used_sep_ratios,2);
 num_r_modes = size(used_sep_ratios,1);
+if num_r_modes == 1
+    adjacent_sep_ratios = [];
+    return
+end
 num_angles = num_r_modes - 1;
 
 phi = zeros(num_angles,num_sep_ratios);

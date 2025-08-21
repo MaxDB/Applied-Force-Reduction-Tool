@@ -63,12 +63,15 @@ for iIteration = 1:(max_iterations+1)
 
     max_force_degree = get_max_poly_degree("force",num_r_modes,num_dataset_points,MAXIMUM_DEGREE);
     max_disp_degree = get_max_poly_degree("displacement",num_r_modes,num_dataset_points,MAXIMUM_DEGREE);
-    max_degree = max(max_force_degree,max_disp_degree);
-    next_max_degree = min(MAXIMUM_DEGREE,max_degree + 2);
-    data_size = size(Static_Data);
+    % max_degree = max(max_force_degree,max_disp_degree);
+    % next_max_degree = min(MAXIMUM_DEGREE,max_degree + 2);
+    % data_size = size(Static_Data);
     % max_iteration_loadcases = get_max_added_points(next_max_degree,data_size,...
     % max_iteration_loadcases_setting);
-    max_iteration_loadcases = num_verified_seps - 2*num_r_modes;
+    max_iteration_loadcases = num_verified_seps;
+    if num_r_modes > 1
+        max_iteration_loadcases = max_iteration_loadcases - 2*num_r_modes;
+    end
 
     if num_added_points == 0
         continue

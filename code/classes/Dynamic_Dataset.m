@@ -135,7 +135,7 @@ classdef Dynamic_Dataset
                         t0 = orbit.tbp';
                         z0 = orbit.xbp';
 
-                        obj = obj.add_backbone(0,"opts",Continuation_Opts,"ic",{t0,z0});
+                        obj = obj.add_backbone(0,"opts",Continuation_Opts,"ic",{t0,z0},"type",Solution_Type.model_type);
                     case "BP"
                         
                     case "PD"

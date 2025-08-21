@@ -8,11 +8,11 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "exhaust";
 energy_limit = 1.8;
-initial_modes = [1,7];
+initial_modes = [1];
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
-Calibration_Opts.calibration_scale_factor = 2;
+Calibration_Opts.calibration_scale_factor = 1.5;
 %----------------------------------------%
 
 %--------- Static Solver Settings ---------%

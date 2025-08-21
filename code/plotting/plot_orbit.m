@@ -59,7 +59,11 @@ Sol_Type = Dyn_Data.solution_types{1,solution_num};
 
 known_modes = Model.reduced_modes;
 known_eval = Model.reduced_eigenvalues;
-known_evec = Model.reduced_eigenvectors.load();
+if isa(Model.reduced_eigenvectors,"Large_Matrix_Pointer")
+    known_evec = Model.reduced_eigenvectors.load();
+else
+    known_evec = Model.reduced_eigenvectors;
+end
 if validated && Sol_Type.validated
     Sol_v = Dyn_Data.load_solution(solution_num,"validation");
 
@@ -106,8 +110,17 @@ labels = strings(plot_dimension,1);
 for iType = 1:plot_dimension
     data_id = split(type(iType),"-");
     plot_type = data_id(1); %physical vs modal vs time etc.
-    plot_part = data_id(2); % displacement vs velocity
-    data_index = double(data_id(3)); %specific quantity: mode 2 etc..
+    if length(data_id) >= 2
+        plot_part = data_id(2); % displacement vs velocity
+    else
+        plot_part = "";
+    end
+
+    if length(data_id) >=3
+        data_index = double(data_id(3)); %specific quantity: mode 2 etc..
+    else
+        data_index = [];
+    end
 
     label = "";
     switch plot_type
@@ -152,7 +165,8 @@ for iType = 1:plot_dimension
             plotted_value_type = time;
             label = label + plot_type;
     end
-
+    
+      
     switch plot_part
         case "d"
             plotted_value_type = plotted_state(1:plotted_output_size,:);
@@ -170,6 +184,8 @@ for iType = 1:plot_dimension
     switch plot_type
         case {"q"}
             plotted_value = plotted_value_type(1,:);
+        case {"t"}
+            plotted_value = plotted_value_type;
         otherwise
             plotted_value = plotted_value_type(data_index,:);
     end

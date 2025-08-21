@@ -69,6 +69,13 @@ vel_coords = plotting_coords(~disp_coord_index) - num_dof;
 
 Sol = Dyn_Data.load_solution(sol_num);
 num_orbits = Sol.num_orbits;
+switch Sol.Solution_Type.model_type
+    case "rom"
+        num_modes = size(evec,2);
+    case "fom"
+        num_modes = size(evec,1);
+end
+
 
 points_per_orbit = Plot_Opts.points_per_orbit;
 sol_points = zeros(num_orbits,points_per_orbit+1,3);
@@ -137,13 +144,21 @@ for iOrbit = 1:num_orbits
 
     r_interp = z_interp(1:num_modes,:);
     r_dot_interp = z_interp((1:num_modes)+num_modes,:);
-
-    x = Rom.Physical_Displacement_Polynomial.evaluate_polynomial(r_interp,disp_coords);
-    x_dot = Rom.get_physical_velocity(r_interp,r_dot_interp,vel_coords);
-
+    
+    switch Sol.Solution_Type.model_type
+        case "rom"
+            x = Rom.Physical_Displacement_Polynomial.evaluate_polynomial(r_interp,disp_coords);
+            x_dot = Rom.get_physical_velocity(r_interp,r_dot_interp,vel_coords);
+        case "fom"
+            mass = Model.mass;
+            stiffness = Model.stiffness;
+            [evec,~] = eig(stiffness,mass);
+            x = evec*r_interp;
+            x_dot = evec*r_dot_interp;
+    end
     x_all = zeros(num_coords,points_per_orbit + 1);
     x_all(disp_coord_index,:) = x;
-    x_all(~disp_coord_index,:) = x_dot;
+    x_all(~disp_coord_index,:) = x_dot(1,:);
 
     sol_points(orbit_counter,:,:) = x_all';
 end
@@ -179,9 +194,9 @@ hold(ax,"off")
 coord_names = strings(num_coords,1);
 for iCoord = 1:num_coords
     if disp_coord_index(iCoord)
-        coord_names(iCoord) = "$x_{" + plotting_coords(iCoord) + "}$";
+        coord_names(iCoord) = "$x_{" + plotting_coords(iCoord) + "}$ (m)";
     else
-        coord_names(iCoord) = "$\dot{x}_{" + (plotting_coords(iCoord) - num_dof) + "}$";
+        coord_names(iCoord) = "$\dot{x}_{" + (plotting_coords(iCoord) - num_dof) + "}$ (m/s)";
     end
 end
 xlabel(ax,coord_names(1),"Interpreter","latex")
