@@ -281,6 +281,9 @@ for iIteration = 1:(max_iterations+1)
         [~,force_degree_index] = min(maximum_force_pair_errors);
         [~,disp_degree_index] = min(maximum_disp_pair_errors);
         [~,degree_index] = min(max(maximum_disp_pair_errors,maximum_force_pair_errors));
+        
+
+
         Extra_Point_Data = verification_data{1,degree_index};
         force_degree = verification_data{1,force_degree_index}.degree(1);
         disp_degree = verification_data{1,disp_degree_index}.degree(2);
