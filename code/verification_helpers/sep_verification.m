@@ -9,7 +9,8 @@ max_interpolation_error = Verification_Opts.maximum_interpolation_error;
 max_iteration_loadcases_setting = Verification_Opts.max_added_points;
 max_iterations = Verification_Opts.maximum_iterations;
 
-num_added_points = Verification_Opts.num_added_points;
+num_added_points_setting = Verification_Opts.num_added_points;
+
 
 Model = Static_Data.Model;
 max_sep_points = Model.Static_Options.maximum_loadcases;
@@ -19,7 +20,17 @@ energy_limit = Model.energy_limit;
 
 num_r_modes = length(Model.reduced_modes);
 
-
+%---------
+if isnumeric(num_added_points_setting)
+    num_added_points = num_added_points_setting;
+elseif isstring(num_added_points_setting) && num_added_points_setting == "auto"
+    switch num_r_modes
+        case 2
+            num_added_points = 3;
+        otherwise
+            num_added_points = 1;
+    end
+end
 %-------------------------
 found_force_ratios = Static_Data.unit_sep_ratios;
 num_original_seps = size(found_force_ratios,2);
@@ -73,7 +84,7 @@ for iIteration = 1:(max_iterations+1)
         max_iteration_loadcases = max_iteration_loadcases - 2*num_r_modes;
     end
 
-    if isnumeric(num_added_points) && num_added_points == 0
+    if num_added_points == 0
         continue
     end
 
@@ -196,10 +207,14 @@ for iIteration = 1:(max_iterations+1)
 
             %pick worst points
             [sorted_error,sorted_error_index] = sort(interpolation_error,"descend");
-            num_error_points = size(sorted_error,2);
+            % num_error_points = size(sorted_error,2);
 
-            worst_errors = sorted_error(1:min(num_error_points,num_added_points));
-            worst_errors_index = sorted_error_index(1:min(num_error_points,num_added_points));
+            worst_errors = sorted_error(1);
+            worst_errors_index = sorted_error_index(1);
+
+            % for auto, add the worst point and 
+            %   - for 3 add the error = 1 points
+
 
             nonzero_error_index = worst_errors ~= 0;
             worst_errors = worst_errors(nonzero_error_index);
@@ -284,7 +299,17 @@ for iIteration = 1:(max_iterations+1)
         added_point_index = sort_index(1:num_extra_points);
         new_loads = new_loads(:,added_point_index);
         new_sep_id = new_sep_id(:,added_point_index);
-        new_sep_ratios = new_sep_ratios(:,added_point_index);
+        new_sep_ratios = new_sep_ratios(:,sort(added_point_index,"ascend"));
+
+        if num_added_points > 1
+            new_loads = repelem(new_loads,1,num_added_points);
+            new_sep_id = repelem(new_sep_id,1,num_added_points);
+
+            load_scale_factor = (1:num_added_points)/num_added_points;
+            load_scale_factor = repmat(load_scale_factor,1,num_extra_points);
+
+            new_loads = new_loads.*load_scale_factor;
+        end
 
     else
         log_message = sprintf("Error calculation failed. Could not follow SEPs");
@@ -338,9 +363,15 @@ for iIteration = 1:(max_iterations+1)
             end
         end
         added_sep_ratios = setdiff(new_sep_ratios',Static_Data.unit_sep_ratios',"rows")';
-        Static_Data = Static_Data.update_data(r,theta,f,E,new_sep_id-num_original_seps,additional_data,"new_unit_sep_ratios",added_sep_ratios);
+        num_found_seps = size(Static_Data.unit_sep_ratios,2);
+        Static_Data = Static_Data.update_data(r,theta,f,E,new_sep_id-num_found_seps,additional_data,"new_unit_sep_ratios",added_sep_ratios);
     end
     
+    if isstring(num_added_points_setting) && num_added_points_setting == "auto"
+        if num_added_points > 1
+            num_added_points =  1;
+        end
+    end
     validation_iteration_time = toc(validation_iteration_start);
     log_message = sprintf("Verification step %i/%i completed: %i points added in %.1f seconds" ,[iIteration,max_iterations,num_extra_points,validation_iteration_time]);
     logger(log_message,2)
