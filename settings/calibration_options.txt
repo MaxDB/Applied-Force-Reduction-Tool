@@ -3,8 +3,8 @@
 
 ## General
 calibration_scale_factor, 2,	estimated ratio between effective stiffness at energy limit and linear stiffness
-energy_overfit, 1.1,		actual_energy_limit = energy_limit * energy_overfit
-force_overcalibration,1.1, 	actual_calibrated_force = calibrated_force * force_overcalibration
+energy_overfit, 1.05,		actual_energy_limit = energy_limit * energy_overfit
+force_overcalibration,1.05, 	actual_calibrated_force = calibrated_force * force_overcalibration
 Static_Opts,[],			any changed static options for calibration
 
 ## Experimental

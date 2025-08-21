@@ -45,10 +45,12 @@ classdef Static_Dataset
             end
             
             obj.Model = Model;
-            data_path = get_data_path(obj);
-            if isfolder(data_path)
-                rmdir(data_path,"s")
+            static_data_path = get_data_path(obj);
+            if isfolder(static_data_path)
+                rmdir(static_data_path,"s")
             end
+            system_name = get_system_name(obj);
+            delete_dynamic_data(system_name);
 
 
 

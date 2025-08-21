@@ -5,7 +5,7 @@
 static_solver, "abaqus", 		software for apply static loadcases    
 solver_algorithm, "standard",	solver algorithm to implement (e.g. continuation) 
 num_loadcases, "auto", 			initial target number of loadcases per SEP. 
-maximum_loadcases, 20, 			maxium number of loadcases per SEP
+maximum_loadcases, 50, 			maxium number of loadcases per SEP
 minimum_displacement, 1e-16,	anything lower will be treated as zero when creating the ROM
 max_matrix_size, 1,				matrices larger than x KB will be stored seperately
 

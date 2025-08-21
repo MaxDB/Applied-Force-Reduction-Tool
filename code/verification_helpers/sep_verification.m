@@ -73,7 +73,7 @@ for iIteration = 1:(max_iterations+1)
         max_iteration_loadcases = max_iteration_loadcases - 2*num_r_modes;
     end
 
-    if num_added_points == 0
+    if isnumeric(num_added_points) && num_added_points == 0
         continue
     end
 

@@ -16,5 +16,9 @@ switch class(system_name)
 
 end
     file_path = "data\" + system_name + "\static_data\Static_Data.mat";
-    load(file_path,"Static_Data")
+    if isfile(file_path)
+        load(file_path,"Static_Data")
+    else
+        Static_Data = [];
+    end
 end
