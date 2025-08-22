@@ -72,6 +72,7 @@ switch num_modes
     case 3
         plot3(force_points(1,:),force_points(2,:),force_points(3,:),"x")
         plot3(force(1,:),force(2,:),force(3,:))
+        sep_ax.CameraPosition = [-1429.01208184779	-15572.6982084683	8848.89938869558];
 end
 hold off
 

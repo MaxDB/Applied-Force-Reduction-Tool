@@ -4,6 +4,6 @@ if isempty(Dyn_Data)
     return
 end
 
-Dyn_Data.remove_solutions("all");
+Dyn_Data.remove_solution("all")
 delete("data\" + system_name + "\Dyn_Data.mat")
 end

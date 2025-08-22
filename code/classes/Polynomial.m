@@ -290,7 +290,7 @@ classdef Polynomial
                             if size(plotted_outputs,2) > 1 
                                 ylabel("y_{(" + plotted_outputs(iOutput,1) + "," + plotted_outputs(iOutput,2) + ")}")
                             else
-                                ylabel("y_" + plotted_outputs(iOutput))
+                                ylabel("y_{" + plotted_outputs(iOutput)+ "}")
                             end
                             box on
                         end
@@ -314,7 +314,7 @@ classdef Polynomial
                     
                     if isempty(ax)
                         figure
-                        tiledlayout(1,num_plotted_outputs)
+                        tiledlayout("flow")
                         ax = cell(num_plotted_outputs);
                         for iOutput = 1:num_plotted_outputs
                             ax{iOutput} = nexttile;
@@ -323,7 +323,7 @@ classdef Polynomial
                             if size(plotted_outputs,2) > 1
                                 zlabel("y_{(" + plotted_outputs(iOutput,1) + plotted_outputs(iOutput,2) + ")}")
                             else
-                                zlabel("y_" + plotted_outputs(iOutput))
+                                zlabel("y_{" + plotted_outputs(iOutput) + "}")
                             end
                             box on
                         end

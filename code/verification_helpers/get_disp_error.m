@@ -17,7 +17,8 @@ function error = get_disp_error(disp,Rom_One,Rom_Two,force_ratio,Disp_Error_Inpu
     num_modes = size(r_transformed,1);
 
     error_map = ~ismember(force_ratio,0);
-    error = zeros(1,num_x);
+    r_ddot_one = zeros(num_modes,num_x);
+    point_error = zeros(num_modes,num_x);
     for iX = 1:num_x
         r_i = r_transformed(:,iX);
 
@@ -44,11 +45,17 @@ function error = get_disp_error(disp,Rom_One,Rom_Two,force_ratio,Disp_Error_Inpu
         inertia_two = r_dr_products_disp_two'*beta_bar_two*r_dr_products_disp_two;
 
         %---------
-        r_ddot_one = - inertia_one\force_one;
+        r_ddot_one(:,iX) = - inertia_one\force_one;
         r_ddot_two = - inertia_two\force_two;
 
-        point_error = 2*abs((r_ddot_one - r_ddot_two)./(r_ddot_one + r_ddot_two));
-        point_error(~error_map) = 0;
-        error(iX) = max(point_error);
+        point_error(:,iX) = 2*abs((r_ddot_one(:,iX) - r_ddot_two)./(r_ddot_one(:,iX) + r_ddot_two));
+        point_error(~error_map,iX) = 0;
+  
     end
+
+    r_ddot_max = abs(max(r_ddot_one,[],2));
+    largest_r_ddot = max(r_ddot_max);
+    small_acceleration = r_ddot_max < largest_r_ddot/10;
+    point_error(small_acceleration,:) = 0;
+    error = max(point_error);
 end

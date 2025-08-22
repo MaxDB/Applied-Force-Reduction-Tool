@@ -12,7 +12,7 @@ initial_modes = [1,6];
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
-Calibration_Opts.calibration_scale_factor = 1.5;
+Calibration_Opts.calibration_scale_factor = 1;
 %----------------------------------------%
 
 %--------- Static Solver Settings ---------%
@@ -22,7 +22,6 @@ Static_Opts.num_validation_modes = 20;
 %------------------------------------------%
 
 %--------- Static Verification Settings ---------%
-Verification_Opts.num_added_points = 1;
 Verification_Opts.maximum_iterations = 2;
 %----------------------------------------------%
 

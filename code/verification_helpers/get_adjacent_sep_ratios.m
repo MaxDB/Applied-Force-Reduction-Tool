@@ -96,15 +96,23 @@ end
 
 function order = get_sep_order(phi)
 MAX_ORDER = 10;
+num_angles = size(phi,1);
 
-for iOrder = 1:MAX_ORDER
-    order = iOrder;
-    base = pi*2^(-order);
-    if isapprox(mod(phi/base,1),0,"tight") || isapprox(mod(phi/base,1),1,"tight")
-        return
+angle_order = zeros(num_angles,1);
+for iPhi = 1:num_angles
+    for iOrder = 1:MAX_ORDER
+        order = iOrder;
+        base = pi*2^(-order);
+        if isapprox(mod(phi(iPhi)/base,1),0,"tight") || isapprox(mod(phi(iPhi)/base,1),1,"tight")
+            angle_order(iPhi) = order;
+            break
+        end
+    end
+    if order == MAX_ORDER
+        error("Could not detect SEP order")
     end
 end
-if order == MAX_ORDER
-    error("Could not detect SEP order")
-end
+
+order = max(angle_order);
+
 end
