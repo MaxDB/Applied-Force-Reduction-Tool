@@ -101,6 +101,8 @@ for iMode = 1:num_uncalibrated_modes
     num_seps = 2;
     r_limit = zeros(1,num_seps);
     f_limit = zeros(1,num_seps);
+    force_poly = cell(1,2);
+    potential_poly = cell(1,2);
     for iSep = 1:num_seps
         sep_span = sep_id == (iSep+2*(iMode-1));
         E_sep = E(sep_span);
@@ -123,26 +125,29 @@ for iMode = 1:num_uncalibrated_modes
         num_loadcases = size(f_sep,2);
         max_force_degree = num_loadcases+1;
         force_degree = min(max_force_degree,11);
-        Force_Poly = Polynomial(r_mode,f_mode,force_degree,"constraint",{"linear_force",eval_mode},"coupling","force","shift",1,"scale",1);
-        Potential_Poly = integrate_polynomial(Force_Poly);
+        Force_Poly_i = Polynomial(r_sep,f_sep,force_degree,"constraint",{"linear_force",eval_mode},"coupling","force","shift",1,"scale",1);
+        Potential_Poly_i = integrate_polynomial(Force_Poly_i);
 
         r_bound = r_sep(bound_index);
         r_interp = linspace(r_bound(1),r_bound(2));
-        v_interp = Potential_Poly.evaluate_polynomial(r_interp);
+        v_interp = Potential_Poly_i.evaluate_polynomial(r_interp);
         [~,min_index] = min(abs(v_interp - Model.energy_limit));
 
-        f_interp = Force_Poly.evaluate_polynomial(r_interp);
+        f_interp = Force_Poly_i.evaluate_polynomial(r_interp);
 
 
         r_limit(1,iSep) = r_interp(min_index);
         f_limit(1,iSep) = f_interp(min_index);
+
+        force_poly{iSep} = Force_Poly_i;
+        potential_poly{iSep} = Potential_Poly_i;
     end
 
 
     Force_Calibration.force_limit{1,calibration_id}(iMode+num_calibrated_modes,:) = f_limit;
     Force_Calibration.calibrated_modes{1,calibration_id}(iMode+num_calibrated_modes,:) = mode;
     %---------------------------------------------------------%
-    model_calibration_plot(mode,sep_id_all,iMode,r_all(mode_index,:),f_all(mode_index,:),f_limit,E_all,Force_Poly,Potential_Poly,Model)
+    model_calibration_plot(mode,sep_id_all,iMode,r_all(mode_index,:),f_all(mode_index,:),f_limit,E_all,force_poly,potential_poly,Model)
     %---------------------------------------------------------%
 end
 Force_Calibration.Parameters = Model.Parameters;

@@ -88,7 +88,7 @@ classdef Polynomial
             obj.num_element_coefficients = num_coeffs;
             obj.input_order = input_index;
 
-            obj.input_limit = Polynomial.find_limits(input_data);
+
 
             
             %---------------------
@@ -111,14 +111,17 @@ classdef Polynomial
                 end
                 obj.modeled_outputs = ~zero_index;
             end
+     
             %---------------------
             [scale_factor,shift_factor] = Polynomial.transform_data(input_data,scale,shift);
             obj.scaling_factor = scale_factor;
             obj.shifting_factor = shift_factor;
-            
-            %---------------------
+                       %---------------------
             Constraint = obj.parse_constraint(constraint_type);
             Constraint.coupling = coupling_type;
+            obj.input_limit = Polynomial.find_limits(input_data,Constraint);
+        
+            
             %---------------------
             [coeffs,Num_Unconstrained_Terms] = obj.fit_polynomial(input_data,output_data,Constraint);
             switch coupling_type
@@ -297,6 +300,7 @@ classdef Polynomial
                     end
 
                     for iOutput = 1:num_plotted_outputs
+                        hold_state = ishold(ax{iOutput});
 
                         plotted_output = plotted_outputs(iOutput,:);
 
@@ -304,8 +308,12 @@ classdef Polynomial
                         y = obj.evaluate_polynomial(x,plotted_output);
                         
                         hold(ax{iOutput},"on")
-                        plot(ax{iOutput},x,y,"Color",get_plot_colours(colour_num))
+                        plot(ax{iOutput},x,y,"Color",get_plot_colours(colour_num),"Tag",tag)
                         hold(ax{iOutput},"off")
+
+                        if hold_state
+                            hold(ax{iOutput},"on");
+                        end
                     end
 
                 case 2
@@ -330,6 +338,7 @@ classdef Polynomial
                     end
 
                     for iOutput = 1:num_plotted_outputs
+                        hold_state = ishold(ax{iOutput});
                         plotted_output = plotted_outputs(iOutput,:);
 
                         x_lin = reshape(x_grid,1,num_points);
@@ -338,8 +347,12 @@ classdef Polynomial
                         z_grid = reshape(z_lin',size(x_grid));
                         
                         hold(ax{iOutput},"on")
-                        mesh(ax{iOutput},x_grid,y_grid,z_grid)
+                        mesh(ax{iOutput},x_grid,y_grid,z_grid,"Tag",tag)
                         hold(ax{iOutput},"off")
+
+                        if hold_state
+                            hold(ax{iOutput},"on");
+                        end
                     end
             end
             
@@ -891,7 +904,11 @@ classdef Polynomial
             
         end
         %-----------------------------------------------------------------%
-        function limits = find_limits(input_data)
+        function limits = find_limits(input_data,Constraint)
+
+            if ismember(1,Constraint.terms)
+                input_data = [input_data,Constraint.values(Constraint.terms == 1)];
+            end
             num_inputs = size(input_data,1);
             switch num_inputs
                 case 1
