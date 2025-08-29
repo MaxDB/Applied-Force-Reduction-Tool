@@ -168,8 +168,8 @@ for iIteration = 1:(max_iterations+1)
         else
             num_jobs = gcp("nocreate").NumWorkers;
         end
-        % parfor (iSep = 1:num_verified_seps,num_jobs)
-        for iSep = 1:num_verified_seps
+        parfor (iSep = 1:num_verified_seps,num_jobs)
+        % for iSep = 1:num_verified_seps
 
 
             force_ratio = scaled_force_ratios(:,iSep);
