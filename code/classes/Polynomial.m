@@ -907,7 +907,7 @@ classdef Polynomial
         function limits = find_limits(input_data,Constraint)
 
             if ismember(1,Constraint.terms)
-                input_data = [input_data,Constraint.values(Constraint.terms == 1)];
+                input_data = [input_data,zeros(size(input_data,1),1)];
             end
             num_inputs = size(input_data,1);
             switch num_inputs

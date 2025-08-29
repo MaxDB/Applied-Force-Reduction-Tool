@@ -2,7 +2,7 @@ clear
 close all
 %--------- Software Settings ---------%
 set_logging_level(4)
-set_visualisation_level(43)
+set_visualisation_level(3)
 %-------------------------------------%
 
 %--------- System Settings ---------%
@@ -22,7 +22,7 @@ Static_Opts.max_parallel_jobs = 4; %be careful!
 %------------------------------------------%
 
 %--------- Static Verification Settings ---------%
-Verification_Opts.maximum_iterations =3;
+Verification_Opts.maximum_iterations = 0 ;
 %----------------------------------------------%
 
 Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);

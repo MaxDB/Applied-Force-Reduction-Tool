@@ -2,7 +2,7 @@ clear
 close all
 %--------- Software Settings ---------%
 set_logging_level(4)
-set_visualisation_level(4)
+set_visualisation_level(3)
 %-------------------------------------%
 
 %--------- System Settings ---------%
@@ -22,7 +22,7 @@ Static_Opts.num_validation_modes = 20;
 %------------------------------------------%
 
 %--------- Static Verification Settings ---------%
-Verification_Opts.maximum_iterations = 2;
+Verification_Opts.maximum_iterations = 5;
 %----------------------------------------------%
 
 Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);

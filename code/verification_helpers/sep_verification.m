@@ -163,12 +163,12 @@ for iIteration = 1:(max_iterations+1)
         error_calculation_failed = zeros(1,num_verified_seps);
         load("data\plot_level.mat","plotting_level")
         if plotting_level >= 4
-            num_jobs = 1;
+            error("disable parallelisation for verification plotting")
         else
             num_jobs = gcp("nocreate").NumWorkers;
         end
-        % parfor (iSep = 1:num_verified_seps,num_jobs)
-        for iSep = 1:num_verified_seps
+        parfor (iSep = 1:num_verified_seps,num_jobs)
+        % for iSep = 1:num_verified_seps
 
 
             force_ratio = scaled_force_ratios(:,iSep);
@@ -319,9 +319,10 @@ for iIteration = 1:(max_iterations+1)
     max_convergence_error = max(maximum_disp_pair_errors,maximum_force_pair_errors);
     [~,degree_index] = min(max_convergence_error);
     % [~,degree_index] = max(max_convergence_error);
-
+    
+    increase_degree_index = 0;
     if iIteration <= max_iterations
-        increase_degree_index = 0;
+        
         if force_degree_index < length(maximum_force_pair_errors)
             if maximum_force_pair_errors(force_degree_index) < 5 && maximum_force_pair_errors(force_degree_index) > 1
                 if maximum_force_pair_errors(force_degree_index+1) < 10*maximum_force_pair_errors(force_degree_index)
