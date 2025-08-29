@@ -163,12 +163,13 @@ for iIteration = 1:(max_iterations+1)
         error_calculation_failed = zeros(1,num_verified_seps);
         load("data\plot_level.mat","plotting_level")
         if plotting_level >= 4
-            error("disable parallelisation for verification plotting")
+            num_jobs = "nan";
+            %"disable parallelisation for verification plotting")
         else
             num_jobs = gcp("nocreate").NumWorkers;
         end
-        parfor (iSep = 1:num_verified_seps,num_jobs)
-        % for iSep = 1:num_verified_seps
+        % parfor (iSep = 1:num_verified_seps,num_jobs)
+        for iSep = 1:num_verified_seps
 
 
             force_ratio = scaled_force_ratios(:,iSep);
@@ -409,7 +410,8 @@ for iIteration = 1:(max_iterations+1)
     if iIteration > max_iterations
         break
     end
-
+    
+    final_added_points = 0;
     if ~isempty(new_sep_id)
         if data_available
             [found_loadcases,found_r,found_theta,found_f,found_E,found_additional_data] = Static_Data_Added.contains_loadcase(new_loads);
@@ -454,11 +456,12 @@ for iIteration = 1:(max_iterations+1)
         added_sep_ratios = setdiff(new_sep_ratios',Static_Data.unit_sep_ratios',"rows")';
         num_found_seps = size(Static_Data.unit_sep_ratios,2);
         Static_Data = Static_Data.update_data(r,theta,f,E,new_sep_id-num_found_seps,additional_data,"new_unit_sep_ratios",added_sep_ratios);
+        final_added_points = size(E,2);
     end
     
 
     validation_iteration_time = toc(validation_iteration_start);
-    log_message = sprintf("Verification step %i/%i completed: %i points added in %.1f seconds" ,[iIteration,max_iterations,num_extra_points,validation_iteration_time]);
+    log_message = sprintf("Verification step %i/%i completed: %i points added in %.1f seconds" ,[iIteration,max_iterations,final_added_points,validation_iteration_time]);
     logger(log_message,2)
 
     if isempty(new_sep_id)

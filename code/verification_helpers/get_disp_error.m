@@ -57,5 +57,5 @@ function error = get_disp_error(disp,Rom_One,Rom_Two,force_ratio,Disp_Error_Inpu
     largest_r_ddot = max(r_ddot_max);
     small_acceleration = r_ddot_max < largest_r_ddot/10;
     point_error(small_acceleration,:) = 0;
-    error = max(point_error);
+    error = max(point_error,[],1);
 end
