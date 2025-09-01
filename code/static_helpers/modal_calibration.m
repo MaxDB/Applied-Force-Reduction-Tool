@@ -95,7 +95,7 @@ for iMode = 1:num_uncalibrated_modes
 
  
 
-    eval_mode = Model.reduced_eigenvalues(iMode);
+    eval_mode = Model.reduced_eigenvalues(mode_index);
   
 
     num_seps = 2;
