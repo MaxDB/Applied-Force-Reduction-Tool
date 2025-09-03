@@ -8,7 +8,7 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "JH_beam_2d";
 energy_limit = 0.015; %0.01 J
-initial_modes = [1];
+initial_modes = [1,3,5];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%

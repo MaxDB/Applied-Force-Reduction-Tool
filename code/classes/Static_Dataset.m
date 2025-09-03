@@ -90,10 +90,36 @@ classdef Static_Dataset
         function obj = create_dataset(obj)
             rom_data_time_start = tic;
             
+           
+            if isstring(obj.Model.Static_Options.num_loadcases) && obj.Model.Static_Options.num_loadcases == "auto"
+                Old_Static_Opts = obj.Model.Static_Options;
+                num_modes  = size(obj.Model.reduced_modes,2);
+                switch num_modes
+                    case {1,2}
+                        num_loadcases = 5;
+                    case 3
+                        num_loadcases = 9;
+                    case 4
+                        num_loadcases = 16;
+                    otherwise
+                        num_loadcases = 20;
+                end
+                Static_Opts.num_loadcases = num_loadcases;
+                obj.Model = obj.Model.update_static_opts(Static_Opts);
+
+                %remove found seps if not going from 1 to 2
+                if num_modes > 2
+                    obj.scaffold_points(:) = 0;
+                end
+
+            end
+
             
             obj = obj.create_scaffold;
             obj = obj.verify_dataset;
             obj = obj.add_perturbation_data;
+
+            obj.Model = obj.Model.update_static_opts(Old_Static_Opts);
 
             rom_data_time = toc(rom_data_time_start);
             log_message = sprintf("ROM Dataset Created: %.1f seconds" ,rom_data_time);
@@ -290,8 +316,12 @@ classdef Static_Dataset
                     num_modes = length(r_modes);
 
                     full_unit_force_ratios = add_sep_ratios(num_modes,sep_density);
-
-                    found_sep_ratios = obj.unit_sep_ratios;
+                    
+                    if num_modes < 3
+                        found_sep_ratios = obj.unit_sep_ratios;
+                    else
+                        found_sep_ratios = [];
+                    end
                     unit_force_ratios = add_sep_ratios(num_modes,sep_density,found_sep_ratios);
 
                     member_map = ismembertol(full_unit_force_ratios',unit_force_ratios',"ByRows",true)';
@@ -301,8 +331,14 @@ classdef Static_Dataset
                     scaled_force_ratios = scaled_force_ratios*limit_scale_factor;
 
                     [r,theta,f,E,sep_id,additional_data] = obj.Model.add_sep(scaled_force_ratios,obj.additional_data_type,1);
-
+                    
+                    if num_modes > 2 && size(obj,2) > 0
+                        obj.static_equilibrium_path_id(:) = 0;
+                        obj.unit_sep_ratios = [];
+                    end
                     obj = obj.update_data(r,theta,f,E,sep_id,additional_data,"found_force_ratios",unit_force_ratios);
+
+                  
                     scaf_points = obj.scaffold_points == 1;
                     obj.static_equilibrium_path_id(scaf_points) = sep_map(obj.static_equilibrium_path_id(scaf_points));
                     obj.unit_sep_ratios(:,sep_map) = obj.unit_sep_ratios;

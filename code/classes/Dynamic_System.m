@@ -134,23 +134,7 @@ classdef Dynamic_System
                 %--------------------%
             end
 
-            if isstring(obj.Static_Options.num_loadcases) && obj.Static_Options.num_loadcases == "auto"
-                switch size(obj.reduced_modes,2)
-                    case 1
-                        num_loadcases = 5;
-                    case 2
-                        num_loadcases = 5;
-                    case 3
-                        num_loadcases = 9;
-                    case 4
-                        num_loadcases = 16;
-                    otherwise
-                        num_loadcases = 20;
-                end
-                Static_Opts.num_loadcases = num_loadcases;
-                obj = obj.update_static_opts(Static_Opts);
-            end
-
+          
 
             model_init_time = toc(model_init_start);
             log_message = sprintf("Model Initialised: %.1f seconds" ,model_init_time);

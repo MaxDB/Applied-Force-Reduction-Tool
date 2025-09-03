@@ -1,4 +1,8 @@
 function logger(log_message,message_level)
+timestamp_format = "HH:mm:ss.SS";
+timestamp = datetime;
+timestamp.Format = timestamp_format;
+
 load("data\log_level.mat","logging_level")
 
 switch message_level
@@ -23,13 +27,15 @@ if message_level == 1
     logger(log_break,2)
 end
 
-log_id = fopen("data\logs\log.txt","a");
-fprintf(log_id,log_message);
-fclose(log_id);
-
 if message_level <= logging_level
     fprintf(log_message)
 end
+
+log_message = string(timestamp) + ">>\t" + log_message;
+
+log_id = fopen("data\logs\log.txt","a");
+fprintf(log_id,log_message);
+fclose(log_id);
 
 if message_level == 1
     logger("",2)
