@@ -28,7 +28,9 @@ elseif isstring(num_added_points_setting) && num_added_points_setting == "auto"
         case 2
             num_added_points = [4,2];
         case 3
-            num_added_points = [5,3];
+            num_added_points = [4,3];
+        case 4
+            num_added_points = [3,1];
         otherwise
             num_added_points = 1;
     end
@@ -326,41 +328,41 @@ for iIteration = 1:(max_iterations+1)
         
         if force_degree_index < length(maximum_force_pair_errors)
             if maximum_force_pair_errors(force_degree_index) < 5 && maximum_force_pair_errors(force_degree_index) > 1
-                if maximum_force_pair_errors(force_degree_index+1) < 10*maximum_force_pair_errors(force_degree_index)
-                    force_degree_index = force_degree_index + 1;
-                    increase_degree_index = 1;
-                    log_message = sprintf("Error close to tolerace: higher force degree selected");
-                    logger(log_message,4)
-                end
+
+                force_degree_index = force_degree_index + 1;
+                increase_degree_index = 1;
+                log_message = sprintf("Error close to tolerace: higher force degree selected");
+                logger(log_message,4)
+
             end
         end
 
         if disp_degree_index < length(maximum_disp_pair_errors)
             if maximum_disp_pair_errors(disp_degree_index) < 5 && maximum_disp_pair_errors(disp_degree_index) > 1
-                if maximum_disp_pair_errors(disp_degree_index+1) < 10*maximum_disp_pair_errors(disp_degree_index)
-                    disp_degree_index = disp_degree_index + 1;
-                    increase_degree_index = 1;
-                    log_message = sprintf("Error close to tolerace: higher displacement degree selected");
-                    logger(log_message,4)
-                end
+
+                disp_degree_index = disp_degree_index + 1;
+                increase_degree_index = 1;
+                log_message = sprintf("Error close to tolerace: higher displacement degree selected");
+                logger(log_message,4)
+
             end
         end
 
 
     end
 
-    if iIteration <= length(num_added_points) && increase_degree_index == 0
-        if force_degree_index < length(maximum_force_pair_errors)
-            force_degree_index = force_degree_index + 1;
-            increase_degree_index = 1;
-        end
-        if disp_degree_index < length(maximum_disp_pair_errors)
-            disp_degree_index = disp_degree_index + 1;
-            increase_degree_index = 1;
-        end
-        log_message = sprintf("Select larger degree pairs at earlier iterations");
-        logger(log_message,4)
-    end
+    % if iIteration <= length(num_added_points) && increase_degree_index == 0
+    %     if force_degree_index < length(maximum_force_pair_errors)
+    %         force_degree_index = force_degree_index + 1;
+    %         increase_degree_index = 1;
+    %     end
+    %     if disp_degree_index < length(maximum_disp_pair_errors)
+    %         disp_degree_index = disp_degree_index + 1;
+    %         increase_degree_index = 1;
+    %     end
+    %     log_message = sprintf("Select larger degree pairs at earlier iterations");
+    %     logger(log_message,4)
+    % end
 
     degree_index = degree_index + increase_degree_index;
     if degree_index > length(max_convergence_error)

@@ -25,8 +25,24 @@ classdef Static_Dataset
         verified_degree
     end
     methods
-        function obj = Static_Dataset(Model,Verification_Opts,varargin)
+        function obj = Static_Dataset(Model,varargin)
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            Verification_Opts = struct([]);
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "verification_opts"
+                        Verification_Opts = keyword_values{arg_counter};
+                end
+            end
             
+            %-----
 
             obj.additional_data_type = Model.Static_Options.additional_data;
 
@@ -56,19 +72,19 @@ classdef Static_Dataset
 
             obj = update_verification_opts(obj,Verification_Opts);
 
-            if nargin == 2
-                obj = obj.create_dataset;
-                static_dataset_verificiation_plot(obj)
-            else
-                Properties_Data = varargin{1,1};
-                properties = fields(Properties_Data);
-                num_properties = size(properties,1);
-                for iProp = 1:num_properties
-                    property = properties{iProp};
-                    obj.(property) = Properties_Data.(property);
-                end
-
-            end
+            % if nargin == 2
+            obj = obj.create_dataset;
+            static_dataset_verificiation_plot(obj)
+            % else
+            %     Properties_Data = varargin{1,1};
+            %     properties = fields(Properties_Data);
+            %     num_properties = size(properties,1);
+            %     for iProp = 1:num_properties
+            %         property = properties{iProp};
+            %         obj.(property) = Properties_Data.(property);
+            %     end
+            % 
+            % end
         end
         %-----------------------------------------------------------------%
         function obj = create_dataset(obj)
@@ -524,6 +540,11 @@ classdef Static_Dataset
         %-----------------------------------------------------------------%
         %-----------------------------------------------------------------%
         function save_data(Static_Data)
+            log_message = sprintf("Saving...");
+            logger(log_message,2)
+            save_time_start = tic;
+
+            
             SEPERATELY_SAVED_PROPERTIES = [
                 "physical_displacement", ...
                 "low_frequency_stiffness", ...
@@ -556,6 +577,11 @@ classdef Static_Dataset
             
             
             save(data_path + "Static_Data.mat","Static_Data","-v7.3")
+
+            save_time = toc(save_time_start);
+            log_message = sprintf("Static Dataset saved: %.1f seconds",save_time);
+            logger(log_message,1)
+
 
             function Static_Data = save_property_data(static_data_property,Static_Data)
                 TEMP_PROPERTY_VALUE = "unloaded";

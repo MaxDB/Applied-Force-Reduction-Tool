@@ -47,13 +47,15 @@ function error = get_disp_error(disp,Rom_One,Rom_Two,force_ratio,Disp_Error_Inpu
         %---------
         r_ddot_one(:,iX) = - inertia_one\force_one;
         r_ddot_two = - inertia_two\force_two;
+        % 
+        % point_error(:,iX) = 2*abs((r_ddot_one(:,iX) - r_ddot_two)./(abs(r_ddot_one(:,iX)) + abs(r_ddot_two)));
 
-        point_error(:,iX) = 2*abs((r_ddot_one(:,iX) - r_ddot_two)./(r_ddot_one(:,iX) + r_ddot_two));
+        point_error(:,iX) = abs(r_ddot_one(:,iX) - r_ddot_two)./abs(r_ddot_one(:,iX));
         point_error(~error_map,iX) = 0;
   
     end
 
-    r_ddot_max = abs(max(r_ddot_one,[],2));
+    r_ddot_max = max(abs(r_ddot_one),[],2);
     largest_r_ddot = max(r_ddot_max);
     small_acceleration = r_ddot_max < largest_r_ddot/10;
     point_error(small_acceleration,:) = 0;

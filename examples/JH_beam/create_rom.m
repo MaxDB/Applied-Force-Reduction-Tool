@@ -43,10 +43,10 @@ for iCount = 1:num_iterations
     Model = create_model(system_name,energy_limit,initial_modes,Static_Opts);
     calibration(1,iCount) = toc(calibration_time_start);
 
-    Static_Data = Static_Dataset(Model,Verification_Opts);
+    Static_Data = Static_Dataset(Model);
 
-   clear Model
-   clear Static_Dataset
+    clear Model
+    clear Static_Dataset
 end
 
 print_mean_time(rom_one_base,"Static Data")

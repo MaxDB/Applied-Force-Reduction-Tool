@@ -8,6 +8,9 @@ if plotting_level < PLOT_LEVEL
 end
 
 Rom = Reduced_System(Static_Data);
+if length(Rom.Model.reduced_modes) > 2
+    return
+end
 limit_data = {Rom.Potential_Polynomial,Rom.Model.energy_limit};
 
 ax = plot_static_data("energy",Static_Data);
