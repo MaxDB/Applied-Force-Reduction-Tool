@@ -50,17 +50,24 @@ end
 log_message = string(timestamp) + ">>\t" + log_message;
 
 lock_counter = 0;
-while ~isempty(dir("*.lck"))
-    pause(0.1);
+lock_files = dir("*.lck");
+while ~isempty(lock_files)
+    pause(rand/10);
     lock_counter = lock_counter + 1;
     if lock_counter > 10
         error("Log locked")
     end
+    lock_files = dir("*.lck");
+end
+lock_id = fopen(lock_file,'w');
+fclose(lock_id);
+
+lock_files = dir("*.lck");
+if length(lock_files) > 1
+    error("multiple lock files")
 end
 
 
-lock_id = fopen(lock_file,'w');
-fclose(lock_id);
 log_id = fopen(log_file,"a");
 try
     fprintf(log_id,log_message);

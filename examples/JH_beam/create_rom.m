@@ -35,14 +35,14 @@ rom_one = get_system_name(system_name,initial_modes);
 rom_two = get_system_name(system_name,[initial_modes,added_modes(1)]);
 rom_three = get_system_name(system_name,[initial_modes,added_modes]);
 
-initial_time = zeros(1,num_iterations);
-calibration = zeros(3,num_iterations);
-initial_points = zeros(3,num_iterations);
-verification_step_1 = zeros(3,num_iterations);
-verification_step_2 = zeros(3,num_iterations);
-verification_step_3 = zeros(3,num_iterations);
+initial_time = zeros(2,num_iterations);
+calibration = zeros(4,num_iterations);
+initial_points = zeros(4,num_iterations);
+verification_step_1 = zeros(4,num_iterations);
+verification_step_2 = zeros(4,num_iterations);
+verification_step_3 = zeros(4,num_iterations);
 
-total_time = zeros(3,num_iterations);
+total_time = zeros(4,num_iterations);
 
 for iCount = 1:num_iterations
     close all
@@ -56,7 +56,7 @@ for iCount = 1:num_iterations
     total_time_start = tic;
     initial_time_start = tic;
     Dynamic_System(system_name,0,initial_modes,"static_opts",Static_Opts);
-    initial_time(iCount) = toc(initial_time_start);
+    initial_time(1,iCount) = toc(initial_time_start);
 
     calibration_time_start = tic;
     Model = Dynamic_System(system_name,energy_limit,initial_modes,"static_opts",Static_Opts);
@@ -104,6 +104,33 @@ for iCount = 1:num_iterations
     %-------------------------------------------
     clear Model
     clear Static_Dataset
+
+    %-------------------------------------------
+    %-------------------------------------------
+    delete_static_data(rom_three);
+    delete_cache(system_name,"force",energy_limit)
+    delete_cache(system_name,"matrices")
+    
+    total_time_start = tic;
+    initial_time_start = tic;
+    Dynamic_System(system_name,0,[initial_modes,added_modes],"static_opts",Static_Opts);
+    initial_time(2,iCount) = toc(initial_time_start);
+
+    calibration_time_start = tic;
+    Model = Dynamic_System(system_name,energy_limit,[initial_modes,added_modes],"static_opts",Static_Opts);
+    calibration(4,iCount) = toc(calibration_time_start);
+
+    Static_Data = Static_Dataset(Model);
+    Static_Data.save_data;
+    total_time(4,iCount) = toc(total_time_start);
+
+    log_data = read_log(log_lines);
+    calibration(4,iCount) = log_data(1);
+    initial_points(4,iCount) = log_data(2);
+    verification_step_1(4,iCount) = log_data(3);
+    %-------------------------------------------
+    clear Model
+    clear Static_Dataset
 end
 
 print_mean_time(initial_time,"Initialisation")
@@ -119,11 +146,9 @@ fprintf("\n");
 print_mean_time(verification_step_3,"Verification iteration 3")
 fprintf("\n");
 print_mean_time(total_time,"Total ROM creation")
-% 
-% total_one = rom_one_validation_data + sum(rom_one_orbits,1) + sum(rom_one_orbit_validation,1);
-% print_mean_time(total_one,"Total")
 
 
+cumulative_total = sum(total_time(1:3,:),1);
+print_mean_time(cumulative_total,"Cumulative ROM creation")
 
-%-----------------------------------
 
