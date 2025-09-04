@@ -87,10 +87,6 @@ for iCount = 1:num_iterations
     verification_step_3(2,iCount) = log_data(5);
     %-------------------------------------------
     total_time_start = tic;
-    initial_time_start = tic;
-    Dynamic_System(system_name,0,initial_modes,"static_opts",Static_Opts);
-    initial_time(iCount) = toc(initial_time_start);
-
     
     
     calibration_time_start = tic;
