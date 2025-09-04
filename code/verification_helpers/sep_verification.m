@@ -28,9 +28,9 @@ elseif isstring(num_added_points_setting) && num_added_points_setting == "auto"
         case 2
             num_added_points = [4,2];
         case 3
-            num_added_points = [4,3];
+            num_added_points = 4;
         case 4
-            num_added_points = [3,1];
+            num_added_points = 3;
         otherwise
             num_added_points = 1;
     end
