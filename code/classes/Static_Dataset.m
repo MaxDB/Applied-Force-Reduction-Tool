@@ -90,9 +90,8 @@ classdef Static_Dataset
         function obj = create_dataset(obj)
             rom_data_time_start = tic;
             
-           
+            Old_Static_Opts = obj.Model.Static_Options;
             if isstring(obj.Model.Static_Options.num_loadcases) && obj.Model.Static_Options.num_loadcases == "auto"
-                Old_Static_Opts = obj.Model.Static_Options;
                 num_modes  = size(obj.Model.reduced_modes,2);
                 switch num_modes
                     case {1,2}
@@ -665,7 +664,10 @@ classdef Static_Dataset
         end
         %-----------------------------------------------------------------%
         function[Static_Data,Static_Data_Removed] = remove_loadcases(Static_Data,removal_index)
-            Static_Data_Removed = Static_Data;
+            if isstring(removal_index) && removal_index == "all"
+                removal_index = 1:size(Static_Data,2);
+            end
+            Static_Data_Removed = Static_Data.load_all_data();
 
             Static_Data_Removed.reduced_displacement = Static_Data_Removed.reduced_displacement(:,removal_index);
             Static_Data_Removed.physical_displacement = Static_Data_Removed.physical_displacement(:,removal_index);
@@ -786,5 +788,15 @@ classdef Static_Dataset
             h_evec = [r_evec,L_evec];
         end
         %-----------------------------------------------------------------%
+        function obj = load_all_data(obj)
+            props = properties(obj);
+            num_props = size(props,1);
+            for iProp = 1:num_props
+                prop = props{iProp};
+                if isstring(obj.(prop)) && obj.(prop) == "unloaded"
+                    obj.(prop) = obj.get_dataset_values(prop);
+                end
+            end
+        end
     end
 end

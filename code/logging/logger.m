@@ -76,6 +76,11 @@ catch
     warning("Could not write to log")
     fclose(log_id);
 end
+
+pause(0.01)
+if length(lock_files) > 1
+    error("multiple lock files")
+end
 delete(lock_file)
 
 if message_level == 1

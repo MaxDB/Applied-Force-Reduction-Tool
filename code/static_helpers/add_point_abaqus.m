@@ -280,7 +280,7 @@ try
         
         
         if RESET_TO_ZERO || additional_data_mode
-            if ~isempty(Closest_Point.initial_disp)
+            if ~isempty(Closest_Point) && ~isempty(Closest_Point.initial_disp)
                 initial_force_bc = force_transform*Closest_Point.initial_force(:,iLoad);
                 initial_force = zeros(all_dofs,1);
                 initial_force(node_map,:) = initial_force_bc;
