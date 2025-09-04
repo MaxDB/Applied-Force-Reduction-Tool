@@ -3,7 +3,23 @@ timestamp_format = "HH:mm:ss.SS";
 timestamp = datetime;
 timestamp.Format = timestamp_format;
 
-load("data\log_level.mat","logging_level")
+
+worker = getCurrentWorker();
+
+
+log_path = "data\logs\";
+log_level = "data\log_level.mat";
+log_file = log_path + "log.txt";
+if ~isempty(worker)
+    worker_id = worker.ProcessId;
+    lock_file = log_path + "log_" + worker_id + ".lck";
+else
+    lock_file = log_path + "log.lck";
+end
+
+
+
+load(log_level,"logging_level")
 
 switch message_level
     case 1
@@ -33,9 +49,27 @@ end
 
 log_message = string(timestamp) + ">>\t" + log_message;
 
-log_id = fopen("data\logs\log.txt","a");
-fprintf(log_id,log_message);
-fclose(log_id);
+lock_counter = 0;
+while ~isempty(dir("*.lck"))
+    pause(0.1);
+    lock_counter = lock_counter + 1;
+    if lock_counter > 10
+        error("Log locked")
+    end
+end
+
+
+lock_id = fopen(lock_file,'w');
+fclose(lock_id);
+log_id = fopen(log_file,"a");
+try
+    fprintf(log_id,log_message);
+    fclose(log_id);
+catch
+    warning("Could not write to log")
+    fclose(log_id);
+end
+delete(lock_file)
 
 if message_level == 1
     logger("",2)

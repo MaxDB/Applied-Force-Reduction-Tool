@@ -64,7 +64,8 @@ classdef Dynamic_System
 
 
             %----------------------- Environment Setup -------------------%
-            if ~isfolder("data\logs")
+            if isfolder("data\logs")
+                rmdir("data\logs","s")
                 mkdir("data\logs")
             end
 
