@@ -918,7 +918,7 @@ classdef Polynomial
                     bound_index = boundary(input_data(1,:)',input_data(2,:)',0.1);
                     limits = input_data(:,bound_index);
                 otherwise
-                    limits = [];
+                    limits = [min(input_data,[],2),max(input_data,[],2)];
             end
         end
         %-----------------------------------------------------------------%
