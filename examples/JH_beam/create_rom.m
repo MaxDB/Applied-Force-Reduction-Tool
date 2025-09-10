@@ -50,8 +50,8 @@ for iCount = 1:num_iterations
     delete_static_data(rom_one);
     delete_static_data(rom_two);
     delete_static_data(rom_three);
-    % delete_cache(system_name,"force",energy_limit)
-    % delete_cache(system_name,"matrices")
+    delete_cache(system_name,"force",energy_limit)
+    delete_cache(system_name,"matrices")
     
     total_time_start = tic;
     initial_time_start = tic;
@@ -108,8 +108,8 @@ for iCount = 1:num_iterations
     %-------------------------------------------
     %-------------------------------------------
     delete_static_data(rom_three);
-    % delete_cache(system_name,"force",energy_limit)
-    % delete_cache(system_name,"matrices")
+    delete_cache(system_name,"force",energy_limit)
+    delete_cache(system_name,"matrices")
     
     total_time_start = tic;
     initial_time_start = tic;
