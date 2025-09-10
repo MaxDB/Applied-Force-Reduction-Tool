@@ -1,7 +1,6 @@
 function logger(log_message,message_level)
 timestamp_format = "HH:mm:ss.SS";
-timestamp = datetime;
-timestamp.Format = timestamp_format;
+
 
 
 worker = getCurrentWorker();
@@ -14,6 +13,7 @@ if ~isempty(worker)
     worker_id = worker.ProcessId;
     lock_file = log_path + "log_" + worker_id + ".lck";
 else
+    worker_id = 0;
     lock_file = log_path + "log.lck";
 end
 
@@ -43,45 +43,68 @@ if message_level == 1
     logger(log_break,2)
 end
 
-if message_level <= logging_level
-    fprintf(log_message)
-end
 
-log_message = string(timestamp) + ">>\t" + log_message;
 
+lock_files_path = "data\logs\*.lck";
 lock_counter = 0;
-lock_files = dir("*.lck");
+lock_files = dir(lock_files_path);
 while ~isempty(lock_files)
-    pause(rand/10);
+    pause(0.01);
     lock_counter = lock_counter + 1;
-    if lock_counter > 10
+    if lock_counter > 100
         error("Log locked")
     end
-    lock_files = dir("*.lck");
+    lock_files = dir(lock_files_path);
 end
 lock_id = fopen(lock_file,'w');
 fclose(lock_id);
 
-lock_files = dir("*.lck");
-if length(lock_files) > 1
-    error("multiple lock files")
+while ~isfile(lock_file)
+    pause(0.01);
 end
+
+lock_files = dir(lock_files_path);
+if length(lock_files) > 1
+    min_id = 0;
+    lock_counter = 0;
+    while worker_id ~= min_id
+        lock_file_names = arrayfun(@(x) convertCharsToStrings(x.name),lock_files);
+        lock_file_ids = double(extract(lock_file_names,digitsPattern));
+        min_id = min(lock_file_ids);
+        pause(0.01);
+        lock_counter = lock_counter + 1;
+        if lock_counter > 100
+            error("Log locked")
+        end
+        lock_files = dir(lock_files_path);
+    end
+end
+
+
+
+
 
 
 log_id = fopen(log_file,"a");
 try
+    timestamp = datetime;
+    timestamp.Format = timestamp_format;
+    log_message = string(timestamp) + ">>\t" + log_message;
+    if message_level <= logging_level
+        fprintf(log_message)
+    end
     fprintf(log_id,log_message);
     fclose(log_id);
-catch
-    warning("Could not write to log")
+catch exception_message
     fclose(log_id);
+    rethrow(exception_message)
 end
 
-pause(0.01)
-if length(lock_files) > 1
-    error("multiple lock files")
-end
 delete(lock_file)
+
+while isfile(lock_file)
+    pause(0.01);
+end
 
 if message_level == 1
     logger("",2)

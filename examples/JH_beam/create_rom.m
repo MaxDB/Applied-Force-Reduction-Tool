@@ -1,7 +1,7 @@
 clear
 close all
 
-num_iterations = 1;
+num_iterations = 10;
 
 %--------- Software Settings ---------%
 set_logging_level(3)
@@ -50,8 +50,8 @@ for iCount = 1:num_iterations
     delete_static_data(rom_one);
     delete_static_data(rom_two);
     delete_static_data(rom_three);
-    delete_cache(system_name,"force",energy_limit)
-    delete_cache(system_name,"matrices")
+    % delete_cache(system_name,"force",energy_limit)
+    % delete_cache(system_name,"matrices")
     
     total_time_start = tic;
     initial_time_start = tic;
@@ -108,8 +108,8 @@ for iCount = 1:num_iterations
     %-------------------------------------------
     %-------------------------------------------
     delete_static_data(rom_three);
-    delete_cache(system_name,"force",energy_limit)
-    delete_cache(system_name,"matrices")
+    % delete_cache(system_name,"force",energy_limit)
+    % delete_cache(system_name,"matrices")
     
     total_time_start = tic;
     initial_time_start = tic;
@@ -128,6 +128,7 @@ for iCount = 1:num_iterations
     calibration(4,iCount) = log_data(1);
     initial_points(4,iCount) = log_data(2);
     verification_step_1(4,iCount) = log_data(3);
+    verification_step_2(4,iCount) = log_data(4);
     %-------------------------------------------
     clear Model
     clear Static_Dataset
