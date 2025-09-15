@@ -464,15 +464,8 @@ num_cpus = Model.Static_Options.num_fe_cpus;
 
 abaqus_time_start = tic;
 
-[status,cmdout] = system("cd temp & abaqus job=" + new_job + " cpus=" + num_cpus); %#ok<ASGLU>
 
-while ~isfile("temp\" + new_job + ".dat")
-    pause(0.1)
-end
-
-while isfile("temp\" + new_job + ".lck")
-    pause(0.1)
-end
+[status,cmdout] = run_abaqus_job(new_job,"num_cpus",num_cpus,"interactive",3); %#ok<ASGLU>
 
 abaqus_time = toc(abaqus_time_start);
 log_message = sprintf("job " + job_id(1) + ": Abaqus static analysis complete: %.1f seconds" ,abaqus_time);

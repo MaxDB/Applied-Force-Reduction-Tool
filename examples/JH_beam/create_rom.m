@@ -55,15 +55,16 @@ for iCount = 1:num_iterations
     
     total_time_start = tic;
     initial_time_start = tic;
-    Dynamic_System(system_name,0,initial_modes,"static_opts",Static_Opts);
+    Model = Dynamic_System(system_name,0,initial_modes,"static_opts",Static_Opts);
     initial_time(1,iCount) = toc(initial_time_start);
     
-    pause(20)
+    Model.save_log;
     continue
+
     calibration_time_start = tic;
     Model = Dynamic_System(system_name,energy_limit,initial_modes,"static_opts",Static_Opts);
     calibration(1,iCount) = toc(calibration_time_start);
-
+    
     Static_Data = Static_Dataset(Model);
     Static_Data.save_data;
     total_time(1,iCount) = toc(total_time_start);

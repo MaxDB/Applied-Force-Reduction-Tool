@@ -31,17 +31,7 @@ logger(log_message,3)
 %Execute in cmd
 abaqus_time_start = tic;
 
-project_directory = pwd;
-cd temp
-[status,cmdout] = system("abaqus j=" + file_name); %#ok<ASGLU>
-
-while ~isfile(file_name + ".dat")
-    pause(0.1)
-end
-while isfile(file_name + ".lck")
-    pause(0.1)
-end
-cd(project_directory)
+[status,cmdout] = run_abaqus_job(file_name,"interactive",3); %#ok<ASGLU>
 abaqus_time = toc(abaqus_time_start);
 log_message = sprintf("Abaqus matrix analysis complete: %.1f seconds" ,abaqus_time);
 logger(log_message,3)
@@ -58,7 +48,6 @@ pre_M = load_mtx(M_file);
 pre_K = load_mtx(K_file);
 
 
-cd(project_directory)
 
 % Apply boundary conditions
 

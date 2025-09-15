@@ -402,20 +402,9 @@ logger(log_message,3)
 num_cpus = Model.Static_Options.num_fe_cpus;
 
 abaqus_time_start = tic;
-project_directory = pwd;
-cd temp
-[status,cmdout] = system("abaqus job=" + new_job + " cpus=" + num_cpus); %#ok<ASGLU>
-
-while ~isfile(new_job + ".dat")
-    pause(0.1)
-end
-
-while isfile(new_job + ".lck")
-    pause(0.1)
-end
-cd(project_directory)
-
+[status,cmdout] = run_abaqus_job(new_job,"num_cpus",num_cpus,"interactive",3); %#ok<ASGLU>
 abaqus_time = toc(abaqus_time_start);
+
 log_message = sprintf("job " + job_id + ": Abaqus static analysis complete: %.1f seconds" ,abaqus_time);
 logger(log_message,3)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

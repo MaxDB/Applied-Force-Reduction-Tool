@@ -1,5 +1,24 @@
-function logger(log_message,message_level)
+function logger(log_message,message_level,varargin)
 timestamp_format = "HH:mm:ss.SS";
+
+%-------------------------------------------------------------------------%
+num_args = length(varargin);
+if mod(num_args,2) == 1
+    error("Invalid keyword/argument pairs")
+end
+keyword_args = varargin(1:2:num_args);
+keyword_values = varargin(2:2:num_args);
+
+print_timestamp = 1;
+for arg_counter = 1:num_args/2
+    switch keyword_args{arg_counter}
+        case "timestamp"
+            print_timestamp = keyword_values{arg_counter};
+        otherwise
+            error("Invalid keyword: " + keyword_args{arg_counter})
+    end
+end
+%-----
 
 
 
@@ -87,9 +106,11 @@ end
 
 log_id = fopen(log_file,"a");
 try
-    timestamp = datetime;
-    timestamp.Format = timestamp_format;
-    log_message = string(timestamp) + ">>\t" + log_message;
+    if print_timestamp
+        timestamp = datetime;
+        timestamp.Format = timestamp_format;
+        log_message = string(timestamp) + ">>\t" + log_message;
+    end
     if message_level <= logging_level
         fprintf(log_message)
     end
