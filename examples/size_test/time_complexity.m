@@ -36,7 +36,7 @@ for iSeed = 1:num_seeds
 
     %create static data
     static_time_start = tic;
-    create_static_data(1,"perturbation")
+    create_static_data(1,"none")
     static_time(1,iSeed) = toc(static_time_start);
     %create backbone
 
@@ -44,11 +44,12 @@ for iSeed = 1:num_seeds
 
     %create static data
     static_time_start = tic;
-    create_static_data([1,6],"perturbation")
+    create_static_data([1,6],"none")
     static_time(2,iSeed) = toc(static_time_start);
 
     Size_Data.static_time = static_time;
     Size_Data.num_dof = num_dof;
 
     save(data_path + "\size_data","Size_Data") 
+
 end

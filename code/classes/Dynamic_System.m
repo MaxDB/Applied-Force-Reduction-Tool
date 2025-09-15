@@ -64,12 +64,13 @@ classdef Dynamic_System
 
 
             %----------------------- Environment Setup -------------------%
-            if isfolder("data\logs")
-                rmdir("data\logs","s")
-                mkdir("data\logs")
+            log_path = "data\logs";
+            if isfolder(log_path)
+                rmdir(log_path,"s")
             end
+            mkdir(log_path)
 
-            log_id = fopen("data\logs\log.txt","w");
+            log_id = fopen(log_path + "\log.txt","w");
             fclose(log_id);
             logger(name + ": " + string(datetime),10)
             logger("",1)

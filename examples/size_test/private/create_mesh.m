@@ -3,11 +3,12 @@ SYSTEM_NAME = "mems_arch";
 DIR_DELIMINATOR = "\";
 
 current_directory = pwd;
+script_path =  string(current_directory) + DIR_DELIMINATOR + "generate_input_file" + DIR_DELIMINATOR + "mesh_arch.py";
 geometry_path = string(current_directory) + DIR_DELIMINATOR + "geometry" + DIR_DELIMINATOR + SYSTEM_NAME + DIR_DELIMINATOR;
 
 reset_temp_directory()
-cd temp
-system("python " + '"' + geometry_path +  "mesh_arch.py" + '" ' + seed_size);
+cd generate_input_file
+system("python " + '"' + script_path + '" ' + seed_size);
 copyfile(SYSTEM_NAME + ".inp",geometry_path)
 cd(current_directory)
 

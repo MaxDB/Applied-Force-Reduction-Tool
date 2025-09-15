@@ -1,7 +1,7 @@
 clear
 close all
 
-num_iterations = 10;
+num_iterations = 3;
 
 %--------- Software Settings ---------%
 set_logging_level(3)
@@ -57,7 +57,9 @@ for iCount = 1:num_iterations
     initial_time_start = tic;
     Dynamic_System(system_name,0,initial_modes,"static_opts",Static_Opts);
     initial_time(1,iCount) = toc(initial_time_start);
-
+    
+    pause(20)
+    continue
     calibration_time_start = tic;
     Model = Dynamic_System(system_name,energy_limit,initial_modes,"static_opts",Static_Opts);
     calibration(1,iCount) = toc(calibration_time_start);
