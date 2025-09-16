@@ -66,9 +66,10 @@ classdef Dynamic_System
             %----------------------- Environment Setup -------------------%
             log_path = "data\logs";
             if isfolder(log_path)
-                rmdir(log_path,"s")
+                delete(log_path + "\log.txt")
+            else
+                mkdir(log_path)
             end
-            mkdir(log_path)
 
             log_id = fopen(log_path + "\log.txt","w");
             fclose(log_id);
@@ -609,6 +610,12 @@ classdef Dynamic_System
         end
         %-----------------------------------------------------------------%
         function save_log(obj)
+            log_path = "data\logs\";
+            save_time = string(datetime);
+            save_time = replace(save_time,":","-");
+            saved_log_name = obj.system_name + " " + save_time+".txt";
+
+            copyfile(log_path + "log.txt",log_path + saved_log_name)
 
         end
 
