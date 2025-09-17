@@ -60,6 +60,8 @@ for iCount = 1:num_iterations
     initial_time(1,iCount) = toc(initial_time_start);
     
     Model.save_log;
+    stop_memory_profiler()
+    memory_change = get_memory_change;
     continue
 
     calibration_time_start = tic;
