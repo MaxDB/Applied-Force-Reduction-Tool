@@ -11,7 +11,7 @@ $title = 'Memory Profiler'
 $Host.UI.RawUI.WindowTitle = $title
 
 
-Write-Output $pid
+Get-Date | Write-Output
 while ($true)
 {
     $memory = (Get-CimInstance -ClassName Win32_OperatingSystem).FreePhysicalMemory*$unit_factor
@@ -20,3 +20,7 @@ while ($true)
     if (Test-Path -Path $stop_file) {break}
     Start-Sleep -Seconds $sample_delay
 }
+Get-Date | Write-Output
+
+Write-Host "Press any key to exit..."
+$Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
