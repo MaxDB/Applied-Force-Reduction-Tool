@@ -53,6 +53,7 @@ for iCount = 1:num_iterations
     delete_cache(system_name,"force",energy_limit)
     delete_cache(system_name,"matrices")
     
+    start_memory_profiler()
     total_time_start = tic;
     initial_time_start = tic;
     Model = Dynamic_System(system_name,0,initial_modes,"static_opts",Static_Opts);
