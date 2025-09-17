@@ -34,7 +34,7 @@ script_path =  convertStringsToChars(get_project_path + "\code\logging");
 start_script_path = [script_path,'\memory_profiler.ps1'];
 powershell_command = ['Start-Process powershell \"-File \"\"',start_script_path,'\"\" -\"\"log_path\"\" \"\"',memory_log_path,'\"\"\"'];
 cmd_command = ['powershell -Command "& {',powershell_command,'}"'];
-system(cmd_command)
+system(cmd_command);
 
 %make sure to add killing the memoey profiler to project shut down
 end

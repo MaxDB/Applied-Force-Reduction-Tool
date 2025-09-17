@@ -1,7 +1,8 @@
 clear
 close all
+start_memory_profiler()
 %--------- Software Settings ---------%
-set_logging_level(4)
+set_logging_level(3)
 set_visualisation_level(3)
 %-------------------------------------%
 
@@ -29,4 +30,5 @@ Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts"
 
 Static_Data = Static_Dataset(Model,"verification_opts",Verification_Opts);
 Static_Data.save_data;
-
+stop_memory_profiler()
+memory_change = get_memory_change;

@@ -12,6 +12,6 @@ if ~isfile(memory_path)
 end
 
 cmd_command = "type nul >""" + stop_path + """";
-system(cmd_command)
+system(cmd_command);
 
 end
