@@ -50,6 +50,11 @@ if temp
     project_directory = pwd;
     cd temp
 end
+
+if is_parallel
+    interactive = interactive + 1;
+end
+
 if interactive <= logging_level && ~is_parallel
     [status,cmd_out] = system(command,"-echo");
 else
