@@ -12,8 +12,8 @@ close all
 
 % dof ≈ 0.0458 * seed_size ^ -2.53
 %-------------------------------
-% seed_sizes = [0.003,0.00195,0.00125];#
-seed_sizes = 0.003;
+seed_sizes = [0.003,0.0024,0.0021,0.0018,0.0017,0.0016,0.0015,0.0014,0.0013,0.00125];
+% seed_sizes = 0.003;
 num_workers = 4;
 
 
@@ -68,7 +68,7 @@ for iSeed = 1:num_seeds
     Model = Dynamic_System(system_name,energy_limit,modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
     Static_Data = Static_Dataset(Model);
     Static_Data.save_data;
-    total_time(1,iSeed) = toc(total_time_start = tic);
+    total_time(1,iSeed) = toc(total_time_start);
 
     stop_memory_profiler
     memory_data = get_free_memory;
