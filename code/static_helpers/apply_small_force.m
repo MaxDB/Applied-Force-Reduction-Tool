@@ -36,6 +36,7 @@ F_h = lambda.*eye(num_h_modes);
 perturbation_disp = zeros([size(h_disp_transform'),num_loadcases]);
 
 applied_force = h_disp_transform'*F_h;
+Const_Applied_Force = parallel.pool.Constant(applied_force);
 
 parfor iLoad = 1:num_loadcases
     if is_fe_system
@@ -43,7 +44,7 @@ parfor iLoad = 1:num_loadcases
     else
         K_i = stiffness_pointer(:,:,iLoad);
     end
-    perturbation_disp(:,:,iLoad) = K_i\applied_force;
+    perturbation_disp(:,:,iLoad) = K_i\Const_Applied_Force.Value;
 end
 
 data_path = get_data_path(Static_Data) + "perturbation";

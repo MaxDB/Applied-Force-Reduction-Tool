@@ -23,7 +23,7 @@ Static_Opts.num_validation_modes = 20;
 %------------------------------------------%
 
 %--------- Static Verification Settings ---------%
-Verification_Opts.maximum_iterations = 5;
+Verification_Opts.maximum_iterations = 3;
 %----------------------------------------------%
 
 Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);

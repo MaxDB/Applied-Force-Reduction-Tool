@@ -170,12 +170,16 @@ for iIteration = 1:(max_iterations+1)
         else
             num_jobs = gcp("nocreate").NumWorkers;
         end
+
+        Disp_Error_Inputs_Const = parallel.pool.Constant(Disp_Error_Inputs);
+        Rom_One_Const =  parallel.pool.Constant(Rom_One);
+        Rom_Two_Const = parallel.pool.Constant(Rom_Two);
         parfor (iSep = 1:num_verified_seps,num_jobs)
         % for iSep = 1:num_verified_seps
 
 
             force_ratio = scaled_force_ratios(:,iSep);
-            [disp_sep,lambda_sep] = find_sep_rom(Rom_One,force_ratio,3*max_sep_points);
+            [disp_sep,lambda_sep] = find_sep_rom(Rom_One_Const.Value,force_ratio,3*max_sep_points);
             if isempty(lambda_sep)
                 error_calculation_failed(iSep) = 1;
             else
@@ -195,11 +199,11 @@ for iIteration = 1:(max_iterations+1)
                 tested_disp = disp_sep(:,tested_sep_index);
                 tested_force = force_sep(:,tested_sep_index);
 
-                force_error = get_force_error(tested_disp,Rom_One,Rom_Two);
-                disp_error = get_disp_error(tested_disp,Rom_One,Rom_Two,force_ratio,Disp_Error_Inputs);
+                force_error = get_force_error(tested_disp,Rom_One_Const.Value,Rom_Two_Const.Value);
+                disp_error = get_disp_error(tested_disp,Rom_One_Const.Value,Rom_Two_Const.Value,force_ratio,Disp_Error_Inputs_Const.Value);
 
                 %---------------
-                potential_one = Rom_One.Potential_Polynomial.evaluate_polynomial(tested_disp);
+                potential_one = Rom_One_Const.Value.Potential_Polynomial.evaluate_polynomial(tested_disp);
                 in_energy_limit = potential_one <= energy_limit;
 
                 norm_force_error = force_error/max_interpolation_error(1);
@@ -208,16 +212,16 @@ for iIteration = 1:(max_iterations+1)
                 Plot_Data = struct([]);
                 Plot_Data(1).displacement = disp_sep;
                 Plot_Data(1).lambda = lambda_sep;
-                Plot_Data(1).Rom = Rom_One;
+                Plot_Data(1).Rom = Rom_One_Const.Value;
                 Plot_Data(1).force_ratio = force_ratio;
                 Plot_Data(1).tested_index = tested_sep_index;
-                Plot_Data(2).Rom = Rom_Two;
+                Plot_Data(2).Rom = Rom_Two_Const.Value;
 
                 Plot_Error = struct("force_error",[],"disp_error",[]);
                 Plot_Error.force_error = norm_force_error;
                 Plot_Error.disp_error = norm_disp_error;
 
-                sep_error_plot(Plot_Data,Static_Data,Plot_Error,Disp_Error_Inputs)
+                sep_error_plot(Plot_Data,Static_Data,Plot_Error,Disp_Error_Inputs_Const.Value)
 
                 if all(norm_force_error(in_energy_limit) < 1)
                     force_converged(1,iSep) = 1;

@@ -12,7 +12,7 @@ initial_modes = [1,3,5];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.max_parallel_jobs =  4; %be careful!
+Static_Opts.max_parallel_jobs =  2; %be careful!
 Static_Opts.num_loadcases = 50;
 %------------------------------------------%
 
@@ -22,7 +22,7 @@ Calibration_Opts = struct([]);
 
 
 %--------- Static Verification Settings ---------%
-Verification_Opts.maximum_iterations = 0;
+Verification_Opts.maximum_iterations = 5;
 % [1e-3] works for three modes and 5e-3 works for two modes]
 %----------------------------------------------%
 tic

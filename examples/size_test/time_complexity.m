@@ -13,6 +13,10 @@ seed_sizes = [0.003,0.00195,0.00125];
 % dof ≈ 0.0458 * seed_size ^ -2.53
 %-------------------------------
 
+
+
+create_parallel_pool(num_workers)
+
 %-- setup
 if ~isfolder(data_path)
     mkdir(data_path)

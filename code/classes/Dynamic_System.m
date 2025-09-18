@@ -237,16 +237,7 @@ classdef Dynamic_System
                     [num_sep_input_lines,additional_job_input_lines] = estimate_input_lines(num_dofs,Static_Opts);
                     max_parallel_jobs = maximum_viable_jobs(num_seps,num_sep_input_lines,additional_job_input_lines,Static_Opts);
 
-                    current_pool = gcp("nocreate");
-                    if isempty(current_pool) && max_parallel_jobs > 1
-                        current_pool = parpool(max_parallel_jobs);
-                    end
-                    if ~isempty(current_pool) && current_pool.NumWorkers ~= max_parallel_jobs
-                        delete(current_pool)
-                        if max_parallel_jobs > 1
-                            current_pool = parpool(max_parallel_jobs);
-                        end
-                    end
+                    create_parallel_pool(max_parallel_jobs);
 
                     if max_parallel_jobs > 1
                         abaqus_start = tic;
@@ -265,10 +256,24 @@ classdef Dynamic_System
                         additional_data_cell = cell(1,num_parallel_jobs);
                         sep_id_cell = cell(1,num_parallel_jobs);
 
+                        Model = obj;
+                        if isa(Model.mass,"Large_Matrix_Pointer")
+                            Model.mass = Model.mass.load;
+                        end
+                        if isa(Model.stiffness,"Large_Matrix_Pointer")
+                            Model.stiffness = Model.stiffness.load;
+                        end
+                        if isa(Model.reduced_eigenvectors,"Large_Matrix_Pointer")
+                            Model.reduced_eigenvectors = Model.reduced_eigenvectors.load;
+                        end
+                        if additional_data_type == "perturbation" && isa(Model.low_frequency_eigenvectors,"Large_Matrix_Pointer")
+                            Model.low_frequency_eigenvectors = Model.low_frequency_eigenvectors.load;
+                        end
+                        Const_Model = parallel.pool.Constant(Model);
                         parfor iJob = 1:num_parallel_jobs
                             job_force = force_ratio_groups{1,iJob};
                             [job_r,job_theta,job_f,job_E,job_additional_data,job_sep_id] = ...
-                                add_sep_abaqus(job_force,num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,obj,iJob);
+                                add_sep_abaqus(job_force,num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,Const_Model.Value,iJob);
 
                             reduced_disp_cell{1,iJob} = job_r;
                             condensed_disp_cell{1,iJob} = job_theta;
@@ -392,7 +397,7 @@ classdef Dynamic_System
 
                     reset_temp_directory()
                     max_inc = Static_Opts.maximum_step_increments*Static_Opts.num_loadcases;
-
+                    create_parallel_pool(Static_Opts.max_parallel_jobs);
                     if Static_Opts.max_parallel_jobs > 1
 
                         abaqus_start = tic;
@@ -419,12 +424,28 @@ classdef Dynamic_System
                         restoring_force_cell = cell(1,num_parallel_jobs);
                         energy_cell = cell(1,num_parallel_jobs);
                         additional_data_cell = cell(1,num_parallel_jobs);
+                        
 
+
+                        Model = obj;
+                        if isa(Model.mass,"Large_Matrix_Pointer")
+                            Model.mass = Model.mass.load;
+                        end
+                        if isa(Model.stiffness,"Large_Matrix_Pointer")
+                            Model.stiffness = Model.stiffness.load;
+                        end
+                        if isa(Model.reduced_eigenvectors,"Large_Matrix_Pointer")
+                            Model.reduced_eigenvectors = Model.reduced_eigenvectors.load;
+                        end
+                        if additional_data_type == "perturbation" && isa(Model.low_frequency_eigenvectors,"Large_Matrix_Pointer")
+                            Model.low_frequency_eigenvectors = Model.low_frequency_eigenvectors.load;
+                        end
+                        Const_Model = parallel.pool.Constant(Model);
                         parfor iJob = 1:num_parallel_jobs
                             job_force = force_groups{1,iJob};
                             Job_Closest_Point = closest_point_group{1,iJob};
                             [job_r,job_theta,job_f,job_E,job_additional_data] = ...
-                                add_point_abaqus(job_force,max_inc,additional_data_type,obj,iJob,Job_Closest_Point);
+                                add_point_abaqus(job_force,max_inc,additional_data_type,Const_Model.Value,iJob,Job_Closest_Point);
 
                             reduced_disp_cell{1,iJob} = job_r;
                             condensed_disp_cell{1,iJob} = job_theta;

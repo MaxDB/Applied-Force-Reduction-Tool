@@ -36,14 +36,17 @@ num_loadcases = size(perturbation_disp,3);
 
 h_coupling_gradient = zeros(num_dofs,num_h_modes,num_loadcases);
 h_stiffness = zeros(num_h_modes,num_h_modes,num_loadcases);
+
+h_Disp_Transform_Const = parallel.pool.Constant(h_disp_transform);
+Perturbation_Disp_Const = parallel.pool.Constant(perturbation_disp);
 parfor iLoad = 1:num_loadcases
     % for iLoad = 1:num_loadcases
 
-    disp_hat = perturbation_disp(:,:,iLoad);
+    disp_hat = Perturbation_Disp_Const.Value(:,:,iLoad);
     if CLEAN_DATA
         disp_hat(mean(abs(disp_hat),2) < MIN_DISP,:) = 0;
     end
-    h_disp = h_disp_transform*disp_hat;
+    h_disp = h_Disp_Transform_Const.Value*disp_hat;
 
     h_coupling_gradient(:,:,iLoad) = disp_hat/h_disp;
 
