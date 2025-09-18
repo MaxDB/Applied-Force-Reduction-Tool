@@ -270,7 +270,7 @@ classdef Dynamic_System
                             Model.low_frequency_eigenvectors = Model.low_frequency_eigenvectors.load;
                         end
                         Const_Model = parallel.pool.Constant(Model);
-                        parfor iJob = 1:num_parallel_jobs
+                        parfor (iJob = 1:num_parallel_jobs,get_current_parallel_jobs)
                             job_force = force_ratio_groups{1,iJob};
                             [job_r,job_theta,job_f,job_E,job_additional_data,job_sep_id] = ...
                                 add_sep_abaqus(job_force,num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,Const_Model.Value,iJob);
@@ -441,7 +441,7 @@ classdef Dynamic_System
                             Model.low_frequency_eigenvectors = Model.low_frequency_eigenvectors.load;
                         end
                         Const_Model = parallel.pool.Constant(Model);
-                        parfor iJob = 1:num_parallel_jobs
+                        parfor (iJob = 1:num_parallel_jobs,get_current_parallel_jobs)
                             job_force = force_groups{1,iJob};
                             Job_Closest_Point = closest_point_group{1,iJob};
                             [job_r,job_theta,job_f,job_E,job_additional_data] = ...
@@ -516,7 +516,7 @@ classdef Dynamic_System
                         x = cell(1,num_parallel_jobs);
                         x_dot = cell(1,num_parallel_jobs);
                         energy = cell(1,num_parallel_jobs);
-                        parfor (iJob = 1:num_parallel_jobs,Static_Opts.max_parallel_jobs)
+                        parfor (iJob = 1:num_parallel_jobs,get_current_parallel_jobs)
                             % for iJob = 1:num_parallel_jobs
                             [t_job,x_job,x_dot_job,energy_job] = dynamic_simulation_abaqus(x_0(:,iJob),x_dot_0(:,iJob),f_r_0(:,iJob),period(iJob),num_periods,min_incs(iJob),initial_time(iJob),FE_Force_Data,obj,iJob);
 
@@ -557,7 +557,7 @@ classdef Dynamic_System
                         stress = cell(1,num_parallel_jobs);
                         section_points = cell(1,num_parallel_jobs);
                         stress_labels = cell(1,num_parallel_jobs);
-                        parfor (iJob = 1:num_parallel_jobs,Static_Opts.max_parallel_jobs)
+                        parfor (iJob = 1:num_parallel_jobs,get_current_parallel_jobs)
                             [stress_job,stress_labels_job,section_points_job] = stress_simulation_abaqus(x_0(:,iJob),x_dot_0(:,iJob),f_r_0(:,iJob),obj,iJob);
                             stress{1,iJob} = stress_job;
                             stress_labels{1,iJob} = stress_labels_job;

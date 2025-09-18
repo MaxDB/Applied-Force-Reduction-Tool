@@ -38,7 +38,7 @@ perturbation_disp = zeros([size(h_disp_transform'),num_loadcases]);
 applied_force = h_disp_transform'*F_h;
 Const_Applied_Force = parallel.pool.Constant(applied_force);
 
-parfor iLoad = 1:num_loadcases
+parfor (iLoad = 1:num_loadcases,get_current_parallel_jobs)
     if is_fe_system
         K_i = stiffness_pointer.get_matrix(iLoad);
     else

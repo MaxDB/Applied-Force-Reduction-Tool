@@ -36,16 +36,7 @@ load(log_level,"logging_level")
 
 command = "abaqus job=" + job + " cpus=" + num_cpus + " interactive";
 
-
-
-
-
-current_pool = gcp("nocreate");
-if isempty(current_pool)
-    num_workers = 1;
-else
-    num_workers = current_pool.NumWorkers;
-end
+num_workers = get_current_parallel_jobs;
 
 is_parallel = num_workers > 1;
 log_start_message = "|---------------------- Abaqus output start ----------------------|";

@@ -72,7 +72,7 @@ classdef Perturbation_Pointer
             perturbation_displacements = zeros(dofs,num_h_modes,num_loadcases);
             file_path = obj.data_dir + "\" + obj.perturbation_name + "_";
             create_parallel_pool("current");
-            parfor iMode = 1:num_h_modes
+            parfor (iMode = 1:num_h_modes,get_current_parallel_jobs)
                 file_name =  file_path + h_modes(iMode);
                 perturbation_data = load(file_name,"perturbation_disp");
                 perturbation_displacements(:,iMode,:) = perturbation_data.perturbation_disp;
@@ -127,7 +127,7 @@ classdef Perturbation_Pointer
             end
             file_path =  obj.data_dir + "\" + obj.perturbation_name + "_";
             create_parallel_pool("current");
-            parfor iMode = 1:num_modes
+            parfor (iMode = 1:num_modes,get_current_parallel_jobs)
                 perturbation_disp = squeeze(perturbation_displacements(:,iMode,:));
                 file_name = file_path + validation_modes(iMode);
                 save(file_name,"-fromstruct",struct("perturbation_disp",perturbation_disp))

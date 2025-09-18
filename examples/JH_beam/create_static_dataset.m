@@ -1,19 +1,18 @@
 clear
 close all
 %--------- Software Settings ---------%
-set_logging_level(4)
+set_logging_level(3)
 set_visualisation_level(3)
 %-------------------------------------%
 
 %--------- System Settings ---------%
 system_name = "JH_beam_2d_comp";
 energy_limit = 0.015; %0.01 J
-initial_modes = [1,3,5];
+initial_modes = [1,3];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
 Static_Opts.max_parallel_jobs =  2; %be careful!
-Static_Opts.num_loadcases = 50;
 %------------------------------------------%
 
 %--------- Calibration Settings ---------%

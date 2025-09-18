@@ -108,7 +108,7 @@ classdef Sparse_Stiffness_Pointer
             new_stiffness_path = destination_path + "\" + obj.stiffness_name;
             file_type_one = obj.file_type;
             create_parallel_pool("current");
-            parfor iLoad = 1:num_added_loadcases
+            parfor (iLoad = 1:num_added_loadcases,get_current_parallel_jobs)
                 new_load_label = iLoad + num_old_loadcases;
                 stiffness_file = stiffness_path + iLoad + file_type_two;
                 new_stiffness_file = new_stiffness_path + new_load_label +  file_type_one;

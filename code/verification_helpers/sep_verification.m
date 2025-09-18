@@ -165,10 +165,10 @@ for iIteration = 1:(max_iterations+1)
         error_calculation_failed = zeros(1,num_verified_seps);
         load("data\plot_level.mat","plotting_level")
         if plotting_level >= 4
-            num_jobs = "nan";
-            %"disable parallelisation for verification plotting")
+            num_jobs = 0;
+            warning("parallelisation disabled for verification plotting")
         else
-            num_jobs = gcp("nocreate").NumWorkers;
+            num_jobs = get_current_parallel_jobs;
         end
 
         Disp_Error_Inputs_Const = parallel.pool.Constant(Disp_Error_Inputs);

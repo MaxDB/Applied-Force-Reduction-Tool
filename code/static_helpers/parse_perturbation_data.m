@@ -39,7 +39,7 @@ h_stiffness = zeros(num_h_modes,num_h_modes,num_loadcases);
 
 h_Disp_Transform_Const = parallel.pool.Constant(h_disp_transform);
 Perturbation_Disp_Const = parallel.pool.Constant(perturbation_disp);
-parfor iLoad = 1:num_loadcases
+parfor (iLoad = 1:num_loadcases,get_current_parallel_jobs)
     % for iLoad = 1:num_loadcases
 
     disp_hat = Perturbation_Disp_Const.Value(:,:,iLoad);
