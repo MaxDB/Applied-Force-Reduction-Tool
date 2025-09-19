@@ -13,5 +13,5 @@ end
 
 cmd_command = "type nul >""" + stop_path + """";
 system(cmd_command);
-
+pause(1.5)
 end

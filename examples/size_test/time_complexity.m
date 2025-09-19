@@ -12,10 +12,10 @@ close all
 
 % dof ≈ 0.0458 * seed_size ^ -2.53
 %-------------------------------
-seed_sizes = [0.003,0.0024,0.0021,0.0018,0.0017,0.0016,0.0015,0.0014,0.0013,0.00125];
-% seed_sizes = 0.003;
+% seed_sizes = [0.003,0.0024,0.0021,0.0018,0.0017,0.0016,0.0015,0.0014,0.0013,0.00125];
+seed_sizes = [0.003,0.0024];
 num_workers = 4;
-
+num_repeats = 2;
 
 %-------
 data_path = "data\size_data";
@@ -39,6 +39,8 @@ Calibration_Opts.calibration_scale_factor = 1;
 Static_Opts.max_parallel_jobs = num_workers;
 create_parallel_pool(num_workers);
 
+data_path = data_path + "\workers_" + num_workers;
+
 %-- setup
 if ~isfolder(data_path)
     mkdir(data_path)
@@ -61,32 +63,42 @@ for iSeed = 1:num_seeds
 
     %mesh arch with a particular seed size
     num_dof(iSeed) = create_mesh(seed_size);
-    
-    start_memory_profiler
-    %create static data
-    total_time_start = tic;
-    Model = Dynamic_System(system_name,energy_limit,modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
-    Static_Data = Static_Dataset(Model);
-    Static_Data.save_data;
-    total_time(1,iSeed) = toc(total_time_start);
 
-    stop_memory_profiler
-    memory_data = get_free_memory;
-    free_memory{1,iSeed} = memory_data;
+    for iRepeat = 1:num_repeats
+        delete_static_data(get_system_name(system_name,modes));
+        delete_cache(system_name,"force",energy_limit)
+        delete_cache(system_name,"matrices")
+        start_memory_profiler
+        %create static data
+        total_time_start = tic;
+        Model = Dynamic_System(system_name,energy_limit,modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
+        Static_Data = Static_Dataset(Model);
+        Static_Data.save_data;
+        total_time(1,iSeed) = toc(total_time_start);
 
-    log_data = read_log(log_lines);
-    matrix_time(1,iSeed) = log_data(1);
-    initialisation_time(1,iSeed) = log_data(2);
-    scaffold_time(1,iSeed) = log_data(3);
-    verification_time(1,iSeed) = log_data(4);
-    verification_time(2,iSeed) = log_data(5);
+        stop_memory_profiler
+        memory_data = get_free_memory;
+        free_memory{1,iSeed} = memory_data;
 
-    Size_Data.total_time = total_time;
-    Size_Data.matrix_time = matrix_time;
-    Size_Data.initialisation_time = initialisation_time;
-    Size_Data.scaffold_time = scaffold_time;
-    Size_Data.verification_time = verification_time;
-    Size_Data.free_memory = free_memory;
+        log_data = read_log(log_lines);
+        matrix_time(1,iSeed) = log_data(1);
+        initialisation_time(1,iSeed) = log_data(2);
+        scaffold_time(1,iSeed) = log_data(3);
+        verification_time(1,iSeed) = log_data(4);
+        verification_time(2,iSeed) = log_data(5);
 
-    save(data_path + "\size_data","Size_Data") 
+        Size_Data(iRepeat).total_time = total_time; %#ok<*SAGROW>
+        Size_Data(iRepeat).matrix_time = matrix_time;
+        Size_Data(iRepeat).initialisation_time = initialisation_time;
+        Size_Data(iRepeat).scaffold_time = scaffold_time;
+        Size_Data(iRepeat).verification_time = verification_time;
+        Size_Data(iRepeat).free_memory = free_memory;
+        Size_Data(iRepeat).num_dofs = num_dof;
+
+        save(data_path + "\size_data","Size_Data")
+        
+        
+        clear Static_Data
+        clear Model
+    end
 end

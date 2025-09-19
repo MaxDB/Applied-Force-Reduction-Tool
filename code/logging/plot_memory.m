@@ -1,7 +1,12 @@
-function ax=plot_memory
+function ax=plot_memory(varargin)
 SAMPLE_DEALY = 1;
 
-memory_data = get_free_memory;
+switch nargin
+    case 0
+        memory_data = get_free_memory;
+    case 1
+        memory_data = varargin{1};
+end
 time = 0:SAMPLE_DEALY:(length(memory_data)-1);
 
 
