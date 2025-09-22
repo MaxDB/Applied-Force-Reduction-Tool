@@ -87,13 +87,13 @@ for iSeed = 1:num_seeds
         verification_time(1,iSeed) = log_data(4);
         verification_time(2,iSeed) = log_data(5);
 
-        Size_Data(iRepeat).total_time = total_time; %#ok<*SAGROW>
-        Size_Data(iRepeat).matrix_time = matrix_time;
-        Size_Data(iRepeat).initialisation_time = initialisation_time;
-        Size_Data(iRepeat).scaffold_time = scaffold_time;
-        Size_Data(iRepeat).verification_time = verification_time;
-        Size_Data(iRepeat).free_memory = free_memory;
-        Size_Data(iRepeat).num_dofs = num_dof;
+        Size_Data(iRepeat).total_time(1,iSeed) = total_time(1,iSeed); %#ok<*SAGROW>
+        Size_Data(iRepeat).matrix_time(1,iSeed) = matrix_time(1,iSeed);
+        Size_Data(iRepeat).initialisation_time(1,iSeed) = initialisation_time(1,iSeed);
+        Size_Data(iRepeat).scaffold_time(1,iSeed) = scaffold_time(1,iSeed);
+        Size_Data(iRepeat).verification_time(:,iSeed) = verification_time(:,iSeed);
+        Size_Data(iRepeat).free_memory(1,iSeed) = free_memory(1,iSeed);
+        Size_Data(iRepeat).num_dofs(1,iSeed) = num_dof(1,iSeed);
 
         save(data_path + "\size_data","Size_Data")
         
