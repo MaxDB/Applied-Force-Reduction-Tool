@@ -25,6 +25,7 @@ afr_tool_parts = cellfun(@(line) [padding,line,padding] ,afr_tool_parts,"Uniform
 afr_tool = sprintf('%s\n',afr_tool_parts{:});
 afr_tool(end) = [];
 
+fprintf('\n')
 disp(bar_line)
 disp(afr_tool)
 disp(bar_line)
@@ -32,12 +33,26 @@ disp(bar_line)
 
 %-----------------
 current_version_text = "Installed version: " + get_version();
-is_new_version = check_version;
 disp(current_version_text)
-disp(available_version_text)
+line_length = fprintf("Checking for updates...");
+
+is_new_version = check_version;
+fprintf(repmat('\b',1,line_length))
+
+if isempty(is_new_version)
+    new_version_text = "Could not connect to remote repository";
+else
+    if is_new_version
+        new_version_text = "New version available at https://github.com/MaxDB/Applied-Force-Reduction-Tool"; 
+    else
+        new_version_text = "Version up to date";
+    end
+end
+disp(new_version_text)
+fprintf('\n')
 
 
-
+%-------------------
 function version = get_version
     project_path = get_project_path;
     version_path = project_path + "\settings\version_number.txt";
@@ -55,4 +70,22 @@ function version = get_version
         rethrow(exception)
     end
     fclose(version_id);
+end
+
+
+function is_new_version=check_version()
+version_path = "settings\version_number.txt";
+try
+    [exit_code,cmd_output] = system("git fetch origin main"); %#ok<*ASGLU>
+    [exit_code,cmd_output] = system("git diff origin/main " + version_path);
+    if exit_code == 0
+        is_new_version = ~isempty(cmd_output);
+    else
+        is_new_version = logical([]);
+    end
+catch
+    is_new_version = logical([]);
+end
+
+
 end
