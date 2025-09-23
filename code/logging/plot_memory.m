@@ -1,13 +1,13 @@
 function ax=plot_memory(varargin)
-SAMPLE_DEALY = 1;
 
 switch nargin
     case 0
-        memory_data = get_free_memory;
+        [memory_data,sample_delay] = get_free_memory;
     case 1
         memory_data = varargin{1};
+        sample_delay = varargin{2};
 end
-time = 0:SAMPLE_DEALY:(length(memory_data)-1);
+time = 0:sample_delay:(length(memory_data)-1);
 
 
 figure

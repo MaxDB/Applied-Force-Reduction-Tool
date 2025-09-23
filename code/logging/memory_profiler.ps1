@@ -10,8 +10,10 @@ $stop_file =Join-Path -Path $log_path -ChildPath 'memory.stop'
 $title = 'Memory Profiler'
 $Host.UI.RawUI.WindowTitle = $title
 
-
-Get-Date | Write-Output
+$start_time = Get-Date
+$start_time | Write-Output
+$start_time | Add-Content -Path $log_file
+$sample_delay | Add-Content -Path $log_file
 while ($true)
 {
     $memory = (Get-CimInstance -ClassName Win32_OperatingSystem).FreePhysicalMemory*$unit_factor
