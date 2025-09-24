@@ -80,7 +80,7 @@ version_path = "settings\version_number.txt";
 try
     [exit_code(1),cmd_output] = system("git fetch origin main"); %#ok<*ASGLU>
     [exit_code(2),cmd_output] = system("git diff origin/main " + version_path);
-    if any(exit_code ~= 0) 
+    if any(exit_code == 0) 
         is_new_version = ~isempty(cmd_output);
     else
         is_new_version = logical([]);
