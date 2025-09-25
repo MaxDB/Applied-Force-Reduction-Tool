@@ -39,20 +39,24 @@ while ~solution_converged
     kinetic_energy = zeros(1,num_ics);
     initial_conditions = zeros(num_modes,num_ics);
     max_ke = 0;
+    ic_combinations = zeros(num_ics,num_modes);
     for iCondition = 1:num_ics
         ic_counter = increment_counter(ic_counter,sweep_resolution);
-
+        ic_combinations(iCondition,:) = ic_counter;
+    end
+    
+    create_parallel_pool("current");
+    test_conditions_const = parallel.pool.Constant(test_conditions);
+    parfor iCondition = 1:num_ics
+        ic_counter = ic_combinations(iCondition,:);
         initial_condition = zeros(2*num_modes,1);
         for iMode = 1:num_modes
-            initial_condition(iMode) = test_conditions(iMode,ic_counter(iMode));
+            initial_condition(iMode) = test_conditions_const.Value(iMode,ic_counter(iMode));
         end
         initial_conditions(:,iCondition) = initial_condition(1:num_modes);
         if sum(abs(initial_condition)) == 0
             continue
         end
-
-        % periodicity_event = @(t,z) periodicity_event_fun(t,z,initial_condition,period*0.9);
-        % options = odeset(RelTol=1e-8,AbsTol=1e-10,Events=periodicity_event);
 
 
         Sol = ode45(@(t,z) eom(t,z),[0,period],initial_condition,options);
@@ -60,14 +64,6 @@ while ~solution_converged
         ke = 1/2*sum(Sol.y((num_modes+1):(2*num_modes),:).^2,1);
         max_ke = max(max_ke,max(ke));
         kinetic_energy(iCondition) = ke(end);
-        % if ~isempty(Sol.ie)
-        %     sol_counter = sol_counter+1;
-        %     periodic_sol(sol_counter) = iCondition; %#ok<*AGROW>
-        %     sol_period(sol_counter) = Sol.xe;
-        %     sol_periodicity(sol_counter) = get_periodicity_error(Sol.ye,initial_condition);
-        %     sol_ics(:,sol_counter) = initial_condition;
-        %     periodic_solutions{sol_counter} = {Sol.x,Sol.y};
-        % end
     end
     
     % plot3(initial_conditions(1,:),initial_conditions(2,:),periodicity_error,"x");

@@ -17,6 +17,7 @@ seed_sizes = [0.003,0.0024];
 num_workers = 4;
 num_repeats = 2;
 
+dynamic_data = 1;
 %-------
 data_path = "data\size_data";
 
@@ -58,6 +59,8 @@ scaffold_time = zeros(1,num_seeds);
 verification_time = zeros(2,num_seeds);
 free_memory = cell(1,num_seeds);
 
+dynamic_time = zeros(3,num_seeds);
+
 for iSeed = 1:num_seeds
     seed_size = seed_sizes(iSeed);
 
@@ -65,6 +68,10 @@ for iSeed = 1:num_seeds
     num_dof(iSeed) = create_mesh(seed_size);
 
     for iRepeat = 1:num_repeats
+        clear Static_Data
+        clear Model
+        clear Dyn_Data
+
         delete_static_data(get_system_name(system_name,modes));
         delete_cache(system_name,"force",energy_limit)
         delete_cache(system_name,"matrices")
@@ -97,8 +104,39 @@ for iSeed = 1:num_seeds
 
         save(data_path + "\size_data","Size_Data")
         
+        if ~dynamic_data
+            continue
+        end
         
-        clear Static_Data
-        clear Model
+        dynamic_time_one_start = tic;
+        Dyn_Data = initalise_dynamic_data(get_system_name(system_name,modes));
+        %--
+        Additional_Output.output = "physical displacement";
+        Additional_Output.type = "max";
+        Additional_Output.dof = 66539;
+        Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
+        % --------- Continuation Settings ---------%
+        Continuation_Opts.initial_inc = 5e-1;
+        Continuation_Opts.max_inc = 5e-1;
+        Continuation_Opts.min_inc = 1e-2;
+        Continuation_Opts.forward_steps = 100;
+        Continuation_Opts.backward_steps = 0;
+        Continuation_Opts.collation_degree = 8;
+        % ----------------------------------------- %
+        Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+        dynamic_time(1,iSeed) = toc(dynamic_time_one_start);
+        %---
+        dynamic_time_two_start = tic;
+        potential_ic = initial_condition_sweep(Dyn_Data.Dynamic_Model,2.69e6,[1.5e-7,1e-7]);
+        dynamic_time(2,iSeed) = toc(dynamic_time_two_start);
+        %---
+        dynamic_time_three_start = tic;
+        Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
+        dynamic_time(3,iSeed) = toc(dynamic_time_three_start);
+        %---
+
+        Size_Data(iRepeat).dynamic_time(:,iSeed) = dynamic_time(:,iSeed);
+        save(data_path + "\size_data","Size_Data")
+
     end
 end
