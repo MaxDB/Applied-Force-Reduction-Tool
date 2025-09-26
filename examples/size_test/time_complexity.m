@@ -12,8 +12,7 @@ close all
 
 % dof ≈ 0.0458 * seed_size ^ -2.53
 %-------------------------------
-% seed_sizes = [0.003,0.0024,0.0021,0.0018,0.0017,0.0016,0.0015,0.0014,0.0013,0.00125];
-seed_sizes = [0.003,0.0024];
+seed_sizes = [0.00307,0.0023,0.002,0.00174,0.00163,0.00157,0.001481,0.00142,0.00138,0.00136,0.00133,0.001293,0.00129];
 num_workers = 4;
 num_repeats = 2;
 
@@ -111,10 +110,10 @@ for iSeed = 1:num_seeds
         dynamic_time_one_start = tic;
         Dyn_Data = initalise_dynamic_data(get_system_name(system_name,modes));
         %--
-        Additional_Output.output = "physical displacement";
-        Additional_Output.type = "max";
-        Additional_Output.dof = 66539;
-        Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
+        % Additional_Output.output = "physical displacement";
+        % Additional_Output.type = "max";
+        % Additional_Output.dof = 66539;
+        % Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
         % --------- Continuation Settings ---------%
         Continuation_Opts.initial_inc = 5e-1;
         Continuation_Opts.max_inc = 5e-1;
