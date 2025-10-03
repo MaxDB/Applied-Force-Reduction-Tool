@@ -1,6 +1,8 @@
 param (
-    [string]$log_path
+    [string]$log_path,
+    [int16]$display = 1
 )
+
 
 [float]$sample_delay = 1
 [float]$unit_factor = 1/(1024*1024)
@@ -11,18 +13,20 @@ $title = 'Memory Profiler'
 $Host.UI.RawUI.WindowTitle = $title
 
 $start_time = Get-Date
-$start_time | Write-Output
+if ($display -eq 1) {$start_time | Write-Output}
 $start_time | Add-Content -Path $log_file
 $sample_delay | Add-Content -Path $log_file
 while ($true)
 {
     $memory = (Get-CimInstance -ClassName Win32_OperatingSystem).FreePhysicalMemory*$unit_factor
     $memory | Add-Content -Path $log_file
-    '{0:N2} GB free' -f $memory | Write-Output
+    if ($display -eq 1) {'{0:N2} GB free' -f $memory | Write-Output}
     if (Test-Path -Path $stop_file) {break}
     Start-Sleep -Seconds $sample_delay
 }
-Get-Date | Write-Output
 
-Write-Host "Press any key to exit..."
-$Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+if ($display -eq 1){
+    Get-Date | Write-Output
+    Write-Host "Press any key to exit..."
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+}

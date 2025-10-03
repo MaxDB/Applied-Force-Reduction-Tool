@@ -47,6 +47,8 @@ classdef Dynamic_Dataset
         % Creation
         %-----------------------------------------------------------------%
         function obj = add_backbone(obj,mode_num,varargin)
+            backbone_time_start = tic;
+
             num_args = length(varargin);
             if mod(num_args,2) == 1
                 error("Invalid keyword/argument pairs")
@@ -89,9 +91,14 @@ classdef Dynamic_Dataset
             obj.solution_types{obj.num_solutions} = BB_Sol.Solution_Type;
             obj.solution_types{obj.num_solutions}.validated = false;
             obj.save_solution(BB_Sol,obj.num_solutions)
+
+            backbone_time = toc(backbone_time_start);
+            log_message = sprintf("Backbone: %u orbits in %.1f seconds" ,BB_Sol.num_orbits,backbone_time);
+            logger(log_message,1)
         end
         %-----------------------------------------------------------------%        
         function obj = restart_point(obj,solution_num,orbit_num,type,varargin)
+            restart_time_start = tic;
             num_args = length(varargin);
             if mod(num_args,2) == 1
                 error("Invalid keyword/argument pairs")
@@ -111,7 +118,6 @@ classdef Dynamic_Dataset
             end
             %-------------------------------------------------------------%
             % Rom = obj.Dynamic_Model;
-            
             switch type
                 case "IC"
                     point_index = obj.get_special_point(solution_num,type);
@@ -231,6 +237,9 @@ classdef Dynamic_Dataset
 
 
             end
+            restart_time = toc(restart_time_start);
+            log_message = sprintf("Restart: %.1f seconds" ,restart_time);
+            logger(log_message,1)
         end
         %-----------------------------------------------------------------%
         function obj = add_orbits(obj,solution_num,orbit_span,varargin)

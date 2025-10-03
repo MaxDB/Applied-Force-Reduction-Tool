@@ -2,7 +2,7 @@ clear
 % close all
 set_visualisation_level(1)
 
-system_name = "JH_beam_2d_135";
+system_name = "JH_beam_2d_13";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%

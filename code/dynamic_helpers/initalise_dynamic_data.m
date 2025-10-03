@@ -1,4 +1,12 @@
 function Dyn_Data = initalise_dynamic_data(system_name)
+initalisation_time_start = tic;
+Dyn_Data = init_helper(system_name);
+initalisation_time = toc(initalisation_time_start);
+log_message = sprintf("Dynamic Dataset initalised: %.1f seconds" ,initalisation_time);
+logger(log_message,1)
+end
+
+function Dyn_Data = init_helper(system_name)
 if class(system_name) == "Dynamic_Dataset"
     Dyn_Data = system_name;
     return

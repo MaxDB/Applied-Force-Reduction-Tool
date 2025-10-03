@@ -1,7 +1,33 @@
-function periodic_solution = initial_condition_sweep(Rom,frequency,ic_limits)
+function periodic_solution = initial_condition_sweep(Rom,frequency,ic_limits,varargin)
+ic_time_start = tic;
+
+
 sweep_resolution = 50;
 step_reduction = 5.5;
 MAX_ERROR = 1e-12;
+
+
+%----------------
+num_args = length(varargin);
+if mod(num_args,2) == 1
+    error("Invalid keyword/argument pairs")
+end
+keyword_args = varargin(1:2:num_args);
+keyword_values = varargin(2:2:num_args);
+
+show_figure = 1;
+
+for arg_counter = 1:num_args/2
+    switch keyword_args{arg_counter}
+        case "figure"
+            show_figure = keyword_values{arg_counter};
+        case {"colour","color"}
+        otherwise
+            error("Invalid keyword: " + keyword_args{arg_counter})
+    end
+end
+%-------------------------------------------------------------------------%
+
 
 Model = Rom.Model;
 num_modes = size(Model.reduced_modes,2);
@@ -13,8 +39,10 @@ eom = Rom.get_equation_of_motion();
 centre_point = zeros(num_modes,1);
 
 solution_converged = 0;
+if show_figure
 figure
 hold on
+end
 while ~solution_converged
 
     test_conditions = zeros(num_modes,sweep_resolution);
@@ -46,8 +74,9 @@ while ~solution_converged
     end
     
     create_parallel_pool("current");
+    num_jobs = get_current_parallel_jobs;
     test_conditions_const = parallel.pool.Constant(test_conditions);
-    parfor iCondition = 1:num_ics
+    parfor (iCondition = 1:num_ics,num_jobs)
         ic_counter = ic_combinations(iCondition,:);
         initial_condition = zeros(2*num_modes,1);
         for iMode = 1:num_modes
@@ -67,10 +96,12 @@ while ~solution_converged
     end
     
     % plot3(initial_conditions(1,:),initial_conditions(2,:),periodicity_error,"x");
+    if show_figure
     plot3(initial_conditions(1,:),initial_conditions(2,:),kinetic_energy,"x");
     ax = gca;
     ax.ZScale = "log";
     drawnow
+    end
 
     % [min_periodicity,min_index] = min(periodicity_error);
     [min_error,min_index] = min(kinetic_energy);
@@ -88,7 +119,9 @@ while ~solution_converged
     step_reduction = 2.5;
     sweep_resolution = 11;
 end
+if show_figure
 hold off
+end
 num_output_points = 101;
 t_sol = linspace(0,period,num_output_points);
 
@@ -107,6 +140,10 @@ periodic_solution = {x,y};
 % [~,sort_index] = sort(abs(sol_period-period));
 % potential_ics = sol_ics(:,sort_index);
 % periodic_solutions = periodic_solutions(sort_index);
+
+ic_time = toc(ic_time_start);
+log_message = sprintf("Initial condition sweep: %.1f seconds" , ic_time);
+logger(log_message,2)
 end
 
 function counter = increment_counter(counter,max_value)

@@ -1,6 +1,6 @@
 clear
 
-seed_size = 0.001290;
+seed_size =0.00174;
 % 0.01    --> 7,000
 % 0.005   --> 24,500
 % 0.00307   --> 100,000
@@ -29,10 +29,13 @@ end
 mkdir(geometry_path)
 
 data_path = previous_directory{1} + DIR_DELIMINATOR + "data";
-if isfolder(data_path)
-   rmdir(data_path,"s")
+data_dirs = string(ls(data_path));
+data_index = find(startsWith(data_dirs,SYSTEM_NAME));
+for iDir = 1:length(data_index)
+    folder_path = data_path + DIR_DELIMINATOR + data_dirs(data_index(iDir));
+    rmdir(folder_path,"s")
 end
-mkdir(data_path)
+
 copyfile(SYSTEM_NAME + ".inp",geometry_path)
 
 %-----------

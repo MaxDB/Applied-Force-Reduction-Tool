@@ -6,7 +6,7 @@ set_visualisation_level(3)
 %-------------------------------------%
 
 %--------- System Settings ---------%
-system_name = "JH_beam_2d_comp";
+system_name = "JH_beam_2d";
 energy_limit = 0.015; %0.01 J
 initial_modes = [1,3];
 %-----------------------------------%
@@ -22,7 +22,6 @@ Calibration_Opts = struct([]);
 
 %--------- Static Verification Settings ---------%
 Verification_Opts.maximum_iterations = 5;
-% [1e-3] works for three modes and 5e-3 works for two modes]
 %----------------------------------------------%
 tic
 Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);

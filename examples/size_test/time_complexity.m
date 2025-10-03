@@ -14,19 +14,31 @@ close all
 %-------------------------------
 seed_sizes = [0.00307,0.0023,0.002,0.00174,0.00163,0.00157,0.001481,0.00142,0.00138,0.00136,0.00133,0.001293,0.00129];
 num_workers = 4;
-num_repeats = 2;
+num_static_repeats = 2;
 
-dynamic_data = 1;
+num_dynamic_repeats = 10;
 %-------
 data_path = "data\size_data";
 
-log_lines = [
+static_log_lines = [
     "mems_arch:", "Eigenvectors:";
     "Eigenvectors:","Model Initialised:";
     "Model Initialised:","Dataset scaffold created:";
     "Dataset scaffold created:", "Verification step 1";
     "Verification step 1", "Verification step 2"
     ];
+
+dynamic_log_lines = @(id) [
+    "Dynamic analysis " + id, "Dynamic Dataset initalised:";
+    "Dynamic Dataset initalised:", "EoM precomputations:";
+    "EoM precomputations:", "Linear solution found";
+    "Linear solution found:", "EoM precomputations:";
+    "EoM precomputations:", "Backbone:";
+    "Backbone:","EoM precomputations:";
+    "EoM precomputations:", "Initial condition sweep:";
+    "Initial condition sweep:", "EoM precomputations:";
+    "EoM precomputations:", "Backbone:"
+];
 %-----
 set_logging_level(1)
 set_visualisation_level(0)
@@ -47,6 +59,7 @@ if ~isfolder(data_path)
 end
 %--
 Size_Data.seed_sizes = seed_sizes;
+Dynamic_Data.seed_sizes = seed_sizes;
 
 num_seeds = length(seed_sizes);
 num_dof = zeros(1,num_seeds);
@@ -56,8 +69,9 @@ matrix_time = zeros(1,num_seeds);
 initialisation_time = zeros(1,num_seeds);
 scaffold_time = zeros(1,num_seeds);
 verification_time = zeros(2,num_seeds);
-free_memory = cell(1,num_seeds);
+free_static_memory = cell(1,num_seeds);
 
+free_dynamic_memory = cell(1,num_seeds);
 dynamic_time = zeros(3,num_seeds);
 
 for iSeed = 1:num_seeds
@@ -66,7 +80,7 @@ for iSeed = 1:num_seeds
     %mesh arch with a particular seed size
     num_dof(iSeed) = create_mesh(seed_size);
 
-    for iRepeat = 1:num_repeats
+    for iRepeat = 1:num_static_repeats
         clear Static_Data
         clear Model
         clear Dyn_Data
@@ -74,7 +88,7 @@ for iSeed = 1:num_seeds
         delete_static_data(get_system_name(system_name,modes));
         delete_cache(system_name,"force",energy_limit)
         delete_cache(system_name,"matrices")
-        start_memory_profiler
+        start_memory_profiler("display",0)
         %create static data
         total_time_start = tic;
         Model = Dynamic_System(system_name,energy_limit,modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
@@ -84,9 +98,9 @@ for iSeed = 1:num_seeds
 
         stop_memory_profiler
         memory_data = get_free_memory;
-        free_memory{1,iSeed} = memory_data;
+        free_static_memory{1,iSeed} = memory_data;
 
-        log_data = read_log(log_lines);
+        log_data = read_log(static_log_lines);
         matrix_time(1,iSeed) = log_data(1);
         initialisation_time(1,iSeed) = log_data(2);
         scaffold_time(1,iSeed) = log_data(3);
@@ -98,15 +112,25 @@ for iSeed = 1:num_seeds
         Size_Data(iRepeat).initialisation_time(1,iSeed) = initialisation_time(1,iSeed);
         Size_Data(iRepeat).scaffold_time(1,iSeed) = scaffold_time(1,iSeed);
         Size_Data(iRepeat).verification_time(:,iSeed) = verification_time(:,iSeed);
-        Size_Data(iRepeat).free_memory(1,iSeed) = free_memory(1,iSeed);
+        Size_Data(iRepeat).free_memory(1,iSeed) = free_static_memory(1,iSeed);
         Size_Data(iRepeat).num_dofs(1,iSeed) = num_dof(1,iSeed);
 
         save(data_path + "\size_data","Size_Data")
-        
-        if ~dynamic_data
-            continue
-        end
-        
+        Model.save_log
+    end
+
+    for iRepeat = 1:num_dynamic_repeats
+        clear Static_Data
+        clear Model
+        clear Dyn_Data
+        delete_dynamic_data(get_system_name(system_name,modes));
+
+        start_memory_profiler("display",0)
+
+   
+        log_message = sprintf("Dynamic analysis %u/%u" ,iRepeat,num_dynamic_repeats);
+        logger(log_message,1)
+
         dynamic_time_one_start = tic;
         Dyn_Data = initalise_dynamic_data(get_system_name(system_name,modes));
         %--
@@ -126,16 +150,39 @@ for iSeed = 1:num_seeds
         dynamic_time(1,iSeed) = toc(dynamic_time_one_start);
         %---
         dynamic_time_two_start = tic;
-        potential_ic = initial_condition_sweep(Dyn_Data.Dynamic_Model,2.69e6,[1.5e-7,1e-7]);
+        potential_ic = initial_condition_sweep(Dyn_Data.Dynamic_Model,2.69e6,[1.5e-7,1e-7],"figure",0);
         dynamic_time(2,iSeed) = toc(dynamic_time_two_start);
         %---
         dynamic_time_three_start = tic;
+        Continuation_Opts.collation_degree = 10;
         Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
         dynamic_time(3,iSeed) = toc(dynamic_time_three_start);
         %---
+        stop_memory_profiler
+        memory_data = get_free_memory;
+        free_dynamic_memory{1,iSeed} = memory_data;
+        %--
+        Dynamic_Data(iRepeat).dynamic_time(:,iSeed) = dynamic_time(:,iSeed);
+        Dynamic_Data(iRepeat).free_memory(1,iSeed) = free_dynamic_memory(1,iSeed);
+        Dynamic_Data(iRepeat).num_dofs(1,iSeed) = num_dof(1,iSeed);
+        
+        %-----------------------------
+        log_data = read_log(dynamic_log_lines(iRepeat));
 
-        Size_Data(iRepeat).dynamic_time(:,iSeed) = dynamic_time(:,iSeed);
-        save(data_path + "\size_data","Size_Data")
+        eom_construction_time = sum(log_data([1,2,4,6,8]));
+        backbone_1_time = sum(log_data([3,5]));
+        ic_time = log_data(7);
+        backbone_2_time = log_data(9);
 
+        Dynamic_Data(iRepeat).eom_construction_time(:,iSeed) = eom_construction_time;
+        Dynamic_Data(iRepeat).backbone_1_time(:,iSeed) = backbone_1_time;
+        Dynamic_Data(iRepeat).ic_time(:,iSeed) = ic_time;
+        Dynamic_Data(iRepeat).backbone_2_time(:,iSeed) = backbone_2_time;
+        %-----------------------------
+
+        save(data_path + "\dynamic_data","Dynamic_Data")
+
+        
+        % Model.save_log
     end
 end

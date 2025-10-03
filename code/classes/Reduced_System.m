@@ -282,6 +282,7 @@ classdef Reduced_System
         end
         %-----------------------------------------------------------------%
         function Eom_Input = get_solver_inputs(obj,type,varargin)
+            pre_dynamic_time_start = tic;
             switch type
                 case "coco_backbone"
                     input_order = obj.get_max_input_order;
@@ -497,6 +498,9 @@ classdef Reduced_System
                     Nc_Inputs = varargin{1,1};
 
             end
+            pre_dynamic_time = toc(pre_dynamic_time_start);
+            log_message = sprintf("EoM precomputations: %.1f seconds" ,pre_dynamic_time);
+            logger(log_message,3)
         end
         %-----------------------------------------------------------------%
         function L_eigenvectors = get_current_L_eigenvectors(obj)

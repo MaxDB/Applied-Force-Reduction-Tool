@@ -4,6 +4,8 @@ INITIAL_AMP_SCALE_FACTOR = 0.01; %initial guess at ratio of end of linear regiem
 MAX_ITERATIONS = 100; %maximum number of attempts to find linear solution
 MAX_LINEARITY_ERROR = 1e-3; %maximum allowable percentage difference in approximate linear solution
 
+linear_solution_time_start = tic;
+
 Model = Rom.Model;
 %find linear solution
 r_eigenvalues = Model.reduced_eigenvalues;
@@ -73,4 +75,10 @@ for iIteration = 1:MAX_ITERATIONS
 end
 z0 = z;
 t0 = t;
+
+
+linear_solution_time = toc(linear_solution_time_start);
+log_message = sprintf("Linear solution found: %.1f seconds" ,linear_solution_time);
+logger(log_message,2)
+
 end
