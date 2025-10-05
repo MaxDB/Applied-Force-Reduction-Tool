@@ -10,7 +10,7 @@ end
 
 memory_id = fopen(memory_path);
 date_format = "%{dd/MM/uuuu}D";
-time_format = "%{hh:mm:ss}D";
+time_format = "%{HH:mm:ss}D";
 try
     date = textscan(memory_id,date_format + " " + time_format,1);
     sample_period = textscan(memory_id,"%f",1);
