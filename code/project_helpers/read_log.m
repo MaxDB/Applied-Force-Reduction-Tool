@@ -48,6 +48,9 @@ for iOutput = 1:num_outputs
     
     if class(start_time) == "datetime" && class(end_time) == "datetime"
         time_diff = seconds(end_time - start_time);
+        if time_diff < 0
+            time_diff = time_diff + 24*60*60;
+        end
     else
         time_diff = nan;
     end

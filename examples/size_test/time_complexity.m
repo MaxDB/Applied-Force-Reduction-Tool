@@ -81,6 +81,8 @@ for iSeed = 1:num_seeds
     num_dof(iSeed) = create_mesh(seed_size);
 
     for iRepeat = 1:num_static_repeats
+        create_parallel_pool(0);
+        create_parallel_pool(num_workers);
         clear Static_Data
         clear Model
         clear Dyn_Data
