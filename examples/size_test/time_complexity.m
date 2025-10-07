@@ -99,8 +99,11 @@ for iSeed = 1:num_seeds
         total_time(1,iSeed) = toc(total_time_start);
 
         stop_memory_profiler
-        memory_data = get_free_memory;
-        free_static_memory{1,iSeed} = memory_data;
+        [memory_data,memory_duration] = get_free_memory;
+        Memory.data = memory_data;
+        Memory.duration = memory_duration;
+        free_static_memory{1,iSeed} = Memory;
+
 
         log_data = read_log(static_log_lines);
         matrix_time(1,iSeed) = log_data(1);
@@ -161,8 +164,10 @@ for iSeed = 1:num_seeds
         dynamic_time(3,iSeed) = toc(dynamic_time_three_start);
         %---
         stop_memory_profiler
-        memory_data = get_free_memory;
-        free_dynamic_memory{1,iSeed} = memory_data;
+        [memory_data,memory_duration] = get_free_memory;
+        Memory.data = memory_data;
+        Memory.duration = memory_duration;
+        free_dynamic_memory{1,iSeed} = Memory;
         %--
         Dynamic_Data(iRepeat).dynamic_time(:,iSeed) = dynamic_time(:,iSeed);
         Dynamic_Data(iRepeat).free_memory(1,iSeed) = free_dynamic_memory(1,iSeed);

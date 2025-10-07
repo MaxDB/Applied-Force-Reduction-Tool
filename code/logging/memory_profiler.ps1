@@ -16,6 +16,7 @@ $start_time = Get-Date
 if ($display -eq 1) {$start_time | Write-Output}
 $start_time | Add-Content -Path $log_file
 $sample_delay | Add-Content -Path $log_file
+"--" | Add-Content -Path $log_file
 while ($true)
 {
     $memory = (Get-CimInstance -ClassName Win32_OperatingSystem).FreePhysicalMemory*$unit_factor
@@ -25,8 +26,12 @@ while ($true)
     Start-Sleep -Seconds $sample_delay
 }
 
+$stop_time = Get-Date
+"--" | Add-Content -Path $log_file
+$stop_time | Add-Content -Path $log_file
+
 if ($display -eq 1){
-    Get-Date | Write-Output
+    $stop_time | Write-Output
     Write-Host "Press any key to exit..."
     $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 }

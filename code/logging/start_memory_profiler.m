@@ -61,5 +61,4 @@ powershell_command = ['Start-Process powershell \"-File \"\"',start_script_path,
 cmd_command = ['powershell -Command "& {',powershell_command,'}"'];
 system(cmd_command);
 
-%make sure to add killing the memoey profiler to project shut down
 end
