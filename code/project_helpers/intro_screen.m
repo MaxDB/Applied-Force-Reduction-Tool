@@ -36,6 +36,8 @@ disp(bar_line)
 
 
 %-----------------
+fprintf('By <a href ="https://orcid.org/0009-0002-6785-4337">Max de Bono</a>\n')
+
 current_version_text = "Installed version: " + get_version();
 disp(current_version_text)
 line_length = fprintf("Checking for updates...\n");
@@ -47,9 +49,9 @@ if isempty(is_new_version)
     new_version_text = "Unable to check current version";
 else
     if is_new_version
-        new_version_text = "New version available at https://github.com/MaxDB/Applied-Force-Reduction-Tool";
+        new_version_text = 'Major update available <a href ="https://github.com/MaxDB/Applied-Force-Reduction-Tool">here</a>';
     else
-        new_version_text = "Version up to date";
+        new_version_text = "Software up to date";
     end
 end
 disp(new_version_text)
@@ -85,6 +87,9 @@ end
 
 function is_new_version=check_version()
 version_path = "settings\version_number.txt";
+current_directory = pwd;
+project_directory = get_project_path;
+cd(project_directory)
 try
     [exit_code(1),cmd_output] = system("git fetch origin main"); %#ok<*ASGLU>
     [exit_code(2),cmd_output] = system("git diff origin/main " + version_path);
@@ -96,6 +101,6 @@ try
 catch
     is_new_version = logical([]);
 end
-
+cd(current_directory)
 
 end
