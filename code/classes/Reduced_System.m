@@ -36,7 +36,11 @@ classdef Reduced_System
                 force_degree = degree(1);
                 disp_degree = degree(2);
             end
-            
+            %-----------------
+
+
+
+
             obj.Model = Static_Data.Model; 
 
             r = Static_Data.get_dataset_values("reduced_displacement");
@@ -74,7 +78,11 @@ classdef Reduced_System
             static_data_path = split(Static_Data.get_data_path,"\");
             obj.data_path = join(static_data_path(1:2),"\") + "\";
 
-
+            rom_data_path = obj.data_path + "rom_data";
+            if isfolder(rom_data_path)
+                rmdir(rom_data_path,"s")
+            end
+            mkdir(rom_data_path)
 
             if isempty(Static_Data.Dynamic_Validation_Data)
                 return
@@ -283,6 +291,16 @@ classdef Reduced_System
         %-----------------------------------------------------------------%
         function Eom_Input = get_solver_inputs(obj,type,varargin)
             pre_dynamic_time_start = tic;
+
+            rom_data = obj.data_path + "rom_data\" + type + ".mat";
+            if isfile(rom_data)
+                load(rom_data,"Eom_Input");
+                pre_dynamic_time = toc(pre_dynamic_time_start);
+                log_message = sprintf("EoM loaded: %.1f seconds" ,pre_dynamic_time);
+                logger(log_message,3)
+                return
+            end
+
             switch type
                 case "coco_backbone"
                     input_order = obj.get_max_input_order;
@@ -498,6 +516,7 @@ classdef Reduced_System
                     Nc_Inputs = varargin{1,1};
 
             end
+            save(rom_data,"Eom_Input");
             pre_dynamic_time = toc(pre_dynamic_time_start);
             log_message = sprintf("EoM precomputations: %.1f seconds" ,pre_dynamic_time);
             logger(log_message,3)
