@@ -32,12 +32,12 @@ dynamic_log_lines = @(id) [
     "Dynamic analysis " + id, "Dynamic Dataset initalised:";
     "Dynamic Dataset initalised:", "EoM precomputations:";
     "EoM precomputations:", "Linear solution found";
-    "Linear solution found:", "EoM precomputations:";
-    "EoM precomputations:", "Backbone:";
-    "Backbone:","EoM precomputations:";
-    "EoM precomputations:", "Initial condition sweep:";
-    "Initial condition sweep:", "EoM precomputations:";
-    "EoM precomputations:", "Backbone:"
+    "Linear solution found:", "EoM loaded:";
+    "EoM loaded:", "Backbone:";
+    "Backbone:","EoM loaded:";
+    "EoM loaded:", "Initial condition sweep:";
+    "Initial condition sweep:", "EoM loaded:";
+    "EoM loaded:", "Backbone:"
 ];
 %-----
 set_logging_level(1)

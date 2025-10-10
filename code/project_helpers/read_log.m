@@ -10,17 +10,20 @@ end
 
 
 try
-    log_file = textscan(log_id,"%s %s","Delimiter",{'>>','\n'});
+    log_file = textscan(log_id,"%s","Delimiter","\n");
 catch
     fclose(log_id);
     error("Cannot read log")
 end
 fclose(log_id);
 
-
+log_file = log_file{1};
+date_pattern = digitsPattern(2) + ":" + digitsPattern(2) + ":" + digitsPattern(2) + "." + digitsPattern(2) + ">>";
+time_stamped_data = log_file(startsWith(log_file,date_pattern));
+split_data = split(time_stamped_data,">>");
 %------------------
-log_times = log_file{1};
-log_text = log_file{2};
+log_times = split_data(:,1);
+log_text = strip(split_data(:,2));
 
 
 num_outputs = size(log_lines,1);
@@ -62,5 +65,3 @@ end
 
 log_data = log_timespan;
 end
-
-
