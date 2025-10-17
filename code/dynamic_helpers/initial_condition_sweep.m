@@ -39,6 +39,7 @@ eom = Rom.get_equation_of_motion();
 centre_point = zeros(num_modes,1);
 
 solution_converged = 0;
+solutions_checked = 0;
 if show_figure
 figure
 hold on
@@ -118,6 +119,8 @@ while ~solution_converged
     end
     step_reduction = 2.5;
     sweep_resolution = 11;
+
+    solutions_checked = solutions_checked + num_ics;
 end
 if show_figure
 hold off
@@ -142,6 +145,8 @@ periodic_solution = {x,y};
 % periodic_solutions = periodic_solutions(sort_index);
 
 ic_time = toc(ic_time_start);
+log_message = sprintf("%d initial conditions checked" , solutions_checked);
+logger(log_message,3)
 log_message = sprintf("Initial condition sweep: %.1f seconds" , ic_time);
 logger(log_message,2)
 end

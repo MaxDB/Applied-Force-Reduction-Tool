@@ -28,16 +28,36 @@ classdef Dynamic_Dataset
                     dof_bcs = Rom.Model.dof_boundary_conditions;
                     num_dof = Rom.Model.num_dof;
                     Disp_Poly = Rom.Physical_Displacement_Polynomial;
-                    disp_func = @(input_disp) additional_physical_displacement(input_disp,Disp_Poly,Additional_Output,num_dof,dof_bcs);
-
-                    Additional_Output.output_func = disp_func;
+                   
                     
+                    if isstruct(Additional_Output.dof)
+                        dof_coords = Additional_Output.dof.position;
+                        dof_direction = Additional_Output.dof.direction;
+
+                        geometry = load_geometry(obj.Dynamic_Model.Model);
+                        node_position = read_abaqus_node_position(geometry);
+
+
+                        node_displacement = node_position - dof_coords;
+                        node_distance = sqrt(sum(node_displacement.^2,2));
+                        [min_distance,closest_node] = min(node_distance); %#ok<ASGLU>
+
+                        num_dimensions = get_num_node_dimensions(obj.Dynamic_Model.Model);
+                        Additional_Output.dof = (closest_node-1)*num_dimensions + dof_direction;
+                    end
+
                     if isnumeric(Additional_Output.dof)
+
                         node_map = 1:(Rom.Model.num_dof + numel(dof_bcs));
                         node_map(dof_bcs) = [];
                         control_dof = find(node_map == Additional_Output.dof);
                         Additional_Output.control_dof = control_dof;
                     end
+
+
+                    disp_func = @(input_disp) additional_physical_displacement(input_disp,Disp_Poly,Additional_Output,num_dof,dof_bcs);
+                    Additional_Output.output_func = disp_func;
+
             end
             obj.Additional_Output = Additional_Output;
         end
