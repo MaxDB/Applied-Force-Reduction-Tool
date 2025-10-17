@@ -139,10 +139,12 @@ for iSeed = 1:num_seeds
         dynamic_time_one_start = tic;
         Dyn_Data = initalise_dynamic_data(get_system_name(system_name,modes));
         %--
-        % Additional_Output.output = "physical displacement";
-        % Additional_Output.type = "max";
-        % Additional_Output.dof = 66539;
-        % Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
+        Additional_Output.output = "physical displacement";
+        Additional_Output.type = "max";
+        dof.position = [0,36e-3,10e-3];
+        dof.direction = 2;
+        Additional_Output.dof = dof;
+        Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
         % --------- Continuation Settings ---------%
         Continuation_Opts.initial_inc = 5e-1;
         Continuation_Opts.max_inc = 5e-1;
