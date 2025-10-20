@@ -516,8 +516,8 @@ classdef Dynamic_System
                         x = cell(1,num_parallel_jobs);
                         x_dot = cell(1,num_parallel_jobs);
                         energy = cell(1,num_parallel_jobs);
-                        parfor (iJob = 1:num_parallel_jobs,get_current_parallel_jobs)
-                            % for iJob = 1:num_parallel_jobs
+                        % parfor (iJob = 1:num_parallel_jobs,get_current_parallel_jobs)
+                        for iJob = 1:num_parallel_jobs
                             [t_job,x_job,x_dot_job,energy_job] = dynamic_simulation_abaqus(x_0(:,iJob),x_dot_0(:,iJob),f_r_0(:,iJob),period(iJob),num_periods,min_incs(iJob),initial_time(iJob),FE_Force_Data,obj,iJob);
 
                             t{1,iJob} = t_job;

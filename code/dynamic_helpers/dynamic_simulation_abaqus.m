@@ -12,7 +12,10 @@ project_path = get_project_path;
 
 setup_time_start = tic;
 
-all_dofs = Model.node_mapping(end,1);
+all_dofs = Model.num_dof + numel(Model.dof_boundary_conditions);
+node_map = 1:all_dofs;
+node_map(Model.dof_boundary_conditions) = [];
+
 num_dofs = Model.num_dof;
 num_nodes = (all_dofs/num_dimensions);
 
@@ -22,8 +25,12 @@ static_settings(1) = Static_Opts.initial_time_increment;
 static_settings(2) = Static_Opts.total_step_time;
 static_settings(3) = Static_Opts.minimum_time_increment;
 static_settings(4) = Static_Opts.maximum_time_increment;
-max_static_inc = Static_Opts.maximum_step_increments*Static_Opts.num_loadcases;
 
+if isstring(Static_Opts.num_loadcases)
+    max_static_inc = Static_Opts.maximum_step_increments*10;
+else
+    max_static_inc = Static_Opts.maximum_step_increments*Static_Opts.num_loadcases;
+end
 
 new_job = JOB_NAME + "_" + job_id(1);
 
@@ -199,7 +206,7 @@ input_id = fopen("temp\" + new_job + ".inp","w");
 %-------------------------------------------------------------------------%
 step_force_bc = force_transform*f_r_0;
 step_force = zeros(all_dofs,1);
-step_force(Model.node_mapping(:,1),:) = step_force_bc(Model.node_mapping(:,2),:);
+step_force(node_map,:) = step_force_bc;
 step_force_label = strings(all_dofs,1);
 for iDimension = 1:num_dimensions
     dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
@@ -207,7 +214,7 @@ for iDimension = 1:num_dimensions
 end
 %-------------------------------------------------------------------------%
 step_velocity = zeros(all_dofs,1);
-step_velocity(Model.node_mapping(:,1),:) = x_dot_0(Model.node_mapping(:,2),:);
+step_velocity(node_map,:) = x_dot_0;
 step_velocity_label = strings(all_dofs,1);
 for iDimension = 1:num_dimensions
     dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
@@ -218,7 +225,7 @@ if ~isempty(FE_Force_Data)
     % dyn_force_bc = FE_Force_Data.amplitude*FE_Force_Data.force_shape;
     dyn_force_bc = FE_Force_Data.amplitude*FE_Force_Data.force_shape;
     dyn_force = zeros(all_dofs,1);
-    dyn_force(Model.node_mapping(:,1),:) = dyn_force_bc(Model.node_mapping(:,2),:);
+    dyn_force(node_map,:) = dyn_force_bc(node_map(:,2),:);
     dyn_force_label = strings(all_dofs,1);
     for iDimension = 1:num_dimensions
         dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
@@ -261,23 +268,7 @@ logger(log_message,3)
 num_cpus = Model.Static_Options.num_fe_cpus;
 
 abaqus_time_start = tic;
-project_directory = pwd;
-cd temp
-if ~restart_read
-    [status,cmdout] = system("abaqus job=" + new_job + " cpus=" + num_cpus); %#ok<ASGLU>
-else
-    [status,cmdout] = system("abaqus job=" + new_job + " oldjob=" + old_job + " cpus=" + num_cpus); %#ok<ASGLU>
-end
-
-while ~isfile(new_job + ".dat")
-    pause(0.1)
-end
-
-while isfile(new_job + ".lck")
-    pause(0.1)
-end
-cd(project_directory)
-
+[status,cmdout] = run_abaqus_job(new_job,"num_cpus",num_cpus,"interactive",3); %#ok<ASGLU>
 abaqus_time = toc(abaqus_time_start);
 log_message = sprintf("job " + job_id(1) + ": Abaqus dynamic analysis complete: %.1f seconds" ,abaqus_time);
 logger(log_message,3)
@@ -312,7 +303,7 @@ if ~restart_read
     disp_table_span = disp_table_start:size(step_span,2);
     disp_table_data = step_data(disp_table_span,1);
     disp_0 = read_abaqus_table(disp_table_data,num_nodes,num_dimensions);
-    disp_0_bc = disp_0(Model.node_mapping(:,1),:);
+    disp_0_bc = disp_0(node_map,:);
 end
 
 %Dynamic increments
@@ -360,13 +351,13 @@ for iInc = 1:num_increments
     disp_table_span = disp_table_start:size(inc_span,2);
     disp_table_data = inc_data(disp_table_span,1);
     disp_pre_bc = read_abaqus_table(disp_table_data,num_nodes,num_dimensions);
-    displacement(:,iInc) = disp_pre_bc(Model.node_mapping(:,1),:);
+    displacement(:,iInc) = disp_pre_bc(node_map,:);
     
         if OUTPUT_VELOCITY
         vel_table_span = vel_table_start:size(inc_span,2);
         vel_table_data = inc_data(vel_table_span,1);
         vel_pre_bc = read_abaqus_table(vel_table_data,num_nodes,num_dimensions);
-        velocity(:,iInc) = vel_pre_bc(Model.node_mapping(:,1),:);
+        velocity(:,iInc) = vel_pre_bc(node_map,:);
         end
 end
 
