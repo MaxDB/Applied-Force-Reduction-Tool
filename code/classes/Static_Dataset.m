@@ -781,7 +781,14 @@ classdef Static_Dataset
             L_modes = obj.Model.low_frequency_modes;
             L_map = ismember(L_modes,current_L_modes);
             L_eval = obj.Model.low_frequency_eigenvalues(L_map);
-            L_evec = obj.Model.low_frequency_eigenvectors(:,L_map);
+            if class(r_evec) == "Large_Matrix_Pointer"
+                r_evec = r_evec.load;
+                L_evec = obj.Model.low_frequency_eigenvectors.load;
+                L_evec = L_evec(:,L_map);
+            else
+                L_evec = obj.Model.low_frequency_eigenvectors(:,L_map);
+            end
+            
             
             h_modes = [r_modes,current_L_modes];
             h_eval = [r_eval;L_eval];

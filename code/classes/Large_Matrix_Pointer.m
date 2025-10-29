@@ -94,8 +94,14 @@ classdef Large_Matrix_Pointer
             mat_size = mat_size(dim);
         end
         %----
-        function mat1 = horzcat(mat1,mat2)
-            a
+        function mat = horzcat(mat1,mat2)
+            error()
+            % mat1_data = mat1.load;
+            % mat2_data = mat2.load;
+            % mat_data = horzcat(mat1_data,mat2_data);
+            % mat = ma1
+            % mat1.save(mat_data);
+            % mat1.matrix_size = size(mat_data);
 
         end
         % function sub_matrix = subsindex(obj,index)

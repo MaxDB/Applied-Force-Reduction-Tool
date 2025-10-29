@@ -1,11 +1,11 @@
 clear
 close all
 
-num_iterations = 10;
+num_iterations = 1;
 
 %--------- Software Settings ---------%
 set_logging_level(3)
-set_visualisation_level(0)
+set_visualisation_level(3)
 %-------------------------------------%
 
 %--------- System Settings ---------%
@@ -17,12 +17,8 @@ added_modes = [3];
 
 %--------- Static Solver Settings ---------%
 Static_Opts.max_parallel_jobs = 4; %be careful!
-Static_Opts.output_format = "binary";
-Static_Opts.num_loadcases = 6;
 %------------------------------------------%
-if isempty(gcp('nocreate')) && Static_Opts.max_parallel_jobs > 1
-    parpool;
-end
+create_parallel_pool(Static_Opts.max_parallel_jobs)
 
 rom_one_base = zeros(1,num_iterations);
 rom_one_validation_data = zeros(1,num_iterations);
@@ -77,7 +73,7 @@ for iCount = 1:num_iterations
     rom_one_orbit_validation(2,iCount) = toc(orbit_validation_start);
 
     clear("Dyn_Data")
-    close all
+    % close all
     %----------------------------------------------------------------
     validation_time_start = tic;
     Static_Data_Validation = two_mode_rom(Static_Data_Validation,added_modes);

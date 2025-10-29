@@ -53,7 +53,10 @@ orbit_labels = Solution.orbit_labels;
 frequency = Solution.frequency;
 num_periodic_orbits = length(orbit_labels);
 
-num_jobs= gcp("nocreate").NumWorkers;
+num_jobs= get_current_parallel_jobs;
+if num_jobs == 0
+    num_jobs = 1;
+end
 orbit_groups = split_orbit_jobs(num_periodic_orbits,num_jobs);
 
 
