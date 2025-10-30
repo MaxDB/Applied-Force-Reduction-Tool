@@ -93,8 +93,8 @@ classdef Reduced_System
             h_stiffness = Static_Data.get_dataset_values("low_frequency_stiffness");
             h_coupling_gradient = Static_Data.get_dataset_values("low_frequency_coupling_gradient");
 
-            h_stiffness_degree = degree(3);
-            h_coupling_gradient_degree = degree(4);
+            h_stiffness_degree = Static_Data.Dynamic_Validation_Data.degree(1);
+            h_coupling_gradient_degree = Static_Data.Dynamic_Validation_Data.degree(2);
 
             h_stiffness_0 = Static_Data.Dynamic_Validation_Data.h_stiffness_0;
             h_coupling_gradient_0 = Static_Data.Dynamic_Validation_Data.h_coupling_gradient_0;

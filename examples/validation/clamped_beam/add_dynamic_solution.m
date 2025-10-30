@@ -1,5 +1,5 @@
 clear
-% close all
+close all
 set_visualisation_level(1)
 
 system_name = "clamped_beam_1";

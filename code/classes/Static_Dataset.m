@@ -268,14 +268,12 @@ classdef Static_Dataset
             obj.Dynamic_Validation_Data.h_stiffness_0 = h_stiffness_0;
             obj.Dynamic_Validation_Data.h_coupling_gradient_0 = h_coupling_gradient_0;
 
-            obj.verified_degree = repmat(obj.verified_degree,1,2);
-            % minimum_degree_start = tic;
-            % % obj = minimum_h_degree(obj);
-            %
-            %
-            % minimum_degree_time = toc(minimum_degree_start);
-            % log_message = sprintf("Validating validation polynomials: %.1f seconds" ,minimum_degree_time);
-            % logger(log_message,3)
+            %obj.verified_degree = repmat(obj.verified_degree,1,2);
+            minimum_degree_start = tic;
+            obj = verify_validation_polynomials(obj);
+            minimum_degree_time = toc(minimum_degree_start);
+            log_message = sprintf("Verifying validation polynomials: %.1f seconds" ,minimum_degree_time);
+            logger(log_message,3)
 
             validation_dataset_verificiation_plot(obj)
 
