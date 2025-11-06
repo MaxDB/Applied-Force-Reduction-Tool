@@ -293,13 +293,14 @@ classdef Reduced_System
             pre_dynamic_time_start = tic;
 
             rom_data = obj.data_path + "rom_data\" + type + ".mat";
-            if isfile(rom_data)
-                load(rom_data,"Eom_Input");
-                pre_dynamic_time = toc(pre_dynamic_time_start);
-                log_message = sprintf("EoM loaded: %.1f seconds" ,pre_dynamic_time);
-                logger(log_message,3)
-                return
-            end
+            %%%% disabled for debugging
+            % if isfile(rom_data)
+            %     load(rom_data,"Eom_Input");
+            %     pre_dynamic_time = toc(pre_dynamic_time_start);
+            %     log_message = sprintf("EoM loaded: %.1f seconds" ,pre_dynamic_time);
+            %     logger(log_message,3)
+            %     return
+            % end
 
             switch type
                 case "coco_backbone"
@@ -343,6 +344,10 @@ classdef Reduced_System
                     H_Disp_Grad_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
                     h_disp_coeff = H_Disp_Grad_Poly.coefficients;
 
+                    Disp_Grad_Diff_Data = H_Stiffness_Poly.get_diff_data(2);
+                    Disp_Grad_Data.diff_scale_factor = Disp_Grad_Diff_Data.diff_scale_factor;
+                    Disp_Grad_Data.diff_mapping = Disp_Grad_Diff_Data.diff_mapping;
+
                     Beta_Bar_Data = obj.get_h_beta_bar(h_disp_coeff,physical_disp_coeffs);
 
                     % Beta_Bar_Data.h_disp = obj.get_beta_mode(h_disp_coeff,permute(h_disp_coeff,[2,3,1]));
@@ -356,6 +361,7 @@ classdef Reduced_System
                     Eom_Input.Reduced_Force_Data = Reduced_Force_Data;
                     Eom_Input.H_Force_Data = H_Force_Data;
                     Eom_Input.Physical_Disp_Data = Physical_Disp_Data;
+                    Eom_Input.Disp_Grad_Data = Disp_Grad_Data;
                     Eom_Input.Beta_Bar_Data = Beta_Bar_Data;
 
                 case "h_analysis"
@@ -385,6 +391,11 @@ classdef Reduced_System
                     % Beta_Bar_Data.h_disp = obj.get_beta_mode(h_disp_coeff,permute(h_disp_coeff,[2,3,1]));
                     % Beta_Bar_Data.h_disp_r_disp = obj.get_beta_mode(h_disp_coeff,physical_disp_coeffs);
                     Beta_Bar_Data.r_disp = obj.get_beta_mode(physical_disp_coeffs',physical_disp_coeffs);
+                    
+                    H_Stiffness_Poly = obj.Low_Frequency_Stiffness_Polynomial;
+                    Disp_Grad_Diff_Data = H_Stiffness_Poly.get_diff_data(2);
+                    Disp_Grad_Data.diff_scale_factor = Disp_Grad_Diff_Data.diff_scale_factor;
+                    Disp_Grad_Data.diff_mapping = Disp_Grad_Diff_Data.diff_mapping;
 
                     Eom_Input.input_order = input_order;
                     Eom_Input.scale_factor = scale_factor;
@@ -397,6 +408,7 @@ classdef Reduced_System
                     % Eom_Input.H_Disp_Data = H_Disp_Data;
                     Eom_Input.Beta_Bar_Data = Beta_Bar_Data;
                     Eom_Input.L_disp_transform = L_disp_transform;
+                    Eom_Input.Disp_Grad_Data = Disp_Grad_Data;
 
                     Additional_Output = varargin{1};
                     Eom_Input.Additional_Output = Additional_Output;

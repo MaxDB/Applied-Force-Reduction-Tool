@@ -1,4 +1,4 @@
-function Validation_Sol = solve_h_prediction(Validation_Sol,Solution,Validation_Rom, Validated_BB_Settings)
+function Validation_Sol = solve_h_prediction(Validation_Sol,Solution,Validation_Rom,Verification_Rom, Validated_BB_Settings)
 Validation_Opts = Validation_Sol.Validation_Options;
 solution_num = Validated_BB_Settings.solution_num;
 
@@ -15,38 +15,8 @@ solution_name = Validation_Rom.data_path + "dynamic_sol_" + solution_num;
 
 
 %%% Set up h-problem
-
-switch orbit_type
-    case "free"
-        Eom_Input = Validation_Rom.get_solver_inputs("coco_backbone");
-        reduced_eom = @(t,z,zeta) coco_eom(t,z,zeta,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data);
-        %
-        Validation_Input = Validation_Rom.get_solver_inputs("h_prediction");
-        h_terms = @(r,r_dot,r_ddot) get_h_error_terms(r,r_dot,r_ddot,Validation_Input);
-
-        Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("h_analysis",Validated_BB_Settings.Additional_Output);
-    case "forced"
-        
-        Nonconservative_Input = Solution.get_nonconservative_input(Validation_Rom.Model);
-        amp = Nonconservative_Input.amplitude;
-        Eom_Input = Validation_Rom.get_solver_inputs("coco_frf",Nonconservative_Input);
-        reduced_eom = @(t,z,T) coco_forced_eom(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data);
-        
-        Validation_Input = Validation_Rom.get_solver_inputs("forced_h_prediction",Nonconservative_Input);
-        h_terms = @(t,r,r_dot,r_ddot,period) get_forced_h_error_terms(t,r,r_dot,r_ddot,amp,period,Validation_Input);
-
-        Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("forced_h_analysis",Nonconservative_Input);
-end
-
-
-switch Validation_Opts.validation_algorithm
-    case "h_time"
-        h_solver = @(h_terms,t0,omega,num_harmonics) h_time_solution(h_terms,t0,omega,num_harmonics);
-    case "h_frequency"
-        h_solver = @(h_terms,t0,omega,num_harmonics) h_harmonic_balance(h_terms,t0,omega,num_harmonics);
-    case "h_infinite_determinant"
-        h_solver = @(h_terms,t0,omega,num_harmonics) h_infinite_determinant(h_terms,t0,omega,num_harmonics);
-end
+[h_terms,reduced_eom,h_solver,Validation_Analysis_Inputs] = set_up_validation_problem(Validation_Rom,Validation_Opts,Solution,Validated_BB_Settings);
+h_terms_verification = set_up_validation_problem(Verification_Rom,Validation_Opts,Solution,Validated_BB_Settings);
 
 
 orbit_labels = Solution.orbit_labels;
@@ -69,8 +39,8 @@ time_ranges = zeros(2,num_jobs);
 job_time = zeros(1,num_jobs);
 num_job_orbits = zeros(1,num_jobs);
 
-% for iJob = 1:num_jobs
-parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
+for iJob = 1:num_jobs
+% parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
     time_range = [inf,0];
     num_harmonics = initial_harmonic;
     orbit_group = orbit_groups(iJob,:);
@@ -98,12 +68,14 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
                 x_dot = reduced_eom(t0,x,zeros(size(t0)));
                 r_ddot  = x_dot(vel_span,:);
                 [h_inertia,h_conv,h_stiff,h_force] = h_terms(r,r_dot,r_ddot); %lots of scope to speed up
+                [h_inertia_v,h_conv_v,h_stiff_v,h_force_v] = h_terms_verification(r,r_dot,r_ddot);
             case "forced"
 
                 period = 2*pi/omega;
                 x_dot = reduced_eom(t0,x,period);
                 r_ddot  = x_dot(vel_span,:);
                 [h_inertia,h_conv,h_stiff,h_force] = h_terms(t0,r,r_dot,r_ddot,period);
+                [h_inertia_v,h_conv_v,h_stiff_v,h_force_v] = h_terms_verification(t0,r,r_dot,r_ddot,period);
             otherwise
                 h_inertia = [];
                 h_conv = [];
@@ -127,12 +99,13 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
         end
 
 
-        %%% DEBUG
-        % if iOrbit == 54
-        %     debug_validation(validation_eq_terms,t0,Validation_Orbit.h,Validation_Orbit.h_dot)
-        % end
-        %%%
-
+        %-------------
+        h_verification_start = tic;
+        
+        validation_eq_terms_verification = {h_inertia_v,h_conv_v,h_stiff_v,h_force_v};
+        verification_error = verify_validation_orbit(Validation_Orbit,validation_eq_terms,validation_eq_terms_verification,r_ddot);
+        h_verification_time = toc(h_verification_start);
+        %-------------
         h_analysis_start = tic;
         
 
@@ -145,16 +118,13 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
             orbit_stab = 1;
         end
 
-
-               
         Displacement = struct("r",r,"h",Validation_Orbit.h);
         Velocity = struct("r_dot",r_dot,"h_dot",Validation_Orbit.h_dot);
-        
-        Eom_Terms = struct("h_inertia",h_inertia, ...
-                           "h_convection",h_conv, ...
-                           "h_stiffness",h_stiff, ...
-                           "h_force",h_force);
 
+        Eom_Terms = struct("h_inertia",h_inertia, ...
+            "h_convection",h_conv, ...
+            "h_stiffness",h_stiff, ...
+            "h_force",h_force);
 
         Validation_Sols(iJob) = Validation_Sols(iJob).analyse_h_solution(Displacement,Velocity,Eom_Terms,orbit_stab,Validation_Analysis_Inputs,job_orbit);
         h_analysis_time = toc(h_analysis_start);
@@ -167,8 +137,8 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
         if orbit_time > time_range(2)
             time_range(2) = orbit_time;
         end
-        fprintf("%i / %i. data: %.3f, setup: %.3f, solution: %.3f, analysis: %.3f. N_h = %i \n",...
-            job_orbit,num_periodic_orbits,read_data_time,set_up_h_time,solve_h_time,h_analysis_time,num_harmonics);
+        fprintf("%i / %i. data: %.3f, setup: %.3f, solution: %.3f, verification: %.3f, analysis: %.3f. N_h = %i, error = %.2f \n",...
+            job_orbit,num_periodic_orbits,read_data_time,set_up_h_time,solve_h_time,h_verification_time,h_analysis_time,num_harmonics,verification_error);
 
         if Validation_Opts.save_orbit
             validation_name = solution_name + "\sol" + orbit_labels(job_orbit) + "_v.mat";

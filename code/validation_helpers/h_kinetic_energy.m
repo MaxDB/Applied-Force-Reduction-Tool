@@ -2,8 +2,20 @@ function [ke_tilde,ke_hat] = h_kinetic_energy(r,r_dot,h,h_dot,Eom_Input)
 num_x = size(r,2);
 num_r_modes = size(r,1);
 
-num_coupling_coeffs = size(Eom_Input.Beta_Bar_Data.h_disp_r_disp,3);
+num_disp_coeffs = size(Eom_Input.Beta_Bar_Data.h_disp_r_disp,3);
+num_grad_coeffs = size(Eom_Input.Beta_Bar_Data.h_disp_r_disp,1);
 num_coeffs = size(Eom_Input.input_order,1);
+
+% 
+% if num_grad_coeffs > num_disp_coeffs
+%     disp_diff_mapping = Eom_Input.Disp_Grad_Data.diff_mapping;
+%     disp_diff_scale_factor = Eom_Input.Disp_Grad_Data.diff_scale_factor;
+%     num_max_disp_coeffs = num_h_disp_grad_coeffs;
+% else
+%     disp_diff_mapping = Eom_Input.Physical_Disp_Data.diff_mapping;
+%     disp_diff_scale_factor = Eom_Input.Physical_Disp_Data.diff_scale_factor;
+%     num_max_disp_coeffs = num_disp_coeffs;
+% end
 
 
 scale_factor = Eom_Input.scale_factor;
@@ -35,37 +47,52 @@ for iX = 1:num_x
     
     
     %--
-    r_products_disp = r_power_products(1:num_coupling_coeffs,:);
+    % r_products_disp_all = r_power_products(1:num_max_disp_coeffs,:);
+    % 
+    % dr_dr_power_products = r_products_disp_all(disp_diff_mapping{1,1}).*disp_diff_scale_factor{1,1};
+    % 
+    % % r_products_disp = r_products_disp_all(1:num_disp_coeffs);
+    % r_dr_products_disp = dr_dr_power_products(1:num_disp_coeffs,:);
+    % 
+    % r_products_grad = r_products_disp_all(1:num_grad_coeffs,:);
+    % r_dr_products_grad = dr_dr_power_products(1:num_grad_coeffs,:);
+
+    r_products_disp = r_power_products(1:num_disp_coeffs,:);
     r_dr_products_disp = r_products_disp(Eom_Input.Physical_Disp_Data.diff_mapping{1,1}).*Eom_Input.Physical_Disp_Data.diff_scale_factor{1,1};
+
+    r_products_grad = r_power_products(1:num_grad_coeffs);
+    r_dr_products_grad = r_products_grad(Eom_Input.Disp_Grad_Data.diff_mapping{1,1}).*Eom_Input.Disp_Grad_Data.diff_scale_factor{1,1};
+
 
     %--
     r_dr_r_dot_prod = r_dr_products_disp*r_dot_i;
+    r_dr_grad_r_dot_prod = r_dr_products_grad*r_dot_i;
     
     %--
     r_disp_r_disp = r_dr_r_dot_prod'*r_disp_beta_bar*r_dr_r_dot_prod;
     
     %--
-    r_disp_h_disp_prod = r_dr_r_dot_prod'*tensorprod(r_disp_h_disp_beta_bar,r_dr_r_dot_prod,3,1);
+    r_disp_h_disp_prod = r_dr_r_dot_prod'*tensorprod(r_disp_h_disp_beta_bar,r_dr_grad_r_dot_prod,3,1);
     r_disp_h_disp = r_disp_h_disp_prod*h_i;
 
     %--
-    r_disp_h_vel_prod = r_dr_r_dot_prod'*tensorprod(r_disp_h_disp_beta_bar,r_products_disp,3,1);
+    r_disp_h_vel_prod = r_dr_r_dot_prod'*tensorprod(r_disp_h_disp_beta_bar,r_products_grad,3,1);
     r_disp_h_vel = r_disp_h_vel_prod*h_dot_i;
 
     %--
-    h_disp_prod = squeeze(tensorprod(r_dr_r_dot_prod',h_disp_beta_bar,2,1));
+    h_disp_prod = squeeze(tensorprod(r_dr_grad_r_dot_prod',h_disp_beta_bar,2,1));
     h_disp_prod = squeeze(tensorprod(h_i',h_disp_prod,2,1));
-    h_disp_h_disp_prod = h_disp_prod*r_dr_r_dot_prod;
+    h_disp_h_disp_prod = h_disp_prod*r_dr_grad_r_dot_prod;
     h_disp_h_disp = h_disp_h_disp_prod'*h_i;
 
     %--
-    h_disp_h_vel_prod = h_disp_prod*r_products_disp;
+    h_disp_h_vel_prod = h_disp_prod*r_products_grad;
     h_disp_h_vel = h_disp_h_vel_prod'*h_dot_i;
 
     %--
-    h_vel_prod = squeeze(tensorprod(r_products_disp',h_disp_beta_bar,2,1));
+    h_vel_prod = squeeze(tensorprod(r_products_grad',h_disp_beta_bar,2,1));
     h_vel_prod = squeeze(tensorprod(h_dot_i',h_vel_prod,2,1));
-    h_vel_h_vel_prod = h_vel_prod*r_products_disp;
+    h_vel_h_vel_prod = h_vel_prod*r_products_grad;
     h_vel_h_vel = h_vel_h_vel_prod'*h_dot_i;
 
     %--

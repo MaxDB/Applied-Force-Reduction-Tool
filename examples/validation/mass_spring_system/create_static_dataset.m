@@ -30,12 +30,12 @@ Calibration_Opts.Static_Opts.num_loadcases = 20;
 Verification_Opts.verification_algorithm = "sep_to_edge";
 % Validation_Opts.minimum_degree = 3;
 Verification_Opts.maximum_iterations = 5;
-Verification_Opts.maximum_interpolation_error = [1e-4,1e-4];
+% Verification_Opts.maximum_interpolation_error = [1e-4,1e-4];
 Verification_Opts.num_added_points = 1;
 Verification_Opts.max_added_points = 800;
 %----------------------------------------------%
 
 Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
-Static_Data = Static_Dataset(Model,Verification_Opts);
+Static_Data = Static_Dataset(Model,"verification_opts",Verification_Opts);
 Static_Data.save_data;
 

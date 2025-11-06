@@ -4,7 +4,7 @@ close all
 set_visualisation_level(1)
 set_logging_level(3)
 
-system_name = "mems_arch_16";
+system_name = "mems_arch_1";
 Dyn_Data = initalise_dynamic_data(system_name);
 %-------------------------------------------------------------------------%
 Additional_Output.output = "physical displacement";
@@ -35,4 +35,4 @@ potential_ic = initial_condition_sweep(Dyn_Data.Dynamic_Model,2.69e6,[1.5e-7,1e-
 Continuation_Opts.collation_degree = 10;
 Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
 
-Dyn_Data = Dyn_Data.get_fe_output("periodicity",2,1);
+% Dyn_Data = Dyn_Data.get_fe_output("periodicity",2,1);

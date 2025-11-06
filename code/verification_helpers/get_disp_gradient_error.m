@@ -24,7 +24,7 @@ num_test_points = size(validation_points,2);
 error_map = ~ismember(validation_points,0);
 
 num_points = size(disp,2);
-disp_grad_error = zeros(num_points,num_test_points);
+disp_grad_error_all = zeros(num_points,num_test_points);
 
 for iX = 1:num_x
     r_transformed_i = r_transformed(:,iX);
@@ -72,11 +72,16 @@ for iX = 1:num_x
         
         acceleration_error = abs(acceleration_one - acceleration_two)./abs(acceleration_one);
         acceleration_error(~error_map(:,iTest)) = 0;
+        
+        h_ddot_max = max(abs(acceleration_one),[],2);
+        largest_h_ddot = max(h_ddot_max);
+        small_acceleration = h_ddot_max < largest_h_ddot/10;
+        acceleration_error(small_acceleration) = 0;
 
-        disp_grad_error(iX,iTest) = max(acceleration_error);
+        disp_grad_error_all(iX,iTest) = max(acceleration_error);
     end
 
 end
 
-disp_grad_error = max(disp_grad_error,[],2);
+disp_grad_error = max(disp_grad_error_all,[],2);
 end

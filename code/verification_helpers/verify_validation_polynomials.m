@@ -2,22 +2,18 @@ function Static_Data = verify_validation_polynomials(Static_Data)
 MAXIMUM_DEGREE = 12;
 
 Verification_Opts = Static_Data.Verification_Options;
-max_interpolation_error = Verification_Opts.maximum_interpolation_error*10;
-max_iterations = Verification_Opts.maximum_iterations;
+max_interpolation_error = Verification_Opts.maximum_interpolation_error(3:4);
 
 Model = Static_Data.Model;
 max_sep_points = Model.Static_Options.maximum_loadcases;
 
-initial_degree = Static_Data.verified_degree - 1;
+initial_degree = Static_Data.verified_degree;
+% initial_degree = Static_Data.verified_degree - 1;
 
-fitting_energy_limit = Model.fitting_energy_limit;
-energy_limit = Model.energy_limit;
+
 
 num_r_modes = length(Model.reduced_modes);
 
-
-found_force_ratios = Static_Data.unit_sep_ratios;
-num_original_seps = size(found_force_ratios,2);
 adjacent_sep_ratios = get_adjacent_sep_ratios(Static_Data.unit_sep_ratios);
 
 unit_force_ratios = [Static_Data.unit_sep_ratios,adjacent_sep_ratios];
@@ -36,11 +32,10 @@ unit_force_ratios(:,removal_indicies) = [];
 scaled_force_ratios = scale_sep_ratios(unit_force_ratios,Static_Data.Model.calibrated_forces);
 num_verified_seps = size(unit_force_ratios,2);
 
-validated_seps = (1:num_verified_seps);
 
 num_dataset_points = size(Static_Data,2);
 max_degree = get_max_poly_degree("displacement",num_r_modes,num_dataset_points,MAXIMUM_DEGREE);
-max_degree = max_degree - 1;
+% max_degree = max_degree - 1;
 %-------------
 stiffness_converged = zeros(1,num_verified_seps);
 disp_grad_converged = zeros(1,num_verified_seps);
@@ -56,6 +51,9 @@ max_pair_error = inf;
 
 num_validation_modes = size(Static_Data.low_frequency_stiffness,1);
 validation_points = add_sep_ratios(num_validation_modes,2);
+
+fitting_energy_limit = Model.fitting_energy_limit;
+energy_limit = Model.energy_limit;
 
 
 verification_data = cell(1,num_degree_pairs);
@@ -130,8 +128,12 @@ for iDegree_pair = 1:num_degree_pairs
 
             %---------------
 
+
             norm_stiffness_error = stiffness_error/max_interpolation_error(1);
             norm_disp_grad_error = disp_grad_error/max_interpolation_error(2);
+
+            potential_one = Rom_One_Const.Value.Potential_Polynomial.evaluate_polynomial(tested_disp);
+            in_energy_limit = potential_one <= energy_limit;
 
             % Plot_Data = struct([]);
             % Plot_Data(1).displacement = disp_sep;
@@ -142,15 +144,24 @@ for iDegree_pair = 1:num_degree_pairs
             % Plot_Data(2).Rom = Rom_Two_Const.Value;
             % 
             % Plot_Error = struct("force_error",[],"disp_error",[]);
-            % Plot_Error.force_error = norm_force_error;
-            % Plot_Error.disp_error = norm_disp_error;
+            % Plot_Error.force_error = norm_stiffness_error;
+            % Plot_Error.disp_error = norm_disp_grad_error;
             % 
+            % if max(norm_stiffness_error) > 10
+            %     figure
+            %     tiledlayout("flow")
+            %     nexttile
+            %     plot(lambda_sep(tested_sep_index),norm_stiffness_error)
+            %     nexttile
+            %     plot(lambda_sep(tested_sep_index),norm_disp_grad_error)
+            %     1
+            % end
             % sep_error_plot(Plot_Data,Static_Data,Plot_Error,Disp_Error_Inputs_Const.Value)
 
-            if all(norm_stiffness_error < 1)
+            if all(norm_stiffness_error(in_energy_limit) < 1)
                 stiffness_converged(1,iSep) = 1;
             end
-            if all(norm_disp_grad_error < 1)
+            if all(norm_disp_grad_error(in_energy_limit) < 1)
                 disp_grad_converged(1,iSep) = 1;
             end
 

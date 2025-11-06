@@ -5,8 +5,7 @@ INITIAL_DISPLACEMENT_DEGREE = 3;
 
 %-------------------------
 Verification_Opts = Static_Data.Verification_Options;
-max_interpolation_error = Verification_Opts.maximum_interpolation_error;
-max_iteration_loadcases_setting = Verification_Opts.max_added_points;
+max_interpolation_error = Verification_Opts.maximum_interpolation_error(1:2);
 max_iterations = Verification_Opts.maximum_iterations;
 
 num_added_points_setting = Verification_Opts.num_added_points;

@@ -12,7 +12,7 @@ Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
 
 %--------- Continuation Settings ---------%
 Continuation_Opts.initial_inc = 1e-2;
-Continuation_Opts.max_inc = 2e-2;
+Continuation_Opts.max_inc = 2e-1;
 % Continuation_Opts.max_inc = 2e-2;
 
 Continuation_Opts.min_inc = 1e-3;

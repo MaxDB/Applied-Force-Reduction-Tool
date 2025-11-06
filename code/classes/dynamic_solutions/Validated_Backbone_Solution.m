@@ -54,15 +54,35 @@ classdef Validated_Backbone_Solution
 
             obj.validation_modes = L_modes;
             obj = obj.preallocate_analysis_outputs(BB_Sol);
+
+            degree_shift = 0;
+            Static_Data.Dynamic_Validation_Data.degree = Static_Data.Dynamic_Validation_Data.degree + degree_shift;
+            Static_Data.verified_degree(2) = Static_Data.verified_degree(2) + 2;
             Validation_Rom = Reduced_System(Static_Data);
+            Static_Data.Dynamic_Validation_Data.degree = Static_Data.Dynamic_Validation_Data.degree - degree_shift;
+            
             obj.low_frequency_eigenvalues = Validation_Rom.Model.low_frequency_eigenvalues;
+
+            verification_rom_start = tic;
+            degree_shift = 2;
+            Static_Data.Dynamic_Validation_Data.degree = Static_Data.Dynamic_Validation_Data.degree + degree_shift;
+            Verification_Rom = Reduced_System(Static_Data);
+            Static_Data.Dynamic_Validation_Data.degree = Static_Data.Dynamic_Validation_Data.degree - degree_shift;
+            verification_rom_time = toc(verification_rom_start);
+
+            log_message = sprintf("Verification ROM created: %.1f seconds" ,verification_rom_time);
+            logger(log_message,3)
+            
 
             validation_rom_time = toc(validation_rom_start);
             log_message = sprintf("Validation ROM created: %.1f seconds" ,validation_rom_time);
             logger(log_message,2)
 
+            
+
+
             validation_solution_start = tic;
-            obj = solve_h_prediction(obj,BB_Sol,Validation_Rom, Validated_BB_Settings);
+            obj = solve_h_prediction(obj,BB_Sol,Validation_Rom,Verification_Rom, Validated_BB_Settings);
             % switch H_ALGORITHM
             %     case "harmonic_balance"
             %         obj = h_harmonic_balance(BB_Sol,Validation_Rom,solution_num);
