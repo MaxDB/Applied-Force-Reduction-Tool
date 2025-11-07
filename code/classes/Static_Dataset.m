@@ -189,6 +189,7 @@ classdef Static_Dataset
                 end
             elseif nargin == 1
                 L_modes = 1:Static_Opts.num_validation_modes;
+                L_modes(L_modes > obj.Model.num_dof) = [];
             end
 
 

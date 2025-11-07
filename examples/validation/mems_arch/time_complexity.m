@@ -13,10 +13,10 @@ close all
 % dof ≈ 0.0458 * seed_size ^ -2.53
 %-------------------------------
 seed_sizes = [0.00307,0.0023,0.002,0.00174,0.00163,0.00157,0.001481,0.00142,0.00138,0.00136,0.00133,0.001293,0.00129];
-num_workers = 4;
+num_workers = 1;
 num_static_repeats = 2;
 
-num_dynamic_repeats = 10;
+num_dynamic_repeats = 0;
 %-------
 data_path = "data\size_data";
 
@@ -49,6 +49,7 @@ modes = [1,6];
 Calibration_Opts.calibration_scale_factor = 1;
 %----
 Static_Opts.max_parallel_jobs = num_workers;
+Static_Opts.additional_data = "stiffness";
 create_parallel_pool(num_workers);
 
 data_path = data_path + "\workers_" + num_workers;
@@ -121,7 +122,7 @@ for iSeed = 1:num_seeds
         Size_Data(iRepeat).num_dofs(1,iSeed) = num_dof(1,iSeed);
 
         save(data_path + "\size_data","Size_Data")
-        Model.save_log
+        % Model.save_log
     end
 
     for iRepeat = 1:num_dynamic_repeats
