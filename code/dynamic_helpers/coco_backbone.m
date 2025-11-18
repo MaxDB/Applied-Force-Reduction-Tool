@@ -64,7 +64,7 @@ prob = coco_prob();
 
 
 prob = coco_set(prob, 'coll', 'NTST',   Continuation_Settings.initial_discretisation_num);  % [10] %initial number of discretisation intervals
-prob = coco_set(prob, 'coll', 'NCOL',   Continuation_Settings.collation_degree);            % [4] %degree of interpolating polynomial
+prob = coco_set(prob, 'coll', 'NCOL',   Continuation_Settings.collocation_degree);            % [4] %degree of interpolating polynomial
 prob = coco_set(prob, 'coll', 'NTSTMN',   Continuation_Settings.min_discretisation_num);    % [5] %min number of discretisation intervals
 prob = coco_set(prob, 'coll', 'NTSTMX',   Continuation_Settings.max_discretisation_num);    % [100] %max number of discretisation intervals
 
@@ -78,7 +78,7 @@ prob = coco_set(prob, 'ode', 'AbsTol', ODE_TOLERACE*1e-2);
 switch Restart_Data.initial_solution_type
     case "initial_solution"
         prob = coco_set(prob, 'cont', 'NAdapt', 1);
-        %Collation Settings
+        %collocation Settings
         coll_args = [funcs, {t0',z0', {'zet'}, 0}];
         prob = ode_isol2po(prob, '', coll_args{:});
     case "branch_point"

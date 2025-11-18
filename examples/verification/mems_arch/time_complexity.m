@@ -151,7 +151,7 @@ for iSeed = 1:num_seeds
         Continuation_Opts.min_inc = 1e-2;
         Continuation_Opts.forward_steps = 100;
         Continuation_Opts.backward_steps = 0;
-        Continuation_Opts.collation_degree = 8;
+        Continuation_Opts.collocation_degree = 8;
         % ----------------------------------------- %
         Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
         dynamic_time(1,iSeed) = toc(dynamic_time_one_start);
@@ -161,7 +161,7 @@ for iSeed = 1:num_seeds
         dynamic_time(2,iSeed) = toc(dynamic_time_two_start);
         %---
         dynamic_time_three_start = tic;
-        Continuation_Opts.collation_degree = 10;
+        Continuation_Opts.collocation_degree = 10;
         Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
         dynamic_time(3,iSeed) = toc(dynamic_time_three_start);
         %---

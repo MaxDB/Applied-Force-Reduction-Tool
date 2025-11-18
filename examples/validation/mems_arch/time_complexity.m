@@ -25,7 +25,8 @@ static_log_lines = [
     "Eigenvectors:","Model Initialised:";
     "Model Initialised:","Dataset scaffold created:";
     "Dataset scaffold created:", "Verification step 1";
-    "Verification step 1", "Verification step 2"
+    "Verification step 1", "Verification step 2";
+    "Verification step 2", "ROM Dataset Created"
     ];
 
 dynamic_log_lines = @(id) [
@@ -70,6 +71,7 @@ matrix_time = zeros(1,num_seeds);
 initialisation_time = zeros(1,num_seeds);
 scaffold_time = zeros(1,num_seeds);
 verification_time = zeros(2,num_seeds);
+perturbation_time = zeros(1,num_seeds);
 free_static_memory = cell(1,num_seeds);
 
 free_dynamic_memory = cell(1,num_seeds);
@@ -112,12 +114,14 @@ for iSeed = 1:num_seeds
         scaffold_time(1,iSeed) = log_data(3);
         verification_time(1,iSeed) = log_data(4);
         verification_time(2,iSeed) = log_data(5);
+        perturbation_time(1,iSeed) = log_data(6);
 
         Size_Data(iRepeat).total_time(1,iSeed) = total_time(1,iSeed); %#ok<*SAGROW>
         Size_Data(iRepeat).matrix_time(1,iSeed) = matrix_time(1,iSeed);
         Size_Data(iRepeat).initialisation_time(1,iSeed) = initialisation_time(1,iSeed);
         Size_Data(iRepeat).scaffold_time(1,iSeed) = scaffold_time(1,iSeed);
         Size_Data(iRepeat).verification_time(:,iSeed) = verification_time(:,iSeed);
+        Size_Data(iRepeat).perturbation_time(1,iSeed) = perturbation_time(:,iSeed);
         Size_Data(iRepeat).free_memory(1,iSeed) = free_static_memory(1,iSeed);
         Size_Data(iRepeat).num_dofs(1,iSeed) = num_dof(1,iSeed);
 
@@ -152,7 +156,7 @@ for iSeed = 1:num_seeds
         Continuation_Opts.min_inc = 1e-2;
         Continuation_Opts.forward_steps = 100;
         Continuation_Opts.backward_steps = 0;
-        Continuation_Opts.collation_degree = 8;
+        Continuation_Opts.collocation_degree = 8;
         % ----------------------------------------- %
         Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
         dynamic_time(1,iSeed) = toc(dynamic_time_one_start);
@@ -162,7 +166,7 @@ for iSeed = 1:num_seeds
         dynamic_time(2,iSeed) = toc(dynamic_time_two_start);
         %---
         dynamic_time_three_start = tic;
-        Continuation_Opts.collation_degree = 10;
+        Continuation_Opts.collocation_degree = 10;
         Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
         dynamic_time(3,iSeed) = toc(dynamic_time_three_start);
         %---

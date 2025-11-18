@@ -20,12 +20,21 @@ num_dynamic_repeats = 0;
 %-------
 data_path = "data\size_data";
 
-static_log_lines = [
+static_log_lines_one = [
     "mems_arch:", "Eigenvectors:";
     "Eigenvectors:","Model Initialised:";
     "Model Initialised:","Dataset scaffold created:";
     "Dataset scaffold created:", "Verification step 1";
-    "Verification step 1", "Verification step 2"
+    "Verification step 1", "ROM Dataset Created"
+    ];
+
+static_log_lines_two = [
+    "mems_arch:", "Eigenvectors:";
+    "Eigenvectors:","Model Initialised:";
+    "Model Initialised:","Dataset scaffold created:";
+    "Dataset scaffold created:", "Verification step 1";
+    "Verification step 1", "Verification step 2";
+    "Verification step 2", "ROM Dataset Created"
     ];
 
 dynamic_log_lines = @(id) [
@@ -65,11 +74,12 @@ Dynamic_Data.seed_sizes = seed_sizes;
 num_seeds = length(seed_sizes);
 num_dof = zeros(1,num_seeds);
 
-total_time = zeros(1,num_seeds);
-matrix_time = zeros(1,num_seeds);
-initialisation_time = zeros(1,num_seeds);
-scaffold_time = zeros(1,num_seeds);
+total_time = zeros(2,num_seeds);
+matrix_time = zeros(2,num_seeds);
+initialisation_time = zeros(2,num_seeds);
+scaffold_time = zeros(2,num_seeds);
 verification_time = zeros(2,num_seeds);
+perturbation_time = zeros(2,num_seeds);
 free_static_memory = cell(1,num_seeds);
 
 free_dynamic_memory = cell(1,num_seeds);
@@ -83,6 +93,7 @@ for iSeed = 1:num_seeds
 
     for iRepeat = 1:num_static_repeats
         create_parallel_pool(0);
+        pause(30)
         create_parallel_pool(num_workers);
         clear Static_Data
         clear Model
@@ -99,12 +110,21 @@ for iSeed = 1:num_seeds
         Model = Dynamic_System(system_name,energy_limit,modes(1),"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
         Static_Data = Static_Dataset(Model);
         Static_Data.save_data;
+        total_time(1,iSeed) = toc(total_time_start);
 
+        log_data = read_log(static_log_lines_one);
+        matrix_time(1,iSeed) = log_data(1);
+        initialisation_time(1,iSeed) = log_data(2);
+        scaffold_time(1,iSeed) = log_data(3);
+        verification_time(1,iSeed) = log_data(4);
+        perturbation_time(1,iSeed) = log_data(5);
+        
+        total_time_start = tic;
         %two mode
         Static_Data = Static_Data.update_model(modes(2));
         Static_Data = Static_Data.create_dataset;
         Static_Data.save_data;
-        total_time(1,iSeed) = toc(total_time_start);
+        total_time(2,iSeed) = toc(total_time_start);
 
         stop_memory_profiler
         [memory_data,memory_duration] = get_free_memory;
@@ -113,18 +133,19 @@ for iSeed = 1:num_seeds
         free_static_memory{1,iSeed} = Memory;
 
 
-        log_data = read_log(static_log_lines);
-        matrix_time(1,iSeed) = log_data(1);
-        initialisation_time(1,iSeed) = log_data(2);
-        scaffold_time(1,iSeed) = log_data(3);
-        verification_time(1,iSeed) = log_data(4);
-        verification_time(2,iSeed) = log_data(5);
+        log_data = read_log(static_log_lines_two);
+        matrix_time(2,iSeed) = log_data(1);
+        initialisation_time(2,iSeed) = log_data(2);
+        scaffold_time(2,iSeed) = log_data(3);
+        verification_time(2,iSeed) = sum(log_data(4:5));
+        perturbation_time(2,iSeed) = log_data(6);
 
-        Size_Data(iRepeat).total_time(1,iSeed) = total_time(1,iSeed); %#ok<*SAGROW>
-        Size_Data(iRepeat).matrix_time(1,iSeed) = matrix_time(1,iSeed);
-        Size_Data(iRepeat).initialisation_time(1,iSeed) = initialisation_time(1,iSeed);
-        Size_Data(iRepeat).scaffold_time(1,iSeed) = scaffold_time(1,iSeed);
+        Size_Data(iRepeat).total_time(:,iSeed) = total_time(:,iSeed); %#ok<*SAGROW>
+        Size_Data(iRepeat).matrix_time(:,iSeed) = matrix_time(:,iSeed);
+        Size_Data(iRepeat).initialisation_time(:,iSeed) = initialisation_time(:,iSeed);
+        Size_Data(iRepeat).scaffold_time(:,iSeed) = scaffold_time(:,iSeed);
         Size_Data(iRepeat).verification_time(:,iSeed) = verification_time(:,iSeed);
+        Size_Data(iRepeat).perturbation_time(:,iSeed) = perturbation_time(:,iSeed);
         Size_Data(iRepeat).free_memory(1,iSeed) = free_static_memory(1,iSeed);
         Size_Data(iRepeat).num_dofs(1,iSeed) = num_dof(1,iSeed);
 

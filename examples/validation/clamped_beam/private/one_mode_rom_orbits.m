@@ -4,7 +4,7 @@ Dyn_Data = initalise_dynamic_data(system_name);
 %-------------------------------------------------------------------------%
 
 %--------- Continuation Settings ---------%
-Continuation_Opts.collation_degree = 6;
+Continuation_Opts.collocation_degree = 6;
 Continuation_Opts.initial_discretisation_num = 20;
 Continuation_Opts.max_discretisation_num = 200;
 Continuation_Opts.min_discretisation_num = 20;

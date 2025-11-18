@@ -32,7 +32,7 @@ funcs = {@(t,x,p) validation_eqation(t,x,system_matrix_frequency,force_frequency
 
 prob = coco_prob();
 prob = coco_set(prob, 'ode', 'autonomous', false);
-%Collation Settings
+%collocation Settings
 coll_args = [funcs, {t0',z0', {'p'}, 0}];
 
 prob = ode_isol2po(prob, '', coll_args{:});

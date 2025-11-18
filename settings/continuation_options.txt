@@ -13,7 +13,7 @@ backward_steps, 0, 		#number of backward incrementations
 initial_discretisation_num, 10, #intial number of discretisation points
 max_discretisation_num, 100, 	#maximum number of discretisation points
 min_discretisation_num, 5, 	#minimum number of discretisation points
-collation_degree, 4, 		#degree of interpolating polynomial
+collocation_degree, 4, 		#degree of interpolating polynomial
 parameter_range, [0;1e16],	#allowable range of continuation variable
 
 ## Experimental (use with care as not fully implemented)

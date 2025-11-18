@@ -25,7 +25,7 @@ Continuation_Opts.backward_steps = 0;
 Continuation_Opts.initial_discretisation_num = 20;
 Continuation_Opts.max_discretisation_num = 250;
 Continuation_Opts.min_discretisation_num = 20;
-Continuation_Opts.collation_degree = 6;
+Continuation_Opts.collocation_degree = 6;
 Continuation_Opts.energy_limit_multiplier = 1;
 %-----------------------------------------%
 
@@ -87,7 +87,7 @@ compare_validation(Dyn_Data,"validation error",1,"all")
 % Continuation_Opts.initial_discretisation_num = 20;
 % Continuation_Opts.max_discretisation_num = 250;
 % Continuation_Opts.min_discretisation_num = 20;
-% Continuation_Opts.collation_degree = 6;
+% Continuation_Opts.collocation_degree = 6;
 % Continuation_Opts.parameter_range = [0.004,0.0068];
 % Continuation_Opts.energy_limit_multiplier = 1;
 % % %-----------------------------------------%
@@ -129,7 +129,7 @@ compare_validation(Dyn_Data,"validation error",1,"all")
 % Continuation_Opts.initial_discretisation_num = 20;
 % Continuation_Opts.max_discretisation_num = 250;
 % Continuation_Opts.min_discretisation_num = 20;
-% Continuation_Opts.collation_degree = 6;
+% Continuation_Opts.collocation_degree = 6;
 % Continuation_Opts.parameter_range = [0.004,0.0068];
 % %-----------------------------------------%
 % % Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);

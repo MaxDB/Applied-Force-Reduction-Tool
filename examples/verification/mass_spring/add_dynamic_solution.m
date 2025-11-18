@@ -21,7 +21,7 @@ Continuation_Opts.backward_steps = 0;
 Continuation_Opts.initial_discretisation_num = 20;
 Continuation_Opts.max_discretisation_num = 250;
 Continuation_Opts.min_discretisation_num = 20;
-Continuation_Opts.collation_degree = 8;
+Continuation_Opts.collocation_degree = 8;
 %-----------------------------------------%
 Continuation_Opts.inertial_compensation = 1;
 Dyn_Data = Dyn_Data.add_backbone(1,"type","rom","opts",Continuation_Opts);
