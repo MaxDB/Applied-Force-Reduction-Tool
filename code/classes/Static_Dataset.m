@@ -176,7 +176,7 @@ classdef Static_Dataset
             obj = obj.update_additional_data(additional_data);
         end
         %-----------------------------------------------------------------%
-        function obj = add_perturbation_data(obj)
+        function obj = add_perturbation_data(obj,low_freq_modes)
             if obj.additional_data_type ~= "stiffness"
                 return
             end
@@ -184,30 +184,30 @@ classdef Static_Dataset
             Static_Opts = obj.Model.Static_Options;
 
             if nargin == 2
-                if isempty(L_modes) || L_modes == 0
+                if isempty(low_freq_modes) || low_freq_modes == 0
                     return
                 end
             elseif nargin == 1
-                L_modes = 1:Static_Opts.num_validation_modes;
-                L_modes(L_modes > obj.Model.num_dof) = [];
+                low_freq_modes = 1:Static_Opts.num_validation_modes;
+                low_freq_modes(low_freq_modes > obj.Model.num_dof) = [];
             end
 
 
             r_modes = obj.Model.reduced_modes;
-            L_modes(ismember(L_modes,r_modes)) = [];
+            low_freq_modes(ismember(low_freq_modes,r_modes)) = [];
 
             found_L_modes = obj.Model.low_frequency_modes;
-            unknown_L_modes = setdiff(L_modes,found_L_modes);
+            unknown_L_modes = setdiff(low_freq_modes,found_L_modes);
             calc_eigenproblem = ~isempty(unknown_L_modes);
 
             if calc_eigenproblem
                 mass = obj.Model.mass;
                 stiffness = obj.Model.stiffness;
 
-                [full_evecs,full_evals] = eigs(stiffness,mass,max(L_modes),"smallestabs");
+                [full_evecs,full_evals] = eigs(stiffness,mass,max(low_freq_modes),"smallestabs");
                 full_evals = diag(full_evals);
 
-                new_L_modes = 1:max(L_modes);
+                new_L_modes = 1:max(low_freq_modes);
                 new_L_modes(ismember(new_L_modes,r_modes)) = [];
 
                 obj.Model.low_frequency_modes = new_L_modes;
@@ -222,7 +222,7 @@ classdef Static_Dataset
                 obj.Model.low_frequency_eigenvectors = evec_L;
             end
 
-            obj = apply_small_force(obj,L_modes);
+            obj = apply_small_force(obj,low_freq_modes);
             perturbation_time = toc(perturbation_time_start);
             log_message = sprintf("Perturbation data created: %.1f seconds" ,perturbation_time);
             logger(log_message,2)

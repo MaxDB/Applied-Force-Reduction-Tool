@@ -2,7 +2,7 @@ clear
 % close all
 set_visualisation_level(1)
 
-system_name = "mass_spring_roller_1";
+system_name = "mass_spring_roller_12";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 Additional_Output.output = "physical displacement";
@@ -21,11 +21,16 @@ Continuation_Opts.max_discretisation_num = 250;
 Continuation_Opts.min_discretisation_num = 20;
 Continuation_Opts.collocation_degree = 8;
 
-Continuation_Opts.energy_limit_multiplier = 1.2;
+
 %-----------------------------------------%
 
 Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+
+
+Continuation_Opts.forward_steps = 0;
+Continuation_Opts.backward_steps = 200;
+Dyn_Data = Dyn_Data.add_orbits(1,[106,115],"opts",Continuation_Opts);
 % Dyn_Data = Dyn_Data.add_backbone(1,"type","fom","opts",Continuation_Opts);
 
-Dyn_Data = Dyn_Data.validate_solution(1,2);
+% Dyn_Data = Dyn_Data.validate_solution(1,2);
 

@@ -2,6 +2,9 @@ function Dyn_Data = initalise_dynamic_data(system_name)
 initalisation_time_start = tic;
 Dyn_Data = init_helper(system_name);
 initalisation_time = toc(initalisation_time_start);
+if isempty(Dyn_Data)
+    error("No static data found for '" + system_name + "' in '" + pwd + "\data'")
+end
 log_message = sprintf("Dynamic Dataset initalised: %.1f seconds" ,initalisation_time);
 logger(log_message,1)
 end

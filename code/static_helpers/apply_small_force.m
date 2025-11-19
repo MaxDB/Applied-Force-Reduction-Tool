@@ -1,6 +1,5 @@
 function Static_Data = apply_small_force(Static_Data,validation_modes)
 
-
 Model = Static_Data.Model;
 r_modes = Model.reduced_modes;
 num_r_modes = size(r_modes,2);
@@ -37,15 +36,18 @@ perturbation_disp = zeros([size(h_disp_transform'),num_loadcases]);
 
 applied_force = h_disp_transform'*F_h;
 Const_Applied_Force = parallel.pool.Constant(applied_force);
+Const_Stiffness = parallel.pool.Constant(stiffness_pointer);
 
 parfor (iLoad = 1:num_loadcases,get_current_parallel_jobs)
+    tic
     if is_fe_system
-        K_i = stiffness_pointer.get_matrix(iLoad);
+        perturbation_disp(:,:,iLoad) = Const_Stiffness.Value.get_matrix(iLoad)\Const_Applied_Force.Value;
     else
-        K_i = stiffness_pointer(:,:,iLoad);
+        perturbation_disp(:,:,iLoad) = Const_Stiffness.Value(:,:,iLoad)\Const_Applied_Force.Value;
     end
-    perturbation_disp(:,:,iLoad) = K_i\Const_Applied_Force.Value;
+    toc
 end
+clear("Const_Applied_Force","Const_Stiffness")
 
 data_path = get_data_path(Static_Data) + "perturbation";
 Static_Data.perturbation_displacement = Perturbation_Pointer(Model,perturbation_disp,"path",data_path);

@@ -263,6 +263,7 @@ for iIteration = 1:(max_iterations+1)
                 end
             end
         end
+        clear("Disp_Error_Inputs_Const","Rom_One_Const","Rom_Two_Const")
 
 
         Extra_Point_Data.new_sep_id = new_sep_id;

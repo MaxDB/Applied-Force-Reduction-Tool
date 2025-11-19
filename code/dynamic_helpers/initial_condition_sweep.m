@@ -95,6 +95,7 @@ while ~solution_converged
         max_ke = max(max_ke,max(ke));
         kinetic_energy(iCondition) = ke(end);
     end
+    clear("test_conditions_const")
     
     % plot3(initial_conditions(1,:),initial_conditions(2,:),periodicity_error,"x");
     if show_figure

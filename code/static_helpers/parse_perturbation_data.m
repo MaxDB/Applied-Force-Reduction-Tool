@@ -53,6 +53,7 @@ parfor (iLoad = 1:num_loadcases,get_current_parallel_jobs)
     h_stiffness(:,:,iLoad) =  F_h/h_disp;
 
 end
+clear("h_Disp_Transform_Const","Perturbation_Disp_Const")
 
 stiffness = Model.stiffness;
 disp_hat_0 = lambda.*(stiffness\(h_disp_transform'));

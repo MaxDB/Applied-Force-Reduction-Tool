@@ -282,6 +282,7 @@ classdef Dynamic_System
                             additional_data_cell{1,iJob} = job_additional_data;
                             sep_id_cell{1,iJob} = job_sep_id;
                         end
+                        clear("Const_Model")
 
                         reduced_disp = [reduced_disp_cell{1,:}];
                         condensed_disp = [condensed_disp_cell{1,:}];
@@ -454,6 +455,7 @@ classdef Dynamic_System
                             additional_data_cell{1,iJob} = job_additional_data;
 
                         end
+                        clear("Const_Model")
 
                         reduced_disp = [reduced_disp_cell{1,:}];
                         condensed_disp = [condensed_disp_cell{1,:}];

@@ -100,8 +100,8 @@ for iDegree_pair = 1:num_degree_pairs
     Disp_Error_Inputs_Const = parallel.pool.Constant(Disp_Error_Inputs);
     Rom_One_Const =  parallel.pool.Constant(Rom_One);
     Rom_Two_Const = parallel.pool.Constant(Rom_Two);
-    % parfor (iSep = 1:num_verified_seps,num_jobs)
-    for iSep = 1:num_verified_seps
+    parfor (iSep = 1:num_verified_seps,num_jobs)
+    % for iSep = 1:num_verified_seps
         force_ratio = scaled_force_ratios(:,iSep);
         [disp_sep,lambda_sep] = find_sep_rom(Rom_One_Const.Value,force_ratio,3*max_sep_points);
         if isempty(lambda_sep)
@@ -192,6 +192,7 @@ for iDegree_pair = 1:num_degree_pairs
      
         end
     end
+    clear("Disp_Error_Inputs_Const","Rom_One_Const","Rom_Two_Const")
 
 
     Extra_Point_Data.new_error = new_error;
