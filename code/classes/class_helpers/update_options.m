@@ -10,6 +10,8 @@ opt_fields = fieldnames(Input_Opts);
 for iField = 1:length(opt_fields)
     opt_field = opt_fields{iField,1};
     if ~isfield(New_Opts,opt_field)
+        opts_directory = get_project_path + "\settings";
+        disp("See possible options in " + opts_directory)
         error("Unknown option: " + opt_field)
     end
     New_Opts.(opt_field) = Input_Opts.(opt_field);

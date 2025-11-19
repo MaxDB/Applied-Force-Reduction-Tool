@@ -1,5 +1,6 @@
 classdef Reduced_System
-    %Stores the different polynomial models required for ICE-IC
+    %Stores the different polynomial models required for the applied force
+    %method
     properties
         Force_Polynomial
         Physical_Displacement_Polynomial
@@ -17,17 +18,39 @@ classdef Reduced_System
         data_path
         reduced_displacement_limits
 
+        id
+
     end
     methods
-        function obj = Reduced_System(Static_Data,degree)
+        function obj = Reduced_System(Static_Data,varargin)
             SHIFT_ON = 1;
             SCALE_ON = 1;
-            % obj.minimum_displacement = 1e-16; %any condensed displacement with smaller range will be treated as 0
             obj.minimum_displacement = Static_Data.Model.Static_Options.minimum_displacement;
 
-            if nargin == 1
-                degree = Static_Data.verified_degree;
+
+            %Optional argumanents
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
             end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            degree = Static_Data.verified_degree;
+            rom_id = 1;
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "degree"
+                        degree = keyword_values{arg_counter};
+                    case "id"
+                        rom_id = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %--------------------------------
+    
+
 
             if isscalar(degree)
                 force_degree = degree;
@@ -42,6 +65,7 @@ classdef Reduced_System
 
 
             obj.Model = Static_Data.Model; 
+            obj.id = rom_id;
 
             r = Static_Data.get_dataset_values("reduced_displacement");
             f = Static_Data.get_dataset_values("restoring_force");
@@ -78,7 +102,7 @@ classdef Reduced_System
             static_data_path = split(Static_Data.get_data_path,"\");
             obj.data_path = join(static_data_path(1:2),"\") + "\";
 
-            rom_data_path = obj.data_path + "rom_data";
+            rom_data_path = obj.data_path + "rom_data_" + obj.id;
             if isfolder(rom_data_path)
                 rmdir(rom_data_path,"s")
             end
@@ -292,15 +316,44 @@ classdef Reduced_System
         function Eom_Input = get_solver_inputs(obj,type,varargin)
             pre_dynamic_time_start = tic;
 
-            rom_data = obj.data_path + "rom_data\" + type + ".mat";
-            %%%% disabled for debugging
-            % if isfile(rom_data)
-            %     load(rom_data,"Eom_Input");
-            %     pre_dynamic_time = toc(pre_dynamic_time_start);
-            %     log_message = sprintf("EoM loaded: %.1f seconds" ,pre_dynamic_time);
-            %     logger(log_message,3)
-            %     return
-            % end
+            %-------------------------------------------------------------------------%
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            rom_type = "standard";
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "rom_type"
+                        rom_type = keyword_values{arg_counter};
+                    case "additional_output"
+                        Additional_Output = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                        %will need to fix later
+                end
+            end
+            %-------------------------------------------------------------------------%
+
+
+            file_name = "rom_data_" + obj.id + "\" + type;
+            if rom_type ~= "standard"
+                file_name = file_name + "_rom_type";
+            end
+            file_name = file_name + ".mat";
+            rom_data = obj.data_path + file_name;
+   
+            if isfile(rom_data)
+                load(rom_data,"Eom_Input");
+                pre_dynamic_time = toc(pre_dynamic_time_start);
+                log_message = sprintf("EoM loaded: %.1f seconds" ,pre_dynamic_time);
+                logger(log_message,3)
+                return
+            end
 
             switch type
                 case "coco_backbone"
@@ -410,7 +463,7 @@ classdef Reduced_System
                     Eom_Input.L_disp_transform = L_disp_transform;
                     Eom_Input.Disp_Grad_Data = Disp_Grad_Data;
 
-                    Additional_Output = varargin{1};
+           
                     Eom_Input.Additional_Output = Additional_Output;
                     switch Additional_Output.output
                         case "physical displacement"
@@ -527,6 +580,10 @@ classdef Reduced_System
                     Eom_Input = obj.get_solver_inputs("h_analysis");
                     Nc_Inputs = varargin{1,1};
 
+            end
+            dir_name = obj.data_path + "rom_data_" + obj.id;
+            if ~isfolder(dir_name)
+                mkdir(dir_name);
             end
             save(rom_data,"Eom_Input");
             pre_dynamic_time = toc(pre_dynamic_time_start);

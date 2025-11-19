@@ -17,7 +17,7 @@ stiffness_degree = initial_degree-1;
 %find minimum degree
 
 while stiffness_degree  < MAX_DEGREE
-    rom = Reduced_System(Static_Data,[1,1,stiffness_degree]);
+    rom = Reduced_System(Static_Data,"degree",[1,1,stiffness_degree]);
     modeled_outputs = rom.Tangent_Stiffness_Polynomial.Nonzero_Polynomials.modeled_outputs;
     modeled_outputs_indicies = find(modeled_outputs);
     

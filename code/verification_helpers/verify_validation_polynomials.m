@@ -42,7 +42,7 @@ disp_grad_converged = zeros(1,num_verified_seps);
 
 degree = initial_degree;
 Static_Data.Dynamic_Validation_Data.degree = degree;
-Rom_One = Reduced_System(Static_Data);
+Rom_One = Reduced_System(Static_Data,"id",2);
 
 num_degree_pairs = min(max_degree+2 - degree(1),max_degree+2 - degree(2))/2;
 maximum_stiffness_pair_errors = zeros(1,num_degree_pairs);
@@ -76,7 +76,7 @@ for iDegree_pair = 1:num_degree_pairs
     logger(log_message,4)
     
     Static_Data.Dynamic_Validation_Data.degree = degree_two;
-    Rom_Two = Reduced_System(Static_Data);
+    Rom_Two = Reduced_System(Static_Data,"id",3);
 
 
     Disp_Error_Inputs.Beta_Bar_Data_One = Rom_One.get_h_beta_bar(Rom_One.Low_Frequency_Coupling_Gradient_Polynomial.coefficients,Rom_One.Physical_Displacement_Polynomial.coefficients);
@@ -231,7 +231,7 @@ for iDegree_pair = 1:num_degree_pairs
     end
     
     Static_Data.Dynamic_Validation_Data.degree = degree;
-    Rom_One = Reduced_System(Static_Data);
+    Rom_One = Reduced_System(Static_Data,"id",2);
 end
 error_time = toc(error_time_start);
 %------------------------------------------------------------------

@@ -58,7 +58,7 @@ classdef Validated_Backbone_Solution
             degree_shift = 0;
             Static_Data.Dynamic_Validation_Data.degree = Static_Data.Dynamic_Validation_Data.degree + degree_shift;
             Static_Data.verified_degree(2) = Static_Data.verified_degree(2) + 2;
-            Validation_Rom = Reduced_System(Static_Data);
+            Validation_Rom = Reduced_System(Static_Data,"id",2);
             Static_Data.Dynamic_Validation_Data.degree = Static_Data.Dynamic_Validation_Data.degree - degree_shift;
             
             obj.low_frequency_eigenvalues = Validation_Rom.Model.low_frequency_eigenvalues;
@@ -66,7 +66,7 @@ classdef Validated_Backbone_Solution
             verification_rom_start = tic;
             degree_shift = 2;
             Static_Data.Dynamic_Validation_Data.degree = Static_Data.Dynamic_Validation_Data.degree + degree_shift;
-            Verification_Rom = Reduced_System(Static_Data);
+            Verification_Rom = Reduced_System(Static_Data,"id",3);
             Static_Data.Dynamic_Validation_Data.degree = Static_Data.Dynamic_Validation_Data.degree - degree_shift;
             verification_rom_time = toc(verification_rom_start);
 
@@ -82,6 +82,14 @@ classdef Validated_Backbone_Solution
 
 
             validation_solution_start = tic;
+            preload_data = "coco_backbone";
+            Eom_Input = Validation_Rom.get_solver_inputs(preload_data);
+            
+            get_rom_dir = @(Rom) Rom.data_path + "rom_data_" + Rom.id;
+            get_file_name = @(Rom) get_rom_dir(Rom) + "\" + preload_data + ".mat";
+            save(get_file_name(Verification_Rom),"Eom_Input")
+
+
             obj = solve_h_prediction(obj,BB_Sol,Validation_Rom,Verification_Rom, Validated_BB_Settings);
             % switch H_ALGORITHM
             %     case "harmonic_balance"
@@ -89,6 +97,11 @@ classdef Validated_Backbone_Solution
             %     case "time_solution"
             %         obj = h_time_solution(obj,BB_Sol,Validation_Rom,solution_num);
             % end
+
+            
+            rmdir(get_rom_dir(Validation_Rom),"s")
+            rmdir(get_rom_dir(Verification_Rom),"s")
+
             validation_solution_time = toc(validation_solution_start);
             log_message = sprintf("Validation equations solved: %.1f seconds" ,validation_solution_time);
             logger(log_message,2)

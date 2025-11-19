@@ -31,7 +31,7 @@ num_modelled_outputs = size(modelled_output_indicies,1);
 
 h_stiffness_degree = Static_Data.validated_degree(1);
 while h_stiffness_degree  < max_degree(1)
-    rom = Reduced_System(Static_Data,[1,1,h_stiffness_degree,1]);
+    rom = Reduced_System(Static_Data,"degree",[1,1,h_stiffness_degree,1]);
     
     stiffness_error = zeros(num_modelled_outputs,1);
     for iOutput = 1:num_modelled_outputs
@@ -77,7 +77,7 @@ while h_coupling_gradient_degree  < max_degree(2)
     if isempty(modelled_output_indicies)
         break
     end
-    rom = Reduced_System(Static_Data,[1,1,1,h_coupling_gradient_degree]);
+    rom = Reduced_System(Static_Data,"degree",[1,1,1,h_coupling_gradient_degree]);
     
     h_coupling_gradient_rom = rom.Low_Frequency_Coupling_Gradient_Polynomial.evaluate_polynomial(r,lin_index);
     coupling_gradient_error = coeff_of_determination(h_coupling_gradient_i,h_coupling_gradient_rom); 

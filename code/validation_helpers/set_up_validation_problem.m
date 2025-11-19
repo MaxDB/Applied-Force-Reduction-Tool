@@ -15,7 +15,7 @@ switch orbit_type
             return
         end
 
-        Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("h_analysis",Validated_BB_Settings.Additional_Output);
+        Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("h_analysis","additional_output",Validated_BB_Settings.Additional_Output);
     case "forced"
         
         Nonconservative_Input = Solution.get_nonconservative_input(Validation_Rom.Model);

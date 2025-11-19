@@ -112,7 +112,7 @@ for iIteration = 1:(max_iterations+1)
     force_converged = zeros(1,num_verified_seps);
     disp_converged = zeros(1,num_verified_seps);
 
-    Rom_One = Reduced_System(Static_Data,[force_degree,disp_degree]);
+    Rom_One = Reduced_System(Static_Data,"degree",[force_degree,disp_degree]);
     
     num_degree_pairs = min(max_force_degree+2 - force_degree,max_disp_degree+2 - disp_degree)/2;
     maximum_force_pair_errors = zeros(1,num_degree_pairs);
@@ -139,7 +139,7 @@ for iIteration = 1:(max_iterations+1)
             ordinal_suffix(disp_degree),ordinal_suffix(disp_degree_two));
         logger(log_message,4)
 
-        Rom_Two = Reduced_System(Static_Data,[force_degree_two,disp_degree_two]);
+        Rom_Two = Reduced_System(Static_Data,"degree",[force_degree_two,disp_degree_two]);
 
         Disp_Error_Inputs.beta_bar_one = Rom_One.get_beta_bar(Rom_One.Physical_Displacement_Polynomial);
         Disp_Error_Inputs.beta_bar_two = Rom_Two.get_beta_bar(Rom_Two.Physical_Displacement_Polynomial);
@@ -304,7 +304,7 @@ for iIteration = 1:(max_iterations+1)
             break
         end
         
-        Rom_One = Reduced_System(Static_Data,[force_degree,disp_degree]);
+        Rom_One = Reduced_System(Static_Data,"degree",[force_degree,disp_degree]);
         % if all(force_converged) || all(disp_converged)
         %     
         % else
