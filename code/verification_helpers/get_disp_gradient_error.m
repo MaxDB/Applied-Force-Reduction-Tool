@@ -10,7 +10,7 @@ scale_factor = Rom_One.Force_Polynomial.scaling_factor;
 shift_factor = Rom_One.Force_Polynomial.shifting_factor;
 r_transformed = scale_factor.*(disp + shift_factor);
 
-num_force_coeffs = [Rom_One.Force_Polynomial.num_element_coefficients,Rom_Two.Force_Polynomial.num_element_coefficients];
+% num_force_coeffs = [Rom_One.Force_Polynomial.num_element_coefficients,Rom_Two.Force_Polynomial.num_element_coefficients];
 num_h_force_grad_coeffs = [Rom_One.Low_Frequency_Stiffness_Polynomial.num_element_coefficients,Rom_Two.Low_Frequency_Stiffness_Polynomial.num_element_coefficients];
 num_h_coupling_grad_coeffs = [size(beta_bar_h_disp_one,1),size(beta_bar_h_disp_two,1)];
 num_coeffs = size(input_order,1);
@@ -37,14 +37,14 @@ for iX = 1:num_x
     %---
     
     %%% Force
-    r_force_one = Rom_One.Force_Polynomial.coefficients*r_power_products(1:num_force_coeffs(1),:);
-    r_force_two = Rom_Two.Force_Polynomial.coefficients*r_power_products(1:num_force_coeffs(2),:);
+    % r_force_one = Rom_One.Force_Polynomial.coefficients*r_power_products(1:num_force_coeffs(1),:);
+    % r_force_two = Rom_Two.Force_Polynomial.coefficients*r_power_products(1:num_force_coeffs(2),:);
+    % 
+    % force_one = zeros(num_h_modes,1);
+    % force_two = zeros(num_h_modes,1);
 
-    force_one = zeros(num_h_modes,1);
-    force_two = zeros(num_h_modes,1);
-
-    force_one(1:num_r_modes,1) = r_force_one;
-    force_two(1:num_r_modes,1) = r_force_two;
+    % force_one(1:num_r_modes,1) = r_force_one;
+    % force_two(1:num_r_modes,1) = r_force_two;
 
     %%% Stiffness
     h_force_grad_one = tensorprod(Rom_One.Low_Frequency_Stiffness_Polynomial.coefficients,r_power_products(1:num_h_force_grad_coeffs(1),:),3,1);
@@ -63,12 +63,14 @@ for iX = 1:num_x
     pre_acceleration_one = - h_inertia_one\h_force_grad_one;
     pre_acceleration_two = - h_inertia_two\h_force_grad_two;
     
-    force_acceleration_one = - h_inertia_one\force_one;
-    force_acceleration_two = - h_inertia_two\force_two;
+    % force_acceleration_one = - h_inertia_one\force_one;
+    % force_acceleration_two = - h_inertia_two\force_two;
     for iTest = 1:num_test_points
         h_test = validation_points(:,iTest);
-        acceleration_one = pre_acceleration_one*h_test + force_acceleration_one;
-        acceleration_two = pre_acceleration_two*h_test + force_acceleration_two;
+        % acceleration_one = pre_acceleration_one*h_test + force_acceleration_one;
+        % acceleration_two = pre_acceleration_two*h_test + force_acceleration_two;
+        acceleration_one = pre_acceleration_one*h_test;
+        acceleration_two = pre_acceleration_two*h_test;
         
         acceleration_error = abs(acceleration_one - acceleration_two)./abs(acceleration_one);
         acceleration_error(~error_map(:,iTest)) = 0;

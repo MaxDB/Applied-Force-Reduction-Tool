@@ -29,3 +29,7 @@ Static_Data = Static_Dataset(Model);
 Static_Data.save_data;
 % stop_memory_profiler()
 % memory_change = get_memory_change;
+
+   % Static_Data = Static_Data.update_model(6);
+   %      Static_Data = Static_Data.create_dataset;
+   %      Static_Data.save_data;

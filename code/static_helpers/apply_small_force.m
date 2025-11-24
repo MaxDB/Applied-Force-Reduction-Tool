@@ -39,13 +39,11 @@ Const_Applied_Force = parallel.pool.Constant(applied_force);
 Const_Stiffness = parallel.pool.Constant(stiffness_pointer);
 
 parfor (iLoad = 1:num_loadcases,get_current_parallel_jobs)
-    tic
     if is_fe_system
         perturbation_disp(:,:,iLoad) = Const_Stiffness.Value.get_matrix(iLoad)\Const_Applied_Force.Value;
     else
         perturbation_disp(:,:,iLoad) = Const_Stiffness.Value(:,:,iLoad)\Const_Applied_Force.Value;
     end
-    toc
 end
 clear("Const_Applied_Force","Const_Stiffness")
 
