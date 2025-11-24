@@ -134,6 +134,7 @@ classdef Validated_Backbone_Solution
         end
         %-----------------------------------------------------------------%
         function obj = analyse_h_solution(obj,Displacment,Velocity,Eom_Terms,orbit_stability,Validation_Analysis_Inputs,orbit_num)
+          
             H_CUTOFF = 1e-4;
             get_amplitude = @(x) (max(x,[],2) - min(x,[],2))/2;
             %--
@@ -149,24 +150,28 @@ classdef Validated_Backbone_Solution
             h_amp = get_amplitude(h);
             
             %--
+     
             R_Disp_Poly = Validation_Analysis_Inputs.Physical_Disp_Data.Poly;
             x_r = R_Disp_Poly.evaluate_polynomial(r);
-
+         
+            
             L_disp_transform = Validation_Analysis_Inputs.L_disp_transform;
             g_l = L_disp_transform*x_r;
-
+           
+       
             g_h = [r;g_l];
             g_amp = get_amplitude(g_h);
 
             %--
             q_l = h+g_h;
             q_amp = get_amplitude(q_l);
-
+      
             %--
             % h_ke_approx = 0.5*1
             % [~,energy_point_span] = min(abs(h_dot))
             energy_point_span = 1:size(h,2);
             num_points = size(energy_point_span,2);
+           
 
             r_energy = r(:,energy_point_span);
             r_dot_energy = r_dot(:,energy_point_span);
@@ -221,8 +226,9 @@ classdef Validated_Backbone_Solution
             h_dist = sqrt(sum(h.^2,1));
             [max_r2_dist,dist_index] = max(r2_dist);
             h_error = max(h_dist/max_r2_dist);
-            
+     
             %---
+         
             Additional_Output = Validation_Analysis_Inputs.Additional_Output;
             switch Additional_Output.output
                 case "physical displacement"
@@ -233,15 +239,23 @@ classdef Validated_Backbone_Solution
                     else
                         add_dof = Additional_Output.control_dof;
                     end
-                    x_h = x_r;
+                   
+                    
+                    num_added_dofs = length(add_dof);
+                    x_h_add = zeros(num_added_dofs,num_points);
                     for iT = 1:num_points
+                        
                         G_dof = Validation_Analysis_Inputs.G_Grad_Poly.evaluate_polynomial(r(:,iT));
-                        x_h(add_dof,iT) = x_h(add_dof,iT) + G_dof*h(:,iT);
+                        
+                        x_h_add(:,iT) = G_dof*h(:,iT);
                     end
+                    x_h = x_r;
+                    x_h(add_dof,:) = x_h(add_dof,:) + x_h_add;
                     add_output = Additional_Output.output_func(x_h);
                 otherwise
                     add_output = [];
             end
+         
             %--
             obj.h_amplitude(:,orbit_num) = h_amp;
             obj.corrected_low_modal_amplitude(:,orbit_num) = g_amp;
@@ -256,6 +270,7 @@ classdef Validated_Backbone_Solution
             if Additional_Output.output ~= "none"
                 obj.additional_dynamic_output(:,orbit_num) = add_output;
             end
+            
         end
         %-----------------------------------------------------------------%
         function obj = update_validation_opts(obj,Validation_Opts)
