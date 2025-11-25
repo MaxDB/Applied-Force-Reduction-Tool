@@ -9,7 +9,7 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "mems_arch";
 energy_limit = 0.8;
-initial_modes = [1,6];
+initial_modes = [1];
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
@@ -30,6 +30,6 @@ Static_Data.save_data;
 % stop_memory_profiler()
 % memory_change = get_memory_change;
 
-   % Static_Data = Static_Data.update_model(6);
-   %      Static_Data = Static_Data.create_dataset;
-   %      Static_Data.save_data;
+Static_Data = Static_Data.update_model(6);
+Static_Data = Static_Data.create_dataset;
+Static_Data.save_data;

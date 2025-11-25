@@ -14,7 +14,7 @@ close all
 %-------------------------------
 seed_sizes = [0.00307,0.0023,0.002,0.00174,0.00163,0.00157,0.001481,0.00142,0.00138,0.00136,0.00133,0.001293,0.00129];
 % seed_sizes = 0.00129;
-num_workers = 2;
+num_workers = 1;
 num_repeats = 2;
 
 %-------
@@ -88,7 +88,7 @@ validation_time = zeros(2,num_seeds);
 free_dynamic_memory = cell(1,num_seeds);
 dynamic_time = zeros(3,num_seeds);
 
-start_crash_monitoring()
+% start_crash_monitoring()
 
 for iSeed = 1:num_seeds
     seed_size = seed_sizes(iSeed);
@@ -199,12 +199,14 @@ Continuation_Opts.min_inc = 1e-2;
 Continuation_Opts.forward_steps = 200;
 Continuation_Opts.backward_steps = 0;
 Continuation_Opts.collocation_degree = 6;
-Continuation_Opts.initial_discretisation_num = 40;
+Continuation_Opts.initial_discretisation_num = 20;
 % -----------------------------------------%
 
 Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 
 compare_validation(Dyn_Data,"validation error",1,1:6)
+
+
 end
 
 function two_mode_validation
@@ -224,27 +226,25 @@ Continuation_Opts.min_inc = 1e-2;
 Continuation_Opts.forward_steps = 200;
 Continuation_Opts.backward_steps = 0;
 Continuation_Opts.collocation_degree = 6;
-Continuation_Opts.initial_discretisation_num = 80;
+Continuation_Opts.initial_discretisation_num = 40;
 % -----------------------------------------%
 
 % Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 
 
 Dyn_Data_One_Mode = initalise_dynamic_data("mems_arch_1");
+% Dyn_Data_One_Mode = Dyn_Data_One_Mode.validate_solution(1,6);
 Sol = Dyn_Data_One_Mode.load_solution(1,"validation");
 unstable_index = find(Sol.h_stability>1.01,3);
-[orbit,validation_orbit] = Dyn_Data_One_Mode.get_orbit(1,unstable_index(end),1);
-
-
-[q,q_dot] = Dyn_Data_One_Mode.get_modal_validation_orbit(1,unstable_index(end));
+[orbit,validation_orbit] = Dyn_Data_One_Mode.get_orbit(1,unstable_index(1),1);
+[q,q_dot] = Dyn_Data_One_Mode.get_modal_validation_orbit(1,unstable_index(1));
 [min_ke,min_index] = min(sum(q_dot.^2,1)); 
 test_ic = q(:,min_index);
 
 potential_ic = initial_condition_sweep(Dyn_Data.Dynamic_Model,2*pi/orbit.T,test_ic);
-Continuation_Opts.collocation_degree = 10;
-Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
 
-compare_validation(Dyn_Data,"validation error",[1,2],"all")
+
+Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
 
 Dyn_Data.validate_solution(1,[5,11,13]);
 Dyn_Data.validate_solution(2,[5,11,13]);
