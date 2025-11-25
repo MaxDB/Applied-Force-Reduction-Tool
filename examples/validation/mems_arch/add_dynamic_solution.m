@@ -30,3 +30,26 @@ if system_name == "mems_arch_1", return, end
 
 potential_ic = initial_condition_sweep(Dyn_Data.Dynamic_Model,2.69e6,[1.5e-7,1e-7]);
 Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
+
+
+%------------
+
+Dyn_Data_One_Mode = initalise_dynamic_data("mems_arch_1");
+Dyn_Data_One_Mode = Dyn_Data_One_Mode.validate_solution(1,6);
+Sol = Dyn_Data_One_Mode.load_solution(1,"validation");
+unstable_index = find(Sol.h_stability>1.01,3);
+[orbit,validation_orbit] = Dyn_Data_One_Mode.get_orbit(1,unstable_index(end),1);
+
+
+[q,q_dot] = Dyn_Data_One_Mode.get_modal_validation_orbit(1,unstable_index(end));
+[min_ke,min_index] = min(sum(q_dot.^2,1)); 
+test_ic = q(:,min_index);
+
+potential_ic = initial_condition_sweep(Dyn_Data.Dynamic_Model,2*pi/orbit.T,test_ic);
+Continuation_Opts.collocation_degree = 10;
+Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
+
+compare_validation(Dyn_Data,"validation error",[1,2],"all")
+
+Dyn_Data.validate_solution(1,[5,11,13]);
+Dyn_Data.validate_solution(2,[5,11,13]);

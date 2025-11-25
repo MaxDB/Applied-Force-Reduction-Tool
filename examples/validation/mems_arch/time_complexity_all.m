@@ -87,6 +87,8 @@ validation_time = zeros(2,num_seeds);
 free_dynamic_memory = cell(1,num_seeds);
 dynamic_time = zeros(3,num_seeds);
 
+start_crash_monitoring()
+
 for iSeed = 1:num_seeds
     seed_size = seed_sizes(iSeed);
 
@@ -231,4 +233,7 @@ Continuation_Opts.collocation_degree = 10;
 Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
 
 compare_validation(Dyn_Data,"validation error",[1,2],"all")
+
+Dyn_Data.validate_solution(1,[5,11,13]);
+Dyn_Data.validate_solution(2,[5,11,13]);
 end
