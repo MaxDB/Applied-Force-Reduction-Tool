@@ -107,13 +107,17 @@ ax(type == "validation error").YLim = [1e-5,1.1];
 % drawnow
 
 
+r_modes_text = join(string(r_modes),",");
+
 for iMode = 1:num_L_modes
     % Dyn_Data.Additional_Output.output = "none";
-
-
-
+    mode_time_start = tic;
     for iSol = 1:num_sols
-        [Dyn_Data,Validated_BB_Sol] = Dyn_Data.validate_solution(solution_num(iSol),L_modes(iMode));
+        if iSol == 1
+            [Dyn_Data,Validated_BB_Sol] = Dyn_Data.validate_solution(solution_num(iSol),L_modes(iMode));
+        else
+            [Dyn_Data,Validated_BB_Sol] = Dyn_Data.validate_solution(solution_num(iSol),L_modes(iMode),"validation_degree",Validated_BB_Sol.validation_degree,"load_data",1);
+        end
         colour_num = L_modes(iMode);
 
 
@@ -147,6 +151,11 @@ for iMode = 1:num_L_modes
         title(ax(1),mode_details,"FontWeight","normal")
         drawnow
     end
+    mode_time = toc(mode_time_start);
+    h_mode_text = r_modes_text + "," + L_modes(iMode);
+    log_message = sprintf("{" + r_modes_text + "}:{" + h_mode_text+ "} validation: %.1f seconds" ,mode_time);
+    logger(log_message,1)
+
 end
 % plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0);
 end

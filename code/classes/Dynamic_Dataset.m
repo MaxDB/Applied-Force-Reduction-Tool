@@ -399,7 +399,32 @@ classdef Dynamic_Dataset
         %-----------------------------------------------------------------%
         % Validation
         %-----------------------------------------------------------------%
-        function  [obj,Validated_BB_Sol] = validate_solution(obj,solution_num,L_modes)
+        function  [obj,Validated_BB_Sol] = validate_solution(obj,solution_num,L_modes,varargin)
+            %-------------------------------------------------------------------------%
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            validation_degree = [];
+            load_validation_data = 0;
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "validation_degree"
+                        validation_degree = keyword_values{arg_counter};
+                    case "load_data"
+                        load_validation_data = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %-------------------------------------------------------------------------%
+
+
+
             if isstring(solution_num)
                 if solution_num == "last"
                     solution_num = obj.num_solutions;
@@ -423,6 +448,8 @@ classdef Dynamic_Dataset
             Validated_BB_Settings.solution_num = solution_num;
             Validated_BB_Settings.L_modes = L_modes;
             Validated_BB_Settings.Additional_Output = obj.Additional_Output;
+            Validated_BB_Settings.validation_degree = validation_degree;
+            Validated_BB_Settings.load_validation_data = load_validation_data;
 
             Validated_BB_Sol = Validated_Backbone_Solution(Rom,BB_Sol,Validated_BB_Settings);
 

@@ -229,7 +229,7 @@ Continuation_Opts.collocation_degree = 6;
 Continuation_Opts.initial_discretisation_num = 40;
 % -----------------------------------------%
 
-% Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 
 
 Dyn_Data_One_Mode = initalise_dynamic_data("mems_arch_1");
@@ -246,6 +246,8 @@ potential_ic = initial_condition_sweep(Dyn_Data.Dynamic_Model,2*pi/orbit.T,test_
 
 Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
 
+compare_validation(Dyn_Data,"validation error",[1,2],"all")
+
 Dyn_Data.validate_solution(1,[5,11,13]);
-Dyn_Data.validate_solution(2,[5,11,13]);
+Dyn_Data.validate_solution(2,[5,11,13],"load_data",1);
 end

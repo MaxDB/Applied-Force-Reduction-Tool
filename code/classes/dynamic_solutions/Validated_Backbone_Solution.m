@@ -17,6 +17,8 @@ classdef Validated_Backbone_Solution
         h_abs_mean
         r_abs_mean
         validation_error
+
+        validation_degree
     end
 
     methods
@@ -46,8 +48,16 @@ classdef Validated_Backbone_Solution
             load_static_data_time = toc(load_static_data_start);
             log_message = sprintf("Static dataset loaded: %.1f seconds" ,load_static_data_time);
             logger(log_message,3)
-
-            Static_Data = Static_Data.add_validation_data(L_modes);
+            
+            if Validated_BB_Settings.load_validation_data
+                Static_Data = Static_Data.load_validation_data();
+            else
+                Static_Data = Static_Data.add_validation_data(L_modes,"degree",Validated_BB_Settings.validation_degree);
+                obj.validation_degree = Static_Data.Dynamic_Validation_Data.degree;
+                Static_Data.save_validation_data();
+            end
+            
+            
             % save(data_path + "Static_Data.mat","Static_Data","-v7.3")
 
             L_modes = Static_Data.Dynamic_Validation_Data.current_L_modes;

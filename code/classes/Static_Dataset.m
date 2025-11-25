@@ -228,7 +228,26 @@ classdef Static_Dataset
             logger(log_message,2)
         end
         %-----------------------------------------------------------------%
-        function obj = add_validation_data(obj,validation_modes)
+        function obj = add_validation_data(obj,validation_modes,varargin)
+            %-------------------------------------------------------------------------%
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            validation_degree = [];
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "degree"
+                        validation_degree = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %-------------------------------------------------------------------------%
 
 
             if isempty(obj.get_dataset_values("perturbation_displacement"))
@@ -271,7 +290,11 @@ classdef Static_Dataset
 
             %obj.verified_degree = repmat(obj.verified_degree,1,2);
             minimum_degree_start = tic;
-            obj = verify_validation_polynomials(obj);
+            if isempty(validation_degree)
+                obj = verify_validation_polynomials(obj);
+            else
+                obj.Dynamic_Validation_Data.degree = validation_degree;
+            end
             minimum_degree_time = toc(minimum_degree_start);
             log_message = sprintf("Verifying validation polynomials: %.1f seconds" ,minimum_degree_time);
             logger(log_message,3)
@@ -631,6 +654,33 @@ classdef Static_Dataset
                 file_path = get_data_path(Static_Data) + static_data_property + ".mat";
                 save(file_path,"value","-v7.3")
             end
+        end
+        %-----------------------------------------------------------------%
+        function save_validation_data(obj)
+            data_path = obj.get_data_path;
+            validation_data_path = data_path + "validation";
+            if isfolder(validation_data_path)
+                rmdir(validation_data_path,"s")
+            end
+            mkdir(validation_data_path);
+
+            Validation_Data.stiffness = obj.low_frequency_stiffness;
+            Validation_Data.disp_gradient = obj.low_frequency_coupling_gradient;
+            Validation_Data.Dynamic_Validation_Data = obj.Dynamic_Validation_Data;
+            save(validation_data_path + "\validation_data","Validation_Data","-v7.3")
+
+        end
+        %-----------------------------------------------------------------%
+        function obj = load_validation_data(obj)
+            data_path = obj.get_data_path;
+            validation_data_path = data_path + "validation\validation_data.mat";
+            if ~isfile(validation_data_path)
+                error("Can't located requested validation data")
+            end
+            load(validation_data_path,"Validation_Data");
+            obj.low_frequency_stiffness = Validation_Data.stiffness;
+            obj.low_frequency_coupling_gradient = Validation_Data.disp_gradient;
+            obj.Dynamic_Validation_Data = Validation_Data.Dynamic_Validation_Data;
         end
         %-----------------------------------------------------------------%
         function value = get_dataset_values(obj,static_data_property)
