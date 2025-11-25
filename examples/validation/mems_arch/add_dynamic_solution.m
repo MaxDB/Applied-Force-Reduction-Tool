@@ -19,7 +19,7 @@ Continuation_Opts.max_inc = 5e-1;
 Continuation_Opts.min_inc = 1e-2;
 Continuation_Opts.forward_steps = 200;
 Continuation_Opts.backward_steps = 0;
-Continuation_Opts.collocation_degree = 6; %10
+Continuation_Opts.collocation_degree = 6;
 Continuation_Opts.initial_discretisation_num = 40;
 
 % -----------------------------------------%

@@ -449,6 +449,58 @@ classdef Dynamic_Dataset
             save_solution(obj,FE_Output,solution_num)
         end
         %-----------------------------------------------------------------%
+        function [q_validation,q_vel_validation] = get_modal_validation_orbit(obj,solution_num,orbit_num)
+            Sol_v = obj.load_solution(solution_num,"validation");
+            [Orbit,Validation_Orbit] = obj.get_orbit(solution_num,orbit_num,1);
+            
+            Rom = obj.Dynamic_Model;
+            Model = Rom.Model;
+            
+            %-----------------
+            known_modes = Model.reduced_modes;
+            known_eval = Model.reduced_eigenvalues;
+            num_reduced_modes = length(Model.reduced_eigenvalues);
+
+            if isa(Model.reduced_eigenvectors,"Large_Matrix_Pointer")
+                known_evec = Model.reduced_eigenvectors.load();
+            else
+                known_evec = Model.reduced_eigenvectors;
+            end
+
+            lf_modes = Model.low_frequency_modes;
+            known_modes = [known_modes,lf_modes];
+
+            orbit_lf_modes = Sol_v.validation_modes;
+            r_modes = Model.reduced_modes;
+            orbit_h_modes = [r_modes,orbit_lf_modes];
+
+
+            lf_eval = Model.low_frequency_eigenvalues;
+            known_eval = [known_eval;lf_eval];
+
+            lf_evec = Model.low_frequency_eigenvectors.load();
+            known_evec = [known_evec,lf_evec];
+
+            %-----------
+            state = Orbit.xbp';
+            disp_index = 1:num_reduced_modes;
+            vel_index = disp_index + num_reduced_modes;
+
+            x = Rom.expand(state(disp_index,:));
+            x_dot = Rom.expand_velocity(state(disp_index,:),state(vel_index,:));
+            
+            data_index = [Model.reduced_modes,Sol_v.validation_modes];
+            modal_transform = known_evec'*Model.mass;
+
+            mode_map = ismember(known_modes,data_index);
+            q_transform = modal_transform(mode_map,:);
+            q = q_transform*x;
+            q_dot = q_transform*x_dot;
+
+            q_validation = q + Validation_Orbit.h;
+            q_vel_validation = q_dot +Validation_Orbit.h_dot;
+        end
+        %-----------------------------------------------------------------%
 
         %-----------------------------------------------------------------%
         % Helpers
