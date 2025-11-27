@@ -12,10 +12,9 @@ close all
 
 % dof ≈ 0.0458 * seed_size ^ -2.53
 %-------------------------------
-% 2 broke
 seed_sizes = [0.00307,0.0023,0.002,0.00174,0.00163,0.00157,0.001481,0.00142,0.00138,0.00136,0.00133,0.001293,0.00129];
 
-num_workers = 4;
+num_workers = 1;
 num_repeats = 1;
 
 %-------
@@ -134,11 +133,7 @@ for iSeed = 1:num_seeds
         perturbation_time(1,iSeed) = log_data(5);
         %------
         validation_time_start = tic;
-        try
         one_mode_validation()
-        catch
-
-        end
         validation_time(1,iSeed) = toc(validation_time_start);
         %------------------
         total_time_start = tic;
@@ -150,11 +145,7 @@ for iSeed = 1:num_seeds
         
         %------
         validation_time_start = tic;
-        try
         two_mode_validation()
-        catch
-
-        end
         validation_time(2,iSeed) = toc(validation_time_start);
         %------------------
         
@@ -186,7 +177,7 @@ for iSeed = 1:num_seeds
         save(data_path + "\size_data","Size_Data")
         % Model.save_log
     end
-
+    simulation_update("MEMS arch validation (%i): %i/%i",[num_dof(iSeed),iSeed,num_seeds])
 
 end
 
