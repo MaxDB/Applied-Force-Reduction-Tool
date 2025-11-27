@@ -95,7 +95,15 @@ classdef Large_Matrix_Pointer
         end
         %----
         function mat = horzcat(mat1,mat2)
-            error()
+            if isa(mat1,"Large_Matrix_Pointer")
+                mat1 = mat1.load;
+            end
+
+            if isa(mat2,"Large_Matrix_Pointer")
+                 mat2 = mat2.load;
+            end
+            mat = horzcat(mat1,mat2);
+        
             % mat1_data = mat1.load;
             % mat2_data = mat2.load;
             % mat_data = horzcat(mat1_data,mat2_data);

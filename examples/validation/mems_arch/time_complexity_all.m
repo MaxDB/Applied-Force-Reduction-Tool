@@ -12,10 +12,11 @@ close all
 
 % dof ≈ 0.0458 * seed_size ^ -2.53
 %-------------------------------
+% 2 broke
 seed_sizes = [0.00307,0.0023,0.002,0.00174,0.00163,0.00157,0.001481,0.00142,0.00138,0.00136,0.00133,0.001293,0.00129];
-% seed_sizes = 0.00129;
-num_workers = 1;
-num_repeats = 2;
+
+num_workers = 4;
+num_repeats = 1;
 
 %-------
 data_path = "data\size_data";
@@ -133,7 +134,11 @@ for iSeed = 1:num_seeds
         perturbation_time(1,iSeed) = log_data(5);
         %------
         validation_time_start = tic;
+        try
         one_mode_validation()
+        catch
+
+        end
         validation_time(1,iSeed) = toc(validation_time_start);
         %------------------
         total_time_start = tic;
@@ -145,7 +150,11 @@ for iSeed = 1:num_seeds
         
         %------
         validation_time_start = tic;
+        try
         two_mode_validation()
+        catch
+
+        end
         validation_time(2,iSeed) = toc(validation_time_start);
         %------------------
         
@@ -204,7 +213,7 @@ Continuation_Opts.initial_discretisation_num = 20;
 
 Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 
-compare_validation(Dyn_Data,"validation error",1,1:6)
+compare_validation(Dyn_Data,"validation error",1,1:6);
 
 
 end
@@ -224,7 +233,7 @@ Continuation_Opts.initial_inc = 5e-1;
 Continuation_Opts.max_inc = 5e-1;
 Continuation_Opts.min_inc = 1e-2;
 Continuation_Opts.forward_steps = 200;
-Continuation_Opts.backward_steps = 0;
+Continuation_Opts.backward_steps = 5;
 Continuation_Opts.collocation_degree = 6;
 Continuation_Opts.initial_discretisation_num = 40;
 % -----------------------------------------%

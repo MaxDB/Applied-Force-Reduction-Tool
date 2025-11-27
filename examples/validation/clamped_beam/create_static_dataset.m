@@ -8,7 +8,7 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "clamped_beam";
 energy_limit = 0.01;
-initial_modes = [1,3];
+initial_modes = [1];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%

@@ -102,8 +102,9 @@ for iOutput = 1:num_outputs
 end
 ax = flip(findobj(fig,"Type","axes"));
 
-
-ax(type == "validation error").YLim = [1e-5,1.1];
+if any(type == "validation error")
+    ax(type == "validation error").YLim = [1e-5,1.1];
+end
 % drawnow
 
 

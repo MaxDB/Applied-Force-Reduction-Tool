@@ -10,6 +10,7 @@ classdef Reduced_System
 
         Low_Frequency_Stiffness_Polynomial
         Low_Frequency_Coupling_Gradient_Polynomial
+        get_low_frequency_displacement
         
         minimum_displacement
         Model
@@ -128,6 +129,8 @@ classdef Reduced_System
             
             obj.Low_Frequency_Stiffness_Polynomial = H_Stiffness_Poly;
             obj.Low_Frequency_Coupling_Gradient_Polynomial = H_Coupling_Gradient_Poly;
+
+            obj.get_low_frequency_displacement = obj.create_modal_validation_polynomial;
         end
         %-----------------------------------------------------------------%
 
@@ -425,7 +428,6 @@ classdef Reduced_System
                     Physical_Disp_Diff_Data = obj.Physical_Displacement_Polynomial.get_diff_data(1);
                     Physical_Disp_Data.diff_scale_factor = Physical_Disp_Diff_Data.diff_scale_factor;
                     Physical_Disp_Data.diff_mapping = Physical_Disp_Diff_Data.diff_mapping;
-                    Physical_Disp_Data.Poly = obj.Physical_Displacement_Polynomial;
                     physical_disp_coeffs = obj.Physical_Displacement_Polynomial.coefficients;
 
                     Potential_Poly = obj.Potential_Polynomial;
@@ -460,7 +462,8 @@ classdef Reduced_System
                     Eom_Input.Force_Poly = Force_Poly;
                     % Eom_Input.H_Disp_Data = H_Disp_Data;
                     Eom_Input.Beta_Bar_Data = Beta_Bar_Data;
-                    Eom_Input.L_disp_transform = L_disp_transform;
+                    % Eom_Input.L_disp_transform = L_disp_transform;
+                    Eom_Input.lf_disp_func = obj.get_low_frequency_displacement;
                     Eom_Input.Disp_Grad_Data = Disp_Grad_Data;
 
            
@@ -468,7 +471,8 @@ classdef Reduced_System
                     switch Additional_Output.output
                         case "physical displacement"
                             G_Disp_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
-                            Eom_Input.G_Grad_Poly = G_Disp_Poly.subpoly(Additional_Output.control_dof);
+                            Eom_Input.Add_Output_Data.G_Grad_Subpoly = G_Disp_Poly.subpoly(Additional_Output.control_dof);
+                            Eom_Input.Add_Output_Data.x_Subpoly = obj.Physical_Displacement_Polynomial.subpoly(Additional_Output.control_dof);
                     end
 
                 case "coco_frf"
@@ -670,6 +674,19 @@ classdef Reduced_System
 
 
             end
+        end
+        %-----------------------------------------------------------------%
+        function low_frequency_displacement = create_modal_validation_polynomial(obj)
+            L_eigenvectors = get_current_L_eigenvectors(obj);
+            r_eigenvectors = obj.Model.reduced_eigenvectors;
+            h_eigenvectors = [r_eigenvectors,L_eigenvectors];
+
+            modal_transform = h_eigenvectors'*obj.Model.mass;
+            L_Modes_Poly = modal_transform*obj.Physical_Displacement_Polynomial;
+
+            % L_Modes_Validation_Poly = modal_transform*obj.Low_Frequency_Coupling_Gradient_Polynomial;
+            % low_frequency_displacement = @(r,h) L_Modes_Poly.evaluate_polynomial(r) + L_Modes_Validation_Poly.evaluate_polynomial(r)*h;
+            low_frequency_displacement = @(r,h) L_Modes_Poly.evaluate_polynomial(r) + h;
         end
         %-----------------------------------------------------------------%
     end

@@ -469,8 +469,19 @@ classdef Polynomial
         function poly_two = mtimes(const,poly_one)
             poly_two = poly_one;
             coeffs = poly_two.coefficients;
-            new_coeffs = (const*coeffs')';
+            % new_coeffs = (const*coeffs')';
+            new_coeffs = tensorprod(const,coeffs,ndims(const),1);
             poly_two.coefficients = new_coeffs;
+            out_dim = size(new_coeffs);
+            out_dim(end) = [];
+            poly_two.output_dimension = out_dim;
+
+            if ~isempty(poly_two.modeled_outputs)
+                if size(out_dim,2) == 1
+                    out_dim(2) = 1;
+                end
+                poly_two.modeled_outputs = true(out_dim);
+            end
         end
         %-----------------------------------------------------------------%
         function obj = subpoly(obj,index)

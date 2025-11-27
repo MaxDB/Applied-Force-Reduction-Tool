@@ -39,6 +39,11 @@ time_ranges = zeros(2,num_jobs);
 job_time = zeros(1,num_jobs);
 num_job_orbits = zeros(1,num_jobs);
 
+
+Force_Poly_Const = parallel.pool.Constant(Force_Polynomial);
+orbit_labels_const = parallel.pool.Constant(orbit_labels);
+frequency_const = parallel.pool.Constant(frequency);
+
 % for iJob = 1:num_jobs
 parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
     time_range = [inf,0];
@@ -48,8 +53,8 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
     num_periodic_orbits_jobs = size(periodic_orbits_jobs,2);
     num_job_orbits(iJob) = num_periodic_orbits_jobs;    
 
-    job_orbit_labels = orbit_labels(periodic_orbits_jobs);
-    job_frequency = frequency(periodic_orbits_jobs);
+    job_orbit_labels = orbit_labels_const.Value(periodic_orbits_jobs);
+    job_frequency = frequency_const.Value(periodic_orbits_jobs);
     for iOrbit = 1:num_periodic_orbits_jobs
         read_data_start = tic;
         job_orbit = periodic_orbits_jobs(iOrbit);
@@ -62,6 +67,7 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
         r = x(disp_span,:);
         r_dot = x(vel_span,:);
         omega = job_frequency(iOrbit);
+        
 
         switch orbit_type
             case "free"
@@ -72,7 +78,7 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
             case "forced"
 
                 period = 2*pi/omega;
-                x_dot = reduced_eom(t0,x,period);
+                x_dot = reduced_eom_value(t0,x,period);
                 r_ddot  = x_dot(vel_span,:);
                 [h_inertia,h_conv,h_stiff,h_force] = h_terms(t0,r,r_dot,r_ddot,period);
                 [h_inertia_v,h_conv_v,h_stiff_v,h_force_v] = h_terms_verification(t0,r,r_dot,r_ddot,period);
@@ -81,13 +87,18 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
                 h_conv = [];
                 h_stiff = [];
                 h_force = [];
+                r_ddot = [];
+                h_inertia_v = [];
+                h_conv_v = [];
+                h_stiff_v = [];
+                h_force_v = [];
                 error("")
         end
         %h_inertia * h_ddot  +  h_conv * h_dot  +  h_stiff * h  =  h_force
         set_up_h_time = toc(set_up_h_start);
 
         validation_eq_terms = {h_inertia,h_conv,h_stiff,h_force};
-        r_force = Force_Polynomial.evaluate_polynomial(r);
+        r_force = Force_Poly_Const.Value.evaluate_polynomial(r);
         solution_converged = 0;
         solve_h_time = 0;
         Validation_Orbit = [];
@@ -147,6 +158,9 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
     end
     time_ranges(:,iJob) = time_range;
 end
+const_vars = {"Force_Poly_Const","orbit_labels_const","frequency_const"};
+clear(const_vars{:})
+
 mean_time = job_time./num_job_orbits;
 fprintf("Mean time: %.3f, min time: %.3f, max time: %.3f \n",...
     mean(mean_time),min(time_ranges(1,:)),max(time_ranges(2,:)));

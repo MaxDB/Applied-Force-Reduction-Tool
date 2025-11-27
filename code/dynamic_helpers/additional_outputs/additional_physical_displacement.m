@@ -2,7 +2,7 @@ function additional_disp = additional_physical_displacement(input_disp,Disp_Poly
 num_dof = num_bc_dof + numel(dof_bcs);
 node_map = 1:num_dof;
 node_map(dof_bcs) = [];
-input_dimension = size(input_disp,1);
+
 num_reduced_modes = Disp_Poly.input_dimension;
 
 if isstring(Additional_Output.dof)
@@ -15,16 +15,33 @@ else
     control_dof = find(node_map == fom_dof);
 end
 
-
-
-switch input_dimension
-    case num_reduced_modes  %input_disp = r
-        phy_disp = Disp_Poly.evaluate_polynomial(input_disp,control_dof); 
-    case num_dof            %input_disp = x
-        phy_disp = input_disp(fom_dof,:);
-    case num_bc_dof         %input_disp = x_bc
-        phy_disp = input_disp(control_dof,:);
+if iscell(input_disp)
+    input_type = input_disp{2};
+    input_disp = input_disp{1};
+else
+    input_dimension = size(input_disp,1);
+    switch input_dimension
+        case num_reduced_modes  %input_disp = r
+            input_type = "r";
+        case num_dof            %input_disp = x
+            input_type = "x";
+        case num_bc_dof         %input_disp = x_bc
+            input_type = "x_bc";
+    end
 end
+
+
+switch input_type
+    case "r"
+        phy_disp = Disp_Poly.evaluate_polynomial(input_disp,control_dof);
+    case "x"
+        phy_disp = input_disp(fom_dof,:);
+    case "x_bc"
+        phy_disp = input_disp(control_dof,:);
+    case "x_dof"
+        phy_disp = input_disp;
+end
+
 
 switch Additional_Output.type
     case "max"

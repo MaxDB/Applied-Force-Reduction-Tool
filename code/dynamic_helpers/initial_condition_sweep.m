@@ -5,7 +5,7 @@ ic_time_start = tic;
 sweep_resolution = 50;
 step_reduction = 5.5;
 MAX_ERROR = 1e-12;
-
+MAX_ITERATIONS = 100;
 
 %----------------
 num_args = length(varargin);
@@ -37,13 +37,12 @@ eom = Rom.get_equation_of_motion();
 
 
 centre_point = zeros(num_modes,1);
+ic_limits = ic_limits*1.2;
 
 solution_converged = 0;
 solutions_checked = 0;
-if show_figure
-figure
-hold on
-end
+if show_figure, figure; hold on, end
+num_iterations = 0;
 while ~solution_converged
 
     test_conditions = zeros(num_modes,sweep_resolution);
@@ -122,10 +121,10 @@ while ~solution_converged
     sweep_resolution = 11;
 
     solutions_checked = solutions_checked + num_ics;
+    num_iterations = num_iterations + 1;
+    if num_iterations >= MAX_ITERATIONS, error(""), end
 end
-if show_figure
-hold off
-end
+if show_figure,hold off, end
 num_output_points = 101;
 t_sol = linspace(0,period,num_output_points);
 

@@ -153,7 +153,10 @@ classdef Validated_Backbone_Solution
 
             r_dot = Velocity.r_dot;
             h_dot = Velocity.h_dot;
-            
+
+            num_r_modes = size(r,1);
+            num_h_modes = size(h,1);
+
             % h_stiff = Eom_Terms.h_stiffness;
             h_force = Eom_Terms.h_force;
             %--
@@ -161,20 +164,24 @@ classdef Validated_Backbone_Solution
             
             %--
      
-            R_Disp_Poly = Validation_Analysis_Inputs.Physical_Disp_Data.Poly;
-            x_r = R_Disp_Poly.evaluate_polynomial(r);
+            
+        
          
             
-            L_disp_transform = Validation_Analysis_Inputs.L_disp_transform;
-            g_l = L_disp_transform*x_r;
-           
-       
-            g_h = [r;g_l];
+            % L_disp_transform = Validation_Analysis_Inputs.L_disp_transform;
+            % g_l = L_disp_transform*x_r;
+            % 
+            % 
+            % g_h = [r;g_l];
+
+            low_freq_disp = Validation_Analysis_Inputs.lf_disp_func;
+            g_h = low_freq_disp(r,zeros(num_h_modes,1));
+
             g_amp = get_amplitude(g_h);
 
             %--
-            q_l = h+g_h;
-            q_amp = get_amplitude(q_l);
+            q_h = g_h+h;
+            q_amp = get_amplitude(q_h);
       
             %--
             % h_ke_approx = 0.5*1
@@ -188,8 +195,7 @@ classdef Validated_Backbone_Solution
             h_disp_energy = h(:,energy_point_span);
             h_dot_energy = h_dot(:,energy_point_span);
 
-            num_r_modes = size(r_energy,1);
-            num_h_modes = size(h,1);
+           
             
              
             r_force = Validation_Analysis_Inputs.Force_Poly.evaluate_polynomial(r_energy);
@@ -242,7 +248,9 @@ classdef Validated_Backbone_Solution
             Additional_Output = Validation_Analysis_Inputs.Additional_Output;
             switch Additional_Output.output
                 case "physical displacement"
-                    
+                    x_Subpoly = Validation_Analysis_Inputs.Add_Output_Data.x_Subpoly;
+                    x_r = x_Subpoly.evaluate_polynomial(r);
+
                     add_dof = Additional_Output.dof;
                     if isstring(add_dof) && add_dof == "all"
                         add_dof = 1:size(x_r,1);
@@ -255,12 +263,10 @@ classdef Validated_Backbone_Solution
                     x_h_add = zeros(num_added_dofs,num_points);
                     for iT = 1:num_points
                         
-                        G_dof = Validation_Analysis_Inputs.G_Grad_Poly.evaluate_polynomial(r(:,iT));
-                        
+                        G_dof = Validation_Analysis_Inputs.Add_Output_Data.G_Grad_Subpoly.evaluate_polynomial(r(:,iT));
                         x_h_add(:,iT) = G_dof*h(:,iT);
                     end
-                    x_h = x_r;
-                    x_h(add_dof,:) = x_h(add_dof,:) + x_h_add;
+                    x_h = {x_r + x_h_add,"x_dof"};
                     add_output = Additional_Output.output_func(x_h);
                 otherwise
                     add_output = [];
