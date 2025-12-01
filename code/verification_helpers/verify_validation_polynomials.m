@@ -1,6 +1,6 @@
 function Static_Data = verify_validation_polynomials(Static_Data)
 MAXIMUM_DEGREE = 12;
-load_data = 0;
+load_data = 1;
 save_data = 1;
 
 Verification_Opts = Static_Data.Verification_Options;
@@ -72,6 +72,8 @@ if load_data
         end
     end
 else
+    empty_cell = cell(1,num_verified_seps);
+    sep_rom_data = struct("disp",empty_cell,"lambda",empty_cell);
     data_available = false;
 end
 
