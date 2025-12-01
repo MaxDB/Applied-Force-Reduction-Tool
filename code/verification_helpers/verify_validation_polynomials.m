@@ -119,8 +119,8 @@ for iDegree_pair = 1:num_degree_pairs
     Disp_Error_Inputs_Const = parallel.pool.Constant(Disp_Error_Inputs);
     Rom_One_Const =  parallel.pool.Constant(Rom_One);
     Rom_Two_Const = parallel.pool.Constant(Rom_Two);
-    % parfor (iSep = 1:num_verified_seps,num_jobs)
-    for iSep = 1:num_verified_seps
+    parfor (iSep = 1:num_verified_seps,num_jobs)
+    % for iSep = 1:num_verified_seps
          
         force_ratio = scaled_force_ratios(:,iSep);
         if load_data && data_available
