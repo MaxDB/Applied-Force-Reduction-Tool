@@ -56,6 +56,14 @@ while ~solution_converged
     ic_counter = ones(1,num_modes);
     ic_counter(end) = 0;
 
+    
+    
+    if origin_in_ics(centre_point,ic_limits)
+        origin_penalty = @(ic) get_origin_penalty(ic,ic_limits);
+    else
+        origin_penalty = @(ic) 0;
+    end
+
     % periodic_sol = [];
     % sol_period = [];
     % sol_periodicity = [];
@@ -89,10 +97,10 @@ while ~solution_converged
 
 
         Sol = ode45(@(t,z) eom(t,z),[0,period],initial_condition,options);
-        periodicity_error(iCondition) = get_periodicity_error(Sol.y(:,end),initial_condition);
+        % periodicity_error(iCondition) = get_periodicity_error(Sol.y(:,end),initial_condition);
         ke = 1/2*sum(Sol.y((num_modes+1):(2*num_modes),:).^2,1);
         max_ke = max(max_ke,max(ke));
-        kinetic_energy(iCondition) = ke(end);
+        kinetic_energy(iCondition) = ke(end) +origin_penalty(initial_condition)
     end
     clear("test_conditions_const")
     
@@ -122,7 +130,10 @@ while ~solution_converged
 
     solutions_checked = solutions_checked + num_ics;
     num_iterations = num_iterations + 1;
-    if num_iterations >= MAX_ITERATIONS, error(""), end
+    if num_iterations >= MAX_ITERATIONS
+        error("")
+        break
+    end
 end
 if show_figure,hold off, end
 num_output_points = 101;
@@ -204,8 +215,33 @@ end
 
 end
 
+function out = origin_in_ics(centre_point,ic_limits)
+
+num_modes = size(ic_limits,1);
+limits = zeros(num_modes,2);
+for iMode = 1:num_modes
+    limits(iMode,:) = [centre_point(iMode)-ic_limits(iMode),centre_point(iMode) + ic_limits(iMode)];
+
+end
+
+out = all(limits(:,1) < 0 & limits(:,2) > 0);
+end
+
+function origin_penalty = get_origin_penalty(ic,ic_limits)
+num_modes = size(ic_limits,1);
+ic_disp = ic(1:num_modes);
+distance_from_origin = sqrt(sum(ic_disp.^2));
+max_distance_from_origin = sqrt(sum(ic_limits.^2));
 
 
+distance_ratio = distance_from_origin/max_distance_from_origin;
+% origin_penalty = 1+ 1/(exp(5*distance_ratio)-1);
+if distance_ratio < 0.1
+    origin_penalty = nan;
+else
+    origin_penalty = 0;
+end
+end
 
 
 % %_---------

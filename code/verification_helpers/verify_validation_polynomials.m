@@ -1,5 +1,7 @@
 function Static_Data = verify_validation_polynomials(Static_Data)
 MAXIMUM_DEGREE = 12;
+load_data = 0;
+save_data = 1;
 
 Verification_Opts = Static_Data.Verification_Options;
 max_interpolation_error = Verification_Opts.maximum_interpolation_error(3:4);
@@ -59,6 +61,20 @@ energy_limit = Model.energy_limit;
 verification_data = cell(1,num_degree_pairs);
 error_calculation_failed = 0;
 error_time_start = tic;
+
+data_path = Static_Data.get_data_path + "validation\sep_rom_data.mat";
+if load_data
+    data_available = isfile(data_path);
+    if data_available
+        load(data_path,"sep_rom_data")
+        if size(sep_rom_data,2) ~= num_verified_seps
+            data_available = false;
+        end
+    end
+else
+    data_available = false;
+end
+
 for iDegree_pair = 1:num_degree_pairs
     
     maximum_stiffness_pair_error = 0;
@@ -97,13 +113,27 @@ for iDegree_pair = 1:num_degree_pairs
         num_jobs = get_current_parallel_jobs;
     end
 
+
+
+
     Disp_Error_Inputs_Const = parallel.pool.Constant(Disp_Error_Inputs);
     Rom_One_Const =  parallel.pool.Constant(Rom_One);
     Rom_Two_Const = parallel.pool.Constant(Rom_Two);
-    parfor (iSep = 1:num_verified_seps,num_jobs)
-    % for iSep = 1:num_verified_seps
+    % parfor (iSep = 1:num_verified_seps,num_jobs)
+    for iSep = 1:num_verified_seps
+         
         force_ratio = scaled_force_ratios(:,iSep);
-        [disp_sep,lambda_sep] = find_sep_rom(Rom_One_Const.Value,force_ratio,3*max_sep_points);
+        if load_data && data_available
+            disp_sep = sep_rom_data(iSep).disp;
+            lambda_sep = sep_rom_data(iSep).lambda;
+        else
+            [disp_sep,lambda_sep] = find_sep_rom(Rom_One_Const.Value,force_ratio,3*max_sep_points);
+            if save_data
+                sep_rom_data(iSep).disp = disp_sep;
+                sep_rom_data(iSep).lambda = lambda_sep;
+            end
+        end
+        
         if isempty(lambda_sep)
             error_calculation_failed(iSep) = 1;
         else
@@ -232,6 +262,13 @@ for iDegree_pair = 1:num_degree_pairs
     
     Static_Data.Dynamic_Validation_Data.degree = degree;
     Rom_One = Reduced_System(Static_Data,"id",2);
+end
+if save_data && ~data_available
+    dir_path = Static_Data.get_data_path + "validation";
+    if ~isfolder(dir_path)
+        mkdir(dir_path)
+    end
+    save(data_path,"sep_rom_data")
 end
 error_time = toc(error_time_start);
 %------------------------------------------------------------------

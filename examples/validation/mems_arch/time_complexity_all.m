@@ -13,6 +13,7 @@ close all
 % dof ≈ 0.0458 * seed_size ^ -2.53
 %-------------------------------
 seed_sizes = [0.00307,0.0023,0.002,0.00174,0.00163,0.00157,0.001481,0.00142,0.00138,0.00136,0.00133,0.001293,0.00129];
+% seed_sizes = [0.00157,0.001481,0.00142,0.00138,0.00136,0.00133,0.001293,0.00129];
 
 num_workers = 1;
 num_repeats = 1;
@@ -91,6 +92,7 @@ dynamic_time = zeros(3,num_seeds);
 % start_crash_monitoring()
 
 for iSeed = 1:num_seeds
+    seed_time_start = tic;
     seed_size = seed_sizes(iSeed);
 
     %mesh arch with a particular seed size
@@ -177,7 +179,8 @@ for iSeed = 1:num_seeds
         save(data_path + "\size_data","Size_Data")
         % Model.save_log
     end
-    simulation_update("MEMS arch validation (%i): %i/%i",[num_dof(iSeed),iSeed,num_seeds])
+    seed_time = toc(seed_time_start);
+    simulation_update("MEMS arch validation (%i) in %.1f: %i/%i",[num_dof(iSeed),seed_time/60,iSeed,num_seeds])
 
 end
 
@@ -224,27 +227,39 @@ Continuation_Opts.initial_inc = 5e-1;
 Continuation_Opts.max_inc = 5e-1;
 Continuation_Opts.min_inc = 1e-2;
 Continuation_Opts.forward_steps = 200;
-Continuation_Opts.backward_steps = 5;
+Continuation_Opts.backward_steps = 0;
 Continuation_Opts.collocation_degree = 6;
 Continuation_Opts.initial_discretisation_num = 40;
 % -----------------------------------------%
-
-Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
-
+try
+    Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+catch
+    Continuation_Opts.collocation_degree = 8;
+    Continuation_Opts.initial_discretisation_num = 20;
+    Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+    Continuation_Opts.collocation_degree = 6;
+    Continuation_Opts.initial_discretisation_num = 40;
+end
 
 Dyn_Data_One_Mode = initalise_dynamic_data("mems_arch_1");
 % Dyn_Data_One_Mode = Dyn_Data_One_Mode.validate_solution(1,6);
 Sol = Dyn_Data_One_Mode.load_solution(1,"validation");
 unstable_index = find(Sol.h_stability>1.01,3);
-[orbit,validation_orbit] = Dyn_Data_One_Mode.get_orbit(1,unstable_index(1),1);
-[q,q_dot] = Dyn_Data_One_Mode.get_modal_validation_orbit(1,unstable_index(1));
+restart_index = unstable_index(2);
+[orbit,validation_orbit] = Dyn_Data_One_Mode.get_orbit(1,restart_index,1);
+[q,q_dot] = Dyn_Data_One_Mode.get_modal_validation_orbit(1,restart_index);
 [min_ke,min_index] = min(sum(q_dot.^2,1)); 
 test_ic = q(:,min_index);
 
 potential_ic = initial_condition_sweep(Dyn_Data.Dynamic_Model,2*pi/orbit.T,test_ic);
 
-
-Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
+Continuation_Opts.backward_steps = 5;
+try
+    Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
+catch
+    Continuation_Opts.collocation_degree = 8;
+    Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
+end
 
 compare_validation(Dyn_Data,"validation error",[1,2],"all")
 
