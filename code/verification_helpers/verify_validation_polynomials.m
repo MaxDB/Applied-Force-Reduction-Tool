@@ -70,6 +70,9 @@ if load_data
         if size(sep_rom_data,2) ~= num_verified_seps
             data_available = false;
         end
+    else
+        empty_cell = cell(1,num_verified_seps);
+        sep_rom_data = struct("disp",empty_cell,"lambda",empty_cell);
     end
 else
     empty_cell = cell(1,num_verified_seps);
