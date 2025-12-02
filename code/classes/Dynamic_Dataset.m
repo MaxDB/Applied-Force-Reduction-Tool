@@ -646,6 +646,11 @@ classdef Dynamic_Dataset
             orbit_labels = Solution.orbit_labels;
 
             solution_name = data_path + "dynamic_sol_" + solution_num; 
+
+            if isstring(orbit_num) && orbit_num == "last"
+                Sol = obj.load_solution(solution_num);
+                orbit_num = Sol.num_orbits;
+            end
             
             
             if isscalar(orbit_num)
