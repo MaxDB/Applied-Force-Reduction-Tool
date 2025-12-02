@@ -16,6 +16,7 @@ Dyn_Data = initalise_dynamic_data(system_name);
 Continuation_Opts.initial_inc = 2e-2;
 Continuation_Opts.max_inc = 2e-2;
 Continuation_Opts.min_inc = 5e-3;
+
 Continuation_Opts.forward_steps = 200;
 Continuation_Opts.backward_steps = 0;
 Continuation_Opts.collocation_degree = 6;
