@@ -1,7 +1,7 @@
 clear
 close all
 
-num_iterations = 1;
+num_iterations = 10;
 
 %--------- Software Settings ---------%
 set_logging_level(3)

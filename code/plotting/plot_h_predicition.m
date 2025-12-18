@@ -18,6 +18,7 @@ ax = [];
 colour_num = 1;
 add_backbone = 1;
 tag = "";
+plot_special_points = 1;
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
@@ -29,6 +30,8 @@ for arg_counter = 1:num_args/2
             add_backbone = keyword_values{arg_counter};
         case "tag"
             tag = keyword_values{arg_counter};
+        case "plot_special_points"
+            plot_special_points = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -130,7 +133,7 @@ switch type
 
         if add_backbone
             num_lines = size(ax.Children,1);
-            ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0);
+            ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0,"plot_special_points",plot_special_points);
             num_bb_lines = size(ax.Children,1) - num_lines;
             uistack(ax.Children(1:num_bb_lines),"bottom")
         end

@@ -152,7 +152,7 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
             job_orbit,num_periodic_orbits,read_data_time,set_up_h_time,solve_h_time,h_verification_time,h_analysis_time,num_harmonics,verification_error);
 
         if Validation_Opts.save_orbit
-            validation_name = solution_name + "\sol" + orbit_labels(job_orbit) + "_v.mat";
+            validation_name = solution_name + "\sol" + job_orbit + "_v.mat";
             save(validation_name,"-fromstruct",Validation_Orbit)
         end
     end

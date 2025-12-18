@@ -48,8 +48,9 @@ Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
 
 
 %------------
+orbit_id = 26;
 
 figure;
 ax = gca;
-compare_orbits(["t","v-v-3"],"mems_arch_16",{2,26},"axes",ax);
-compare_orbits(["t","q-v-5"],"mems_arch_16",{2,26},"axes",ax);
+compare_orbits(["t","v-d-3"],"mems_arch_16",{2,orbit_id},"axes",ax,"colour",3);
+compare_orbits(["t","q-d-5"],"mems_arch_16",{2,orbit_id},"axes",ax,"colour",0);
