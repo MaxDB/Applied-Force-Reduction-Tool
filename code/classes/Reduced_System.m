@@ -27,7 +27,9 @@ classdef Reduced_System
             SHIFT_ON = 1;
             SCALE_ON = 1;
             obj.minimum_displacement = Static_Data.Model.Static_Options.minimum_displacement;
-
+            
+            Experimental_Opts = read_default_options("experimental"); 
+            param_style = Experimental_Opts.param_style;
 
             %Optional argumanents
             num_args = length(varargin);
@@ -67,27 +69,45 @@ classdef Reduced_System
 
             obj.Model = Static_Data.Model; 
             obj.id = rom_id;
-
-            r = Static_Data.get_dataset_values("reduced_displacement");
+            
+           
             f = Static_Data.get_dataset_values("restoring_force");
             displacement = Static_Data.get_dataset_values("physical_displacement");
             eval_r = Static_Data.Model.reduced_eigenvalues;
             evec_r = Static_Data.Model.reduced_eigenvectors;
             evec_r = load_data(evec_r);
             
-            obj.reduced_displacement_limits = [min(r,[],2),max(r,[],2)];
+ 
            
-            Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
-            Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",evec_r},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
+
+            switch param_style
+                case "disp"
+                    r = Static_Data.get_dataset_values("reduced_displacement");
+                    manifold_param = r;
+                case "force"
+                    manifold_param = f./eval_r;
+            end
+            obj.reduced_displacement_limits = [min(manifold_param,[],2),max(manifold_param,[],2)];
+
+            Force_Poly = Polynomial(manifold_param,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
+            Displacement_Poly = Polynomial(manifold_param,displacement,disp_degree,"constraint",{"linear_disp",evec_r},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
+     
             
             % ax = plot_static_data("force",Static_Data);
             % ax = Force_Poly.plot_polynomial("axes",ax);
             % % 
             % ax = plot_static_data("force",Static_Data);
             % ax = Force_Poly.plot_polynomial("axes",ax);
-
-            Potential_Poly = integrate_polynomial(Force_Poly);
-            Reduced_Stiffness_Poly = differentiate_polynomial(Force_Poly);
+            
+            switch param_style
+                case "disp"
+                    Potential_Poly = integrate_polynomial(Force_Poly);
+                    Reduced_Stiffness_Poly = differentiate_polynomial(Force_Poly);
+                case "force"
+                    V = Static_Data.get_dataset_values("potential_energy");
+                    Potential_Poly = Polynomial(manifold_param,V,force_degree,"constraint",{"constant",0},"shift",SHIFT_ON,"scale",SCALE_ON);
+                    Reduced_Stiffness_Poly = [];
+            end
 
             % ax = plot_static_data("potential",Static_Data);
             % ax = Potential_Poly.plot_polynomial("axes",ax);

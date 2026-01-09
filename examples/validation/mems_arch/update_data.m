@@ -5,7 +5,7 @@ num_workers = 2;
 old_index = 13;
 new_index = 1;
 
-data_path = "data\size_data_all\workers_" + num_workers + "\";
+data_path = "data\size_data\workers_" + num_workers + "\";
 
 old_data = "size_data";
 new_data = "size_data_new";
