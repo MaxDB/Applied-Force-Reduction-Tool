@@ -212,8 +212,8 @@ classdef Dynamic_System
         %-----------------------------------------------------------------%
         %%% Simulation
         %-----------------------------------------------------------------%
-        function [reduced_disp,condensed_disp,restoring_force,energy,sep_id,additional_data] = ...
-                add_sep(obj,force_ratio,additional_data_type,clean_data)
+        function [reduced_disp,physical_disp,restoring_force,energy,sep_id,additional_data] = ...
+                add_sep(obj,force_ratio,additional_data_type,clean_data,varargin)
             % Add the Static Equilibrium Path (SEP) corresponding to the force ratio
             % Force ratio also defines initial magnitude and direction
             if ~exist("additional_data_type","var")
@@ -224,8 +224,35 @@ classdef Dynamic_System
                 clean_data = 0;
             end
 
+            %-------------------------------------------------------------------------%
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            Nc_Data = [];
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "Nc_Data"
+                        Nc_Data = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %-------------------------------------------------------------------------%
+            
+
+
+
             Static_Opts = obj.Static_Options;
             num_loadcases = Static_Opts.num_loadcases;
+            if isstring(num_loadcases) && num_loadcases == "auto"
+                warning("'auto' loadcases not defined")
+                num_loadcases = 5;
+            end
 
 
             switch Static_Opts.static_solver
@@ -285,7 +312,7 @@ classdef Dynamic_System
                         clear("Const_Model")
 
                         reduced_disp = [reduced_disp_cell{1,:}];
-                        condensed_disp = [condensed_disp_cell{1,:}];
+                        physical_disp = [condensed_disp_cell{1,:}];
                         restoring_force = [restoring_force_cell{1,:}];
                         energy = [energy_cell{1,:}];
                         switch additional_data_type
@@ -314,7 +341,7 @@ classdef Dynamic_System
                         logger(log_message,3)
 
                     elseif max_parallel_jobs == 1
-                        [reduced_disp,condensed_disp,restoring_force,energy,additional_data,sep_id] = ...
+                        [reduced_disp,physical_disp,restoring_force,energy,additional_data,sep_id] = ...
                             add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,obj,1);
                     elseif  max_parallel_jobs < 1
                         % go sep by SEP. For larger systems may have to
@@ -341,7 +368,7 @@ classdef Dynamic_System
                         end
 
                         reduced_disp = [reduced_disp_cell{1,:}];
-                        condensed_disp = [condensed_disp_cell{1,:}];
+                        physical_disp = [condensed_disp_cell{1,:}];
                         restoring_force = [restoring_force_cell{1,:}];
                         energy = [energy_cell{1,:}];
                         switch additional_data_type
@@ -375,11 +402,11 @@ classdef Dynamic_System
                 case "matlab"
                     switch Static_Opts.solver_algorithm
                         case "standard"
-                            [reduced_disp,condensed_disp,restoring_force,energy,additional_data,sep_id] = ...
-                                add_sep_matlab(force_ratio,num_loadcases,additional_data_type,obj);
+                            [reduced_disp,physical_disp,restoring_force,energy,additional_data,sep_id] = ...
+                                add_sep_matlab(force_ratio,num_loadcases,additional_data_type,{obj,Nc_Data});
                         case "riks"
-                            [reduced_disp,condensed_disp,restoring_force,energy,additional_data,sep_id] = ...
-                                add_sep_matlab_riks(force_ratio,num_loadcases,additional_data_type,obj);
+                            [reduced_disp,physical_disp,restoring_force,energy,additional_data,sep_id] = ...
+                                add_sep_matlab_riks(force_ratio,num_loadcases,additional_data_type,{obj,Nc_Data});
                     end
             end
         end

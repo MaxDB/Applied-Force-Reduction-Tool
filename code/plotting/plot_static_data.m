@@ -232,7 +232,12 @@ for iOutput = 1:num_outputs
                 plot3(s1,x_origin(1,:),x_origin(2,:),y_origin(iOutput),origin_plot_settings{:})
 
                 xlabel(s1,"$" + x_label + "_{" + r_modes(1) + "}$","Interpreter","latex")
-                ylabel(s1,"$" + x_label + "_{" + r_modes(2) + "}$","Interpreter","latex")
+
+                if length(r_modes) == num_r_modes
+                    ylabel(s1,"$" + x_label + "_{" + r_modes(2) + "}$","Interpreter","latex")
+                else
+                    ylabel(s1,"$p$","Interpreter","latex")
+                end
                 if ~is_matrix
                     z_output_label = y_label + "_{" + outputs(iOutput) + "}";
                 else

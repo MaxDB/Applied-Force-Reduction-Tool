@@ -77,23 +77,28 @@ classdef Reduced_System
             
             obj.reduced_displacement_limits = [min(r,[],2),max(r,[],2)];
            
-            Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
-            Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",evec_r},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
+            % Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
+            % Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",evec_r},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
             
-            % ax = plot_static_data("force",Static_Data);
-            % ax = Force_Poly.plot_polynomial("axes",ax);
-            % % 
-            % ax = plot_static_data("force",Static_Data);
-            % ax = Force_Poly.plot_polynomial("axes",ax);
+            Force_Poly = Polynomial(r,f,force_degree,"shift",SHIFT_ON,"scale",SCALE_ON);
+            Displacement_Poly = Polynomial(r,displacement,disp_degree,"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
 
-            Potential_Poly = integrate_polynomial(Force_Poly);
+   
+
+            % Potential_Poly = integrate_polynomial(Force_Poly);
+            Potential_Poly =  Polynomial(r,Static_Data.potential_energy,force_degree+1,"shift",SHIFT_ON,"scale",SCALE_ON);
             Reduced_Stiffness_Poly = differentiate_polynomial(Force_Poly);
 
             % ax = plot_static_data("potential",Static_Data);
             % ax = Potential_Poly.plot_polynomial("axes",ax);
             % Reduced_Stiffness_Poly.plot_polynomial("outputs",[1,1]);
             
-            
+            % ax = plot_static_data("force",Static_Data);
+            % ax = Force_Poly.plot_polynomial("axes",ax);
+            % %
+            % ax = plot_static_data("force",Static_Data);
+            % ax = Force_Poly.plot_polynomial("axes",ax);
+
 
             obj.Force_Polynomial = Force_Poly;
             obj.Physical_Displacement_Polynomial = Displacement_Poly;

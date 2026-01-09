@@ -570,6 +570,61 @@ classdef Static_Dataset
            
         end
         %-----------------------------------------------------------------%
+        %-----------------------------------------------------------------%
+        % Nonconservative static data
+        function Nc_Static_Data = extend_stress_manifold(obj,Nc_Data)
+
+
+            r_modes = obj.Model.reduced_modes;
+            num_r_modes = length(r_modes);
+
+            num_applied_forces = Nc_Data.num_applied_forces;
+            
+            % found_sep_ratios =  add_sep_ratios(num_r_modes,1);
+            % found_sep_ratios = [found_sep_ratios;zeros(num_applied_forces,length(found_sep_ratios))];
+            found_sep_ratios = [];
+            
+            unit_force_ratios = add_sep_ratios(num_r_modes + num_applied_forces,1,found_sep_ratios);
+            %5->2 for verification
+
+            calibration_factors = obj.Model.calibrated_forces;
+            for iForce = 1:num_applied_forces
+                amplitude_limit = [1,-1]*Nc_Data.max_amplitude(iForce);
+                calibration_factors = [calibration_factors;amplitude_limit]; %#ok<AGROW>
+            end
+
+      
+
+            scaled_force_ratios = scale_sep_ratios(unit_force_ratios,calibration_factors);
+            % scaled_force_ratios = scaled_force_ratios*limit_scale_factor;
+
+            [r,x_disp,f,E,sep_id,additional_data] = obj.Model.add_sep(scaled_force_ratios,obj.additional_data_type,1,"Nc_Data",Nc_Data);
+
+            % if num_modes > 2 && size(obj,2) > 0
+            %     obj.static_equilibrium_path_id(:) = 0;
+            %     obj.unit_sep_ratios = [];
+            % end
+            % obj = obj.update_data(r,x_disp,f,E,sep_id,additional_data,"found_force_ratios",unit_force_ratios);
+
+
+            % scaf_points = obj.scaffold_points == 1;
+            % obj.static_equilibrium_path_id(scaf_points) = sep_map(obj.static_equilibrium_path_id(scaf_points));
+            % obj.unit_sep_ratios(:,sep_map) = obj.unit_sep_ratios;
+
+            Nc_Static_Data = obj;
+            Nc_Static_Data.reduced_displacement = r;
+            Nc_Static_Data.physical_displacement = x_disp;
+            Nc_Static_Data.restoring_force = f;
+            Nc_Static_Data.potential_energy = E;
+            Nc_Static_Data.scaffold_points = [];
+            Nc_Static_Data.static_equilibrium_path_id = sep_id;
+            Nc_Static_Data.unit_sep_ratios = unit_force_ratios;
+            Nc_Static_Data.verified_degree = [];
+
+
+        end
+
+        %-----------------------------------------------------------------%
 
 
         %-----------------------------------------------------------------%
