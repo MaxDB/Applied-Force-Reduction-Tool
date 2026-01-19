@@ -16,7 +16,7 @@ max_discretisation_num, 100, 	#maximum number of discretisation points
 min_discretisation_num, 5, 	#minimum number of discretisation points
 collocation_degree, 4, 		#degree of interpolating polynomial
 parameter_range, [0;1e16],	#allowable range of continuation variable
-
+frequency_range, [],  #allowable range of frequency
 
 
 ## Experimental (use with care as not fully implemented)

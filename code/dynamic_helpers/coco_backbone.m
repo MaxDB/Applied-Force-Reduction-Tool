@@ -106,7 +106,7 @@ switch type
     case "rom"
         energy_func = @(prob,data,u) coco_energy(prob,data,u,Eom_Input.Potential_Polynomial,Eom_Input.Disp_Data,Eom_Input.input_order,"free");
     case "fom"
-        energy_func = @(prob,data,u) direct_energy(prob,data,u,Eom_Input);
+        energy_func = @(prob,data,u) direct_energy(prob,data,u,Eom_Input,1);
 end
 prob = coco_add_func(prob, 'energy_monitor', energy_func, data, 'regular', 'ENERGY', 'uidx', uidx,'remesh',@coco_energy_remesh);
 

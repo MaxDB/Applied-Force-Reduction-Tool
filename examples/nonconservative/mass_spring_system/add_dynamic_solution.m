@@ -24,15 +24,28 @@ Continuation_Opts.frequency_points = [1.86,3];
 
 %-----------------------------------------%
 
-Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
-Dyn_Data = Dyn_Data.validate_solution(1,2);
+Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts,"type","fom");
+
+%-----------------------------------
+Damping_Data.damping_type = "rayleigh";
+Damping_Data.mass_factor = 0.1;
+Damping_Data.stiffness_factor = 1e-7;
 
 
+Force_Data.type = "point force";
+Force_Data.dof = 3;
+Force_Data.continuation_variable = "frequency";
+Force_Data.amplitude = 0.5;
+Force_Data.frequency = 1.1;
+
+
+% --------- Continuation Settings ---------%
+Continuation_Opts.initial_inc = 1e-1;
+Continuation_Opts.max_inc = 1e-1;
+Continuation_Opts.min_inc = 1e-3;
+
+Continuation_Opts.backward_steps = 500;
+Continuation_Opts.frequency_range = [0.995,3.2];
 %-----------------------------------------%
-Continuation_Opts.energy_limit_multiplier = 1.1;
-Continuation_Opts.initial_inc = 1e-2;
-Continuation_Opts.max_inc = 1e-2;
-
-% Dyn_Data = Dyn_Data.restart_point(1,62,"po","opts",Continuation_Opts);
-Dyn_Data = Dyn_Data.validate_solution(2,2);
- Dyn_Data = Dyn_Data.restart_point(1,141,"po","opts",Continuation_Opts);
+% 
+Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"type","fom");

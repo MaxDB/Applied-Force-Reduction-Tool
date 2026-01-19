@@ -1,24 +1,45 @@
-function [t_sol,z_sol] = get_forced_response(Rom,Nonconservative_Input,period)
+function [t_sol,z_sol] = get_forced_response(Rom,Nonconservative_Input,period,type)
 MAX_INCREMENTS = 100000;
 MAX_ERROR = 1e-4;
 CONVERGENCE_SPAN = 10;
 NUM_PERIODS = 1;
 
 %-------------------------------------------------------------------------%
-Eom_Input = Rom.get_solver_inputs("coco_frf",Nonconservative_Input);
-
-input_order = Eom_Input.input_order;
-Force_Data = Eom_Input.Force_Data;
-Disp_Data = Eom_Input.Disp_Data;
-Damping_Data = Eom_Input.Damping_Data;
-Applied_Force_Data = Eom_Input.Applied_Force_Data;
-
-amp = Applied_Force_Data.amplitude; 
 
 
-eom = @(t,z) coco_forced_eom(t,z,amp,period,input_order,Force_Data,Disp_Data,Damping_Data,Applied_Force_Data);
+
+
+switch type
+    case "rom"
+         num_r_modes = size(Rom.Model.reduced_modes,2);
+        Eom_Input = Rom.get_solver_inputs("coco_frf","additional_input",Nonconservative_Input);
+
+        input_order = Eom_Input.input_order;
+        Force_Data = Eom_Input.Force_Data;
+        Disp_Data = Eom_Input.Disp_Data;
+        Damping_Data = Eom_Input.Damping_Data;
+        Applied_Force_Data = Eom_Input.Applied_Force_Data;
+        amp = Applied_Force_Data.amplitude; 
+
+       
+        eom = @(t,z) coco_forced_eom(t,z,amp,period,input_order,Force_Data,Disp_Data,Damping_Data,Applied_Force_Data);
+    case "fom"
+        num_r_modes = Rom.Model.num_dof;
+        Analytic_Eom = load_analytic_system("geometry\" + Rom.Model.system_name+ "\" + Rom.Model.system_name);
+        Eom_Input = Analytic_Eom.get_solver_inputs("forced","additional_input",Nonconservative_Input);
+
+
+        amp = Eom_Input.Applied_Force_Data.amplitude; 
+        modal_restoring_force = Eom_Input.modal_restoring_force;
+        modal_damping = Eom_Input.modal_damping;
+        modal_applied_force = Eom_Input.modal_applied_force;
+
+        eom = @(t,z) direct_forced_eom(t,z,amp,period,modal_restoring_force,modal_damping,modal_applied_force);
+
+end
 %-------------------------------------------------------------------------%
-num_r_modes = size(Rom.Model.reduced_modes,2);
+
+
 
 if isfield(Nonconservative_Input,"z0")
     z0 = Nonconservative_Input.z0*1.01;
@@ -37,6 +58,8 @@ ax = gca;
 ax.YScale = "log";
 error = zeros(1,CONVERGENCE_SPAN);
 mean_error = nan;
+
+
 for iInc = 1:MAX_INCREMENTS
     t_span = t(end) + [0,t_increment];
     [t,z] = ode45(eom,t_span,z0,opts);

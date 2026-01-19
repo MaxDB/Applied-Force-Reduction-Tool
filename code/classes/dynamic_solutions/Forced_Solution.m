@@ -45,7 +45,7 @@ classdef Forced_Solution < Dynamic_Solution
                         % p0 = period_range(2);
                         p0 = Force_Data.frequency;
                         T0 = 2*pi/Force_Data.frequency;
-                        [t0,z0] = get_forced_response(Rom,Nonconservative_Input,T0);
+                        [t0,z0] = get_forced_response(Rom,Nonconservative_Input,T0,type);
                     else
                         [t0,z0,p0] = initial_conditions{:};
                     end
@@ -83,7 +83,12 @@ classdef Forced_Solution < Dynamic_Solution
                 case "point force"
                     num_dofs = Model.num_dof;
                     dof_map = zeros(num_dofs,1);
-                    dof_map(Model.node_mapping(:,1) == F_Data.dof) = 1;
+                    if isempty(Model.dof_boundary_conditions)
+                        dof_map(F_Data.dof) = 1;
+                    else
+                        dof_map(Model.node_mapping(:,1) == F_Data.dof) = 1;
+                    end
+
                     Nonconservative_Input.amplitude_shape = dof_map;
             end
             Nonconservative_Input.force_type = F_Data.type;

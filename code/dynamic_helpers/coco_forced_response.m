@@ -13,7 +13,7 @@ inc_backward = Continuation_Settings.backward_steps;
 %Define EOM
 switch type
     case "rom"
-        Eom_Input = Rom.get_solver_inputs("coco_frf",Nonconservative_Input);
+        Eom_Input = Rom.get_solver_inputs("coco_frf","additional_input",Nonconservative_Input);
 
         switch Nonconservative_Input.continuation_variable
             case "amplitude"
@@ -36,16 +36,33 @@ switch type
             
                 T0 = 2*pi/p0;
                 coll_args = [funcs, {t0',z0', {'T'}, T0}];
-                cont_args = { 1, {'po.period', 'T'}, Continuation_Settings.parameter_range'};
+                if ~isempty(Continuation_Settings.frequency_range)
+                    parameter_range = flip(2*pi./Continuation_Settings.frequency_range)';
+                else
+                    parameter_range = Continuation_Settings.parameter_range';
+                end
+                cont_args = { 1, {'po.period', 'T'}, parameter_range};
         end
     case "fom"
-        % Model = Rom.Model;
-        % load("geometry\" + Model.system_name+ "\" + Model.system_name + ".mat","analytic_eom");
-        % Eom_Input = analytic_eom.get_solver_inputs("free");
-        %
-        % funcs = {@(z,zeta) direct_eom(0,z,zeta,Eom_Input.modal_restoring_force),...
-        %     @(z,zeta) direct_eom_dx(0,z,zeta,Eom_Input.modal_stiffness),...
-        %     @(z,zeta) direct_eom_dzeta(0,z)};
+        Model = Rom.Model;
+        Analytic_Eom = load_analytic_system("geometry\" + Model.system_name+ "\" + Model.system_name);
+        Eom_Input = Analytic_Eom.get_solver_inputs("forced","additional_input",Nonconservative_Input);
+        amp = Eom_Input.Applied_Force_Data.amplitude;
+        
+
+        funcs = {@(t,z,T) direct_forced_eom(t,z,amp,T,Eom_Input.modal_restoring_force,Eom_Input.modal_damping,Eom_Input.modal_applied_force),...
+                    @(t,z,T) direct_forced_eom_dx(t,z,amp,T,Eom_Input.modal_stiffness,Eom_Input.modal_damping,Eom_Input.modal_applied_force),...
+                    @(t,z,T) direct_forced_eom_dTper(t,z,amp,T,Eom_Input.modal_restoring_force,Eom_Input.modal_damping,Eom_Input.modal_applied_force),...
+                    @(t,z,T) direct_forced_eom_dt(t,z,amp,T,Eom_Input.modal_restoring_force,Eom_Input.modal_damping,Eom_Input.modal_applied_force)};
+
+        T0 = 2*pi/p0;
+        coll_args = [funcs, {t0',z0', {'T'}, T0}];
+        if ~isempty(Continuation_Settings.frequency_range)
+            parameter_range = flip(2*pi./Continuation_Settings.frequency_range)';
+        else
+            parameter_range = Continuation_Settings.parameter_range';
+        end
+        cont_args = { 1, {'po.period', 'T'}, parameter_range};
 end
 
 
@@ -86,7 +103,7 @@ switch type
     case "rom"
         energy_func = @(prob,data,u) coco_energy(prob,data,u,Eom_Input.Potential_Polynomial,Eom_Input.Disp_Data,Eom_Input.input_order,"forced");
     case "fom"
-        energy_func = @(prob,data,u) direct_energy(prob,data,u,Eom_Input);
+        energy_func = @(prob,data,u) direct_energy(prob,data,u,Eom_Input,0);
 end
 prob = coco_add_func(prob, 'energy_monitor', energy_func, data, 'regular', 'ENERGY', 'uidx', uidx,'remesh',@coco_energy_remesh);
 

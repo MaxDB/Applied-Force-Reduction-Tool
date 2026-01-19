@@ -1,4 +1,4 @@
-function [data,E] = direct_energy(prob,data,u,Eom_Input)
+function [data,E] = direct_energy(prob,data,u,Eom_Input,conservative)
 pr = data.pr;
 maps = pr.coll_seg.maps;
 
@@ -20,8 +20,10 @@ end
 
 E = kinetic_energy+potential_energy;
 
-if std(E)/mean(E) > 1e-2
-    warning("energy not conserved")
+if conservative
+    if std(E)/mean(E) > 1e-2
+        warning("energy not conserved")
+    end
 end
 
 E = max(E);

@@ -4,9 +4,10 @@ function [reduced_displacement,physical_displacement,f,E,additional_data,sep_id]
 
 conservative = true;
 if iscell(Model)
-    Nc_Data = Model{2};
-    conservative = false;
-    Model = Model{1};
+    [Model,Nc_Data] = Model{:};
+   
+
+    conservative = isempty(Nc_Data);
 end
 
 [num_modes,num_seps] = size(force_ratio);
@@ -126,11 +127,22 @@ end
 
 sin_fraction = f((num_r_modes+1):end,:);
 
-
-
 p = asin(sin_fraction);
-r = r(1:num_r_modes,:);
-reduced_displacement = [r;p];
+x_p = nc_force_transform*sin(p);
+x_r = physical_displacement - x_p;
+r = r_transform*x_r;
+
+r((num_r_modes+1):end,:) = p;
+reduced_displacement = r;
+
+% reduced_displacement = [r;p];
 
 % reduced_displacement = r;
+
+% r = r(1:num_r_modes,:);
+% x_r = Model.reduced_eigenvectors*r;
+% x_p = displacement-x_r;
+% p = nc_force_transform'*x_p;
+% 
+% reduced_displacement = [r;p];
 end

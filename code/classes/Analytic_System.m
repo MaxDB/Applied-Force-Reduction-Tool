@@ -158,14 +158,47 @@ classdef Analytic_System
             dfqdq = matlabFunction(J_sym);
         end
         %-----------------------------------------------------------------%
-        function Eom_Input = get_solver_inputs(obj,type)
+        function Eom_Input = get_solver_inputs(obj,type,varargin)
+            %-------------------------------------------------------------------------%
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "additional_output"
+                        Additional_Output = keyword_values{arg_counter};
+                    case "additional_input"
+                        Additional_Input = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                        %will need to fix later
+                end
+            end
+            %-------------------------------------------------------------------------%
+
             switch type
                 case "free"
                     Eom_Input.modal_restoring_force = obj.modal_restoring_force;
                     Eom_Input.modal_stiffness = obj.modal_stiffness;
                     Eom_Input.modal_potential = obj.modal_potential_energy;
                 case "forced"
+                    
+                    Eom_Input.modal_restoring_force = obj.modal_restoring_force;
+                    Eom_Input.modal_stiffness = obj.modal_stiffness;
+                    Eom_Input.modal_potential = obj.modal_potential_energy;
 
+                    Nc_Data = Additional_Input;
+                    physical_force = Nc_Data.amplitude_shape;
+                    
+                    Eom_Input.modal_damping = obj.eigenvectors'*Nc_Data.damping*obj.eigenvectors;
+                    Eom_Input.modal_applied_force = obj.eigenvectors'*physical_force;
+
+                    Eom_Input.Applied_Force_Data = Nc_Data;
             end
             
         end

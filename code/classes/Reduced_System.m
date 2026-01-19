@@ -76,17 +76,19 @@ classdef Reduced_System
             evec_r = load_data(evec_r);
             
             obj.reduced_displacement_limits = [min(r,[],2),max(r,[],2)];
+            num_r_modes = Static_Data.Model.reduced_modes;
+            num_applied_forces = size(r,1) - num_r_modes;
            
             % Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
             % Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",evec_r},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
             
-            Force_Poly = Polynomial(r,f,force_degree,"shift",SHIFT_ON,"scale",SCALE_ON);
-            Displacement_Poly = Polynomial(r,displacement,disp_degree,"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
+            Force_Poly = Polynomial(r,f,force_degree,"shift",SHIFT_ON,"scale",SCALE_ON,"nonconservative",num_applied_forces);
+            Displacement_Poly = Polynomial(r,displacement,disp_degree,"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement,"nonconservative",num_applied_forces);
 
    
 
             % Potential_Poly = integrate_polynomial(Force_Poly);
-            Potential_Poly =  Polynomial(r,Static_Data.potential_energy,force_degree+1,"shift",SHIFT_ON,"scale",SCALE_ON);
+            Potential_Poly =  Polynomial(r,Static_Data.potential_energy,force_degree+1,"shift",SHIFT_ON,"scale",SCALE_ON,"nonconservative",num_applied_forces);
             Reduced_Stiffness_Poly = differentiate_polynomial(Force_Poly);
 
             % ax = plot_static_data("potential",Static_Data);
@@ -340,6 +342,8 @@ classdef Reduced_System
                         rom_type = keyword_values{arg_counter};
                     case "additional_output"
                         Additional_Output = keyword_values{arg_counter};
+                    case "additional_input"
+                        Additional_Input = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                         %will need to fix later
@@ -482,7 +486,7 @@ classdef Reduced_System
 
                 case "coco_frf"
                     Eom_Input = obj.get_solver_inputs("coco_backbone");
-                    Nc_Inputs = varargin{1,1};
+                    Nc_Inputs = Additional_Input;
 
                     displacement_coeffs = obj.Physical_Displacement_Polynomial.coefficients;
                     damping_beta = displacement_coeffs'*Nc_Inputs.damping*displacement_coeffs;

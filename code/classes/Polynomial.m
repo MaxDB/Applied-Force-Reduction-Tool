@@ -34,6 +34,7 @@ classdef Polynomial
             scale = true;
             shift = true;
             minimum_output = 0;
+            num_applied_forces = 0;
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
@@ -47,6 +48,8 @@ classdef Polynomial
                         coupling_type = keyword_values{arg_counter};
                     case "minimum_output"
                         minimum_output = keyword_values{arg_counter};
+                    case "nonconservative"
+                        num_applied_forces = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -119,7 +122,7 @@ classdef Polynomial
                        %---------------------
             Constraint = obj.parse_constraint(constraint_type);
             Constraint.coupling = coupling_type;
-            obj.input_limit = Polynomial.find_limits(input_data,Constraint);
+            obj.input_limit = Polynomial.find_limits(input_data,Constraint,num_applied_forces);
         
             
             %---------------------
@@ -915,7 +918,7 @@ classdef Polynomial
             
         end
         %-----------------------------------------------------------------%
-        function limits = find_limits(input_data,Constraint)
+        function limits = find_limits(input_data,Constraint,num_applied_forces)
 
             if ismember(1,Constraint.terms)
                 input_data = [input_data,zeros(size(input_data,1),1)];
@@ -928,6 +931,13 @@ classdef Polynomial
         
                     bound_index = boundary(input_data(1,:)',input_data(2,:)',0.1);
                     limits = input_data(:,bound_index);
+                    if num_applied_forces == 1 && false
+                        applied_force_limits = limits(2,:);
+                        limit_sign = sign(applied_force_limits);
+                        applied_force_limits(limit_sign == 1) = pi/2;
+                        applied_force_limits(limit_sign == -1) = -pi/2;
+                        limits(2,:) = applied_force_limits;
+                    end
                 otherwise
                     limits = [min(input_data,[],2),max(input_data,[],2)];
             end

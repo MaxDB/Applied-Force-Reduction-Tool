@@ -584,7 +584,7 @@ classdef Static_Dataset
             % found_sep_ratios = [found_sep_ratios;zeros(num_applied_forces,length(found_sep_ratios))];
             found_sep_ratios = [];
             
-            unit_force_ratios = add_sep_ratios(num_r_modes + num_applied_forces,1,found_sep_ratios);
+            unit_force_ratios = add_sep_ratios(num_r_modes + num_applied_forces,5,found_sep_ratios);
             %5->2 for verification
 
             calibration_factors = obj.Model.calibrated_forces;
