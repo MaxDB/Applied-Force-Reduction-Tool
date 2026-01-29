@@ -1,7 +1,7 @@
 # Applied Force Reduction Tool
 - AFR tool is designed to produce reduced-order models of geometrically nonlinear systems.
 - Whilst primarily aimed at finite element models, analytically defined models can also be analysed. 
-- The method is described in detail in [to be published].
+- The method is described in detail in '[Evaluating applied force reduced-order models: verification](https://doi.org/10.21203/rs.3.rs-8722583/v2)' and '[Evaluating applied force reduced-order models: validation](https://doi.org/10.21203/rs.3.rs-8723275/v2)'.
 
 ## Installation and Use
 - Download and extract or clone the repository.
