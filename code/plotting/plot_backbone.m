@@ -1,6 +1,6 @@
 function ax = plot_backbone(Dyn_Data,type,solution_num,varargin)
 PLOT_BIFURCATIONS = 1;
-PLOT_SPECIAL_POINT = 1;
+
 
 STABILITY_LIMIT = 1.01;
 
@@ -30,6 +30,7 @@ keyword_values = varargin(2:2:num_args);
 ax = [];
 colour_num = 1;
 tag = "";
+plot_special_points = 1;
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
@@ -39,6 +40,8 @@ for arg_counter = 1:num_args/2
             colour_num = keyword_values{arg_counter};
         case "tag"
             tag = keyword_values{arg_counter}; 
+        case "plot_special_points"
+            plot_special_points = keyword_values{arg_counter}; 
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -115,16 +118,16 @@ if PLOT_BIFURCATIONS
     end
 end
 
-if PLOT_SPECIAL_POINT == 1
-    plot_special_point = ~isempty(Dyn_Data.Additional_Output);
+if plot_special_points == 1
+    plot_special_points = ~isempty(Dyn_Data.Additional_Output);
 else
-    plot_special_point = PLOT_SPECIAL_POINT;
+    plot_special_points = plot_special_points;
 end
 
-if plot_special_point
+if plot_special_points
     point_index = Dyn_Data.get_special_point(solution_num,"X");
     if isempty(point_index)
-        plot_special_point = 0;
+        plot_special_points = 0;
     end
     special_point_plot_settings = bifurcation_plot_settings{1,1}; 
     marker_size_index = find(cellfun(@(iSetting) isequal(iSetting,"MarkerSize"),special_point_plot_settings));
@@ -262,7 +265,7 @@ switch type
             end
         end
 
-        if plot_special_point
+        if plot_special_points
             p = plot(ax,frequency(point_index),energy(point_index),special_point_plot_settings{:});
 
             data_tip_row_id = dataTipTextRow("ID",orbit_ids(point_index));

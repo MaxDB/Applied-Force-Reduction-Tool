@@ -9,6 +9,7 @@ keyword_values = varargin(2:2:num_args);
 
 ax = [];
 plot_legend = 1;
+plot_special_points = 1;
 
 dyn_data_names = cell(0,1);
 solution_index = cell(0,1);
@@ -27,6 +28,8 @@ for arg_counter = 1:num_args/2
             ax = keyword_values{arg_counter};
         case "legend"
             plot_legend = keyword_values{arg_counter};
+        case "plot_special_points"
+            plot_special_points = keyword_values{arg_counter};
         otherwise
             system_counter = system_counter + 1;
             dyn_data_names{1,system_counter} = keyword_args{arg_counter};
@@ -98,9 +101,9 @@ for iSol = 1:num_solutions
                 h_colour_number = colour_sol;
             end
 
-            ax = plot_h_predicition(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",h_colour_number);
+            ax = plot_h_predicition(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",h_colour_number,"plot_special_points",plot_special_points);
         else
-            ax = plot_backbone(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",colour_sol);
+            ax = plot_backbone(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",colour_sol,"plot_special_points",plot_special_points);
             if Sol_Type.orbit_type == "free"
                 if iscell(ax)
                     num_axes = size(ax,1);

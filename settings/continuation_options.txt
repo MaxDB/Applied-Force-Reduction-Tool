@@ -3,6 +3,7 @@
 
 ## General
 energy_limit_multiplier, 1, 	#energy_limit = energy_limit * energy_limit_multiplier
+frequency_points, [], 	#points to report
 
 ## COCO
 initial_inc, 0.1,		#initial continuation increment
@@ -15,6 +16,8 @@ max_discretisation_num, 100, 	#maximum number of discretisation points
 min_discretisation_num, 5, 	#minimum number of discretisation points
 collocation_degree, 4, 		#degree of interpolating polynomial
 parameter_range, [0;1e16],	#allowable range of continuation variable
+
+
 
 ## Experimental (use with care as not fully implemented)
 inertial_compensation,1,	#toggle between ICE-IC and ICE

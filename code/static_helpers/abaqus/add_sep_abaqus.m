@@ -20,7 +20,7 @@ switch model_dimension
     case 2
         switch num_dimensions
             case 2
-                dimensio_mapS = [1,2];
+                dimension_map = [1,2];
             case 3
                 dimension_map = [1,2,6];
         end
