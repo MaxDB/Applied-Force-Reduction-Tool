@@ -12,11 +12,11 @@ close all
 
 % dof ≈ 0.0458 * seed_size ^ -2.53
 %-------------------------------
-seed_sizes = [0.00307,0.0023,0.002,0.00174,0.00163,0.00157,0.001481,0.00142,0.00138,0.00136,0.00133,0.001293,0.00129];
-% seed_sizes = [0.00157,0.001481,0.00142,0.00138,0.00136,0.00133,0.001293,0.00129];
+% seed_sizes = [0.00307,0.0023,0.002,0.00174,0.00163,0.00157,0.001481,0.00142,0.00138,0.00136,0.00133,0.001293,0.00129];
+seed_sizes = [0.00133];
 
-num_workers = 1;
-num_repeats = 1;
+num_workers = 2;
+num_repeats = 2;
 
 %-------
 data_path = "data\size_data";
@@ -213,6 +213,7 @@ compare_validation(Dyn_Data,"validation error",1,1:6);
 end
 
 function two_mode_validation
+% create_parallel_pool(8);
 system_name = "mems_arch_16";
 Dyn_Data = initalise_dynamic_data(system_name);
 %-------------------------------------------------------------------------%
@@ -257,9 +258,16 @@ Continuation_Opts.backward_steps = 5;
 try
     Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
 catch
-    Continuation_Opts.collocation_degree = 8;
-    Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
+    try
+        Continuation_Opts.collocation_degree = 8;
+        Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
+    catch
+        Continuation_Opts.collocation_degree = 15;
+        Continuation_Opts.initial_discretisation_num = 100;
+        Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
+    end
 end
+
 
 compare_validation(Dyn_Data,"validation error",[1,2],"all")
 

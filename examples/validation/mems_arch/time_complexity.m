@@ -12,8 +12,9 @@ close all
 
 % dof ≈ 0.0458 * seed_size ^ -2.53
 %-------------------------------
-seed_sizes = [0.00307,0.0023,0.002,0.00174,0.00163,0.00157,0.001481,0.00142,0.00138,0.00136,0.00133,0.001293,0.00129];
-num_workers = 1;
+% seed_sizes = [0.00307,0.0023,0.002,0.00174,0.00163,0.00157,0.001481,0.00142,0.00138,0.00136,0.00133,0.001293,0.00129];
+seed_sizes = [0.00133,0.001293,0.00129];
+num_workers =6;
 num_static_repeats = 2;
 
 num_dynamic_repeats = 0;
@@ -78,6 +79,7 @@ free_dynamic_memory = cell(1,num_seeds);
 dynamic_time = zeros(3,num_seeds);
 
 for iSeed = 1:num_seeds
+    seed_time_start = tic;
     seed_size = seed_sizes(iSeed);
 
     %mesh arch with a particular seed size
@@ -199,4 +201,6 @@ for iSeed = 1:num_seeds
         
         % Model.save_log
     end
+    seed_time = toc(seed_time_start);
+    simulation_update("MEMS arch validation (%i) in %.1f: %i/%i",[num_dof(iSeed),seed_time/60,iSeed,num_seeds])
 end

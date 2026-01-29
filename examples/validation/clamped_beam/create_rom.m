@@ -1,7 +1,7 @@
 clear
 close all
 
-num_iterations = 1;
+num_iterations = 10;
 
 %--------- Software Settings ---------%
 set_logging_level(3)
@@ -16,7 +16,7 @@ added_modes = [3];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.max_parallel_jobs = 4; %be careful!
+Static_Opts.max_parallel_jobs = 8; %be careful!
 %------------------------------------------%
 create_parallel_pool(Static_Opts.max_parallel_jobs);
 

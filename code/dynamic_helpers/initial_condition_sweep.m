@@ -223,7 +223,7 @@ for iMode = 1:num_modes
     limits(iMode,:) = [centre_point(iMode)-ic_limits(iMode),centre_point(iMode) + ic_limits(iMode)];
 
 end
-
+limits = sort(limits,2,"ascend");
 out = all(limits(:,1) < 0 & limits(:,2) > 0);
 end
 
