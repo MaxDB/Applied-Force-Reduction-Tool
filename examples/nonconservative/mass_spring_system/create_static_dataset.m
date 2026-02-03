@@ -46,14 +46,15 @@ Damping.type = "rayleigh";
 Damping.mass_factor = 0.1;
 Damping.stiffness_factor = 1e-7;
 
-External_Force.type = "point";
-External_Force.dof = 3;
-External_Force.max_amplitude = 1; %"limit" -> calibrate
+External_Force.type = "shape";
+External_Force.shape = [0;0;1];
+External_Force.max_amplitude = 3; %"limit" -> calibrate
 
 Nc_Data = Nonconservative_Data(Model,Damping,External_Force);
 Nc_Static_Data = Static_Data.extend_stress_manifold(Nc_Data);
 
 Nc_Static_Data.verified_degree = [7,7];
+Nc_Static_Data.save_data;
 
 
 Rom = Reduced_System(Nc_Static_Data);
@@ -66,7 +67,3 @@ Rom.Physical_Displacement_Polynomial.plot_polynomial("axes",ax);
 %
 ax = plot_static_data("energy",Nc_Static_Data);
 Rom.Potential_Polynomial.plot_polynomial("axes",ax);
-
-animate_whisker(Rom.Physical_Displacement_Polynomial.subpoly(3),Nc_Data,3,"energy",{Rom.Potential_Polynomial,Model.energy_limit})
-animate_whisker(Rom.Force_Polynomial.subpoly(1),Nc_Data,3,"energy",{Rom.Potential_Polynomial,Model.energy_limit})
-animate_whisker(Rom.Potential_Polynomial,Nc_Data,3,"energy",{Rom.Potential_Polynomial,Model.energy_limit})

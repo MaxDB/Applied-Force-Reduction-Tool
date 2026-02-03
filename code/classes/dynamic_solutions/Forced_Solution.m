@@ -27,7 +27,7 @@ classdef Forced_Solution < Dynamic_Solution
             obj.Damping_Data = Damping_Data;
 
             continuation_variable = Force_Data.continuation_variable;
-            Nonconservative_Input = obj.get_nonconservative_input(Rom.Model);
+            Nonconservative_Input = obj.get_nonconservative_input(Rom);
             if isfield(FRF_Settings,"z0")
                 Nonconservative_Input.z0 = FRF_Settings.z0;
             end
@@ -65,14 +65,28 @@ classdef Forced_Solution < Dynamic_Solution
             obj.Solution_Type = Sol_Type;
         end
         %-----------------------------------------------------------------%
-        function Nonconservative_Input = get_nonconservative_input(obj,Model)
+        function Nonconservative_Input = get_nonconservative_input(obj,Rom)
             F_Data = obj.Force_Data;
             Damp_Data = obj.Damping_Data;
+            Model = Rom.Model;
+
+            Applied_Force_Data = Rom.Applied_Force_Data;
+            if F_Data.amplitude > Applied_Force_Data.max_amplitude
+                error("")
+            end
+            F_Data.shape = Applied_Force_Data.shape;
+            F_Data.type = "shape";
             
             switch Damp_Data.damping_type
                 case "rayleigh"
                     damping = get_rayleigh_damping_matrix(Damp_Data,Model);
                     Nonconservative_Input.damping = damping;
+                case "modal"
+                    damping_factors = Damp_Data.modal_damping_factors;
+                    damping = diag(damping_factors);
+                    Nonconservative_Input.damping = damping;
+                otherwise
+                    error("Damping model unsupported / not recognised ")
             end
             continuation_variable = F_Data.continuation_variable;
 
@@ -90,6 +104,8 @@ classdef Forced_Solution < Dynamic_Solution
                     end
 
                     Nonconservative_Input.amplitude_shape = dof_map;
+                case "shape"
+                    Nonconservative_Input.amplitude_shape = F_Data.shape;
             end
             Nonconservative_Input.force_type = F_Data.type;
             Nonconservative_Input.continuation_variable = continuation_variable;

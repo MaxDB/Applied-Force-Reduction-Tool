@@ -24,6 +24,14 @@ else
         return
     end
     Rom = Reduced_System(Static_Data);
-    Dyn_Data = Dynamic_Dataset(Rom);
+
+
+    Static_Data_Nc = load_static_data(system_name,"nonconservative",1);
+    if isempty(Static_Data_Nc)
+        Dyn_Data = Dynamic_Dataset(Rom);
+        return
+    end
+    Rom_Nc = Reduced_System(Static_Data_Nc);
+    Dyn_Data = Dynamic_Dataset(Rom,"Nonconservative_Model",Rom_Nc);
 end
 end

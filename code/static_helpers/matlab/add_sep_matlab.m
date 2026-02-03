@@ -1,4 +1,4 @@
-function [reduced_displacement,physical_displacement,f,E,additional_data,sep_id] = ...
+function [reduced_displacement,physical_displacement,reduced_force,E,additional_data,sep_id] = ...
     add_sep_matlab(force_ratio,num_loadcases,add_data_type,Model)
 
 
@@ -23,7 +23,7 @@ applied_force = force_ratio/num_loadcases;
 force_transform = Model.mass*Model.reduced_eigenvectors;
 
 if ~conservative
-    nc_force_transform = Nc_Data.max_amplitude.*Nc_Data.force_shape;
+    nc_force_transform = Nc_Data.max_amplitude*Nc_Data.force_shape;
     force_transform = [force_transform,nc_force_transform];
     num_r_modes = size(Model.reduced_modes,1);
     num_applied_force = Nc_Data.num_applied_forces;
@@ -113,27 +113,33 @@ switch add_data_type
 end
 
 
-r_transform = force_transform';
-r = r_transform*displacement;
+
 physical_displacement = displacement;
-reduced_displacement = r;
+
 
 if conservative
+    r_transform = force_transform';
+    r = r_transform*displacement;
+    reduced_displacement = r;
+    reduced_force = f;
     return
 end
+evec_p = [Model.reduced_eigenvectors,Nc_Data.orth_force_shape];
+p_transform = evec_p'*Model.mass;
+reduced_displacement = p_transform*displacement;
 
+reduced_force_transform = evec_p'*force_transform;
+reduced_force = reduced_force_transform*f;
+% sin_fraction = f((num_r_modes+1):end,:);
 
-
-
-sin_fraction = f((num_r_modes+1):end,:);
-
-p = asin(sin_fraction);
-x_p = nc_force_transform*sin(p);
-x_r = physical_displacement - x_p;
-r = r_transform*x_r;
-
-r((num_r_modes+1):end,:) = p;
-reduced_displacement = r;
+% p = asin(sin_fraction);
+% p = Nc_Data.force_shape'*physical_displacement;
+% x_p = nc_force_transform*p;
+% x_r = physical_displacement - x_p;
+% r = r_transform*x_r;
+% 
+% r((num_r_modes+1):end,:) = p;
+% reduced_displacement = r;
 
 % reduced_displacement = [r;p];
 

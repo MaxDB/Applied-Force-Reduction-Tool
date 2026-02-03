@@ -5,13 +5,36 @@ classdef Dynamic_Dataset
         solution_types
         
         Dynamic_Model
+        Dynamic_Model_Nc
         Additional_Output
     end
     
     methods
-        function obj = Dynamic_Dataset(Model)
-            obj.Dynamic_Model = Model;
+        function obj = Dynamic_Dataset(Model,varargin)
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
             
+            Model_Nc = [];
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "Nonconservative_Model"
+                        Model_Nc = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %-------------------------------------------------------------%
+
+
+            obj.Dynamic_Model = Model;
+            obj.Dynamic_Model_Nc = Model_Nc;
+
             obj.Additional_Output.output = "none";
             obj.num_solutions = 0;
             obj.solution_types = {};
@@ -38,7 +61,7 @@ classdef Dynamic_Dataset
                         node_position = read_abaqus_node_position(geometry);
 
 
-                        node_displacement = node_position - dof_coords;
+                        node_displacement = node_position - 222;
                         node_distance = sqrt(sum(node_displacement.^2,2));
                         [min_distance,closest_node] = min(node_distance); %#ok<ASGLU>
 
@@ -342,7 +365,7 @@ classdef Dynamic_Dataset
             FRF_Settings.type = type;
             FRF_Settings.initial_condition = initial_condition;
 
-            Rom = obj.Dynamic_Model;
+            Rom = obj.Dynamic_Model_Nc;
             FRF_Sol = Forced_Solution(Rom,FRF_Settings);
 
            

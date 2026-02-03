@@ -6,10 +6,12 @@ classdef Nonconservative_Data
         
         num_applied_forces
         force_type
+        
         force_shape
-
         max_amplitude
-        frequency_range
+
+        orth_force_shape
+        orth_max_amplitude
 
         amplitude
         frequency
@@ -43,16 +45,46 @@ classdef Nonconservative_Data
         %--------------------------------------------
         function obj = process_forcing(obj,Forcing_Data)
             obj.force_type = Forcing_Data.type;
-            obj.max_amplitude = Forcing_Data.max_amplitude;
+            max_amp = Forcing_Data.max_amplitude;
             switch obj.force_type
                 case "point"
                     shape = zeros(obj.Model.num_dof,1);
                     shape(Forcing_Data.dof) = 1;
-                    obj.force_shape = shape;
+                case "shape"
+                    shape = Forcing_Data.shape;
+                    if size(shape,1) ~= obj.Model.num_dof
+                        error("Force shape doesn't match system size")
+                    end
+                    
                 otherwise
                     Error("Unsupported force type: '" + obj.force_type + "'")
             end
 
+            [obj.orth_force_shape,obj.orth_max_amplitude] = obj.orthogonalise_force(shape,max_amp);
+            obj.force_shape = shape;
+            obj.max_amplitude = max_amp;
+        end
+        %--------------------------------------------
+        function [orth_force_shape,orth_max_amp] = orthogonalise_force(obj,force_shape,max_amp)
+            evec_r = obj.Model.reduced_eigenvectors;
+            num_r_modes = size(evec_r,2);
+            phi_a = force_shape*max_amp;
+            
+            for iMode = 1:num_r_modes
+                evec_i = evec_r(:,iMode);
+                phi_a = phi_a - (evec_i'*phi_a)/norm(evec_i)^2 * evec_i;
+                
+            end
+            if norm(phi_a) == 0
+                error("No need to add force")
+            end
+            phi_a_amp = norm(phi_a);
+            norm_phi_a = phi_a/phi_a_amp;
+            norm_test = norm_phi_a'*obj.Model.mass*norm_phi_a;
+    
+            
+            orth_force_shape = norm_phi_a/sqrt(norm_test);
+            orth_max_amp = phi_a_amp*sqrt(norm_test);
         end
     end
 

@@ -11,7 +11,7 @@ NUM_PERIODS = 1;
 
 switch type
     case "rom"
-         num_r_modes = size(Rom.Model.reduced_modes,2);
+        num_r_modes = Rom.Force_Polynomial.input_dimension;
         Eom_Input = Rom.get_solver_inputs("coco_frf","additional_input",Nonconservative_Input);
 
         input_order = Eom_Input.input_order;
@@ -19,7 +19,7 @@ switch type
         Disp_Data = Eom_Input.Disp_Data;
         Damping_Data = Eom_Input.Damping_Data;
         Applied_Force_Data = Eom_Input.Applied_Force_Data;
-        amp = Applied_Force_Data.amplitude; 
+        amp = Nonconservative_Input.amplitude; 
 
        
         eom = @(t,z) coco_forced_eom(t,z,amp,period,input_order,Force_Data,Disp_Data,Damping_Data,Applied_Force_Data);
@@ -46,8 +46,13 @@ if isfield(Nonconservative_Input,"z0")
 else
     z0 = zeros(2*num_r_modes,1);
 end
-opts = odeset('RelTol',1e-6,'AbsTol',1e-8);
+
 t = 0;
+
+
+
+opts = odeset('RelTol',1e-6,'AbsTol',1e-8);
+
 t_increment = NUM_PERIODS*period;
 % t_all = [];
 % z_all = [];

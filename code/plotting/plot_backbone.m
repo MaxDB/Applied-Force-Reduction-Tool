@@ -371,11 +371,17 @@ switch type
             end
         end
         
-        
+
 
 
         for iMode = 1:num_modes
-            mode = r_modes(iMode);
+            if iMode > length(r_modes)
+                mode = iMode+1000;
+                force_mode = 1;
+            else
+                mode = r_modes(iMode);
+                force_mode = 0;
+            end
             ax_id = plotted_modes == mode;
             box(ax{ax_id,1},"on")
 
@@ -482,7 +488,12 @@ switch type
             hold(ax{ax_id,1},"off")
 
             xlabel(ax{ax_id,1},"Frequency (rad/s)")
-            ylabel(ax{ax_id,1},"R_{" + r_modes(iMode) + "}")
+            if ~force_mode
+                ylabel(ax{ax_id,1},"R_{" + r_modes(iMode) + "}")
+            else
+                ylabel(ax{ax_id,1},"P_{" + (mode-1000) + "}")
+            end
+
 
 
         end

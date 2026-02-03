@@ -17,6 +17,8 @@ classdef Static_Dataset
         low_frequency_coupling_gradient
         Dynamic_Validation_Data
 
+        Nonconservative_Data
+
         scaffold_points
         static_equilibrium_path_id
         unit_sep_ratios
@@ -43,7 +45,7 @@ classdef Static_Dataset
             end
             
             %-----
-
+            obj.Nonconservative_Data = [];
             obj.additional_data_type = Model.Static_Options.additional_data;
 
             if obj.additional_data_type == "perturbation"
@@ -573,7 +575,7 @@ classdef Static_Dataset
         %-----------------------------------------------------------------%
         % Nonconservative static data
         function Nc_Static_Data = extend_stress_manifold(obj,Nc_Data)
-
+            obj.Nonconservative_Data = Nc_Data;
 
             r_modes = obj.Model.reduced_modes;
             num_r_modes = length(r_modes);
@@ -589,7 +591,7 @@ classdef Static_Dataset
 
             calibration_factors = obj.Model.calibrated_forces;
             for iForce = 1:num_applied_forces
-                amplitude_limit = [1,-1]*Nc_Data.max_amplitude(iForce);
+                amplitude_limit = [1,-1];
                 calibration_factors = [calibration_factors;amplitude_limit]; %#ok<AGROW>
             end
 
@@ -763,7 +765,11 @@ classdef Static_Dataset
             end
             r_modes = Dyn_System.reduced_modes;
             mode_id = join(string(r_modes),"");
-            data_path = "data\" + Dyn_System.system_name + "_" + mode_id + "\static_data\";
+            data_path = "data\" + Dyn_System.system_name + "_" + mode_id + "\static_data";
+            if ~isempty(obj.Nonconservative_Data)
+                data_path = data_path + "_nc";
+            end
+            data_path = data_path + "\";
 
         end
         %-----------------------------------------------------------------%

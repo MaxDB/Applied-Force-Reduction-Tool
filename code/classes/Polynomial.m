@@ -398,7 +398,7 @@ classdef Polynomial
                 if isscalar(uniquetol(matched_coeffs))
                     coeffs_int(iTerm_int) = matched_coeffs(1);
                 else
-                    error("Potential not consistent")
+                   warning("Potential not consistent")
                 end
                 % term_index = mod(term_index,int_input_size(1));
             end
