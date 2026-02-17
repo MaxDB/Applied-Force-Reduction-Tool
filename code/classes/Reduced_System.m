@@ -101,9 +101,14 @@ classdef Reduced_System
             %     Displacement_Poly = Polynomial(r,displacement,disp_degree,"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement,"nonconservative",num_applied_forces);
             %     Potential_Poly =  Polynomial(r,Static_Data.potential_energy,force_degree+1,"shift",SHIFT_ON,"scale",SCALE_ON,"nonconservative",num_applied_forces);
             % end
+            if isempty(Static_Data.Model.linear_disp)
+                disp_constraint = evec_r;
+            else
+                disp_constraint = Static_Data.Model.linear_disp;
+            end
 
             Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
-            Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",evec_r},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
+            Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",disp_constraint},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
             Potential_Poly = integrate_polynomial(Force_Poly);
 
             Reduced_Stiffness_Poly = differentiate_polynomial(Force_Poly);

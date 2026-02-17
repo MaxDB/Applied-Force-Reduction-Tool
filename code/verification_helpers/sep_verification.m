@@ -18,7 +18,7 @@ fitting_energy_limit = Model.fitting_energy_limit;
 energy_limit = Model.energy_limit;
 
 num_r_modes = length(Model.reduced_modes);
-
+force_transform = Model.mass*Model.reduced_eigenvectors;
 %---------
 if isnumeric(num_added_points_setting)
     num_added_points = num_added_points_setting;
@@ -140,10 +140,16 @@ for iIteration = 1:(max_iterations+1)
         logger(log_message,4)
 
         Rom_Two = Reduced_System(Static_Data,"degree",[force_degree_two,disp_degree_two]);
-
+        
+        
         Disp_Error_Inputs.beta_bar_one = Rom_One.get_beta_bar(Rom_One.Physical_Displacement_Polynomial);
         Disp_Error_Inputs.beta_bar_two = Rom_Two.get_beta_bar(Rom_Two.Physical_Displacement_Polynomial);
+
+        Disp_Error_Inputs.disp_mode_beta_one = Rom_One.Physical_Displacement_Polynomial.coefficients'*force_transform;
+        Disp_Error_Inputs.disp_mode_beta_two = Rom_Two.Physical_Displacement_Polynomial.coefficients'*force_transform;
+
         Disp_Error_Inputs.input_order = Rom_Two.get_max_input_order;
+        
 
         Disp_Error_Inputs.Disp_Diff_Data_One = Rom_One.Physical_Displacement_Polynomial.get_diff_data(1);
         Disp_Error_Inputs.Disp_Diff_Data_Two = Rom_Two.Physical_Displacement_Polynomial.get_diff_data(1);

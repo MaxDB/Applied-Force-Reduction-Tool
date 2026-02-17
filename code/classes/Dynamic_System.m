@@ -23,6 +23,7 @@ classdef Dynamic_System
         reduced_eigenvectors
 
         num_nc_modes
+        linear_disp
 
         low_frequency_modes
         low_frequency_eigenvalues
@@ -141,11 +142,18 @@ classdef Dynamic_System
                 nc_reduced_eigenvectors = nc_modes;
                 % nc_reduced_eigenvalues = nc_modes'*obj.stiffness*nc_modes;
                 force_transform = obj.mass*nc_modes;
-                nc_reduced_eigenvalues = ((force_transform'/obj.stiffness)*force_transform)^-1;
+                stiff_force_prod = obj.stiffness\force_transform;
+                nc_reduced_eigenvalues = (force_transform'*stiff_force_prod)^-1;
+                nc_linear_disp = stiff_force_prod*nc_reduced_eigenvalues;
+
+                if isempty(obj.linear_disp)
+                    obj.linear_disp = obj.reduced_eigenvectors;
+                end
 
                 obj.reduced_modes;
                 obj.reduced_eigenvectors = [obj.reduced_eigenvectors,nc_reduced_eigenvectors];
                 obj.reduced_eigenvalues = [obj.reduced_eigenvalues,nc_reduced_eigenvalues];
+                obj.linear_disp = [obj.linear_disp,nc_linear_disp];
             end
        
 

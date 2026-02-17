@@ -11,8 +11,8 @@ figure
 tiledlayout(1,2)
 ax = nexttile;
 box on
-xlabel("r_" + mode)
-ylabel("f_" + mode)
+xlabel("r_{" + mode+"}")
+ylabel("f_{" + mode+"}")
 
 
 
