@@ -5,6 +5,13 @@ JOB_NAME = "static_analysis";
 RESET_TO_ZERO = 1;
 
 
+conservative = true;
+if iscell(Model)
+    [Model,Nc_Data] = Model{:};
+    conservative = isempty(Nc_Data);
+end
+
+
 [num_dimensions,model_dimension] = get_num_node_dimensions(Model);
 project_path = get_project_path;
 
@@ -238,6 +245,18 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 force_transform = Model.mass*Model.reduced_eigenvectors;
+num_r_modes = size(Model.reduced_modes,2);
+force_size = num_r_modes;
+if ~conservative
+    % nc_force_transform = Nc_Data.max_amplitude*Nc_Data.force_shape;
+    nc_force_transform = Model.mass*Nc_Data.orth_force_shape; 
+    force_transform = [force_transform,nc_force_transform];
+    
+    num_applied_force = Nc_Data.num_applied_forces;
+    force_size = force_size+ num_applied_force;
+end
+
+
 coordinate_index = ((1:num_nodes)-1)*num_dimensions;
 
 
@@ -246,7 +265,7 @@ total_static_steps = sum(num_loadcases);
 log_message = sprintf("job " + job_id(1) + ": %i loadcases over %i SEPs" ,[total_static_steps,num_seps]);
 logger(log_message,3)
 
-modal_force = zeros(length(Model.reduced_modes),total_static_steps);
+modal_force = zeros(force_size,total_static_steps);
 sep_id = zeros (1,total_static_steps);
 switch add_data_type
     case "none"
@@ -482,13 +501,23 @@ switch Static_Opts.output_format
 end
 
 displacement_bc = displacement(node_map,:);
-disp_transform = force_transform';
+f = modal_force;
 
-r = disp_transform*displacement_bc;
+if conservative
+    r_transform = force_transform';
+    r = r_transform*displacement_bc;
+else
+    evec_p = [Model.reduced_eigenvectors,Nc_Data.orth_force_shape];
+    p_transform = evec_p'*Model.mass;
+    r = p_transform*displacement_bc;
+
+    % reduced_force_transform = evec_p'*force_transform;
+    % f = reduced_force_transform*f;
+end
 % theta = displacement_bc - Model.reduced_eigenvectors*r;
 theta = displacement_bc;
 
-f = modal_force;
+
 
 % point = 130;
 %  figure;plot([0,r],[0,theta(point,:)],'rx');hold on;plot([0,r],[0,displacement_bc(point,:)],'kx');
@@ -521,6 +550,9 @@ if clean_data
     f(:,remove_index) = [];
     sep_id(:,remove_index) = [];
 end
+
+
+
 
 stiff_restarted_seps_index  = (final_sep_energy(restart_type ~= 2) < Model.fitting_energy_limit);
 
@@ -661,7 +693,7 @@ if restart_sep
     end
     Initial_Data.initial_disp = initial_disp;
     [r_restart,theta_restart,f_restart,E_restart,additional_data_restart,sep_id_restart] = add_sep_abaqus(restarted_loadcases, ...
-        num_restart_loadcases,Static_Opts,max_inc,add_data_type,clean_data,Model,job_id,Initial_Data,next_restart_type);
+        num_restart_loadcases,Static_Opts,max_inc,add_data_type,clean_data,{Model,Nc_Data},job_id,Initial_Data,next_restart_type);
     
     num_r = size(r,2);
     r_all = [r,r_restart];

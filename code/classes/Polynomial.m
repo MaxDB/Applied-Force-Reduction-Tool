@@ -105,7 +105,11 @@ classdef Polynomial
                     case "none"
                         output_data(zero_index,:) = repmat(mean(output_data(zero_index,:),2),1,size(output_data,2));
                     case "constant"
-                        output_data(zero_index,:) = repmat(constraint_type{1,2}(zero_index,1),1,size(output_data,2));
+                        constraint_value = constraint_type{1,2};
+                        if isscalar(constraint_value)
+                            constraint_value = zeros(obj.output_dimension,1) + constraint_value;
+                        end
+                        output_data(zero_index,:) = repmat(constraint_value(zero_index,1),1,size(output_data,2));
                     case {"linear","linear_disp"}
                         output_data(zero_index,:) = 0;
                         constraint_value = constraint_type{1,2};

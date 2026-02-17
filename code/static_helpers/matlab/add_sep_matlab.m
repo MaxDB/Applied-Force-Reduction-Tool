@@ -23,7 +23,8 @@ applied_force = force_ratio/num_loadcases;
 force_transform = Model.mass*Model.reduced_eigenvectors;
 
 if ~conservative
-    nc_force_transform = Nc_Data.max_amplitude*Nc_Data.force_shape;
+    % nc_force_transform = Nc_Data.max_amplitude*Nc_Data.force_shape;
+    nc_force_transform = Model.mass*Nc_Data.orth_force_shape; 
     force_transform = [force_transform,nc_force_transform];
     num_r_modes = size(Model.reduced_modes,1);
     num_applied_force = Nc_Data.num_applied_forces;
@@ -128,8 +129,8 @@ evec_p = [Model.reduced_eigenvectors,Nc_Data.orth_force_shape];
 p_transform = evec_p'*Model.mass;
 reduced_displacement = p_transform*displacement;
 
-reduced_force_transform = evec_p'*force_transform;
-reduced_force = reduced_force_transform*f;
+% reduced_force_transform = evec_p'*force_transform;
+reduced_force = f;
 % sin_fraction = f((num_r_modes+1):end,:);
 
 % p = asin(sin_fraction);

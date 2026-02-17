@@ -22,6 +22,8 @@ classdef Dynamic_System
         reduced_eigenvalues
         reduced_eigenvectors
 
+        num_nc_modes
+
         low_frequency_modes
         low_frequency_eigenvalues
         low_frequency_eigenvectors
@@ -43,6 +45,7 @@ classdef Dynamic_System
             Calibration_Opts = struct([]);
             Static_Opts = struct([]);
             load_cache = true; %load prestored mass and stiffness matrices if they exist
+            nc_modes = [];
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
@@ -52,6 +55,8 @@ classdef Dynamic_System
                         Static_Opts = keyword_values{arg_counter};
                     case "calibration_opts"
                         Calibration_Opts = keyword_values{arg_counter};
+                    case "nc_modes"
+                        nc_modes = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -108,6 +113,12 @@ classdef Dynamic_System
                 rmdir(obj.get_data_path,"s")
             end
 
+            obj.num_nc_modes = sum(modes > 1000);
+
+     
+
+        
+
             %Update and set optional static solver settings
             obj = obj.update_static_opts(Static_Opts);
             
@@ -124,6 +135,20 @@ classdef Dynamic_System
             matrix_time = toc(matrix_time_start);
             log_message = sprintf("Eigenvectors: %.1f seconds" ,matrix_time);
             logger(log_message,2)
+
+
+            if ~isempty(nc_modes)
+                nc_reduced_eigenvectors = nc_modes;
+                % nc_reduced_eigenvalues = nc_modes'*obj.stiffness*nc_modes;
+                force_transform = obj.mass*nc_modes;
+                nc_reduced_eigenvalues = ((force_transform'/obj.stiffness)*force_transform)^-1;
+
+                obj.reduced_modes;
+                obj.reduced_eigenvectors = [obj.reduced_eigenvectors,nc_reduced_eigenvectors];
+                obj.reduced_eigenvalues = [obj.reduced_eigenvalues,nc_reduced_eigenvalues];
+            end
+       
+
             if obj.energy_limit > 0
                 %Find single modal forcing required to reach energy limit
                 calibration_time_start = tic;
@@ -185,12 +210,18 @@ classdef Dynamic_System
         function obj = eigenanalysis(obj,load_cache)
             %extract mass and stiffness matricies and solve generalised
             %eigenvalue problem
+            modes = obj.reduced_modes;
+            if obj.num_nc_modes > 0
+                num_modes = length(modes);
+                num_r_modes = num_modes - obj.num_nc_modes;
+                obj.reduced_modes = modes(1:num_r_modes);
+            end
             obj = model_eigenanalysis(obj,load_cache);
-            
+            obj.reduced_modes = modes;
 
         end
         %-----------------------------------------------------------------%
-        function obj = calibrate_mode(obj,modes)
+        function obj = calibrate_mode(obj,all_modes)
             %finds static forces that reach the potential energy limit
             
             
@@ -205,7 +236,7 @@ classdef Dynamic_System
                 obj = obj.update_static_opts(Static_Opts);
             end
 
-            obj = modal_calibration(obj,modes);
+            obj = modal_calibration(obj,all_modes);
         end
         %-----------------------------------------------------------------%
 
@@ -252,6 +283,7 @@ classdef Dynamic_System
             if isstring(num_loadcases) && num_loadcases == "auto"
                 warning("'auto' loadcases not defined")
                 num_loadcases = 5;
+                Static_Opts.num_loadcases = num_loadcases;
             end
 
 
@@ -342,7 +374,7 @@ classdef Dynamic_System
 
                     elseif max_parallel_jobs == 1
                         [reduced_disp,physical_disp,restoring_force,energy,additional_data,sep_id] = ...
-                            add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,obj,1);
+                            add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,{obj,Nc_Data},1);
                     elseif  max_parallel_jobs < 1
                         % go sep by SEP. For larger systems may have to
                         % restart SEPs mid way
@@ -357,7 +389,7 @@ classdef Dynamic_System
 
                         for iSep = 1:num_seps
                             [job_r,job_x,job_f,job_E,job_additional_data,job_sep_id] = ...
-                                add_sep_abaqus(force_ratio(:,iSep),num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,obj,iSep);
+                                add_sep_abaqus(force_ratio(:,iSep),num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,{obj,Nc_Data},iSep);
 
                             reduced_disp_cell{1,iSep} = job_r;
                             condensed_disp_cell{1,iSep} = job_x;

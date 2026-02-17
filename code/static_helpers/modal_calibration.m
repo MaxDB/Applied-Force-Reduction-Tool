@@ -33,25 +33,25 @@ num_calibrated_modes = length(calibrated_modes);
 num_uncalibrated_modes = length(uncalibrated_modes);
 
 
-r_modes = Model.reduced_modes;
-num_r_modes = length(r_modes);
-r_eigenvalues = Model.reduced_eigenvalues;
+modes = Model.reduced_modes;
+num_modes = length(modes);
+eigenvalues = Model.reduced_eigenvalues;
 
-num_matching_calibrated_modes = length(intersect(r_modes,calibrated_modes));
+num_matching_calibrated_modes = length(intersect(modes,calibrated_modes));
 
-log_message = sprintf("%u/%u modes precalibrated",[num_matching_calibrated_modes,num_r_modes]);
+log_message = sprintf("%u/%u modes precalibrated",[num_matching_calibrated_modes,num_modes]);
 logger(log_message,3)
 
-initial_force_ratio = zeros(num_r_modes,num_uncalibrated_modes*2);
+initial_force_ratio = zeros(num_modes,num_uncalibrated_modes*2);
 for iMode = 1:num_uncalibrated_modes
     mode = uncalibrated_modes(iMode);
     mode_index = mode == modes;
 
-    force_ratio = zeros(num_r_modes,2);
+    force_ratio = zeros(num_modes,2);
     force_ratio(mode_index,:) = [1,-1];
 
     %start with linear approximation
-    force_scale_factor = Calibration_Opts.calibration_scale_factor*sqrt(2*r_eigenvalues(mode_index)*Model.fitting_energy_limit);
+    force_scale_factor = Calibration_Opts.calibration_scale_factor*sqrt(2*eigenvalues(mode_index)*Model.fitting_energy_limit);
     initial_force_ratio(:,[2*iMode-1,2*iMode]) = force_ratio*force_scale_factor;
 
 end
@@ -154,11 +154,11 @@ Force_Calibration.Parameters = Model.Parameters;
 save(GEOMETRY_PATH + "force_calibration","Force_Calibration")
 
 calibrated_modes = Force_Calibration.calibrated_modes{1,calibration_id};
-Model.calibrated_forces = zeros(num_r_modes,2);
+Model.calibrated_forces = zeros(num_modes,2);
 % obj.calibrated_degree_limits = Force_Calibration.min_degree_data{1,calibration_id};
 
-for iMode = 1:num_r_modes
-    mode = r_modes(iMode);
+for iMode = 1:num_modes
+    mode = modes(iMode);
     Model.calibrated_forces(iMode,:) = Force_Calibration.force_limit{1,calibration_id}(mode == calibrated_modes,:)*Calibration_Opts.force_overcalibration;
     % obj.calibrated_degree_limits{iMode}.force_applied_force = obj.calibrated_degree_limits{iMode}.force_applied_force./obj.calibrated_forces(iMode,:)';
     % obj.calibrated_degree_limits{iMode}.disp_applied_force = obj.calibrated_degree_limits{iMode}.disp_applied_force./obj.calibrated_forces(iMode,:)';

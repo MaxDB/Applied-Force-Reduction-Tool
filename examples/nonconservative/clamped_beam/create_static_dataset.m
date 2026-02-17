@@ -1,43 +1,50 @@
 clear
 close all
 %--------- Software Settings ---------%
-set_logging_level(4)
+set_logging_level(3)
 set_visualisation_level(3)
 %-------------------------------------%
 
 %--------- System Settings ---------%
-system_name = "exhaust";
-energy_limit = 1.8;
+system_name = "clamped_beam";
+energy_limit = 0.01;
 initial_modes = [1];
 %-----------------------------------%
 
-%--------- Calibration Settings ---------%
-Calibration_Opts.calibration_scale_factor = 1.5;
-%----------------------------------------%
-
 %--------- Static Solver Settings ---------%
 Static_Opts.additional_data = "none";
-Static_Opts.num_validation_modes = 18;
-Static_Opts.max_parallel_jobs = 1; %be careful!
+Static_Opts.num_validation_modes = 10;
+Static_Opts.max_parallel_jobs =  1; %be careful!
+% Static_Opts.num_loadcases = 100;
 %------------------------------------------%
+% Verification_Opts.maximum_iterations = -1;
 
-%--------- Static Verification Settings ---------%
-Verification_Opts.maximum_iterations = 0 ;
-%----------------------------------------------%
 
-Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
+Model = Dynamic_System(system_name,energy_limit,initial_modes,"static_opts",Static_Opts);
 
-Static_Data = Static_Dataset(Model,"verification_opts",Verification_Opts);
+Static_Data = Static_Dataset(Model);
 Static_Data.save_data;
-%----------------------------------------------%
-External_Force.type = "point";
-External_Force.dof = 1563;
-External_Force.max_amplitude = 100;
+
+
+
+%---------------------------------------
+
+% 
+% External_Force.type = "point";
+% External_Force.dof = 362; %356
+% External_Force.max_amplitude = 1;
+
+External_Force.type = "uniform";
+External_Force.direction = 2;
+External_Force.max_amplitude = 10;
+
+% External_Force.type = "point";
+% External_Force.dof = 182;
+% External_Force.max_amplitude = 10;
 
 Nc_Data = Nonconservative_Data(Model,External_Force);
 Nc_Static_Data = Static_Data.extend_stress_manifold(Nc_Data);
 
-Nc_Static_Data.verified_degree = [7,7];
 Nc_Static_Data.save_data;
 
 

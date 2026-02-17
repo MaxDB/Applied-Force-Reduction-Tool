@@ -14,7 +14,7 @@ initial_modes = [1];
 
 %--------- Static Solver Settings ---------%
 Static_Opts.additional_data = "none";
-Static_Opts.max_parallel_jobs = 4; %be careful!
+Static_Opts.max_parallel_jobs = 1; %be careful!
 %------------------------------------------%
 
 
@@ -42,18 +42,13 @@ Static_Data.save_data;
 
 
 
-Damping.type = "rayleigh";
-Damping.mass_factor = 0.1;
-Damping.stiffness_factor = 1e-7;
 
 External_Force.type = "shape";
 External_Force.shape = [0;0;1];
 External_Force.max_amplitude = 3; %"limit" -> calibrate
 
-Nc_Data = Nonconservative_Data(Model,Damping,External_Force);
+Nc_Data = Nonconservative_Data(Model,External_Force);
 Nc_Static_Data = Static_Data.extend_stress_manifold(Nc_Data);
-
-Nc_Static_Data.verified_degree = [7,7];
 Nc_Static_Data.save_data;
 
 

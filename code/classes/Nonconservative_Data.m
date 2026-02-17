@@ -21,10 +21,10 @@ classdef Nonconservative_Data
     end
 
     methods
-        function obj = Nonconservative_Data(Model,Damping_Data,Forcing_Data)
+        function obj = Nonconservative_Data(Model,Forcing_Data)
             obj.num_applied_forces = 1;
             obj.Model = Model;
-            obj = process_damping(obj,Damping_Data);
+            % obj = process_damping(obj,Damping_Data);
             obj = process_forcing(obj,Forcing_Data);
 
         end
@@ -49,12 +49,38 @@ classdef Nonconservative_Data
             switch obj.force_type
                 case "point"
                     shape = zeros(obj.Model.num_dof,1);
-                    shape(Forcing_Data.dof) = 1;
+                    if ~isfield(Forcing_Data,"dof_type")
+                        dof_type = "pre_bc";
+                    else
+                        dof_type = Forcing_Data.dof_type;
+                    end
+
+                    switch dof_type
+                        case "pre_bc"
+                            num_dof = obj.Model.num_dof + length(obj.Model.dof_boundary_conditions);
+                            shape = zeros(num_dof,1);
+                            shape(Forcing_Data.dof) = 1;
+                            shape(obj.Model.dof_boundary_conditions) = [];
+                        case "post_bc"
+                            shape(Forcing_Data.dof) = 1;
+                        otherwise
+                            error("")
+                    end
+                    
                 case "shape"
                     shape = Forcing_Data.shape;
                     if size(shape,1) ~= obj.Model.num_dof
                         error("Force shape doesn't match system size")
                     end
+                case "uniform"
+                    num_dof = obj.Model.num_dof + + length(obj.Model.dof_boundary_conditions);
+                    num_dimensions = get_num_node_dimensions(obj.Model);
+                    num_nodes = num_dof/num_dimensions;
+                    shape = zeros(num_dof,1);
+                    direction_index = (0:(num_nodes-1))*num_dimensions + Forcing_Data.direction;
+                    shape(direction_index) = 1;
+                    shape(obj.Model.dof_boundary_conditions) = [];
+                    shape = shape/norm(shape);
                     
                 otherwise
                     Error("Unsupported force type: '" + obj.force_type + "'")
@@ -67,24 +93,30 @@ classdef Nonconservative_Data
         %--------------------------------------------
         function [orth_force_shape,orth_max_amp] = orthogonalise_force(obj,force_shape,max_amp)
             evec_r = obj.Model.reduced_eigenvectors;
+            if class(evec_r) == "Large_Matrix_Pointer"
+                evec_r = evec_r.load();
+            end
             num_r_modes = size(evec_r,2);
             phi_a = force_shape*max_amp;
             
             for iMode = 1:num_r_modes
                 evec_i = evec_r(:,iMode);
-                phi_a = phi_a - (evec_i'*phi_a)/norm(evec_i)^2 * evec_i;
+                phi_a_r = evec_i*(evec_i'*obj.Model.mass*phi_a);
+                phi_a = phi_a - phi_a_r;
                 
             end
             if norm(phi_a) == 0
                 error("No need to add force")
             end
             phi_a_amp = norm(phi_a);
-            norm_phi_a = phi_a/phi_a_amp;
-            norm_test = norm_phi_a'*obj.Model.mass*norm_phi_a;
+            norm_test = phi_a'*obj.Model.mass*phi_a;
     
             
-            orth_force_shape = norm_phi_a/sqrt(norm_test);
-            orth_max_amp = phi_a_amp*sqrt(norm_test);
+            orth_force_shape = phi_a/sqrt(norm_test);
+
+            lambda_p = orth_force_shape'*force_shape*max_amp;
+            % lambda_r = evec_r'*force_shape*max_amp;
+            orth_max_amp = lambda_p;
         end
     end
 

@@ -345,7 +345,10 @@ switch type
         else
             r_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
         end
-
+        
+        if num_modes > size(r_modes,2)
+            r_modes = [r_modes,1001];
+        end
 
         if isempty(ax)
             figure

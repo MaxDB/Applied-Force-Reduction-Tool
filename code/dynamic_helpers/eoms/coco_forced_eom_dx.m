@@ -77,23 +77,15 @@ for iX = 1:num_x
 
     %-------------
     reduced_restoring_force_z = Force_Data.coeffs*r_products_force;
-    reduced_restoring_force_r = reduced_restoring_force_z(r_span,:);
-    reduced_restoring_force_p = reduced_restoring_force_z(p_span,:);
 
-    disp_dr_r_shape_prod = r_dr_products_coupling'*Force_Data.disp_r_force_beta;
-    disp_dr_z_shape_prod = r_dr_products_coupling'*Force_Data.disp_p_force_beta;
-
-    restoring_force = disp_dr_r_shape_prod*reduced_restoring_force_r + disp_dr_z_shape_prod*reduced_restoring_force_p;
+    disp_dr_z_shape_prod = r_dr_products_coupling'*Force_Data.disp_z_force_beta;
+    restoring_force = disp_dr_z_shape_prod*reduced_restoring_force_z;
 
     reduced_restoring_force_z_dz = Force_Data.coeffs*r_dr_products_force;
-    reduced_restoring_force_r_dz =  reduced_restoring_force_z_dz(r_span,:);
-    reduced_restoring_force_p_dz =  reduced_restoring_force_z_dz(p_span,:);
 
-    disp_dr2_r_shape_prod = tensorprod(pagetranspose(r_dr2_products_coupling),Force_Data.disp_r_force_beta,2,1);
-    disp_dr2_z_shape_prod = tensorprod(pagetranspose(r_dr2_products_coupling),Force_Data.disp_p_force_beta,2,1);
-   
-    restoring_force_dz_1 = tensorprod(disp_dr2_r_shape_prod,reduced_restoring_force_r,d2_dims,1) + tensorprod(disp_dr2_z_shape_prod,reduced_restoring_force_p,d2_dims,1); 
-    restoring_force_dz_2 = disp_dr_r_shape_prod*reduced_restoring_force_r_dz + disp_dr_z_shape_prod*reduced_restoring_force_p_dz;
+    disp_dr2_z_shape_prod = tensorprod(pagetranspose(r_dr2_products_coupling),Force_Data.disp_z_force_beta,2,1);
+    restoring_force_dz_1 = tensorprod(disp_dr2_z_shape_prod,reduced_restoring_force_z,d2_dims,1); 
+    restoring_force_dz_2 = disp_dr_z_shape_prod*reduced_restoring_force_z_dz;
 
     restoring_force_dz = restoring_force_dz_1 + restoring_force_dz_2;
     %-------------

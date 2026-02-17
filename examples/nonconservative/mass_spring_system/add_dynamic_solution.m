@@ -22,7 +22,7 @@ Continuation_Opts.collocation_degree = 8;
 
 %-----------------------------------------%
 
-Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts,"type","fom");
+% Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts,"type","fom");
 
 %-----------------------------------
 Damping_Data.damping_type = "rayleigh";

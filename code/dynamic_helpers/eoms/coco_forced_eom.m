@@ -52,12 +52,9 @@ for iX = 1:num_x
 
     %--
     reduced_restoring_force_z = Force_Data.coeffs*r_power_products(1:num_force_coeffs,:);
-    reduced_restoring_force_r = reduced_restoring_force_z(r_span,:);
-    reduced_restoring_force_p = reduced_restoring_force_z(p_span,:);
 
-    disp_r_prod = r_dr_products_coupling'*Force_Data.disp_r_force_beta;
-    disp_z_prod = r_dr_products_coupling'*Force_Data.disp_p_force_beta;
-    restoring_force = disp_r_prod*reduced_restoring_force_r + disp_z_prod*reduced_restoring_force_p;
+    disp_z_prod = r_dr_products_coupling'*Force_Data.disp_z_force_beta;
+    restoring_force = disp_z_prod*reduced_restoring_force_z;
     %--
     inertia_term = disp_prod*r_dr_products_coupling;
     %--

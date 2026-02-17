@@ -326,6 +326,8 @@ classdef Dynamic_Dataset
             type = "rom";
             initial_condition = [];
             backbone_orbit = [];
+            frf_method = "afr";
+
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
@@ -337,6 +339,8 @@ classdef Dynamic_Dataset
                         initial_condition = keyword_values{arg_counter};
                     case "backbone orbit"
                         backbone_orbit = keyword_values{arg_counter};
+                    case "method"
+                        frf_method = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -364,8 +368,12 @@ classdef Dynamic_Dataset
             FRF_Settings.Additional_Output = obj.Additional_Output;
             FRF_Settings.type = type;
             FRF_Settings.initial_condition = initial_condition;
-
-            Rom = obj.Dynamic_Model_Nc;
+            
+            if frf_method == "afr"
+                Rom = obj.Dynamic_Model_Nc;
+            elseif frf_method == "fc"
+                Rom = obj.Dynamic_Model;
+            end
             FRF_Sol = Forced_Solution(Rom,FRF_Settings);
 
            

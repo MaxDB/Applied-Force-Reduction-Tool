@@ -101,15 +101,10 @@ classdef Reduced_System
             %     Displacement_Poly = Polynomial(r,displacement,disp_degree,"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement,"nonconservative",num_applied_forces);
             %     Potential_Poly =  Polynomial(r,Static_Data.potential_energy,force_degree+1,"shift",SHIFT_ON,"scale",SCALE_ON,"nonconservative",num_applied_forces);
             % end
-            if obj.conservative
-                Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
-                Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",evec_r},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
-                Potential_Poly = integrate_polynomial(Force_Poly);
-            else
-                Force_Poly = Polynomial(r,f,force_degree,"constraint",{"constant",0},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
-                Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"constant",0},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
-                Potential_Poly = integrate_polynomial(Force_Poly);
-            end
+
+            Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
+            Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",evec_r},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
+            Potential_Poly = integrate_polynomial(Force_Poly);
 
             Reduced_Stiffness_Poly = differentiate_polynomial(Force_Poly);
 
@@ -381,7 +376,7 @@ classdef Reduced_System
             file_name = file_name + ".mat";
             rom_data = obj.data_path + file_name;
    
-            if isfile(rom_data)
+            if isfile(rom_data) && type ~= "coco_frf"
                 load(rom_data,"Eom_Input");
                 load_data = 1;
                 % load_data = 0;
@@ -525,14 +520,14 @@ classdef Reduced_System
                     Eom_Input.Damping_Data.damping_beta = damping_beta;
 
                     r_evec = obj.Model.reduced_eigenvectors;
-                    p_evec = obj.Applied_Force_Data.orth_shape;
-                    z_evec = [r_evec,p_evec];
+                    if ~isempty(obj.Applied_Force_Data)
+                        p_evec = obj.Applied_Force_Data.orth_shape;
+                        z_evec = [r_evec,p_evec];
+                    else
+                        z_evec = r_evec;
+                    end
                     disp_z_mode_beta = obj.get_beta_mode(displacement_coeffs',z_evec);
-                    z_mode_r_mode_beta = obj.get_beta_mode(z_evec',r_evec);
-                    z_mode_amp_beta = z_evec'*obj.Applied_Force_Data.shape;
-
-                    Eom_Input.Force_Data.disp_r_force_beta = disp_z_mode_beta*z_mode_r_mode_beta;
-                    Eom_Input.Force_Data.disp_p_force_beta = disp_z_mode_beta*z_mode_amp_beta;
+                    Eom_Input.Force_Data.disp_z_force_beta = disp_z_mode_beta;
 
                     switch Nc_Inputs.force_type
                         case "modal"
@@ -587,7 +582,10 @@ classdef Reduced_System
 
                             h_disp_force_beta = displacement_coeffs'*Nc_Inputs.amplitude_shape;
                             Eom_Input.Applied_Force_Data.disp_force_beta = h_disp_force_beta;
+              
+                        
                         otherwise
+
                             error("Unknown force type: '" + Nc_Inputs.force_type + "'")
                     end
                 case "forced_h_prediction"

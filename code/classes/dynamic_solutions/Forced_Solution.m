@@ -71,11 +71,11 @@ classdef Forced_Solution < Dynamic_Solution
             Model = Rom.Model;
 
             Applied_Force_Data = Rom.Applied_Force_Data;
-            if F_Data.amplitude > Applied_Force_Data.max_amplitude
+            if ~isempty(Applied_Force_Data) && F_Data.amplitude > Applied_Force_Data.max_amplitude
                 error("")
             end
-            F_Data.shape = Applied_Force_Data.shape;
-            F_Data.type = "shape";
+            % F_Data.shape = Applied_Force_Data.shape;
+            % F_Data.type = "shape";
             
             switch Damp_Data.damping_type
                 case "rayleigh"
@@ -93,21 +93,32 @@ classdef Forced_Solution < Dynamic_Solution
             switch F_Data.type
                 case "modal"
                     mode_map = F_Data.mode_number == Model.reduced_modes;
-                    Nonconservative_Input.mode_map = mode_map;
+                    
+                    shape = Model.mass*Model.reduced_eigenvectors(:,mode_map);
+                    Nonconservative_Input.amplitude_shape = shape;
                 case "point force"
-                    num_dofs = Model.num_dof;
+                    num_dofs = Model.num_dof + length(Model.dof_boundary_conditions);
                     dof_map = zeros(num_dofs,1);
-                    if isempty(Model.dof_boundary_conditions)
-                        dof_map(F_Data.dof) = 1;
-                    else
-                        dof_map(Model.node_mapping(:,1) == F_Data.dof) = 1;
-                    end
+                    dof_map(F_Data.dof) = 1;
+                    dof_map(Model.dof_boundary_conditions) = [];
 
                     Nonconservative_Input.amplitude_shape = dof_map;
                 case "shape"
                     Nonconservative_Input.amplitude_shape = F_Data.shape;
+                case "uniform"
+                    num_dof = Rom.Model.num_dof +  length(Rom.Model.dof_boundary_conditions);
+                    num_dimensions = get_num_node_dimensions(Rom.Model);
+                    num_nodes = num_dof/num_dimensions;
+                    shape = zeros(num_dof,1);
+                    direction_index = (0:(num_nodes-1))*num_dimensions + F_Data.direction;
+                    shape(direction_index) = 1;
+                    shape(Rom.Model.dof_boundary_conditions) = [];
+                    shape = shape/norm(shape);
+
+                    Nonconservative_Input.amplitude_shape = shape;
+
             end
-            Nonconservative_Input.force_type = F_Data.type;
+            Nonconservative_Input.force_type = "shape";
             Nonconservative_Input.continuation_variable = continuation_variable;
 
             switch continuation_variable
