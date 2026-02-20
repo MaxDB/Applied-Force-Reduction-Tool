@@ -94,7 +94,8 @@ classdef Forced_Solution < Dynamic_Solution
                 case "modal"
                     mode_map = F_Data.mode_number == Model.reduced_modes;
                     
-                    shape = Model.mass*Model.reduced_eigenvectors(:,mode_map);
+                    shape = Model.mass*Model.reduced_eigenvectors;
+                    shape = shape(:,mode_map);
                     Nonconservative_Input.amplitude_shape = shape;
                 case "point force"
                     num_dofs = Model.num_dof + length(Model.dof_boundary_conditions);

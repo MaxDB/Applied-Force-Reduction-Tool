@@ -5,7 +5,6 @@ classdef Dynamic_Dataset
         solution_types
         
         Dynamic_Model
-        Dynamic_Model_Nc
         Additional_Output
     end
     
@@ -33,7 +32,6 @@ classdef Dynamic_Dataset
 
 
             obj.Dynamic_Model = Model;
-            obj.Dynamic_Model_Nc = Model_Nc;
 
             obj.Additional_Output.output = "none";
             obj.num_solutions = 0;
@@ -369,11 +367,7 @@ classdef Dynamic_Dataset
             FRF_Settings.type = type;
             FRF_Settings.initial_condition = initial_condition;
             
-            if frf_method == "afr"
-                Rom = obj.Dynamic_Model_Nc;
-            elseif frf_method == "fc"
-                Rom = obj.Dynamic_Model;
-            end
+            Rom = obj.Dynamic_Model;
             FRF_Sol = Forced_Solution(Rom,FRF_Settings);
 
            

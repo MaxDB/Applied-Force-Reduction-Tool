@@ -4,7 +4,6 @@ function [r,theta,f,E,additional_data,sep_id] = ...
 JOB_NAME = "static_analysis";
 RESET_TO_ZERO = 1;
 
-
 conservative = true;
 if iscell(Model)
     [Model,Nc_Data] = Model{:};
@@ -13,8 +12,7 @@ end
 
 
 [num_dimensions,model_dimension] = get_num_node_dimensions(Model);
-project_path = get_project_path;
-
+project_path = Model.project_path;
 setup_time_start = tic;
 
 all_dofs = Model.num_dof + numel(Model.dof_boundary_conditions);

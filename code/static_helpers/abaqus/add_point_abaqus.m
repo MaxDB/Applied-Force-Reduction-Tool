@@ -7,7 +7,7 @@ RESET_TO_ZERO = 1;
 additional_data_mode = all(isnan(applied_force));
 
 [num_dimensions,model_dimension] = get_num_node_dimensions(Model);
-project_path = get_project_path;
+project_path = Model.project_path;
 
 setup_time_start = tic;
 

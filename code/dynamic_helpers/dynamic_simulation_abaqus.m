@@ -45,6 +45,8 @@ end
 
 if restart_read
     old_job = JOB_NAME + "_" + job_id(1) + "_" + (job_id(2)-1);
+else
+    old_job = [];
 end
 
 %-------------------------------------------------------------------------%
@@ -225,7 +227,7 @@ if ~isempty(FE_Force_Data)
     % dyn_force_bc = FE_Force_Data.amplitude*FE_Force_Data.force_shape;
     dyn_force_bc = FE_Force_Data.amplitude*FE_Force_Data.force_shape;
     dyn_force = zeros(all_dofs,1);
-    dyn_force(node_map,:) = dyn_force_bc(node_map(:,2),:);
+    dyn_force(node_map,:) = dyn_force_bc;
     dyn_force_label = strings(all_dofs,1);
     for iDimension = 1:num_dimensions
         dimension_span = (1:num_nodes)+(iDimension-1)*num_nodes;
@@ -268,7 +270,7 @@ logger(log_message,3)
 num_cpus = Model.Static_Options.num_fe_cpus;
 
 abaqus_time_start = tic;
-[status,cmdout] = run_abaqus_job(new_job,"num_cpus",num_cpus,"interactive",3); %#ok<ASGLU>
+[status,cmdout] = run_abaqus_job(new_job,"num_cpus",num_cpus,"interactive",3,"restart",old_job); %#ok<ASGLU>
 abaqus_time = toc(abaqus_time_start);
 log_message = sprintf("job " + job_id(1) + ": Abaqus dynamic analysis complete: %.1f seconds" ,abaqus_time);
 logger(log_message,3)

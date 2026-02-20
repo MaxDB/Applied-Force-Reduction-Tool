@@ -2,7 +2,7 @@ clear
 close all
 set_visualisation_level(1)
 
-system_name = "clamped_beam_1";
+system_name = "clamped_beam_13";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
@@ -46,7 +46,7 @@ Continuation_Opts.min_discretisation_num = 20;
 Damping_Data.damping_type = "rayleigh";
 % Damping_Data.mass_factor = 16;
 Damping_Data.mass_factor = 0;
-Damping_Data.stiffness_factor = 1e-4;
+Damping_Data.stiffness_factor = 1e-3;
 
 
 % Force_Data.type = "point force";
@@ -62,17 +62,17 @@ Damping_Data.stiffness_factor = 1e-4;
 % Force_Data.amplitude = 0.5;
 
 
-% Force_Data.type = "uniform";
-% Force_Data.direction = 2;
-% Force_Data.continuation_variable = "frequency";
-% Force_Data.frequency = 350;
-% Force_Data.amplitude = 0.05;
-
-Force_Data.type = "modal";
-Force_Data.mode_number = 1;
+Force_Data.type = "uniform";
+Force_Data.direction = 2;
 Force_Data.continuation_variable = "frequency";
 Force_Data.frequency = 350;
-Force_Data.amplitude = 3;
+Force_Data.amplitude = 0.5;
+
+% Force_Data.type = "modal";
+% Force_Data.mode_number = 1;
+% Force_Data.continuation_variable = "frequency";
+% Force_Data.frequency = 350;
+% Force_Data.amplitude = 3;
 
 
 % --------- Continuation Settings ---------%
@@ -85,12 +85,12 @@ Continuation_Opts.backward_steps = 200;
 Continuation_Opts.collocation_degree = 6;
 Continuation_Opts.initial_discretisation_num = 20;
 Continuation_Opts.min_discretisation_num = 20;
-Continuation_Opts.frequency_range = [345,600];
+Continuation_Opts.frequency_range = [290,600];
 %-----------------------------------------%
 % 
-
+%% RE ENABLE JACOBIAN ETC.
 Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"type","rom");
-Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"type","rom","method","fc");
+% Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"type","rom","method","fc");
 
 
-
+Dyn_Data = Dyn_Data.get_fe_output("forced_response",2,67);

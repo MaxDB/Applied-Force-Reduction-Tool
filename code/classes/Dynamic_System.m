@@ -30,6 +30,7 @@ classdef Dynamic_System
         low_frequency_eigenvectors
 
         Parameters
+        project_path
     end
     methods
         function obj = Dynamic_System(name,e_lim,modes,varargin)
@@ -115,7 +116,7 @@ classdef Dynamic_System
             end
 
             obj.num_nc_modes = sum(modes > 1000);
-
+            obj.project_path = get_project_path;
      
 
         
@@ -152,7 +153,7 @@ classdef Dynamic_System
 
                 obj.reduced_modes;
                 obj.reduced_eigenvectors = [obj.reduced_eigenvectors,nc_reduced_eigenvectors];
-                obj.reduced_eigenvalues = [obj.reduced_eigenvalues,nc_reduced_eigenvalues];
+                obj.reduced_eigenvalues = [obj.reduced_eigenvalues;nc_reduced_eigenvalues];
                 obj.linear_disp = [obj.linear_disp,nc_linear_disp];
             end
        
@@ -337,8 +338,11 @@ classdef Dynamic_System
                             Model.low_frequency_eigenvectors = Model.low_frequency_eigenvectors.load;
                         end
                         Const_Model = parallel.pool.Constant(Model);
+                        disp(get_project_path)
+                        disp("parallel --")
                         parfor (iJob = 1:num_parallel_jobs,get_current_parallel_jobs)
                             job_force = force_ratio_groups{1,iJob};
+                            disp(get_project_path)
                             [job_r,job_theta,job_f,job_E,job_additional_data,job_sep_id] = ...
                                 add_sep_abaqus(job_force,num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,Const_Model.Value,iJob);
 

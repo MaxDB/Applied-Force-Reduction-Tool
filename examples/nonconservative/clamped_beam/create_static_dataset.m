@@ -8,21 +8,21 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "clamped_beam";
 energy_limit = 0.01;
-initial_modes = [1];
+initial_modes = [1,3];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
 Static_Opts.additional_data = "none";
 Static_Opts.num_validation_modes = 10;
-Static_Opts.max_parallel_jobs =  1; %be careful!
+Static_Opts.max_parallel_jobs =  4; %be careful!
 % Static_Opts.num_loadcases = 100;
 %------------------------------------------%
-% Verification_Opts.maximum_iterations = -1;
+Verification_Opts.maximum_iterations = 3;
 
 
 Model = Dynamic_System(system_name,energy_limit,initial_modes,"static_opts",Static_Opts);
 
-Static_Data = Static_Dataset(Model);
+Static_Data = Static_Dataset(Model,"verification_opts",Verification_Opts);
 Static_Data.save_data;
 
 
@@ -46,15 +46,3 @@ Nc_Data = Nonconservative_Data(Model,External_Force);
 Nc_Static_Data = Static_Data.extend_stress_manifold(Nc_Data);
 
 Nc_Static_Data.save_data;
-
-
-Rom = Reduced_System(Nc_Static_Data);
-
-ax = plot_static_data("force",Nc_Static_Data);
-Rom.Force_Polynomial.plot_polynomial("axes",ax);
-%
-% ax = plot_static_data("displacement",Nc_Static_Data);
-% Rom.Physical_Displacement_Polynomial.plot_polynomial("axes",ax);
-%
-ax = plot_static_data("energy",Nc_Static_Data);
-Rom.Potential_Polynomial.plot_polynomial("axes",ax);

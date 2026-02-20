@@ -17,23 +17,22 @@ if num_orbits == 1
 end
 
 
+FE_Force_Data.amplitude = Force_Data.amplitude;
+FE_Force_Data.harmonic_coefficients = [0,0,1];
+FE_Force_Data.alpha = Damping_Data.mass_factor;
+FE_Force_Data.beta = Damping_Data.stiffness_factor;
+
+
 switch Force_Data.type
     case "modal"
-        FE_Force_Data.amplitude = Force_Data.amplitude;
-        FE_Force_Data.harmonic_coefficients = [0,0,1];
-        FE_Force_Data.alpha = Damping_Data.mass_factor;
-        FE_Force_Data.beta = Damping_Data.stiffness_factor;
         FE_Force_Data.force_shape = Model.mass*Model.reduced_eigenvectors(:,Force_Data.mode_number);
     case "point force"
-        FE_Force_Data.amplitude = Force_Data.amplitude;
-        FE_Force_Data.harmonic_coefficients = [0,0,1];
-        FE_Force_Data.alpha = Damping_Data.mass_factor;
-        FE_Force_Data.beta = Damping_Data.stiffness_factor;
-
         num_dofs = Model.num_dof;
         dof_map = zeros(num_dofs,1);
         dof_map(Model.node_mapping(:,1) == Force_Data.dof) = 1;
         FE_Force_Data.force_shape = dof_map;
+    otherwise
+        FE_Force_Data.force_shape = get_force_shape(Rom,Force_Data);
 end
 
 max_parallel_jobs = Model.Static_Options.max_parallel_jobs;
@@ -158,7 +157,10 @@ for iJob = 1:num_parallel_jobs
                 drawnow
                 file_name = "temp\J" + iJob + "O" + iOrbit + "_";
                 saveas(fig_all,file_name+"all.fig")
-                saveas(fig_physical,file_name+"period.fig")
+                switch Add_Output.output
+                    case "physical displacement"
+                    saveas(fig_physical,file_name+"period.fig")
+                end
             end
 
             converged = periodicity_error < MAX_PERIODICITY_ERROR;

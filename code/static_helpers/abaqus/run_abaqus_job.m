@@ -10,6 +10,7 @@ keyword_values = varargin(2:2:num_args);
 num_cpus = 1;
 interactive = "off"; %"off" / "on" / level
 temp = 1;
+restart_job = [];
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
         case "num_cpus"
@@ -18,6 +19,8 @@ for arg_counter = 1:num_args/2
             interactive = keyword_values{arg_counter};
         case "temp"
             temp = keyword_values{arg_counter};
+        case "restart"
+            restart_job = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -34,7 +37,11 @@ end
 log_level = "data\log_level.mat";
 load(log_level,"logging_level")
 
-command = "abaqus job=" + job + " cpus=" + num_cpus + " interactive";
+if isempty(restart_job)
+    command = "abaqus job=" + job + " cpus=" + num_cpus + " interactive";
+else
+    command = "abaqus job=" + job + " oldjob=" + restart_job + " cpus=" + num_cpus + " interactive";
+end
 
 num_workers = get_current_parallel_jobs;
 

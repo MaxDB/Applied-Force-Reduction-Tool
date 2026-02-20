@@ -525,14 +525,9 @@ classdef Reduced_System
                     Eom_Input.Damping_Data.damping_beta = damping_beta;
 
                     r_evec = obj.Model.reduced_eigenvectors;
-                    if ~isempty(obj.Applied_Force_Data)
-                        p_evec = obj.Applied_Force_Data.orth_shape;
-                        z_evec = [r_evec,p_evec];
-                    else
-                        z_evec = r_evec;
-                    end
-                    disp_z_mode_beta = obj.get_beta_mode(displacement_coeffs',z_evec);
-                    Eom_Input.Force_Data.disp_z_force_beta = disp_z_mode_beta;
+                   
+                    disp_r_mode_beta = obj.get_beta_mode(displacement_coeffs',r_evec);
+                    Eom_Input.Force_Data.disp_r_force_beta = disp_r_mode_beta;
 
                     switch Nc_Inputs.force_type
                         case "modal"
@@ -566,8 +561,8 @@ classdef Reduced_System
                                     Eom_Input.Applied_Force_Data.amplitude = Nc_Inputs.amplitude;
                             end
 
-                            h_disp_force_beta = displacement_coeffs'*Nc_Inputs.amplitude_shape;
-                            Eom_Input.Applied_Force_Data.disp_force_beta = h_disp_force_beta;
+                            disp_force_beta = displacement_coeffs'*Nc_Inputs.amplitude_shape;
+                            Eom_Input.Applied_Force_Data.disp_force_beta = disp_force_beta;
                         case {"shape","none"}
                             Eom_Input.Applied_Force_Data.shape = Nc_Inputs.amplitude_shape;
                             % Eom_Input.Applied_Force_Data.shape_dx = @(t,amp,T) sine_force_dx(t,amp,T,num_r_modes);
@@ -585,8 +580,8 @@ classdef Reduced_System
                             end
                             Eom_Input.Applied_Force_Data.type = Nc_Inputs.force_type;
 
-                            h_disp_force_beta = displacement_coeffs'*Nc_Inputs.amplitude_shape;
-                            Eom_Input.Applied_Force_Data.disp_force_beta = h_disp_force_beta;
+                            disp_force_beta = displacement_coeffs'*Nc_Inputs.amplitude_shape;
+                            Eom_Input.Applied_Force_Data.disp_force_beta = disp_force_beta;
               
                         
                         otherwise
@@ -642,8 +637,8 @@ classdef Reduced_System
                                     Eom_Input.Applied_Force_Data.amplitude = Nc_Inputs.amplitude;
                             end
 
-                            h_disp_force_beta = obj.get_beta_mode(h_disp_coeff,Nc_Inputs.amplitude_shape);
-                            Eom_Input.Applied_Force_Data.h_disp_force_beta = h_disp_force_beta;
+                            disp_force_beta = obj.get_beta_mode(h_disp_coeff,Nc_Inputs.amplitude_shape);
+                            Eom_Input.Applied_Force_Data.h_disp_force_beta = disp_force_beta;
 
                         otherwise
                             error("Unknown force type: '" + Nc_Inputs.force_type + "'")

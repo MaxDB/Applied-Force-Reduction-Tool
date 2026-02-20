@@ -791,9 +791,9 @@ classdef Static_Dataset
             r_modes = Dyn_System.reduced_modes;
             mode_id = join(string(r_modes),"");
             data_path = "data\" + Dyn_System.system_name + "_" + mode_id + "\static_data";
-            if ~isempty(obj.Nonconservative_Data)
-                data_path = data_path + "_nc";
-            end
+            % if ~isempty(obj.Nonconservative_Data)
+            %     data_path = data_path + "_nc";
+            % end
             data_path = data_path + "\";
 
         end
