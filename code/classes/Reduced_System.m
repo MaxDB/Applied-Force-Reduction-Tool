@@ -69,9 +69,7 @@ classdef Reduced_System
                 rom_id = rom_id + 100;  
                 Nc_Data = Static_Data.Nonconservative_Data;
                 Force_Data.shape = Nc_Data.force_shape;
-                Force_Data.max_amplitude = Nc_Data.max_amplitude;
                 Force_Data.orth_shape = Nc_Data.orth_force_shape;
-                Force_Data.orth_max_amplitude = Nc_Data.orth_max_amplitude;
                 obj.Applied_Force_Data = Force_Data;
             else
                 obj.Applied_Force_Data = [];
@@ -92,15 +90,6 @@ classdef Reduced_System
             num_r_modes = Static_Data.Model.reduced_modes;
             num_applied_forces = size(r,1) - num_r_modes;
 
-            % if obj.conservative
-            %     Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
-            %     Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",evec_r},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
-            %     Potential_Poly = integrate_polynomial(Force_Poly);
-            % else
-            %     Force_Poly = Polynomial(r,f,force_degree,"shift",SHIFT_ON,"scale",SCALE_ON,"nonconservative",num_applied_forces);
-            %     Displacement_Poly = Polynomial(r,displacement,disp_degree,"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement,"nonconservative",num_applied_forces);
-            %     Potential_Poly =  Polynomial(r,Static_Data.potential_energy,force_degree+1,"shift",SHIFT_ON,"scale",SCALE_ON,"nonconservative",num_applied_forces);
-            % end
             if isempty(Static_Data.Model.linear_disp)
                 disp_constraint = evec_r;
             else
@@ -110,7 +99,10 @@ classdef Reduced_System
             Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
             Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",disp_constraint},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
             Potential_Poly = integrate_polynomial(Force_Poly);
-
+            % Force_Poly = Polynomial(r,f,force_degree,"shift",SHIFT_ON,"scale",SCALE_ON);
+            % Displacement_Poly = Polynomial(r,displacement,disp_degree,"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
+            % Potential_Poly = Polynomial(r,Static_Data.potential_energy,force_degree+1,"shift",SHIFT_ON,"scale",SCALE_ON);
+            % 
             Reduced_Stiffness_Poly = differentiate_polynomial(Force_Poly);
 
             % ax = plot_static_data("potential",Static_Data);

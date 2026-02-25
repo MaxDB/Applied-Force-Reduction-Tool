@@ -29,12 +29,12 @@ switch type
             case "frequency"
                 amp = Eom_Input.Applied_Force_Data.amplitude;
                 %probably parameter jacobian needs to be tensor?
-                % funcs = {@(t,z,T) coco_forced_eom(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data),...
-                %     @(t,z,T) coco_forced_eom_dx(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data),...
-                %     @(t,z,T) coco_forced_eom_dTper(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data),...
-                %     @(t,z,T) coco_forced_eom_dt(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data)};
+                funcs = {@(t,z,T) coco_forced_eom(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data),...
+                    @(t,z,T) coco_forced_eom_dx(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data),...
+                    @(t,z,T) coco_forced_eom_dTper(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data),...
+                    @(t,z,T) coco_forced_eom_dt(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data)};
 
-                funcs = {@(t,z,T) coco_forced_eom(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data)};
+                % funcs = {@(t,z,T) coco_forced_eom(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data)};
             
                 T0 = 2*pi/p0;
                 coll_args = [funcs, {t0',z0', {'T'}, T0}];
@@ -116,7 +116,12 @@ prob = coco_add_slot(prob, 'energy_slot',@coco_energy_print,data,'cont_print');
 % Monitor additional output
 switch Additional_Output.output
     case "physical displacement"
-        disp_func = Additional_Output.output_func;
+        switch type
+            case "rom"
+                disp_func = Additional_Output.output_func;
+            case "fom"
+                disp_func = Additional_Output.fom_output_func;
+        end
         coco_disp_func = @(prob,data,u) coco_displacement(prob,data,u,disp_func);
 
         prob = coco_add_func(prob, 'displacement_monitor', coco_disp_func, data, 'regular', 'DISP', 'uidx', uidx,'remesh',@coco_energy_remesh);

@@ -71,7 +71,7 @@ classdef Forced_Solution < Dynamic_Solution
             Model = Rom.Model;
 
             Applied_Force_Data = Rom.Applied_Force_Data;
-            if ~isempty(Applied_Force_Data) && F_Data.amplitude > Applied_Force_Data.max_amplitude
+            if ~isempty(Applied_Force_Data)
                 error("")
             end
             % F_Data.shape = Applied_Force_Data.shape;
@@ -85,6 +85,8 @@ classdef Forced_Solution < Dynamic_Solution
                     damping_factors = Damp_Data.modal_damping_factors;
                     damping = diag(damping_factors);
                     Nonconservative_Input.damping = damping;
+                case "physical"
+                    Nonconservative_Input.damping = Damp_Data.damping_matrix;
                 otherwise
                     error("Damping model unsupported / not recognised ")
             end
@@ -97,7 +99,7 @@ classdef Forced_Solution < Dynamic_Solution
                     shape = Model.mass*Model.reduced_eigenvectors;
                     shape = shape(:,mode_map);
                     Nonconservative_Input.amplitude_shape = shape;
-                case "point force"
+                case "point"
                     num_dofs = Model.num_dof + length(Model.dof_boundary_conditions);
                     dof_map = zeros(num_dofs,1);
                     dof_map(F_Data.dof) = 1;

@@ -78,6 +78,16 @@ classdef Dynamic_Dataset
 
                     disp_func = @(input_disp) additional_physical_displacement(input_disp,Disp_Poly,Additional_Output,num_dof,dof_bcs);
                     Additional_Output.output_func = disp_func;
+                    
+                    Model = Rom.Model;
+                    if Model.system_type == "direct"
+                        [full_evecs,~] = eig(Model.stiffness,Model.mass);
+                        disp_func = @(input_disp) full_evecs(Additional_Output.dof,:)*input_disp;
+                        switch Additional_Output.type
+                            case "max"
+                                Additional_Output.fom_output_func = @(input_disp)max(abs(disp_func(input_disp)));
+                        end
+                    end
 
             end
             obj.Additional_Output = Additional_Output;

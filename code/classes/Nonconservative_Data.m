@@ -8,10 +8,7 @@ classdef Nonconservative_Data
         force_type
         
         force_shape
-        max_amplitude
-
         orth_force_shape
-        orth_max_amplitude
 
         amplitude
         frequency
@@ -45,7 +42,6 @@ classdef Nonconservative_Data
         %--------------------------------------------
         function obj = process_forcing(obj,Forcing_Data)
             obj.force_type = Forcing_Data.type;
-            max_amp = Forcing_Data.max_amplitude;
             switch obj.force_type
                 case "point"
                     shape = zeros(obj.Model.num_dof,1);
@@ -86,37 +82,23 @@ classdef Nonconservative_Data
                     Error("Unsupported force type: '" + obj.force_type + "'")
             end
 
-            [obj.orth_force_shape,obj.orth_max_amplitude] = obj.orthogonalise_force(shape,max_amp);
+            obj.orth_force_shape = obj.orthogonalise_force(shape);
             obj.force_shape = shape;
-            obj.max_amplitude = max_amp;
         end
         %--------------------------------------------
-        function [orth_force_shape,orth_max_amp] = orthogonalise_force(obj,force_shape,max_amp)
+        function orth_force_shape = orthogonalise_force(obj,force_shape)
+
             evec_r = obj.Model.reduced_eigenvectors;
-            if class(evec_r) == "Large_Matrix_Pointer"
-                evec_r = evec_r.load();
-            end
-            num_r_modes = size(evec_r,2);
-            phi_a = force_shape*max_amp;
-            
-            for iMode = 1:num_r_modes
-                evec_i = evec_r(:,iMode);
-                phi_a_r = evec_i*(evec_i'*obj.Model.mass*phi_a);
-                phi_a = phi_a - phi_a_r;
-                
-            end
+            % small_disp = obj.Model.stiffness\force_shape;
+            % phi_a = small_disp - evec_r*(evec_r'*obj.Model.mass*small_disp);
+            applied_force = force_shape - obj.Model.mass*evec_r*(evec_r'*force_shape);
+            phi_a = obj.Model.mass\applied_force;
+
             if norm(phi_a) == 0
                 error("No need to add force")
             end
-            phi_a_amp = norm(phi_a);
             norm_test = phi_a'*obj.Model.mass*phi_a;
-    
-            
             orth_force_shape = phi_a/sqrt(norm_test);
-
-            lambda_p = orth_force_shape'*force_shape*max_amp;
-            % lambda_r = evec_r'*force_shape*max_amp;
-            orth_max_amp = lambda_p;
         end
     end
 

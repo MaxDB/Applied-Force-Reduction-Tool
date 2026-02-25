@@ -9,30 +9,28 @@ num_coupling_coeffs = size(Disp_Data.beta_bar,1);
 num_coeffs = size(input_order,1);
 
 disp_span = 1:num_modes;
-z = x(disp_span,:);
+r = x(disp_span,:);
 
-r_span = 1:num_r_modes;
-p_span = (num_r_modes+1):num_modes;
 
 
 scale_factor = Force_Data.scale_factor;
 shift_factor = Force_Data.shift_factor;
 %assumes force and coupling from same dataset
 
-z_transformed = scale_factor.*(z + shift_factor);
+r_transformed = scale_factor.*(r + shift_factor);
 
 
 vel_span = disp_span + num_modes;
 
 x_dot_dt = zeros(2*num_modes,num_x);
 for iX = 1:num_x
-    z_i = z_transformed(:,iX);
+    r_i = r_transformed(:,iX);
     t_i = t(iX);
     period_i = period(iX);
 
     r_power_products = ones(num_coeffs,1);
     for iMode = 1:num_modes
-        r_power_products = r_power_products.*z_i(iMode).^input_order(:,iMode);
+        r_power_products = r_power_products.*r_i(iMode).^input_order(:,iMode);
     end
 
     r_products_coupling = r_power_products(1:num_coupling_coeffs,:);

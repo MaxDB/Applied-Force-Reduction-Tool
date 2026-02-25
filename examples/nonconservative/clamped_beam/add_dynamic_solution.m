@@ -2,7 +2,7 @@ clear
 close all
 set_visualisation_level(1)
 
-system_name = "clamped_beam_13";
+system_name = "clamped_beam_11001";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
@@ -29,7 +29,7 @@ Continuation_Opts.initial_discretisation_num = 20;
 Continuation_Opts.min_discretisation_num = 20;
 %-----------------------------------------%
 % 
-% Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+% Dyn_Data = Dyn_Data.add_backbone(1001,"opts",Continuation_Opts);
 % % compare_validation(Dyn_Data,"validation error",1,"all")
 % Dyn_Data.validate_solution(1,2)
 % 
@@ -93,4 +93,4 @@ Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuat
 % Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"type","rom","method","fc");
 
 
-Dyn_Data = Dyn_Data.get_fe_output("forced_response",2,67);
+Dyn_Data = Dyn_Data.get_fe_output("forced_response",1,54);

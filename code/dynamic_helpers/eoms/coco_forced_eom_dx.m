@@ -10,20 +10,18 @@ num_coupling_coeffs = size(Disp_Data.beta_bar,1);
 num_coeffs = size(input_order,1);
 
 disp_span = 1:num_modes;
-z = x(disp_span,:);
+r = x(disp_span,:);
 
-r_span = 1:num_r_modes;
-p_span = (num_r_modes+1):num_modes;
 
 scale_factor = Force_Data.scale_factor;
 shift_factor = Force_Data.shift_factor;
 %assumes force and coupling from same dataset
 
-z_transformed = scale_factor.*(z + shift_factor);
+r_transformed = scale_factor.*(r + shift_factor);
 
 
 vel_span = disp_span + num_modes;
-z_dot = x(vel_span,:);
+r_dot = x(vel_span,:);
 
 x_dot_dx = zeros(2*num_modes,2*num_modes,num_x);
 
@@ -38,14 +36,14 @@ end
 frequency = 2*pi./period;
 I_R = eye(num_modes);
 for iX = 1:num_x
-    z_i = z_transformed(:,iX);
-    z_dot_i = z_dot(:,iX);
+    r_i = r_transformed(:,iX);
+    r_dot_i = r_dot(:,iX);
     frequency_i = frequency(iX);
     t_i = t(iX);
 
     r_power_products = ones(num_coeffs,1);
     for iMode = 1:num_modes
-        r_power_products = r_power_products.*z_i(iMode).^input_order(:,iMode);
+        r_power_products = r_power_products.*r_i(iMode).^input_order(:,iMode);
     end
     
     r_products_force = r_power_products(1:num_force_coeffs,:);
@@ -66,35 +64,35 @@ for iX = 1:num_x
         + tensorprod(disp_dr2_prod,r_dr_products_coupling,d2_dims,1);
     
     %-------------
-    r_dr2_r_dot_prod = tensorprod(r_dr2_products_coupling,z_dot_i,3,1);
-    r_dr3_r_dot_prod = tensorprod(r_dr3_products_coupling,z_dot_i,4,1);
+    r_dr2_r_dot_prod = tensorprod(r_dr2_products_coupling,r_dot_i,3,1);
+    r_dr3_r_dot_prod = tensorprod(r_dr3_products_coupling,r_dot_i,4,1);
     
     convection_dr_dot = disp_dr_prod*(r_dr2_r_dot_prod);
     pre_convection_dr = tensorprod(disp_dr2_prod,r_dr2_r_dot_prod,d2_dims,1) ...
         + tensorprod(disp_dr_prod,r_dr3_r_dot_prod,2,1);
-    convection_dr = tensorprod(pre_convection_dr,z_dot_i,3,1);
-    convection = convection_dr_dot*z_dot_i;
+    convection_dr = tensorprod(pre_convection_dr,r_dot_i,3,1);
+    convection = convection_dr_dot*r_dot_i;
 
     %-------------
-    reduced_restoring_force_z = Force_Data.coeffs*r_products_force;
+    reduced_restoring_force = Force_Data.coeffs*r_products_force;
 
-    disp_dr_z_shape_prod = r_dr_products_coupling'*Force_Data.disp_z_force_beta;
-    restoring_force = disp_dr_z_shape_prod*reduced_restoring_force_z;
+    disp_dr_r_shape_prod = r_dr_products_coupling'*Force_Data.disp_r_force_beta;
+    restoring_force = disp_dr_r_shape_prod*reduced_restoring_force;
 
-    reduced_restoring_force_z_dz = Force_Data.coeffs*r_dr_products_force;
+    reduced_restoring_force_r_dr = Force_Data.coeffs*r_dr_products_force;
 
-    disp_dr2_z_shape_prod = tensorprod(pagetranspose(r_dr2_products_coupling),Force_Data.disp_z_force_beta,2,1);
-    restoring_force_dz_1 = tensorprod(disp_dr2_z_shape_prod,reduced_restoring_force_z,d2_dims,1); 
-    restoring_force_dz_2 = disp_dr_z_shape_prod*reduced_restoring_force_z_dz;
+    disp_dr2_r_shape_prod = tensorprod(pagetranspose(r_dr2_products_coupling),Force_Data.disp_r_force_beta,2,1);
+    restoring_force_dr_1 = tensorprod(disp_dr2_r_shape_prod,reduced_restoring_force,d2_dims,1); 
+    restoring_force_dr_2 = disp_dr_r_shape_prod*reduced_restoring_force_r_dr;
 
-    restoring_force_dz = restoring_force_dz_1 + restoring_force_dz_2;
+    restoring_force_dz = restoring_force_dr_1 + restoring_force_dr_2;
     %-------------
     r_dr2_damping_prod = tensorprod(pagetranspose(r_dr2_products_coupling),Damping_Data.damping_beta,2,1);
     r_dr_damping_prod = r_dr_products_coupling'*Damping_Data.damping_beta;
     
     damping_term_dr_dot = r_dr_damping_prod*r_dr_products_coupling;
-    damping_term = damping_term_dr_dot*z_dot_i;
-    damping_term_dr = tensorprod(tensorprod(r_dr2_damping_prod,r_dr_products_coupling,d2_dims,1) + tensorprod(r_dr_damping_prod,r_dr2_products_coupling,2,1),z_dot_i,d2_dims,1);
+    damping_term = damping_term_dr_dot*r_dot_i;
+    damping_term_dr = tensorprod(tensorprod(r_dr2_damping_prod,r_dr_products_coupling,d2_dims,1) + tensorprod(r_dr_damping_prod,r_dr2_products_coupling,2,1),r_dot_i,d2_dims,1);
     
     %-------------
     disp_dr_amp_prod = r_dr_products_coupling'*Applied_Force_Data.disp_force_beta;
