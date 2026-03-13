@@ -39,9 +39,9 @@ for arg_counter = 1:num_args/2
         case {"colour","color"}
             colour_num = keyword_values{arg_counter};
         case "tag"
-            tag = keyword_values{arg_counter}; 
+            tag = keyword_values{arg_counter};
         case "plot_special_points"
-            plot_special_points = keyword_values{arg_counter}; 
+            plot_special_points = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -72,8 +72,12 @@ if Solution.Solution_Type.orbit_type == "forced"
         extra_data = Solution.Solution_Type.amplitude;
         extra_data_name = "Amplitude";
     end
-    
+
 end
+
+r_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
+reduction_basis = "\{" + join(string(r_modes),",") + "\}";
+
 
 if PLOT_BIFURCATIONS
     switch Solution.Solution_Type.orbit_type
@@ -129,7 +133,7 @@ if plot_special_points
     if isempty(point_index)
         plot_special_points = 0;
     end
-    special_point_plot_settings = bifurcation_plot_settings{1,1}; 
+    special_point_plot_settings = bifurcation_plot_settings{1,1};
     marker_size_index = find(cellfun(@(iSetting) isequal(iSetting,"MarkerSize"),special_point_plot_settings));
     special_point_plot_settings{1,marker_size_index+1} = SPECIAL_POINT_SIZE;
     num_settings = size(special_point_plot_settings,2);
@@ -180,7 +184,7 @@ switch type
             case "stability"
                 energy = Solution.stability;
         end
-        
+
 
         if isempty(ax)
             figure
@@ -195,6 +199,9 @@ switch type
                 stab = range_stability(iSection);
                 index_range = index_ranges(iSection,1):index_ranges(iSection,2);
                 p = plot(ax,frequency(index_range),energy(index_range),'LineStyle',LINE_STYLE(stab+1),line_plot_settings{:});
+
+                data_tip_row = dataTipTextRow("Basis", reduction_basis + strings(size(index_range)));
+                p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
                 data_tip_row = dataTipTextRow("ID",orbit_ids(index_range));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
@@ -228,6 +235,9 @@ switch type
                 type_plot_settings = bifurcation_plot_settings{iType,1};
                 p = plot(ax,frequency(bifurcation_index),energy(bifurcation_index),type_plot_settings{:});
 
+                data_tip_row = dataTipTextRow("Basis", reduction_basis + strings(size(bifurcation_index)));
+                p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
                 data_tip_row = dataTipTextRow("ID",orbit_ids(bifurcation_index));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
@@ -236,7 +246,7 @@ switch type
 
                 data_tip_row = dataTipTextRow("Type",repelem(BIFURCATION_TYPE(iType),size(bifurcation_index,1),size(bifurcation_index,2)));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
-                
+
 
                 if plot_periodicity
                     data_tip_row = dataTipTextRow("Periodicity",periodicity_error(bifurcation_index));
@@ -251,6 +261,10 @@ switch type
 
         else
             p = plot(ax,frequency,energy,'LineStyle',LINE_STYLE(2),line_plot_settings{:});
+
+            data_tip_row = dataTipTextRow("Basis", reduction_basis + strings(size(orbit_ids)));
+            p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
             data_tip_row = dataTipTextRow("ID",orbit_ids);
             p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
@@ -267,6 +281,9 @@ switch type
 
         if plot_special_points
             p = plot(ax,frequency(point_index),energy(point_index),special_point_plot_settings{:});
+
+            data_tip_row = dataTipTextRow("Basis", reduction_basis + strings(size(point_index)));
+            p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
             data_tip_row_id = dataTipTextRow("ID",orbit_ids(point_index));
             p.DataTipTemplate.DataTipRows(end+1) = data_tip_row_id;
@@ -303,7 +320,7 @@ switch type
 
                 data_tip_row = dataTipTextRow("ID",orbit_ids(arrayfun(@(label) find(orbit_labels == label),FE_Output.orbit_labels(fe_plot_index ))));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
-                
+
                 data_tip_row = dataTipTextRow("Periodicity",FE_Data.periodicity(fe_plot_index));
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
@@ -316,7 +333,7 @@ switch type
                 end
                 fe_plot_index = ~fe_plot_index;
             end
-            
+
         end
         hold(ax,"off")
 
@@ -333,9 +350,9 @@ switch type
                 ylabel(ax,"max eig magnitude")
         end
 
-        
+
     case "amplitude"
-       
+
         amplitude = Solution.amplitude;
         Solution_Type = Solution.Solution_Type;
         num_modes = size(amplitude,1);
@@ -345,7 +362,7 @@ switch type
         else
             r_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
         end
-        
+
         if num_modes > size(r_modes,2)
             r_modes = [r_modes,1001];
         end
@@ -373,7 +390,7 @@ switch type
                 plotted_modes(num_axes+iMode) = neglected_modes(iMode);
             end
         end
-        
+
 
 
 
@@ -394,6 +411,9 @@ switch type
                     stab = range_stability(iSection);
                     index_range = index_ranges(iSection,1):index_ranges(iSection,2);
                     p = plot(ax{ax_id,1},frequency(index_range),amplitude(iMode,index_range),'LineStyle',LINE_STYLE(stab+1),line_plot_settings{:});
+
+                    data_tip_row = dataTipTextRow("Basis", reduction_basis + strings(size(index_range)));
+                    p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
                     data_tip_row = dataTipTextRow("ID",orbit_ids(index_range));
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
@@ -429,6 +449,9 @@ switch type
                     type_plot_settings = bifurcation_plot_settings{iType,1};
                     p = plot(ax{ax_id,1},frequency(bifurcation_index),amplitude(iMode,bifurcation_index),type_plot_settings{:});
 
+                    data_tip_row = dataTipTextRow("Basis", reduction_basis + strings(size(bifurcation_index)));
+                    p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
                     data_tip_row = dataTipTextRow("ID",orbit_ids(bifurcation_index));
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
@@ -450,6 +473,10 @@ switch type
                 end
             else
                 p = plot(ax{ax_id,1},frequency,amplitude(iMode,:),'LineStyle',LINE_STYLE(2),line_plot_settings{:});
+
+                data_tip_row = dataTipTextRow("Basis", reduction_basis + strings(size(orbit_ids)));
+                p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
+
                 data_tip_row = dataTipTextRow("ID",orbit_ids);
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
@@ -468,7 +495,7 @@ switch type
                         continue
                     end
                     p = plot(ax{ax_id,1},FE_Data.frequency(fe_plot_index ),FE_Data.amplitude(iMode,fe_plot_index),"Color",FE_DATA_COLOUR(iFE_plot,:),fe_data_plot_settings{:});
-                    
+
                     data_tip_row = dataTipTextRow("ID",orbit_ids(arrayfun(@(label) find(orbit_labels == label),FE_Output.orbit_labels(fe_plot_index ))));
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 

@@ -59,7 +59,7 @@ classdef Dynamic_Dataset
                         node_position = read_abaqus_node_position(geometry);
 
 
-                        node_displacement = node_position - 222;
+                        node_displacement = node_position - dof_coords;
                         node_distance = sqrt(sum(node_displacement.^2,2));
                         [min_distance,closest_node] = min(node_distance); %#ok<ASGLU>
 

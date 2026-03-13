@@ -8,12 +8,12 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "mass_spring_roller";
 
-energy_limit = 0.06;
-initial_modes = [1];
+energy_limit = 0.05;
+initial_modes = [1,2];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.additional_data = "none";
+Static_Opts.additional_data = "stiffness";
 Static_Opts.max_parallel_jobs = 1; %be careful!
 %------------------------------------------%
 

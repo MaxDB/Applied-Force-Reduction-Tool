@@ -33,7 +33,7 @@ if isstring(Dyn_Data)
 end
 
 if isstring(h_modes) && h_modes == "all"
-    h_modes = 1:Dyn_Data.Dynamic_Model.Model.Static_Options.num_validation_modes; 
+    h_modes = 1:max(Dyn_Data.Dynamic_Model.Model.low_frequency_modes); 
 end
 
 if isstring(solution_num) && solution_num == "last"

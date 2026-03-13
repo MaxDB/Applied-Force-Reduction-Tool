@@ -43,7 +43,8 @@ test_ic = q(:,min_index);
 
 potential_ic = initial_condition_sweep(Dyn_Data.Dynamic_Model,2*pi/orbit.T,test_ic);
 
-
+Continuation_Opts.initial_inc = 5e-1;
+Continuation_Opts.max_inc = 5e-1;
 Dyn_Data = Dyn_Data.add_backbone(1,"ic",potential_ic,"opts",Continuation_Opts);
 
 

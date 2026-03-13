@@ -1,5 +1,6 @@
 function [h_frequency_alt,upsilon] = h_harmonic_balance(h_terms,t0,omega,num_harmonics)
 
+
 [h_inertia,h_conv,h_stiff,h_force] = h_terms{:};
 num_h_modes = size(h_force,1);
 
@@ -169,11 +170,12 @@ h_frequency = reshape(h_frequency_coeffs,num_coefficients,num_h_modes)';
 % tiledlayout("flow")
 % for iPlot = 1:num_h_modes
 %     nexttile
+%     title(string(num_harmonics))
 %     hold on
-%     plot(t0,inertia_force(iPlot,:),"b")
-%     plot(t0,conv_force(iPlot,:),"r")
+%     plot(t0,inertia_force(iPlot,:),"r")
+%     plot(t0,conv_force(iPlot,:),"b")
 %     plot(t0,restoring_force(iPlot,:),"g")
-%     plot(t0,h_force(iPlot,:),"y")
+%     plot(t0,-h_force(iPlot,:),"m")
 %     plot(t0,net_force(iPlot,:),"k")
 %     hold off
 % end

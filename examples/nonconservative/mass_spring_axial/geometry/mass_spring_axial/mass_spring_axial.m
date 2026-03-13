@@ -1,11 +1,18 @@
 % M*x_ddot + C*x_dot + K*x + f(x) = F 
 %%Parameters
-Parameters.m = 0.1;
-Parameters.k1 = 1e3;
-Parameters.k3 = 1e3;
-% Parameters.c = 1;
-Parameters.dofs = 10;
+num_masses = 10;
+density = 7800;
+E = 200e9;
+length = 0.3;
+radius = 0.005;
 
+%----------------
+area = pi*radius^2;
+num_springs = num_masses;
+Parameters.dofs = num_masses;
+Parameters.m = density*length*area/num_masses;
+Parameters.k1 = num_springs*E*area/length;
+Parameters.k3 = -k1*1000;
 %%linear mass
 
 eom.M = eye(Parameters.dofs).*Parameters.m;
@@ -48,6 +55,7 @@ Analytic_Eom = Analytic_System(system_name,eom,"parameters",Parameters);
 
 
 freq = sqrt(eig(eom.K,eom.M)); 
+disp(freq/freq(1))
 
 %-------------------------------------------------------------------------%
 function fnx = nonlinear_restoring_force(x,Parameters)

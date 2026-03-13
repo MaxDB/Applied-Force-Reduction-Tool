@@ -1,5 +1,5 @@
 function Static_Data = verify_validation_polynomials(Static_Data)
-MAXIMUM_DEGREE = 12;
+MAXIMUM_DEGREE = 13;
 load_data = 1;
 save_data = 1;
 
@@ -100,8 +100,8 @@ for iDegree_pair = 1:num_degree_pairs
     Rom_Two = Reduced_System(Static_Data,"id",3);
 
 
-    Disp_Error_Inputs.Beta_Bar_Data_One = Rom_One.get_h_beta_bar(Rom_One.Low_Frequency_Coupling_Gradient_Polynomial.coefficients,Rom_One.Physical_Displacement_Polynomial.coefficients);
-    Disp_Error_Inputs.Beta_Bar_Data_Two = Rom_Two.get_h_beta_bar(Rom_Two.Low_Frequency_Coupling_Gradient_Polynomial.coefficients,Rom_Two.Physical_Displacement_Polynomial.coefficients);
+    Disp_Error_Inputs.Beta_Bar_Data_One = Rom_One.get_h_beta_bar("backbone",Rom_One.Low_Frequency_Coupling_Gradient_Polynomial.coefficients,Rom_One.Physical_Displacement_Polynomial.coefficients);
+    Disp_Error_Inputs.Beta_Bar_Data_Two = Rom_Two.get_h_beta_bar("backbone",Rom_Two.Low_Frequency_Coupling_Gradient_Polynomial.coefficients,Rom_Two.Physical_Displacement_Polynomial.coefficients);
     Disp_Error_Inputs.input_order = Rom_Two.get_max_input_order;
     new_error = cell(1,num_verified_seps);
 

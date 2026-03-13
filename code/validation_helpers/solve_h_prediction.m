@@ -78,7 +78,7 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
             case "forced"
 
                 period = 2*pi/omega;
-                x_dot = reduced_eom_value(t0,x,period);
+                x_dot = reduced_eom(t0,x,period*ones(size(t0)));
                 r_ddot  = x_dot(vel_span,:);
                 [h_inertia,h_conv,h_stiff,h_force] = h_terms(t0,r,r_dot,r_ddot,period);
                 [h_inertia_v,h_conv_v,h_stiff_v,h_force_v] = h_terms_verification(t0,r,r_dot,r_ddot,period);
@@ -104,6 +104,9 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
         Validation_Orbit = [];
         while ~solution_converged
             solve_h_start = tic;
+            if num_harmonics > length(t0)-2
+                num_harmonics = length(t0)-2;
+            end
             [h_frequency] = h_solver(validation_eq_terms,t0,omega,num_harmonics);
             [solution_converged,num_harmonics,Validation_Orbit] = check_h_convergence(validation_eq_terms,r_force,h_frequency,t0,omega,num_harmonics,Validation_Opts);
             solve_h_time = toc(solve_h_start);

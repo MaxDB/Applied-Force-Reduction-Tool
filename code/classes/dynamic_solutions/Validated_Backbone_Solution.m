@@ -97,7 +97,7 @@ classdef Validated_Backbone_Solution
             
             get_rom_dir = @(Rom) Rom.data_path + "rom_data_" + Rom.id;
             get_file_name = @(Rom) get_rom_dir(Rom) + "\" + preload_data + ".mat";
-            save(get_file_name(Verification_Rom),"Eom_Input")
+            % save(get_file_name(Verification_Rom),"Eom_Input")
 
 
             obj = solve_h_prediction(obj,BB_Sol,Validation_Rom,Verification_Rom, Validated_BB_Settings);

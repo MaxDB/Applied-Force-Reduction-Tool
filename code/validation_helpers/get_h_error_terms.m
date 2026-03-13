@@ -21,21 +21,12 @@ h_disp_r_disp_beta_bar = Eom_Input.Beta_Bar_Data.h_disp_r_disp;
 
 input_order = Eom_Input.input_order;
 
-if num_h_disp_grad_coeffs > num_disp_coeffs
-    disp_diff_mapping = Eom_Input.Disp_Grad_Data.diff_mapping;
-    disp_diff_scale_factor = Eom_Input.Disp_Grad_Data.diff_scale_factor;
-    num_max_disp_coeffs = num_h_disp_grad_coeffs;
-else
-    disp_diff_mapping = Eom_Input.Physical_Disp_Data.diff_mapping;
-    disp_diff_scale_factor = Eom_Input.Physical_Disp_Data.diff_scale_factor;
-    num_max_disp_coeffs = num_disp_coeffs;
-end
-
 
 h_inertia = zeros(num_h_modes,num_h_modes,num_x);
 h_conv = zeros(num_h_modes,num_h_modes,num_x);
 h_stiff = zeros(num_h_modes,num_h_modes,num_x);
 h_force = zeros(num_h_modes,num_x);
+
 for iX = 1:num_x
     r_ddot_i = r_ddot(:,iX);
     r_dot_i = r_dot(:,iX);
@@ -92,8 +83,11 @@ for iX = 1:num_x
     r_dr_r_ddot_prod = r_dr_products_grad*r_ddot_i;
     stiff_sum = r_d2r_r_dot_r_dot_prod + r_dr_r_ddot_prod;
     stiff_prod = tensorprod(H_beta_prod,stiff_sum,3,1);
+    
+    h_force_grad_pre = tensorprod(Eom_Input.Beta_Bar_Data.h_disp_h_force,h_force_grad,3,1);
+    h_force_grad_projected = squeeze(tensorprod(r_products_grad',h_force_grad_pre,2,1));
 
-    h_stiff(:,:,iX) = stiff_prod + h_force_grad;
+    h_stiff(:,:,iX) = stiff_prod + h_force_grad_projected;
 
     %%% Force
     H_beta_disp_prod = squeeze(tensorprod(r_products_grad',h_disp_r_disp_beta_bar,2,1));
@@ -101,10 +95,11 @@ for iX = 1:num_x
     disp_r_dr_r_ddot_prod = r_dr_products_disp*r_ddot_i;
     disp_stiff_sum = disp_r_d2r_r_dot_r_dot_prod + disp_r_dr_r_ddot_prod;
     force_1 = H_beta_disp_prod*disp_stiff_sum;
-    force_1(1:num_r_modes,1) = force_1(1:num_r_modes,1) + r_force;
 
-    % force_1(1:num_r_modes,1) = 0;
-    h_force(:,iX) = -force_1;
+    force_2_pre = tensorprod(Eom_Input.Beta_Bar_Data.h_disp_r_force,r_force,3,1);
+    force_2 = squeeze(tensorprod(r_products_grad',force_2_pre,2,1))';
+
+    h_force(:,iX) = -(force_1 + force_2);
 end
 end
 

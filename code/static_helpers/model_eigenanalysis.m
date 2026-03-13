@@ -35,6 +35,11 @@ end
 
 Model.dof_boundary_conditions = matrix_bcs;
 
+if Model.reduced_modes == 0
+    Model.reduced_eigenvalues = 0;
+    Model.reduced_eigenvectors = zeros(Model.num_dof,1);
+    return
+end
 
 if Model.Static_Options.load_custom_eigendata
 

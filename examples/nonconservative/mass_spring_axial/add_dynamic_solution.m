@@ -2,7 +2,7 @@ clear
 % close all
 set_visualisation_level(1)
 
-system_name = "mass_spring_axial_1";
+system_name = "mass_spring_axial_0";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 Additional_Output.output = "physical displacement";
@@ -17,7 +17,7 @@ Continuation_Opts.min_inc = 1e0;
 Continuation_Opts.forward_steps = 500;
 Continuation_Opts.backward_steps = 0;
 
-Continuation_Opts.min_discretisation_num = 20;
+Continuation_Opts.min_discretisation_num = 50;
 Continuation_Opts.collocation_degree = 8;
 
 %-----------------------------------------%
@@ -30,7 +30,15 @@ Continuation_Opts.collocation_degree = 8;
 % Damping_Data.mass_factor = 0;
 % Damping_Data.stiffness_factor = 0.0035;
 
-damping_coeff = 100;
+damping_ratio = 0.05;
+
+Model = Dyn_Data.Dynamic_Model.Model;
+damping_matrix_base = get_chain_damping_matrix(1,Model);
+r_evec =Model.reduced_eigenvectors(:,1);
+modal_damping_factor = r_evec'*damping_matrix_base*r_evec;
+damping_coeff = 2*sqrt(Model.reduced_eigenvalues(1))*damping_ratio/modal_damping_factor;
+
+damping_coeff =  2e3;
 Damping_Data.damping_type = "physical";
 Damping_Data.damping_matrix = get_chain_damping_matrix(damping_coeff,Dyn_Data.Dynamic_Model.Model);
 
@@ -41,11 +49,18 @@ Damping_Data.damping_matrix = get_chain_damping_matrix(damping_coeff,Dyn_Data.Dy
 % Force_Data.frequency = 20;
 % Force_Data.amplitude = 200;
 
-Force_Data.type = "point";
-Force_Data.dof = 10;
+
+mass = Model.mass;
+stiffness = Model.stiffness;
+[evec,eval] = eig(stiffness,mass);
+force_shape = sum(evec,2);
+
+Force_Data.type = "shape";
+Force_Data.shape = force_shape;
 Force_Data.continuation_variable = "frequency";
-Force_Data.frequency = 24;
-Force_Data.amplitude = 1500;
+Force_Data.frequency = 2.8e4;
+% Force_Data.amplitude = 4e4;
+Force_Data.amplitude = 7.5e3;
 
 
 
@@ -53,19 +68,21 @@ Force_Data.amplitude = 1500;
 % --------- Continuation Settings ---------%
 Continuation_Opts.initial_inc = 1e1;
 Continuation_Opts.max_inc = 1e2;
-Continuation_Opts.min_inc = 1e0;
+Continuation_Opts.min_inc = 1e-2;
 
-Continuation_Opts.backward_steps = 500;
-Continuation_Opts.frequency_range = [5,25];
+Continuation_Opts.forward_steps = 55;
+Continuation_Opts.backward_steps = 5;
+Continuation_Opts.frequency_range = [2.2e4,3e4];
 %-----------------------------------------%
 % 
 
 % % 
+% Continuation_Opts.min_discretisation_num = 50;
 Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"type","rom");
-Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"type","fom");
+% Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"type","fom");
 
 
-
+% compare_validation(Dyn_Data,"validation error",2,"all")
 
 function damping_matrix = get_chain_damping_matrix(params,Model)
 num_dof = Model.num_dof;

@@ -18,19 +18,19 @@ switch orbit_type
         Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("h_analysis","additional_output",Validated_BB_Settings.Additional_Output);
     case "forced"
         
-        Nonconservative_Input = Solution.get_nonconservative_input(Validation_Rom.Model);
+        Nonconservative_Input = Solution.get_nonconservative_input(Validation_Rom);
         amp = Nonconservative_Input.amplitude;
-        Eom_Input = Validation_Rom.get_solver_inputs("coco_frf",Nonconservative_Input);
+        Eom_Input = Validation_Rom.get_solver_inputs("coco_frf","additional_input",Nonconservative_Input);
         reduced_eom = @(t,z,T) coco_forced_eom(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data);
         
-        Validation_Input = Validation_Rom.get_solver_inputs("forced_h_prediction",Nonconservative_Input);
+        Validation_Input = Validation_Rom.get_solver_inputs("forced_h_prediction","additional_input",Nonconservative_Input);
         h_terms = @(t,r,r_dot,r_ddot,period) get_forced_h_error_terms(t,r,r_dot,r_ddot,amp,period,Validation_Input);
 
         if nargout == 1
             return
         end
 
-        Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("forced_h_analysis",Nonconservative_Input);
+        Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("forced_h_analysis","additional_input",Nonconservative_Input,"additional_output",Validated_BB_Settings.Additional_Output);
 end
 
 

@@ -85,6 +85,10 @@ classdef Polynomial
             obj.input_dimension = size(input_data,1);
             obj.output_dimension = size(output_data,1);
 
+            if all([obj.input_dimension,obj.output_dimension] == 0)
+                return
+            end
+
             num_coeffs = Polynomial.input_combinations(degree,obj.input_dimension);
             input_index = Polynomial.get_input_index(degree,obj.input_dimension);
 
@@ -374,6 +378,9 @@ classdef Polynomial
         %-----------------------------------------------------------------%
         function Poly_Int = integrate_polynomial(obj)
             Poly_Int = obj;
+            if isempty(obj.coefficients)
+                return
+            end
             Poly_Int.polynomial_degree = obj.polynomial_degree + 1;
             Poly_Int.output_dimension = 1;
             

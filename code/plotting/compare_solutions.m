@@ -64,6 +64,10 @@ for iSol = 1:num_solutions
     num_system_sols = length(system_sols);
     for jSol = 1:num_system_sols
         Solution = Dyn_Data.load_solution(system_sols(jSol));
+        if isnumeric(Solution) && Solution == -1
+            warning("Solution not found")
+            continue
+        end
         Sol_Type = Solution.Solution_Type;
 
 
@@ -80,7 +84,9 @@ for iSol = 1:num_solutions
                             amplitude_map(round(amplitude)) = numEntries(amplitude_map) + 1;
                        end
                     end
-                    colour_sol = amplitude_map(round(amplitude));
+                    if num_solutions == 1
+                        colour_sol = amplitude_map(round(amplitude));
+                    end
                 else
                     colour_sol = "grey";
                 end

@@ -41,9 +41,9 @@ switch type
                 if ~isempty(Continuation_Settings.frequency_range)
                     parameter_range = flip(2*pi./Continuation_Settings.frequency_range)';
                 else
-                    parameter_range = Continuation_Settings.parameter_range';
+                    parameter_range = Continuation_Settings.parameter_range;
                 end
-                cont_args = { 1, {'po.period', 'T'}, parameter_range};
+                cont_args = { 1, {'po.period', 'T'}, {parameter_range,parameter_range}};
         end
     case "fom"
         Model = Rom.Model;

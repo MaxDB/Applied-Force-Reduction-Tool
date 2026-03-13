@@ -130,6 +130,14 @@ classdef Dynamic_System
 
             %Extract  data from input file
             obj = obj.set_problem_data;
+            
+            place_holder_rom = obj.reduced_modes == 0;
+            if place_holder_rom
+                geometry_path = "geometry\" + obj.system_name + "\" + obj.system_name;
+                Analytic_Eom = load_analytic_system(geometry_path);
+                M = Analytic_Eom.linear_mass;
+                obj.reduced_modes = 1:length(M);
+            end
 
             %Find mass and stiffness matricies and find eigenvectors
             matrix_time_start = tic;
@@ -137,6 +145,11 @@ classdef Dynamic_System
             matrix_time = toc(matrix_time_start);
             log_message = sprintf("Eigenvectors: %.1f seconds" ,matrix_time);
             logger(log_message,2)
+
+            if place_holder_rom
+                obj.reduced_modes = 0;
+                return
+            end
 
 
             if ~isempty(nc_modes)
@@ -684,17 +697,20 @@ classdef Dynamic_System
                 switch Damping_Data.damping_type
                     case "rayleigh"
                         damping = get_rayleigh_damping_matrix(Damping_Data,obj);
-                        % evec = obj.reduced_eigenvectors;
-                        % damping = evec'*damping*evec;
+                        evec = obj.reduced_eigenvectors;
+                        modal_damping = evec'*damping*evec;
                         %need to transform to modal coordinates
                 end
-                if ~isempty(Force_Data)
-                    error("forced full-order simulation not implemented")
-                end
+                force = Force_Data.shape;
+                modal_forcing = evec'*force;
+                amp = Force_Data.amplitude;
+                period = 2*pi/Force_Data.frequency;
+
                 Eom_Input = Analytic_Eom.get_solver_inputs("free");
                 %implement properly later
 
-                eom = @(t,z) direct_forced_eom(t,z,Eom_Input.modal_restoring_force,damping);
+                eom = @(t,z) direct_forced_eom(t,z,amp,period,Eom_Input.modal_restoring_force,modal_damping,modal_forcing);
+              
 
             end
 

@@ -52,12 +52,6 @@ force_degree = INITIAL_FORCE_DEGREE;
 disp_degree = INITIAL_DISPLACEMENT_DEGREE;
 for iIteration = 1:(max_iterations+1)
     validation_iteration_start = tic;
-    % if force_degree > INITIAL_FORCE_DEGREE
-    %     force_degree = force_degree - 2;
-    % end
-    % if disp_degree > INITIAL_DISPLACEMENT_DEGREE
-    %     disp_degree = disp_degree - 2;
-    % end
     
     if  iIteration > length(num_added_points)
         added_iteration_points = num_added_points(end);
@@ -461,7 +455,7 @@ for iIteration = 1:(max_iterations+1)
             new_sep_id(:,removal_index) = [];
             switch Static_Data.additional_data_type
                 case {"stiffness","perturbation"}
-                    additional_data = additional_data.remove_data(removal_index);
+                    additional_data(:,:,removal_index) = [];
                 case "none"
             end
         end

@@ -13,6 +13,9 @@ r_modes = Model.reduced_modes;
 
 
 mode_index = find(r_modes == backbone_num);
+if r_modes == 0
+    mode_index = backbone_num;
+end
 
 
 natural_freq = sqrt(r_eigenvalues(mode_index));
@@ -54,8 +57,11 @@ switch type
         eom = @(z) direct_eom(0,z,zeta,Eom_Input.modal_restoring_force);
 end
 
-
-amplitude = min(abs(Rom.reduced_displacement_limits(mode_index,:)))*INITIAL_AMP_SCALE_FACTOR;
+if ~isempty(Rom.reduced_displacement_limits)
+    amplitude = min(abs(Rom.reduced_displacement_limits(mode_index,:)))*INITIAL_AMP_SCALE_FACTOR;
+else
+    amplitude = 1e-6;
+end
 for iIteration = 1:MAX_ITERATIONS
     z = y*amplitude;
     x_ddot_linear = x_ddot*amplitude;

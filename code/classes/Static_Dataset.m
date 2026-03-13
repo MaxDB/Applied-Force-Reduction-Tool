@@ -73,7 +73,9 @@ classdef Static_Dataset
 
 
             obj = update_verification_opts(obj,Verification_Opts);
-
+            if obj.Model.reduced_modes == 0
+                return
+            end
             % if nargin == 2
             obj = obj.create_dataset;
             static_dataset_verificiation_plot(obj)

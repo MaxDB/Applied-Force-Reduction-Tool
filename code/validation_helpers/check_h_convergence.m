@@ -46,9 +46,9 @@ else
         h_cos = h_frequency(:,alpha_index).*cos_t;
         h_sin = h_frequency(:,beta_index).*sin_t;
         h_n_plus_two = h_n_plus_two + h_cos + h_sin;
-
-        h_dot_sin = h_dot_frequency(:,alpha_index).*sin_t;
-        h_dot_cos = h_dot_frequency(:,beta_index).*cos_t;
+        
+        h_dot_cos = h_dot_frequency(:,beta_index).*sin_t;
+        h_dot_sin = h_dot_frequency(:,alpha_index).*cos_t;
         h_dot_n_plus_two = h_dot_n_plus_two + h_dot_cos + h_dot_sin;
 
         h_ddot_cos = h_ddot_frequency(:,alpha_index).*cos_t;
@@ -56,7 +56,7 @@ else
         h_ddot_n_plus_two = h_ddot_n_plus_two + h_ddot_cos + h_ddot_sin;
         
         debug = 0;
-        eom_error_n_plus_two = get_eom_error(h_n_plus_two,h_dot_n_plus_two,h_ddot_n_plus_two,h_inertia,h_conv,h_stiff,h_force,debug);
+        eom_error_n_plus_two = get_eom_error(h_n_plus_two,h_dot_n_plus_two,h_ddot_n_plus_two,h_inertia,h_conv,h_stiff,h_force,debug,iHarmonic);
         
         % convergence_error = get_convergence_error(eom_error_n,eom_error_n_plus_two);
         % convergence_error = get_convergence_error(h_n,h_n_plus_two);
@@ -208,7 +208,7 @@ function convergence_error = get_convergence_error(x_1,x_2)
 convergence_error = abs(x_2 - x_1)./max(abs(x_2),[],2);
 end
 %--------------------
-function norm_eom_error = get_eom_error(h,h_dot,h_ddot,h_inertia,h_conv,h_stiff,h_force,debug)
+function norm_eom_error = get_eom_error(h,h_dot,h_ddot,h_inertia,h_conv,h_stiff,h_force,debug,harmonic)
 num_t_points = size(h,2);
 num_h_modes = size(h,1);
 
@@ -223,7 +223,7 @@ for iT = 1:num_t_points
     conv_force(:,iT) = h_conv(:,:,iT)*h_dot(:,iT);
     stiff_force(:,iT) = h_stiff(:,:,iT)*h(:,iT);
 
-    max_force = max([max_force,acc_force(:,iT),conv_force(:,iT),stiff_force(:,iT)],[],2);
+    max_force = max([max_force,abs(acc_force(:,iT)),abs(conv_force(:,iT)),abs(stiff_force(:,iT))],[],2);
 
     eom_error(:,iT) = (acc_force(:,iT) + conv_force(:,iT) + stiff_force(:,iT) - h_force(:,iT));
 end
@@ -233,14 +233,16 @@ if ~debug
     return
 end
 figure
+
 tiledlayout(num_h_modes,1);
 for iMode = 1:num_h_modes
     nexttile
+    title(string(harmonic))
     hold on
     plot(acc_force(iMode,:),"r")
     plot(conv_force(iMode,:),"b")
     plot(stiff_force(iMode,:),"g")
-    plot(h_force(iMode,:),"m")
+    plot(-h_force(iMode,:),"m")
     plot(eom_error(iMode,:),"k")
     hold off
 end
