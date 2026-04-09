@@ -1,4 +1,4 @@
-function [r,theta,f,E,additional_data,sep_id] = ...
+function [r,physical_displacement,f,E,additional_data,sep_id] = ...
     add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,add_data_type,clean_data,Model,job_id,Initial_Data,restart_type)
 
 JOB_NAME = "static_analysis";
@@ -8,6 +8,12 @@ conservative = true;
 if iscell(Model)
     [Model,Nc_Data] = Model{:};
     conservative = isempty(Nc_Data);
+end
+
+
+data_method = "steps";
+if Static_Opts.follower_force
+    data_method = "incs";
 end
 
 
@@ -48,11 +54,7 @@ if ~exist("restart_type","var")
     restart_type = zeros(1,num_seps);
 end
 
-%----
-if isscalar(num_loadcases)
-    num_loadcases = ones(1,num_seps)*num_loadcases;
-end
-%----
+
 
 
 if ~exist("Initial_Data","var")
@@ -68,6 +70,24 @@ static_settings(1) = Static_Opts.initial_time_increment;
 static_settings(2) = Static_Opts.total_step_time;
 static_settings(3) = Static_Opts.minimum_time_increment;
 static_settings(4) = Static_Opts.maximum_time_increment;
+
+num_incs = 1;
+if data_method == "incs"
+    load_inc = static_settings(2)/num_loadcases;
+    static_settings(1) = load_inc;
+    static_settings(3) = min(load_inc,static_settings(3));
+    static_settings(4) = load_inc;
+    
+    num_incs = num_loadcases;
+    num_loadcases = 1;
+    add_data_type = "none";
+end
+
+%----
+if isscalar(num_loadcases)
+    num_loadcases = ones(1,num_seps)*num_loadcases;
+end
+%----
 
 switch Static_Opts.output_format 
     case "text"
@@ -303,11 +323,16 @@ if RESET_TO_ZERO
     end
 end
 step_type = strings(total_steps,1);
+step_incs = zeros(total_steps,1);
 sep_ends = zeros(num_seps,1);
 
 
 load_step_counter = 0;
 total_step_counter = 0;
+
+if data_method == "incs"
+    sep_force_shape = zeros(all_dofs,num_seps);
+end
 
 try
     input_ID = fopen("temp\" + new_job + ".inp","w");
@@ -336,6 +361,10 @@ try
         physical_force_bc = force_transform*sep_force;
         physical_force = zeros(all_dofs,1);
         physical_force(node_map,1) = physical_force_bc(:,1);
+
+        if data_method == "incs"
+            sep_force_shape(:,iSep) = physical_force;
+        end
 
         physical_base_force_bc = force_transform*sep_base_force;
         physical_base_force = zeros(all_dofs,1);
@@ -422,19 +451,30 @@ try
                 step_max_inc = max_inc;
                 load_op = "MOD";
             end
+            
+            
+            if data_method == "incs"
+                inc_frequency = 1;
+            else
+                inc_frequency = step_max_inc;
+            end
 
             static_step = static_template;
             static_step{step_def_line,1} = "*Step, name=STATIC_STEP_" + load_step_counter + ", nlgeom=YES, extrapolation=NO, inc=" + step_max_inc;
-
             static_step{load_def_line-1} = "*Cload, OP = " + load_op;
+
+            if Static_Opts.follower_force
+                static_step{step_def_line,1} = static_step{step_def_line,1} + ", UNSYMM=YES";
+                static_step{load_def_line-1} = static_step{load_def_line-1} + ", FOLLOWER";
+            end
             
             switch output_type
                 case "PRINT"
-                    static_step{disp_print_line} = "*NODE "+ output_type +",SUMMARY=NO,FREQUENCY = " + step_max_inc;
-                    static_step{energy_print_line} = "*ENERGY "+ output_type +", FREQUENCY = " + step_max_inc;
+                    static_step{disp_print_line} = "*NODE "+ output_type +",SUMMARY=NO,FREQUENCY = " + inc_frequency;
+                    static_step{energy_print_line} = "*ENERGY "+ output_type +", FREQUENCY = " + inc_frequency;
                 case "FILE"
-                    static_step{disp_print_line} = "*NODE "+ output_type +",FREQUENCY = " + step_max_inc;
-                    static_step{energy_print_line} = "*ENERGY "+ output_type +", FREQUENCY = " + step_max_inc;
+                    static_step{disp_print_line} = "*NODE "+ output_type +",FREQUENCY = " + inc_frequency;
+                    static_step{energy_print_line} = "*ENERGY "+ output_type +", FREQUENCY = " + inc_frequency;
             end
 
             fprintf(input_ID,'%s\r\n',static_step{1:(load_def_line-1),1});
@@ -442,6 +482,11 @@ try
             fprintf(input_ID,'%s\r\n',static_step{(load_def_line+1):end,1});
 
             step_type(total_step_counter,1) = "static";
+            if data_method == "incs"
+                step_incs(total_step_counter) = num_incs;
+            else
+                step_incs(total_step_counter) = 1;
+            end
 
             switch add_data_type
                 case "stiffness"
@@ -464,7 +509,7 @@ try
                     step_type(total_step_counter,1) = "perturbation";
             end
         end
-        sep_ends(iSep) = load_step_counter;
+        sep_ends(iSep) = load_step_counter*num_incs;
         
     end
 catch caught_error
@@ -493,13 +538,26 @@ data_processing_time_start = tic;
 
 switch Static_Opts.output_format
     case "text"
-        [displacement,E,additional_data,additional_data_time] = read_abaqus_static_data(new_job,step_type,num_nodes,num_dimensions);
+        [displacement,E,additional_data,additional_data_time] = read_abaqus_static_data(new_job,step_type,num_nodes,num_dimensions,step_incs);
     case "binary"
         [displacement,E,additional_data,additional_data_time] = read_abaqus_fil_data(new_job,step_type,num_nodes,num_dimensions);
 end
 
 displacement_bc = displacement(node_map,:);
 f = modal_force;
+if data_method == "incs"
+    f = zeros(num_r_modes,size(displacement_bc,2));
+    sep_id_base = sep_id;
+    sep_id = zeros(1,size(displacement_bc,2));
+
+    num_final_force = size(modal_force,2);
+    for iForce = 1:num_final_force
+        inc_span = (1:num_incs) + (iForce-1)*num_incs;
+        inc_multiple = load_inc:load_inc:1;
+        f(:,inc_span) = modal_force(:,iForce) .*inc_multiple;
+        sep_id(inc_span) = sep_id_base(iForce);
+    end
+end
 
 if conservative
     r_transform = force_transform';
@@ -513,7 +571,7 @@ else
     % f = reduced_force_transform*f;
 end
 % theta = displacement_bc - Model.reduced_eigenvectors*r;
-theta = displacement_bc;
+physical_displacement = displacement_bc;
 
 
 
@@ -543,15 +601,38 @@ if clean_data
     % end
     
     r(:,remove_index) = [];
-    theta(:,remove_index) = [];
+    physical_displacement(:,remove_index) = [];
     E(:,remove_index) = [];
     f(:,remove_index) = [];
     sep_id(:,remove_index) = [];
 end
 
 
+%---------------
+if Static_Opts.follower_force
+    Mesh_Data = get_mesh_data(geometry);
+    Mesh_Data = Mesh_Data{1};
+    Mesh_Data.num_nodes = num_nodes;
+    Mesh_Data.node_starting_position = read_abaqus_node_position(geometry)';
 
+    rotated_phy_force = zeros(size(physical_displacement));
+    phy_disp = zeros(all_dofs,1);
+    for iSep = 1:num_seps
+        load_case_ids = find(sep_id == iSep);
+        base_shape = sep_force_shape(:,iSep);
+        starting_disp = zeros(size(base_shape));
+       
+        for iInc = 1:size(load_case_ids,2)
+            phy_disp(node_map) = physical_displacement(:,load_case_ids(iInc));
+            rotated_shape = rotate_force(base_shape,starting_disp,phy_disp,Mesh_Data);
 
+        end
+    end
+
+    plot_fe_force(Model,phy_disp,rotated_shape)
+    plot_fe_force(Model,starting_disp,base_shape)
+end
+%---------------
 stiff_restarted_seps_index  = (final_sep_energy(restart_type ~= 2) < Model.fitting_energy_limit);
 
 %---
@@ -671,6 +752,9 @@ end
 
 
 if restart_sep
+    if Static_Opts.follower_force
+        error("SEP restarts not implemented for follower forces")
+    end
     restarted_seps = [find(stiff_restarted_seps_index),find(soft_restarted_seps_index)];
    
     log_message = sprintf("job " + job_id(1) + ": %u/%u SEPs restarted" ,[length(restarted_seps),num_seps]);
@@ -700,7 +784,7 @@ if restart_sep
     unique_restart_index = unique_index((num_r+1):end)-num_r;
     r = [r,r_restart(:,unique_restart_index)];
 
-    theta = [theta,theta_restart(:,unique_restart_index)];
+    physical_displacement = [physical_displacement,theta_restart(:,unique_restart_index)];
     f = [f,f_restart(:,unique_restart_index)];
     E = [E,E_restart(:,unique_restart_index)];
     if ~isempty(additional_data_restart)

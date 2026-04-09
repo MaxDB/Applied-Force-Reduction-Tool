@@ -44,8 +44,14 @@ Force_Poly_Const = parallel.pool.Constant(Force_Polynomial);
 orbit_labels_const = parallel.pool.Constant(orbit_labels);
 frequency_const = parallel.pool.Constant(frequency);
 
-% for iJob = 1:num_jobs
-parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
+if class(Solution) == "FRF_To_BB_Solution"
+    epsilon_array = Solution.epsilon;
+else
+    epsilon_array = [];
+end
+
+for iJob = 1:num_jobs
+% parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
     time_range = [inf,0];
     num_harmonics = initial_harmonic;
     orbit_group = orbit_groups(iJob,:);
@@ -56,6 +62,7 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
     job_orbit_labels = orbit_labels_const.Value(periodic_orbits_jobs);
     job_frequency = frequency_const.Value(periodic_orbits_jobs);
     for iOrbit = 1:num_periodic_orbits_jobs
+    % for iOrbit = 47:49
         read_data_start = tic;
         job_orbit = periodic_orbits_jobs(iOrbit);
         sol = po_read_solution('',convertStringsToChars(solution_name),job_orbit_labels(iOrbit));
@@ -82,6 +89,14 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
                 r_ddot  = x_dot(vel_span,:);
                 [h_inertia,h_conv,h_stiff,h_force] = h_terms(t0,r,r_dot,r_ddot,period);
                 [h_inertia_v,h_conv_v,h_stiff_v,h_force_v] = h_terms_verification(t0,r,r_dot,r_ddot,period);
+
+            case "frf_to_bb"
+                epsilon = epsilon_array(job_orbit);
+                x_dot = reduced_eom(t0,x,epsilon*ones(size(t0)));
+                r_ddot  = x_dot(vel_span,:);
+                [h_inertia,h_conv,h_stiff,h_force] = h_terms(t0,r,r_dot,r_ddot,epsilon);
+                [h_inertia_v,h_conv_v,h_stiff_v,h_force_v] = h_terms_verification(t0,r,r_dot,r_ddot,epsilon);
+
             otherwise
                 h_inertia = [];
                 h_conv = [];
@@ -163,6 +178,7 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
 end
 const_vars = {"Force_Poly_Const","orbit_labels_const","frequency_const"};
 clear(const_vars{:})
+
 
 mean_time = job_time./num_job_orbits;
 fprintf("Mean time: %.3f, min time: %.3f, max time: %.3f \n",...

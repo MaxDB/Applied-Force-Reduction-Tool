@@ -2,7 +2,7 @@ clear
 % close all
 set_visualisation_level(1)
 
-system_name = "mass_spring_roller_0";
+system_name = "mass_spring_roller_1";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 Additional_Output.output = "physical displacement";
@@ -50,12 +50,14 @@ Continuation_Opts.forward_steps = 10;
 Continuation_Opts.backward_steps = 10;
 Continuation_Opts.frequency_range = [0.995,3.2];
 %-----------------------------------------%
-% 
+%
 
 % Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"type","rom");
 % Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"type","fom");
 
 
+%-----------------------------------------%
+%Find isola
 orbit = Dyn_Data.get_orbit(1,133);
 Model = Dyn_Data.Dynamic_Model.Model;
 Force_Data.frequency = 2*pi/orbit.T;

@@ -78,7 +78,10 @@ if validated && Sol_Type.validated
     lf_eval = Model.low_frequency_eigenvalues;
     known_eval = [known_eval;lf_eval];
     
-    lf_evec = Model.low_frequency_eigenvectors.load();
+    lf_evec = Model.low_frequency_eigenvectors;
+    if class(lf_evec) == "Large_Matrix_Pointer"
+       lf_evec = lf_evec.load();
+    end
     known_evec = [known_evec,lf_evec];
 
   
@@ -124,15 +127,15 @@ for iType = 1:plot_dimension
 
     label = "";
     switch plot_type
-        case "r"
+        case "r" %reduced displacement
             plotted_state = state;
             plotted_output_size = num_modes;
             label = label + plot_type;
-        case "h"
+        case "h" %h displacement
             plotted_state = [Validated_Orbit.h;Validated_Orbit.h_dot];
             plotted_output_size = size(Validated_Orbit.h,1);
             label = label + plot_type;
-        case "q"
+        case "q" %modal displacement
             x = Rom.expand(state(disp_index,:));
             x_vel = Rom.expand_velocity(state(disp_index,:),state(vel_index,:));
             
@@ -144,7 +147,7 @@ for iType = 1:plot_dimension
             plotted_state = [q;q_vel];
             plotted_output_size = size(q,1);
             label = label + plot_type;
-        case "v"
+        case "v" %validated modal displacement
             x = Rom.expand(state(disp_index,:));
             x_vel = Rom.expand_velocity(state(disp_index,:),state(vel_index,:));
             

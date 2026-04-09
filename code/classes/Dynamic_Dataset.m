@@ -158,11 +158,17 @@ classdef Dynamic_Dataset
             keyword_values = varargin(2:2:num_args);
 
             Continuation_Opts = struct([]);
+            Force_Data = struct([]);
+            Damping_Data = struct([]);
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
                     case "opts"
-                        Continuation_Opts= keyword_values{arg_counter};
+                        Continuation_Opts = keyword_values{arg_counter};
+                    case "forcing"
+                        Force_Data = keyword_values{arg_counter};
+                    case "damping"
+                        Damping_Data = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -224,9 +230,9 @@ classdef Dynamic_Dataset
                         z0 = orbit.xbp';
                         p0 = Solution_Type.frequency;
 
-                        FRF_Sol = obj.load_solution(solution_num);
-                        Force_Data = FRF_Sol.Force_Data;
-                        Damping_Data = FRF_Sol.Damping_Data;
+                        Sol = obj.load_solution(solution_num);
+                        Force_Data = Sol.Force_Data;
+                        Damping_Data = Sol.Damping_Data;
 
                         Force_Data.continuation_variable = "frequency";
                         Force_Data = rmfield(Force_Data,"frequency");
@@ -278,12 +284,21 @@ classdef Dynamic_Dataset
                         t0 = orbit.tbp';
                         z0 = orbit.xbp';
 
-                        FRF_Sol = obj.load_solution(solution_num);
-                        Force_Data = FRF_Sol.Force_Data;
-                        Force_Data.continuation_variable = "epsilon";
-                        Damping_Data = FRF_Sol.Damping_Data;
+                        Sol = obj.load_solution(solution_num);
+                        switch class(Sol)
+                            case "Forced_Solution"
+                                Force_Data = Sol.Force_Data;
+                                Damping_Data = Sol.Damping_Data;
+                                p0 = 1;
 
-                        obj = obj.frf_to_bb(Force_Data,Damping_Data,"opts",Continuation_Opts,"ic",{t0,z0});
+                            case "Backbone_Solution"
+                                Force_Data.continuation_variable = "epsilon";
+                                p0 = 0;
+                        end
+                        
+                        Force_Data.frequency = Sol.frequency(orbit_num(iOrbit));
+                        Force_Data.continuation_variable = "epsilon";
+                        obj = obj.frf_to_bb(Force_Data,Damping_Data,"opts",Continuation_Opts,"ic",{t0,z0,p0});
                 end
 
 
@@ -430,11 +445,12 @@ classdef Dynamic_Dataset
             obj.solution_types{obj.num_solutions}.validated = false;
             obj.save_solution(FRF_To_BB_Sol,obj.num_solutions)
         end
+        
 
         %-----------------------------------------------------------------%
         % Validation
         %-----------------------------------------------------------------%
-        function  [obj,Validated_BB_Sol] = validate_solution(obj,solution_num,L_modes,varargin)
+        function  [obj,Validated_Sol] = validate_solution(obj,solution_num,L_modes,varargin)
             %-------------------------------------------------------------------------%
             num_args = length(varargin);
             if mod(num_args,2) == 1
@@ -470,7 +486,7 @@ classdef Dynamic_Dataset
 
 
 
-            BB_Sol = obj.load_solution(solution_num);
+            Sol = obj.load_solution(solution_num);
 
             if isstring(L_modes) && L_modes == "all"
                 switch Rom.Model.system_type
@@ -480,16 +496,22 @@ classdef Dynamic_Dataset
                         L_modes = 1:Rom.Model.num_dof;
                 end
             end
-            Validated_BB_Settings.solution_num = solution_num;
-            Validated_BB_Settings.L_modes = L_modes;
-            Validated_BB_Settings.Additional_Output = obj.Additional_Output;
-            Validated_BB_Settings.validation_degree = validation_degree;
-            Validated_BB_Settings.load_validation_data = load_validation_data;
+            Validated_Sol_Settings.solution_num = solution_num;
+            Validated_Sol_Settings.L_modes = L_modes;
+            Validated_Sol_Settings.Additional_Output = obj.Additional_Output;
+            Validated_Sol_Settings.validation_degree = validation_degree;
+            Validated_Sol_Settings.load_validation_data = load_validation_data;
 
-            Validated_BB_Sol = Validated_Backbone_Solution(Rom,BB_Sol,Validated_BB_Settings);
-
+            switch class(Sol)
+                case "Backbone_Solution"
+                    Validated_Sol = Validated_Backbone_Solution(Rom,Sol,Validated_Sol_Settings);
+                case "Forced_Solution"
+                    Validated_Sol = Validated_Forced_Solution(Rom,Sol,Validated_Sol_Settings);
+                case "FRF_To_BB_Solution"
+                    Validated_Sol = Validated_FRF_To_BB_Solution(Rom,Sol,Validated_Sol_Settings);
+            end
             obj.solution_types{solution_num}.validated = true;
-            obj.save_solution(Validated_BB_Sol,solution_num)
+            obj.save_solution(Validated_Sol,solution_num)
         end
         %-----------------------------------------------------------------%
         function obj = get_fe_output(obj,fe_output_type,solution_num,orbit_ids)
@@ -582,7 +604,7 @@ classdef Dynamic_Dataset
                 case {"Backbone_Solution","Forced_Solution","FRF_To_BB_Solution"}
                     file_name = "Sol_Data";
                     movefile("data\temp\" + solution_name,solution_path);
-                case "Validated_Backbone_Solution"
+                case {"Validated_Backbone_Solution","Validated_Forced_Solution","Validated_FRF_To_BB_Solution"}
                     file_name = "Sol_Data_Validated";
                 case "FE_Orbit_Output"
                     file_name = "Sol_Data_" + Solution.fe_output_type;

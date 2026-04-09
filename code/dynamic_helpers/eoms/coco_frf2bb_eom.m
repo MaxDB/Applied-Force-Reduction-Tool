@@ -21,17 +21,13 @@ r_dot = x(vel_span,:);
 x_dot = zeros(2*num_modes,num_x);
 x_dot(disp_span,:) = r_dot;
 
-% r_power_products = ones(num_coeffs,1);
-force_type = Applied_Force_Data.type;
-switch force_type
-    case {"modal","point force"}
-        force_shape = Applied_Force_Data.shape(t,force_amp,period);
-end
 
+frequency = 2*pi./period;
 for iX = 1:num_x
     r_i = r_transformed(:,iX);
     r_dot_i = r_dot(:,iX);
     epsilon_i = epsilon(iX);
+    t_i = t(iX);
 
     r_power_products = ones(num_coeffs,1);
     for iMode = 1:num_modes
@@ -39,12 +35,16 @@ for iX = 1:num_x
     end
 
     r_products_coupling = r_power_products(1:num_coupling_coeffs,:);
-    restoring_force = Force_Data.coeffs*r_power_products(1:num_force_coeffs,:);
 
     r_dr_products_coupling = r_products_coupling(Disp_Data.diff_mapping{1,1}).*Disp_Data.diff_scale_factor{1,1};
     r_dr2_products_coupling = r_products_coupling(Disp_Data.diff_mapping{1,2}).*Disp_Data.diff_scale_factor{1,2};
     
     disp_prod = r_dr_products_coupling'*Disp_Data.beta_bar; 
+    %--
+    reduced_restoring_force = Force_Data.coeffs*r_power_products(1:num_force_coeffs,:);
+
+    disp_r_prod = r_dr_products_coupling'*Force_Data.disp_r_force_beta;
+    restoring_force = disp_r_prod*reduced_restoring_force;
     %--
     inertia_term = disp_prod*r_dr_products_coupling;
     %--
@@ -53,13 +53,8 @@ for iX = 1:num_x
     damping_prod = r_dr_products_coupling'*Damping_Data.damping_beta;
     damping_term = damping_prod*(r_dr_products_coupling)*r_dot_i;
     %--
-    switch force_type
-        case "modal"
-            applied_force = force_shape(:,iX);
-        case "point force"
-            amplitude_shape = r_dr_products_coupling'*Applied_Force_Data.disp_force_beta;
-            applied_force = amplitude_shape*force_shape(:,iX);
-    end
+    disp_amp_prod = r_dr_products_coupling'*Applied_Force_Data.disp_force_beta;
+    applied_force = force_amp*disp_amp_prod*sin(frequency*t_i);
     %--
     nonconservative_term = epsilon_i*(damping_term - applied_force);
     %--

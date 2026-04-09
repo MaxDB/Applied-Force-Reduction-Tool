@@ -36,6 +36,9 @@ for arg_counter = 1:num_args/2
             solution_index{1,system_counter} = keyword_values{arg_counter};  
     end
 end
+
+%---
+
 %-------------------------------------------------------------------------%
 num_solutions = system_counter;
 if ~exist("validation","var")
@@ -90,9 +93,17 @@ for iSol = 1:num_solutions
                 else
                     colour_sol = "grey";
                 end
+                alt_x_axis = 0;
             case "free"
                 if num_solutions == 1
                     colour_sol = 0;
+                end
+                alt_x_axis = 0;
+            case "frf_to_bb"
+                if num_system_sols == 1
+                    alt_x_axis = 1;
+                else
+                    alt_x_axis = 0;
                 end
         end
         
@@ -107,9 +118,9 @@ for iSol = 1:num_solutions
                 h_colour_number = colour_sol;
             end
 
-            ax = plot_h_predicition(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",h_colour_number,"plot_special_points",plot_special_points);
+            ax = plot_h_predicition(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",h_colour_number,"plot_special_points",plot_special_points,"alt_x_axis",alt_x_axis);
         else
-            ax = plot_backbone(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",colour_sol,"plot_special_points",plot_special_points);
+            ax = plot_backbone(Dyn_Data,type,system_sols(jSol),"axes",ax,"colour",colour_sol,"plot_special_points",plot_special_points,"alt_x_axis",alt_x_axis);
             if Sol_Type.orbit_type == "free"
                 if iscell(ax)
                     num_axes = size(ax,1);

@@ -19,6 +19,7 @@ colour_num = 1;
 add_backbone = 1;
 tag = "";
 plot_special_points = 1;
+alt_x_axis = 0;
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
@@ -32,6 +33,8 @@ for arg_counter = 1:num_args/2
             tag = keyword_values{arg_counter};
         case "plot_special_points"
             plot_special_points = keyword_values{arg_counter};
+        case "alt_x_axis"
+            alt_x_axis =  keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -51,6 +54,13 @@ Solution = Dyn_Data.load_solution(solution_num);
 Validated_Solution = Dyn_Data.load_solution(solution_num,"validation");
 
 frequency = Solution.frequency;
+x_label = "Frequency (rad/s)";
+
+if alt_x_axis
+    frequency = Solution.epsilon;
+    x_label = "Epsilon";
+end
+
 num_orbits = size(frequency,2);
 
 
@@ -133,7 +143,7 @@ switch type
 
         if add_backbone
             num_lines = size(ax.Children,1);
-            ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0,"plot_special_points",plot_special_points);
+            ax = plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0,"plot_special_points",plot_special_points,"alt_x_axis",alt_x_axis);
             num_bb_lines = size(ax.Children,1) - num_lines;
             uistack(ax.Children(1:num_bb_lines),"bottom")
         end
@@ -160,7 +170,7 @@ switch type
                 y_label = "max eig magnitude";
         end
 
-        xlabel(ax,"Frequency (rad/s)")
+        xlabel(ax,x_label)
         ylabel(ax,y_label)
 
     case {"amplitude","force amplitude","mean error"}
@@ -284,13 +294,13 @@ switch type
 
             switch type
                 case "amplitude"
-                    xlabel(iAx,"Frequency (rad/s)")
+                    xlabel(iAx,x_label)
                     ylabel(iAx,"Q_{" + h_modes(iMode) + "}")
                 case "force amplitude"
-                    xlabel(iAx,"Frequency (rad/s)")
+                    xlabel(iAx,x_label)
                     ylabel(iAx,"f_{" + h_modes(iMode) + "}")
                 case "mean error"
-                    xlabel(iAx,"Frequency (rad/s)")
+                    xlabel(iAx,x_label)
                     ylabel(iAx,"mean($\vert h_{" + h_modes(iMode) +"} \vert)$","Interpreter","latex")
             end 
 

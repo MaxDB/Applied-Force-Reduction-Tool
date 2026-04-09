@@ -1,4 +1,4 @@
-function  [h_inertia,h_conv,h_stiff,h_force] = get_forced_h_error_terms(t,r,r_dot,r_ddot,amp,period,Eom_Input)
+function  [h_inertia,h_conv,h_stiff,h_force] = get_forced_h_error_terms(t,r,r_dot,r_ddot,amp,period,Eom_Input,epsilon)
 num_x = size(r,2);
 num_r_modes = size(r,1);
 
@@ -28,6 +28,14 @@ beta_h_disp_damping_r_disp = Eom_Input.Frf_Beta_Bar_Data.h_disp_damp_r_disp;
 
 beta_h_disp_applied_force = Eom_Input.Frf_Beta_Bar_Data.h_disp_applied_force;
 
+
+%- Apply epsilon
+amp = epsilon*amp;
+beta_h_disp_damping = epsilon*beta_h_disp_damping;
+beta_h_disp_damping_r_disp = epsilon*beta_h_disp_damping_r_disp;
+%--
+
+
 Applied_Force_Data = Eom_Input.Applied_Force_Data;
 force_type = Applied_Force_Data.type;
 switch force_type
@@ -43,6 +51,9 @@ switch num_h_modes
     otherwise
         d2_dims = 3;
 end
+
+
+
 
 h_inertia = zeros(num_h_modes,num_h_modes,num_x);
 h_conv = zeros(num_h_modes,num_h_modes,num_x);

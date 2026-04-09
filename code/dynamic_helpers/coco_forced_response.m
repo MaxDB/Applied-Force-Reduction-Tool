@@ -129,6 +129,16 @@ switch Additional_Output.output
         prob = coco_add_event(prob, 'X', 'special point','DISP',disp_points);
 end
 
+% Monitor frequency
+freq_func = @(prob,data,u) coco_frequency(prob,data,u);
+prob = coco_add_func(prob, 'frequency_monitor', freq_func, data, 'regular', 'FREQ', 'uidx', uidx,'remesh',@coco_energy_remesh);
+prob = coco_add_event(prob, 'EP','boundary','FREQ',Continuation_Settings.parameter_range);
+
+if ~isempty(Continuation_Settings.frequency_points)
+    prob = coco_add_event(prob, 'X','special point','FREQ',Continuation_Settings.frequency_points);
+end
+
+
 switch Nonconservative_Input.continuation_variable
     case "amplitude"
         prob = coco_add_event(prob, 'IC', 'F', Nonconservative_Input.force_points);

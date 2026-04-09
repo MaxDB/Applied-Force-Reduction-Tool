@@ -31,6 +31,7 @@ ax = [];
 colour_num = 1;
 tag = "";
 plot_special_points = 1;
+alt_x_axis = 0;
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
@@ -42,6 +43,8 @@ for arg_counter = 1:num_args/2
             tag = keyword_values{arg_counter};
         case "plot_special_points"
             plot_special_points = keyword_values{arg_counter};
+        case "alt_x_axis"
+            alt_x_axis = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -59,6 +62,14 @@ end
 %-------------------------------------------------------------------------%
 Solution = Dyn_Data.load_solution(solution_num);
 frequency = Solution.frequency;
+x_label = "Frequency (rad/s)";
+if alt_x_axis
+    frequency = Solution.epsilon;
+    x_label = "Epsilon";
+end
+
+
+
 num_orbits = Solution.num_orbits;
 orbit_labels = 1:num_orbits;
 orbit_ids = "(" + solution_num + "," + orbit_labels + ")";
@@ -339,7 +350,7 @@ switch type
 
 
 
-        xlabel(ax,"Frequency (rad/s)")
+        xlabel(ax,x_label)
         switch type
             case "energy"
                 ylabel(ax,"Energy")
@@ -516,8 +527,8 @@ switch type
 
 
             hold(ax{ax_id,1},"off")
-
-            xlabel(ax{ax_id,1},"Frequency (rad/s)")
+           
+            xlabel(ax{ax_id,1},x_label)
             if ~force_mode
                 ylabel(ax{ax_id,1},"R_{" + r_modes(iMode) + "}")
             else

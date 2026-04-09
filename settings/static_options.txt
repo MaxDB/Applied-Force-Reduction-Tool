@@ -29,4 +29,5 @@ num_validation_modes, 10, 			add the first X modes as validation modes (Perturba
 perturbation_scale_factor, "auto", 	scale factor for perturbation load (Perturbation) 
 
 ## Experimental
-load_custom_eigendata, 0,			
+load_custom_eigendata, 0,	
+follower_force, 0,		

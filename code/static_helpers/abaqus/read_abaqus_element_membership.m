@@ -34,7 +34,7 @@ for iElement = 1:num_elements
     element_line_data = zeros(line_length-1,1);
     element_counter = 0;
     for iLine = 1:element_def_height
-        line = geometry{element_range(1) + 2*(iElement-1) + iLine};
+        line = geometry{element_range(1) + element_def_height*(iElement-1) + iLine};
         line_data = textscan(line,"%u", "Delimiter",",");
         line_data = line_data{1};
         if iLine == 1

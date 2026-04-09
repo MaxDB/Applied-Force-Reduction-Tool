@@ -6,7 +6,7 @@ set_visualisation_level(3)
 %-------------------------------------%
 
 %--------- System Settings ---------%
-system_name = "mass_spring_roller";
+system_name = "mass_spring_isola";
 
 energy_limit = 0.05;
 initial_modes = [1,2];

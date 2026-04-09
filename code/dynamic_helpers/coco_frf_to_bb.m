@@ -1,4 +1,4 @@
-function coco_frf_to_bb(t0,z0,T,amp,Rom,type,Continuation_Settings,solution_number,Additional_Output,Nonconservative_Input)
+function coco_frf_to_bb(t0,z0,p0,T,amp,Rom,type,Continuation_Settings,solution_number,Additional_Output,Nonconservative_Input)
 %find solution path from a resonant forced response to the corresponding
 %part of the backbone curve
 ODE_TOLERACE = 1e-9;
@@ -13,14 +13,14 @@ inc_backward = Continuation_Settings.backward_steps;
 %Define EOM
 switch type
     case "rom"
-        Eom_Input = Rom.get_solver_inputs("coco_frf",Nonconservative_Input);
+        Eom_Input = Rom.get_solver_inputs("coco_frf","additional_input",Nonconservative_Input);
 
         
-        % funcs = {@(t,z,epsilon) coco_frf2bb_eom(t,z,epsilon,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data)};
-        funcs = {@(t,z,epsilon) coco_frf2bb_eom(t,z,epsilon,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data),...
-                    @(t,z,epsilon) coco_frf2bb_eom_dx(t,z,epsilon,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data),...
-                    @(t,z,epsilon) coco_frf2bb_eom_depsilon(t,z,epsilon,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data),...
-                    @(t,z,epsilon) coco_frf2bb_eom_dt(t,z,epsilon,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data)};
+        funcs = {@(t,z,epsilon) coco_frf2bb_eom(t,z,epsilon,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data)};
+        % funcs = {@(t,z,epsilon) coco_frf2bb_eom(t,z,epsilon,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data),...
+        %             @(t,z,epsilon) coco_frf2bb_eom_dx(t,z,epsilon,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data),...
+        %             @(t,z,epsilon) coco_frf2bb_eom_depsilon(t,z,epsilon,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data),...
+        %             @(t,z,epsilon) coco_frf2bb_eom_dt(t,z,epsilon,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data)};
 
 
        
@@ -37,8 +37,8 @@ end
 
 % Continuation setup
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-coll_args = [funcs, {t0',z0', {'epsilon'}, 1}];
-cont_args = { 1, {'epsilon'}, [0,2]};
+coll_args = [funcs, {t0',z0', {'epsilon'}, p0}];
+cont_args = { 1, {'epsilon'}, [0,1000]};
 
 prob = coco_prob();
 prob = coco_set(prob, 'ode', 'autonomous', false);
