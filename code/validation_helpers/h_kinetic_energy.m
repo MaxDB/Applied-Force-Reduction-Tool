@@ -80,20 +80,20 @@ for iX = 1:num_x
     r_disp_h_vel = r_disp_h_vel_prod*h_dot_i;
 
     %--
-    h_disp_prod = squeeze(tensorprod(r_dr_grad_r_dot_prod',h_disp_beta_bar,2,1));
-    h_disp_prod = squeeze(tensorprod(h_i',h_disp_prod,2,1));
-    h_disp_h_disp_prod = h_disp_prod*r_dr_grad_r_dot_prod;
-    h_disp_h_disp = h_disp_h_disp_prod'*h_i;
+    h_disp_prod = tensorprod(r_dr_grad_r_dot_prod',h_disp_beta_bar,2,1);
+    h_disp_prod = tensorprod(h_i',h_disp_prod,2,2);
+    h_disp_h_disp_prod = tensorprod(h_disp_prod,r_dr_grad_r_dot_prod,4,1);
+    h_disp_h_disp = tensorprod(h_disp_h_disp_prod,h_i,3,1);
 
     %--
-    h_disp_h_vel_prod = h_disp_prod*r_products_grad;
-    h_disp_h_vel = h_disp_h_vel_prod'*h_dot_i;
+    h_disp_h_vel_prod = tensorprod(h_disp_prod,r_products_grad,4,1);
+    h_disp_h_vel = tensorprod(h_disp_h_vel_prod,h_dot_i,3,1);
 
     %--
-    h_vel_prod = squeeze(tensorprod(r_products_grad',h_disp_beta_bar,2,1));
-    h_vel_prod = squeeze(tensorprod(h_dot_i',h_vel_prod,2,1));
-    h_vel_h_vel_prod = h_vel_prod*r_products_grad;
-    h_vel_h_vel = h_vel_h_vel_prod'*h_dot_i;
+    h_vel_prod = tensorprod(r_products_grad',h_disp_beta_bar,2,1);
+    h_vel_prod = tensorprod(h_dot_i',h_vel_prod,2,2);
+    h_vel_h_vel_prod = tensorprod(h_vel_prod,r_products_grad,4,1);
+    h_vel_h_vel = tensorprod(h_vel_h_vel_prod,h_dot_i,3,1);
 
     %--
     %small h

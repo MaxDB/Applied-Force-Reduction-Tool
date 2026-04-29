@@ -57,7 +57,7 @@ for iMode = 1:num_uncalibrated_modes
 end
 
 if num_uncalibrated_modes > 0
-    [r,~,f,E,sep_id] = Model.add_sep(initial_force_ratio);
+    [r,~,~,E,sep_id,f] = Model.add_sep(initial_force_ratio,"lambda");
     
     removal_indicies = [];
     beyond_limit_index = E > Model.fitting_energy_limit;
@@ -126,7 +126,13 @@ for iMode = 1:num_uncalibrated_modes
         max_force_degree = num_loadcases+1;
         force_degree = min(max_force_degree,11);
         Force_Poly_i = Polynomial(r_sep,f_sep,force_degree,"constraint",{"linear_force",eval_mode},"coupling","force","shift",1,"scale",1);
-        Potential_Poly_i = integrate_polynomial(Force_Poly_i);
+
+        if ~Model.Static_Options.follower_force
+            Potential_Poly_i = integrate_polynomial(Force_Poly_i);
+        else
+            Potential_Poly_i = Polynomial(r_sep,E_sep,force_degree+1,"constraint",{"linear",[0,0]},"shift",1,"scale",1);
+             % Potential_Poly_i = Polynomial(r_sep,E_sep,force_degree+1,"shift",1,"scale",1);
+        end
 
         r_bound = r_sep(bound_index);
         r_interp = linspace(r_bound(1),r_bound(2));

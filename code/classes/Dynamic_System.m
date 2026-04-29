@@ -107,7 +107,10 @@ classdef Dynamic_System
             end
 
 
-           
+           if any(modes > 2000)
+                Static_Opts.follower_force = 1;
+                Static_Opts.output_format = "text";
+            end
 
 
             obj.reduced_modes = modes;
@@ -115,7 +118,7 @@ classdef Dynamic_System
                 rmdir(obj.get_data_path,"s")
             end
 
-            obj.num_nc_modes = sum(modes > 1000);
+            obj.num_nc_modes = sum(modes > 1000 && modes < 2000);
             obj.project_path = get_project_path;
      
 
@@ -257,6 +260,8 @@ classdef Dynamic_System
                 Static_Opts.num_loadcases = 5;
                 obj = obj.update_static_opts(Static_Opts);
             end
+            
+        
 
             obj = modal_calibration(obj,all_modes);
         end
@@ -614,7 +619,7 @@ classdef Dynamic_System
                         log_message = sprintf("Total FE time: %.1f seconds" ,abaqus_time);
                         logger(log_message,3)
                     else
-                        [t,x,x_dot,energy] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,num_periods,min_incs,initial_time,FE_Force_Data,obj,job_id);
+                        [t,x,x_dot,energy] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,num_periods,min_incs,initial_time,FE_Force_Data,obj,1);
                     end
                 case "matlab"
 

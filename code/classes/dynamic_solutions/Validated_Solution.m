@@ -197,15 +197,20 @@ classdef Validated_Solution
 
            
             
-             
+
             r_force = Validation_Analysis_Inputs.Force_Poly.evaluate_polynomial(r_energy);
-            
+
             h_potential = zeros(1,num_points);
             for iPoint = 1:num_points
                 h_i = h(:,iPoint);
                 r_force_hat_i = [r_force(:,iPoint);zeros(num_h_modes-num_r_modes,1)];
                 r_force_gradient_i = Validation_Analysis_Inputs.H_Force_Poly.evaluate_polynomial(r_energy(:,iPoint));
-                h_potential(iPoint) = (r_force_hat_i + r_force_gradient_i*h_i)'*h_i;
+                if size(r_force_gradient_i,1) == num_h_modes
+                    h_potential(iPoint) = (r_force_hat_i + r_force_gradient_i*h_i)'*h_i;
+                else
+                    x_i = Validation_Analysis_Inputs.H_Stiffness_Poly.evaluate_polynomial(r_energy(:,iPoint))*h_i;
+                    h_potential(iPoint) = r_force_hat_i'*h_i + h_i'*r_force_gradient_i'*x_i;
+                end
             end
 
 

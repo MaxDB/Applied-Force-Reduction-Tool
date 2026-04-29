@@ -122,7 +122,7 @@ for iMode = 1:num_L_modes
         colour_num = L_modes(iMode);
 
 
-        L_mode_index = L_modes(iMode) - (nnz(r_modes < L_modes(iMode)));
+        L_mode_index = L_modes == L_modes(iMode);
         mode_frequency = sqrt(Validated_BB_Sol.low_frequency_eigenvalues(L_mode_index));
         mode_details = sprintf("Last mode: %u - %.2g rad/s - [%.1fx - %.1fx]",[L_modes(iMode),mode_frequency,mode_frequency/max_freq,mode_frequency/min_freq]);
         

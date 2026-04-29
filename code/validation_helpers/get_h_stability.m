@@ -94,15 +94,29 @@ switch STABILITY_METHOD
                 interp_conv(iRow,iCol,:) = interp1(t0,squeeze(h_conv(iRow,iCol,:)),time_points);
                 interp_stiff(iRow,iCol,:) = interp1(t0,squeeze(h_stiff(iRow,iCol,:)),time_points);
             end
-        end
+        end  
 
-
+        % singular_warning = warning('error', 'MATLAB:singularMatrix');
         orbit_jacobian = zeros(2*num_h_modes,2*num_h_modes,num_time_points);
         for iTime = 1:num_time_points
+            % warning('error', 'MATLAB:singularMatrix');
             % orbit_jacobian = zeros(2*num_h_modes,2*num_h_modes);
             orbit_jacobian(h_disp_span,h_vel_span,iTime) = I_L;
+            % try
+
             orbit_jacobian(h_vel_span,h_disp_span,iTime) = -interp_inertia(:,:,iTime)\interp_stiff(:,:,iTime);
             orbit_jacobian(h_vel_span,h_vel_span,iTime) = -interp_inertia(:,:,iTime)\interp_conv(:,:,iTime);
+            % warning(singular_warning)
+            % catch
+            %     warning(singular_warning)
+            %     if ~all(code_exception.identifier == 'MATLAB:singularMatrix')
+            %         rethrow(code_exception)
+            %     else
+            %         h
+            %         orbit_jacobian(h_vel_span,h_disp_span,iTime) = -interp_inertia(:,:,iTime)\interp_stiff(:,:,iTime);
+            %         orbit_jacobian(h_vel_span,h_vel_span,iTime) = -interp_inertia(:,:,iTime)\interp_conv(:,:,iTime);
+            %     end
+            % end
         end
         fourier_coefficients = fft(orbit_jacobian,size(orbit_jacobian,3),3)/num_time_points;
 

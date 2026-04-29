@@ -1,0 +1,4 @@
+# Experimental Settings
+# "#" are ignored. "," are delimeters. format is [option_name,option_value,short description]. avoid whitespace. place string values in double quotation marks
+
+param_style, "disp",			stress manifold parametrisation style ("disp","force")

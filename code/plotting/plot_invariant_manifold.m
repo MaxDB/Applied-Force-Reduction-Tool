@@ -43,7 +43,7 @@ num_settings = size(settings,1);
 for iSetting = 1:num_settings
     setting = settings{iSetting};
     if ~isfield(Plot_Opts,setting)
-        Plot_Opts.(setting) = Default_Settings.(setting);
+        Plot_Opts(1).(setting) = Default_Settings.(setting);
     end
 end
 %-------------------------------------------------------------------------%

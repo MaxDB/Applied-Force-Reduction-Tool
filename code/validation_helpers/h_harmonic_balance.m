@@ -16,8 +16,8 @@ h_stiff_frequency = time_to_frequency(h_stiff,t0,num_harmonics);
 % t_lin = linspace(t0(1),t0(end),num_points);
 % 
 % 
-% if num_harmonics > 10
-%     test_name = "h_conv";
+% if num_harmonics > 1
+%     test_name = "h_stiff";
 %     test = eval(test_name);
 %     test_frequency = eval(test_name + "_frequency");
 %     test_time = evaluate_fourier_series(test_frequency,omega,t0);
@@ -181,7 +181,7 @@ h_frequency = reshape(h_frequency_coeffs,num_coefficients,num_h_modes)';
 % end
 %----------------------------------------------%
 
-%convert to [cos, sin] ceofficient form
+%convert to [cos, sin] coefficient form
 h_frequency_alt = zeros(size(h_frequency));
 alt_cos_index = (1:num_harmonics) + 1;
 alt_sin_index = alt_cos_index + num_harmonics;

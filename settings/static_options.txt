@@ -31,3 +31,4 @@ perturbation_scale_factor, "auto", 	scale factor for perturbation load (Perturba
 ## Experimental
 load_custom_eigendata, 0,	
 follower_force, 0,		
+follower_validation_modes, 0,

@@ -11,11 +11,24 @@ verification_error_all = zeros(num_h_modes,num_time_points);
 
 get_h_ddot = @(h,h_dot,W_I,W_C,W_S,w_f) W_I\(w_f - W_C*h_dot - W_S*h);
 
+
+% singular_warning = warning('error', 'MATLAB:singularMatrix');
+
 for iTime = 1:num_time_points
+    % warning('error', 'MATLAB:singularMatrix');
+    % try
     h_ddot_one(:,iTime) = get_h_ddot(h(:,iTime),h_dot(:,iTime),validation_terms_one{1}(:,:,iTime),validation_terms_one{2}(:,:,iTime),validation_terms_one{3}(:,:,iTime),validation_terms_one{4}(:,iTime));
     h_ddot_two(:,iTime) = get_h_ddot(h(:,iTime),h_dot(:,iTime),validation_terms_two{1}(:,:,iTime),validation_terms_two{2}(:,:,iTime),validation_terms_two{3}(:,:,iTime),validation_terms_two{4}(:,iTime));
-
     verification_error_all(:,iTime) = abs(h_ddot_one(:,iTime) -  h_ddot_two(:,iTime))./abs( h_ddot_one(:,iTime));
+    %     warning(singular_warning)
+    % catch code_exception
+    %     warning(singular_warning)
+    %     if ~all(code_exception.identifier == 'MATLAB:singularMatrix')
+    %         rethrow(code_exception)
+    %     else
+    %         verification_error_all(:,iTime) = 0;
+    %     end
+    % end
 
     %%% debug
     % convective_acc_one(:,iTime) = validation_terms_one{1}(:,:,iTime)\validation_terms_one{2}(:,:,iTime)*h_dot(:,iTime);
@@ -27,7 +40,6 @@ for iTime = 1:num_time_points
     % force_acc_one(:,iTime) = validation_terms_one{1}(:,:,iTime)\validation_terms_one{4}(:,iTime);
     % force_acc_two(:,iTime) = validation_terms_two{1}(:,:,iTime)\validation_terms_two{4}(:,iTime);
 end
-
 
 h_ddot_max = max(abs(h_ddot_one),[],2);
 largest_h_ddot = max(h_ddot_max);

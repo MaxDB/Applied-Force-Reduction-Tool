@@ -62,7 +62,6 @@ for iJob = 1:num_jobs
     job_orbit_labels = orbit_labels_const.Value(periodic_orbits_jobs);
     job_frequency = frequency_const.Value(periodic_orbits_jobs);
     for iOrbit = 1:num_periodic_orbits_jobs
-    % for iOrbit = 47:49
         read_data_start = tic;
         job_orbit = periodic_orbits_jobs(iOrbit);
         sol = po_read_solution('',convertStringsToChars(solution_name),job_orbit_labels(iOrbit));

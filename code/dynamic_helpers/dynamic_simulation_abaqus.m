@@ -206,7 +206,11 @@ input_id = fopen("temp\" + new_job + ".inp","w");
 
 
 %-------------------------------------------------------------------------%
-step_force_bc = force_transform*f_r_0;
+if size(f_r_0,1) == Model.num_dof
+    step_force_bc = f_r_0;
+else
+    step_force_bc = force_transform*f_r_0;
+end
 step_force = zeros(all_dofs,1);
 step_force(node_map,:) = step_force_bc;
 step_force_label = strings(all_dofs,1);

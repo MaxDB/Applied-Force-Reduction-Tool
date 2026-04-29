@@ -39,6 +39,15 @@ num_dataset_points = size(Static_Data,2);
 max_degree = get_max_poly_degree("displacement",num_r_modes,num_dataset_points,MAXIMUM_DEGREE);
 % max_degree = max_degree - 1;
 %-------------
+
+if size(Static_Data.low_frequency_stiffness,1) ~= size(Static_Data.low_frequency_stiffness,2)
+    warning("verification for physical force not yet implemented")
+    Static_Data.Dynamic_Validation_Data.degree = [max_degree,max_degree];
+    return
+end
+
+
+
 stiffness_converged = zeros(1,num_verified_seps);
 disp_grad_converged = zeros(1,num_verified_seps);
 

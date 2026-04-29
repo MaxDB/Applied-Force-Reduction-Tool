@@ -78,7 +78,7 @@ classdef Static_Dataset
             end
             % if nargin == 2
             obj = obj.create_dataset;
-            static_dataset_verificiation_plot(obj)
+            static_dataset_verification_plot(obj)
             % else
             %     Properties_Data = varargin{1,1};
             %     properties = fields(Properties_Data);
@@ -116,6 +116,7 @@ classdef Static_Dataset
                 end
 
             end
+            
 
             
             obj = obj.create_scaffold;
@@ -194,6 +195,9 @@ classdef Static_Dataset
             elseif nargin == 1
                 low_freq_modes = 1:Static_Opts.num_validation_modes;
                 low_freq_modes(low_freq_modes > obj.Model.num_dof) = [];
+                if obj.Model.Static_Options.follower_validation_modes
+                    low_freq_modes = low_freq_modes + 2000;
+                end
             end
 
 
@@ -208,16 +212,34 @@ classdef Static_Dataset
                 mass = obj.Model.mass;
                 stiffness = obj.Model.stiffness;
 
-                [full_evecs,full_evals] = eigs(stiffness,mass,max(low_freq_modes),"smallestabs");
-                full_evals = diag(full_evals);
+                low_freq_eig_modes = low_freq_modes - 2000*floor(low_freq_modes/2000);
 
-                new_L_modes = 1:max(low_freq_modes);
-                new_L_modes(ismember(new_L_modes,r_modes)) = [];
+                [full_evecs,full_evals] = eigs(stiffness,mass,max(low_freq_eig_modes),"smallestabs");
+                if all(low_freq_modes < 2000)
+                    full_evals = diag(full_evals);
+               
 
-                obj.Model.low_frequency_modes = new_L_modes;
-                obj.Model.low_frequency_eigenvalues = full_evals(new_L_modes);
+                    new_L_modes = 1:max(low_freq_eig_modes);
+                    new_L_modes(ismember(new_L_modes,r_modes)) = [];
 
-                evec_L =  full_evecs(:,new_L_modes);
+                    obj.Model.low_frequency_modes = new_L_modes;
+                    obj.Model.low_frequency_eigenvalues = full_evals(new_L_modes);
+
+                    evec_L =  full_evecs(:,new_L_modes);
+                else
+                    evals_L = diag(full_evals);
+                    evec_L = full_evecs;
+
+                    new_L_modes = low_freq_modes;
+                    evals_L(ismember(new_L_modes,r_modes)) = [];
+                    evec_L(:,ismember(new_L_modes,r_modes)) = [];
+                    new_L_modes(ismember(new_L_modes,r_modes)) = [];
+
+                    obj.Model.low_frequency_modes = new_L_modes;
+                    obj.Model.low_frequency_eigenvalues = evals_L;
+                end
+
+         
                 matrix_data = whos("evec_L");
                 if matrix_data.bytes/1024 > obj.Model.Static_Options.max_matrix_size
                     data_path = obj.Model.get_data_path;
@@ -226,7 +248,12 @@ classdef Static_Dataset
                 obj.Model.low_frequency_eigenvectors = evec_L;
             end
 
-            obj = apply_small_force(obj,low_freq_modes);
+          
+            if obj.Model.Static_Options.follower_validation_modes
+                obj = apply_small_force(obj,low_freq_modes(low_freq_modes>2000));
+            else
+                obj = apply_small_force(obj,low_freq_modes(low_freq_modes<1000));
+            end
             perturbation_time = toc(perturbation_time_start);
             log_message = sprintf("Perturbation data created: %.1f seconds" ,perturbation_time);
             logger(log_message,2)
@@ -260,7 +287,8 @@ classdef Static_Dataset
 
 
             r_modes = obj.Model.reduced_modes;
-            validation_modes(ismember(validation_modes,r_modes)) = [];
+         
+            validation_modes(:,ismember(validation_modes(1,:),r_modes)) = [];
 
             found_L_modes = obj.Model.low_frequency_modes;
             unknown_L_modes = setdiff(validation_modes,found_L_modes);
@@ -303,7 +331,7 @@ classdef Static_Dataset
             log_message = sprintf("Verifying validation polynomials: %.1f seconds" ,minimum_degree_time);
             logger(log_message,3)
 
-            validation_dataset_verificiation_plot(obj)
+            validation_dataset_verification_plot(obj)
 
         end
         %-----------------------------------------------------------------%
@@ -930,6 +958,15 @@ classdef Static_Dataset
             h_modes = [r_modes,current_L_modes];
             h_eval = [r_eval;L_eval];
             h_evec = [r_evec,L_evec];
+
+            mapped_h_modes = h_modes(h_modes>2000) - 2000*floor(h_modes(h_modes>2000)/2000);
+            remove_modes = h_modes == mapped_h_modes;
+
+            h_modes(remove_modes) = [];
+            h_evec(:,remove_modes) = [];
+            h_eval(:,remove_modes) = [];
+
+          
         end
         %-----------------------------------------------------------------%
         function obj = load_all_data(obj)

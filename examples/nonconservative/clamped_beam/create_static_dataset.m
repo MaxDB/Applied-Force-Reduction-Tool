@@ -46,4 +46,4 @@ Nc_Data = Nonconservative_Data(Model,External_Force);
 Nc_Static_Data = Static_Data.extend_stress_manifold(Nc_Data);
 
 Nc_Static_Data.save_data;
-static_dataset_verificiation_plot(Nc_Static_Data)
+static_dataset_verification_plot(Nc_Static_Data)

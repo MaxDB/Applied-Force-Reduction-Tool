@@ -1,6 +1,6 @@
-function validation_dataset_verificiation_plot(Static_Data)
+function validation_dataset_verification_plot(Static_Data)
 PLOT_LEVEL = 2;
-NUM_OUTPUT_PLOTS = 4;
+NUM_OUTPUT_PLOTS = 9;
 
 
 load("data\plot_level.mat","plotting_level")
@@ -15,9 +15,16 @@ num_h_modes = size(h_modes,2);
 
 Rom = Reduced_System(Static_Data);
 
-stiffness_outputs = randi(num_h_modes,[NUM_OUTPUT_PLOTS,2]);
+if size(Rom.Low_Frequency_Stiffness_Polynomial,1) == size(Rom.Low_Frequency_Stiffness_Polynomial,2)
+    stiffness_outputs = randi(num_h_modes,[NUM_OUTPUT_PLOTS,2]);
+else
+    stiff_output_rows = randi(num_dofs,[NUM_OUTPUT_PLOTS,1]);
+    stiff_output_cols = randi(num_h_modes,[NUM_OUTPUT_PLOTS,1]);
+    stiffness_outputs = [stiff_output_rows,stiff_output_cols];
+end
 ax = plot_static_data("h_stiffness",Static_Data,"outputs",stiffness_outputs);
 Rom.Low_Frequency_Stiffness_Polynomial.plot_polynomial("axes",ax,"outputs",stiffness_outputs);
+
 
 disp_output_rows = randi(num_dofs,[NUM_OUTPUT_PLOTS,1]);
 disp_output_cols = randi(num_h_modes,[NUM_OUTPUT_PLOTS,1]);

@@ -2,7 +2,7 @@ function final_force = rotate_force(starting_force,starting_displacement,final_d
 
 num_nodes = Mesh_Data.num_nodes;
 num_dof = num_nodes*Mesh_Data.dimension;
-initial_node_position = Mesh_Data.node_starting_position;
+
 
 switch Mesh_Data.type
     case {"beam","shell"}

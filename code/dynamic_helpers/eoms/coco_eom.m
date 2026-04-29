@@ -33,11 +33,11 @@ for iX = 1:num_x
     end
 
     r_products_coupling = r_power_products(1:num_coupling_coeffs,:);
-    restoring_force = Force_Data.coeffs*r_power_products(1:num_force_coeffs,:);
-
     r_dr_products_coupling = r_products_coupling(Disp_Data.diff_mapping{1,1}).*Disp_Data.diff_scale_factor{1,1};
     r_dr2_products_coupling = r_products_coupling(Disp_Data.diff_mapping{1,2}).*Disp_Data.diff_scale_factor{1,2};
     
+    restoring_force = r_dr_products_coupling'*Force_Data.beta_bar*r_power_products(1:num_force_coeffs,:);
+    % restoring_force = Force_Data.coeffs*r_power_products(1:num_force_coeffs,:);
     
     disp_prod = r_dr_products_coupling'*Disp_Data.beta_bar; 
     

@@ -11,8 +11,9 @@ Model = Rom.Model;
 r_eigenvalues = Model.reduced_eigenvalues;
 r_modes = Model.reduced_modes;
 
+mapped_modes = r_modes - 2000*floor(r_modes/2000);
 
-mode_index = find(r_modes == backbone_num);
+mode_index = find(mapped_modes == backbone_num);
 if r_modes == 0
     mode_index = backbone_num;
 end

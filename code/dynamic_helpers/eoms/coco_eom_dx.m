@@ -64,8 +64,8 @@ for iX = 1:num_x
     convection = convection_dr_dot*r_dot_i;
 
     %-------------
-    restoring_force = Force_Data.coeffs*r_products_force;
-    restoring_force_dr = Force_Data.coeffs*r_dr_products_force;
+    restoring_force = r_dr_products_coupling'*Force_Data.beta_bar*r_products_force;
+    restoring_force_dr = r_dr_products_coupling'*Force_Data.beta_bar*r_dr_products_force;
     
     %-------------
     r_ddot = -inertia\(convection+restoring_force);

@@ -60,6 +60,7 @@ end
 if ~exist("Initial_Data","var")
     Initial_Data.initial_load = zeros(size(force_ratio));
     Initial_Data.initial_disp = [];
+    Initial_Data.initial_shape = [];
 end
 
 initial_load = Initial_Data.initial_load;
@@ -75,12 +76,14 @@ num_incs = 1;
 if data_method == "incs"
     load_inc = static_settings(2)/num_loadcases;
     static_settings(1) = load_inc;
-    static_settings(3) = min(load_inc,static_settings(3));
+    static_settings(3) = load_inc;
     static_settings(4) = load_inc;
     
     num_incs = num_loadcases;
     num_loadcases = 1;
-    add_data_type = "none";
+    if any(add_data_type == ["stiffness","perturbation"])
+        add_data_type = "none";
+    end
 end
 
 %----
@@ -286,8 +289,6 @@ logger(log_message,3)
 modal_force = zeros(force_size,total_static_steps);
 sep_id = zeros (1,total_static_steps);
 switch add_data_type
-    case "none"
-        total_steps = total_static_steps;
     case "stiffness"
         total_steps = total_static_steps*2;
     case "perturbation"
@@ -314,6 +315,8 @@ switch add_data_type
             perturbation_steps = [perturbation_steps;loadcase_step];
         end
         perturbation_steps = [perturbation_steps;perturbation_template((loadcase_end_line+1):end)];
+    otherwise
+        total_steps = total_static_steps;
 end
 
 if RESET_TO_ZERO
@@ -363,7 +366,7 @@ try
         physical_force(node_map,1) = physical_force_bc(:,1);
 
         if data_method == "incs"
-            sep_force_shape(:,iSep) = physical_force;
+            sep_force_shape(:,iSep) = physical_force/applied_force(:,iSep);
         end
 
         physical_base_force_bc = force_transform*sep_base_force;
@@ -544,9 +547,9 @@ switch Static_Opts.output_format
 end
 
 displacement_bc = displacement(node_map,:);
-f = modal_force;
+f_modal = modal_force;
 if data_method == "incs"
-    f = zeros(num_r_modes,size(displacement_bc,2));
+    f_modal = zeros(num_r_modes,size(displacement_bc,2));
     sep_id_base = sep_id;
     sep_id = zeros(1,size(displacement_bc,2));
 
@@ -554,7 +557,7 @@ if data_method == "incs"
     for iForce = 1:num_final_force
         inc_span = (1:num_incs) + (iForce-1)*num_incs;
         inc_multiple = load_inc:load_inc:1;
-        f(:,inc_span) = modal_force(:,iForce) .*inc_multiple;
+        f_modal(:,inc_span) = modal_force(:,iForce) .*inc_multiple;
         sep_id(inc_span) = sep_id_base(iForce);
     end
 end
@@ -603,34 +606,48 @@ if clean_data
     r(:,remove_index) = [];
     physical_displacement(:,remove_index) = [];
     E(:,remove_index) = [];
-    f(:,remove_index) = [];
+    f_modal(:,remove_index) = [];
     sep_id(:,remove_index) = [];
 end
-
+f = f_modal;
 
 %---------------
 if Static_Opts.follower_force
     Mesh_Data = get_mesh_data(geometry);
     Mesh_Data = Mesh_Data{1};
     Mesh_Data.num_nodes = num_nodes;
-    Mesh_Data.node_starting_position = read_abaqus_node_position(geometry)';
 
-    rotated_phy_force = zeros(size(physical_displacement));
+    rotated_phy_force_shape = zeros(size(physical_displacement));
     phy_disp = zeros(all_dofs,1);
+    inc_counter = 0;
     for iSep = 1:num_seps
         load_case_ids = find(sep_id == iSep);
         base_shape = sep_force_shape(:,iSep);
         starting_disp = zeros(size(base_shape));
        
         for iInc = 1:size(load_case_ids,2)
+            inc_counter = inc_counter + 1;
             phy_disp(node_map) = physical_displacement(:,load_case_ids(iInc));
             rotated_shape = rotate_force(base_shape,starting_disp,phy_disp,Mesh_Data);
-
+            rotated_phy_force_shape(:,inc_counter) = rotated_shape(node_map,:);
         end
     end
+    rotated_mode_shape = Model.mass\rotated_phy_force_shape;
+    physical_force = rotated_phy_force_shape.*f_modal;
+    f = physical_force;
+    % plot_fe_force(Model,physical_displacement(:,10),rotated_phy_force(:,10))
+    % plot_fe_modeshape(Model,physical_displacement(:,10),rotated_mode_shape(:,10));
+    % figure;plot(f(1,:),rotated_phy_force_shape(100,:))
 
-    plot_fe_force(Model,phy_disp,rotated_shape)
-    plot_fe_force(Model,starting_disp,base_shape)
+    %% recalculate 'r'?
+    % won't work (as implemented) for R > 1
+    r_rotated = zeros(size(r));
+    r_rotated_transform = rotated_mode_shape'*Model.mass;
+    num_loadcases = size(r,2);
+    for iLoad = 1:num_loadcases
+        r_rotated(:,iLoad) = r_rotated_transform(iLoad,:)*displacement_bc(:,iLoad);
+    end
+    r = r_rotated;
 end
 %---------------
 stiff_restarted_seps_index  = (final_sep_energy(restart_type ~= 2) < Model.fitting_energy_limit);
@@ -707,6 +724,8 @@ switch add_data_type
         if clean_data
             additional_data(:,:,remove_index) = [];
         end
+    case "lambda"
+        additional_data = f_modal;
 end
 additional_data_processing_time = toc(additional_data_processing_time_start) + additional_data_time;
 if add_data_type ~= "none"
@@ -738,8 +757,8 @@ end
 
 if ~isempty(soft_restart_start)
     restart_sep = 1;
-    soft_restarted_loadcases = f(:,soft_restart_end);
-    soft_initial_load = f(:,soft_restart_start);
+    soft_restarted_loadcases = f_modal(:,soft_restart_end);
+    soft_initial_load = f_modal(:,soft_restart_start);
 
     restarted_loadcases = [restarted_loadcases,soft_restarted_loadcases];
     next_initial_load = [next_initial_load,soft_initial_load];
@@ -752,13 +771,18 @@ end
 
 
 if restart_sep
-    if Static_Opts.follower_force
-        error("SEP restarts not implemented for follower forces")
-    end
+    
     restarted_seps = [find(stiff_restarted_seps_index),find(soft_restarted_seps_index)];
    
     log_message = sprintf("job " + job_id(1) + ": %u/%u SEPs restarted" ,[length(restarted_seps),num_seps]);
     logger(log_message,3)
+
+    if Static_Opts.follower_force
+        for iSep = 1:length(restarted_seps)
+            disp([restarted_seps(iSep),max(E(sep_id == restarted_seps))])
+        end
+        error("SEP restarts not implemented for follower forces")
+    end
     
     if size(job_id,2) == 1
         job_id(2) = 2;
@@ -774,6 +798,17 @@ if restart_sep
         initial_disp(:,iSep) = displacement(:,last_disp);
     end
     Initial_Data.initial_disp = initial_disp;
+    
+    if Static_Opts.follower_force
+        initial_shape = zeros(all_dofs,num_restarted_seps);
+        for iSep = 1:num_restarted_seps
+            restarted_sep = restarted_seps(iSep);
+            last_disp = find(sep_id == restarted_sep,1,"last");
+            initial_shape(node_map,iSep) = physical_force(:,last_disp);
+        end
+        Initial_Data.initial_shape = initial_shape;
+    end
+
     [r_restart,theta_restart,f_restart,E_restart,additional_data_restart,sep_id_restart] = add_sep_abaqus(restarted_loadcases, ...
         num_restart_loadcases,Static_Opts,max_inc,add_data_type,clean_data,{Model,Nc_Data},job_id,Initial_Data,next_restart_type);
     
@@ -785,7 +820,7 @@ if restart_sep
     r = [r,r_restart(:,unique_restart_index)];
 
     physical_displacement = [physical_displacement,theta_restart(:,unique_restart_index)];
-    f = [f,f_restart(:,unique_restart_index)];
+    f_modal = [f_modal,f_restart(:,unique_restart_index)];
     E = [E,E_restart(:,unique_restart_index)];
     if ~isempty(additional_data_restart)
         switch add_data_type

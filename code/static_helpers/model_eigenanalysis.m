@@ -41,6 +41,13 @@ if Model.reduced_modes == 0
     return
 end
 
+
+if any(Model.reduced_modes > 2000)
+    mapped_modes = Model.reduced_modes - 2000*floor(Model.reduced_modes/2000);
+else
+    mapped_modes = Model.reduced_modes;
+end
+
 if Model.Static_Options.load_custom_eigendata
 
     load("geometry\" + Model.system_name+"\custom_eigen_data.mat","custom_eval","custom_evec");
@@ -54,9 +61,9 @@ else
         case "perturbation"
             r_modes = Model.reduced_modes;
             L_modes = 1:Model.Static_Options.num_validation_modes;
-            L_modes(ismember(L_modes,r_modes)) = [];
+            L_modes(ismember(L_modes,mapped_modes)) = [];
             Model.low_frequency_modes = L_modes;
-            h_modes = [r_modes,L_modes];
+            h_modes = [mapped_modes,L_modes];
 
             [evec,eval] = eigs(K,M,max(h_modes),"smallestabs");
 
@@ -67,15 +74,13 @@ else
             Model.low_frequency_eigenvectors = eVec_L;
 
         otherwise
-            r_modes = Model.reduced_modes;
-
-            [evec,eval] = eigs(K,M,max(r_modes),"smallestabs");
+            [evec,eval] = eigs(K,M,max(mapped_modes),"smallestabs");
 
 
     end
 
-    eval_r = eval(r_modes,r_modes)*ones(length(r_modes),1);
-    evec_r = evec(:,r_modes);
+    eval_r = diag(eval(mapped_modes,mapped_modes));
+    evec_r = evec(:,mapped_modes);
 
 end
 Model.reduced_eigenvalues = eval_r;

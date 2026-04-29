@@ -487,15 +487,9 @@ classdef Dynamic_Dataset
 
 
             Sol = obj.load_solution(solution_num);
-
-            if isstring(L_modes) && L_modes == "all"
-                switch Rom.Model.system_type
-                    case "indirect"
-                        L_modes = Rom.Model.low_frequency_modes;
-                    case "direct"
-                        L_modes = 1:Rom.Model.num_dof;
-                end
-            end
+            
+            L_modes = process_validation_modes(L_modes,obj.Dynamic_Model.Model);
+           
             Validated_Sol_Settings.solution_num = solution_num;
             Validated_Sol_Settings.L_modes = L_modes;
             Validated_Sol_Settings.Additional_Output = obj.Additional_Output;

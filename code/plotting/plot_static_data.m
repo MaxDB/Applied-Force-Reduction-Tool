@@ -88,9 +88,13 @@ switch type
         Model = Static_Data.Model;
         [~,~,v_modeshapes] = Static_Data.get_current_h_data;
         h_transform = v_modeshapes'*Model.mass;
-
+        
         H_0 = h_transform*(Model.stiffness\(h_transform'));
         stiffness_0 = eye(size(v_modeshapes,2))/H_0;
+        if mat_size(1) == Model.num_dof && Model.system_type ~= "direct"
+            stiffness_0 = h_transform'*stiffness_0;
+        end
+
 
         y_origin = reshape(stiffness_0,vec_size{1},1);
         y_label = "D";

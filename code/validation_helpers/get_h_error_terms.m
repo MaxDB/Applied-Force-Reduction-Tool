@@ -40,7 +40,6 @@ for iX = 1:num_x
     
     %---
     r_force = Eom_Input.Reduced_Force_Data.coeffs*r_power_products(1:num_reduced_force_coeffs,:);
-    h_force_grad = tensorprod(Eom_Input.H_Force_Data.coeffs,r_power_products(1:num_h_force_grad_coeffs,:),3,1);
     
     %--
     % r_products_disp_all = r_power_products(1:num_max_disp_coeffs,:);
@@ -70,34 +69,34 @@ for iX = 1:num_x
     % r_dr2_products_grad = r_dr2_products_disp;
 
     %%% Inertia
-    H_beta_prod = squeeze(tensorprod(r_products_grad',h_disp_beta_bar,2,1));
-    h_inertia(:,:,iX) = tensorprod(H_beta_prod,r_products_grad,3,1);
+    H_beta_prod = tensorprod(r_products_grad',h_disp_beta_bar,2,1);
+    h_inertia(:,:,iX) = tensorprod(H_beta_prod,r_products_grad,4,1);
 
     %%% Convection
     r_dr_r_dot_prod = r_dr_products_grad*r_dot_i;
-    H_r_dr_r_dot_prod = tensorprod(H_beta_prod,r_dr_r_dot_prod,3,1);
+    H_r_dr_r_dot_prod = tensorprod(H_beta_prod,r_dr_r_dot_prod,4,1);
     h_conv(:,:,iX) = 2*H_r_dr_r_dot_prod;
 
     %%% Stiffness
     r_d2r_r_dot_r_dot_prod = tensorprod(r_dr2_products_grad,r_dot_i,3,1)*r_dot_i;
     r_dr_r_ddot_prod = r_dr_products_grad*r_ddot_i;
     stiff_sum = r_d2r_r_dot_r_dot_prod + r_dr_r_ddot_prod;
-    stiff_prod = tensorprod(H_beta_prod,stiff_sum,3,1);
+    stiff_prod = squeeze(tensorprod(H_beta_prod,stiff_sum,4,1));
     
-    h_force_grad_pre = tensorprod(Eom_Input.Beta_Bar_Data.h_disp_h_force,h_force_grad,3,1);
+    h_force_grad_pre = tensorprod(Eom_Input.Beta_Bar_Data.h_disp_h_force,r_power_products(1:num_h_force_grad_coeffs,:),4,1);
     h_force_grad_projected = squeeze(tensorprod(r_products_grad',h_force_grad_pre,2,1));
 
     h_stiff(:,:,iX) = stiff_prod + h_force_grad_projected;
 
     %%% Force
-    H_beta_disp_prod = squeeze(tensorprod(r_products_grad',h_disp_r_disp_beta_bar,2,1));
+    H_beta_disp_prod = tensorprod(r_products_grad',h_disp_r_disp_beta_bar,2,1);
     disp_r_d2r_r_dot_r_dot_prod = tensorprod(r_dr2_products_disp,r_dot_i,3,1)*r_dot_i;
     disp_r_dr_r_ddot_prod = r_dr_products_disp*r_ddot_i;
     disp_stiff_sum = disp_r_d2r_r_dot_r_dot_prod + disp_r_dr_r_ddot_prod;
-    force_1 = H_beta_disp_prod*disp_stiff_sum;
+    force_1 = tensorprod(H_beta_disp_prod,disp_stiff_sum,3,1);
 
     force_2_pre = tensorprod(Eom_Input.Beta_Bar_Data.h_disp_r_force,r_force,3,1);
-    force_2 = squeeze(tensorprod(r_products_grad',force_2_pre,2,1))';
+    force_2 = tensorprod(r_products_grad',force_2_pre,2,1);
 
     h_force(:,iX) = -(force_1 + force_2);
 end

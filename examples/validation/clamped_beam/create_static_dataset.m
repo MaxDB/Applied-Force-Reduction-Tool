@@ -15,6 +15,7 @@ initial_modes = [1];
 Static_Opts.additional_data = "stiffness";
 Static_Opts.num_validation_modes = 10;
 Static_Opts.max_parallel_jobs =  4; %be careful!
+Static_Opts.follower_validation_modes = 1;
 %------------------------------------------%
 
 

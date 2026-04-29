@@ -11,9 +11,11 @@ if num_orbits == 1
     orbits = {orbits};
 end
 
+
+
 physical_displacement = zeros(num_dofs,num_orbits);
 physical_velocity = zeros(num_dofs,num_orbits);
-initial_force = zeros(num_modes,num_orbits);
+initial_force = zeros(size(Rom.Force_Polynomial,1),num_orbits);
 period = zeros(1,num_orbits);
 min_incs = zeros(1,num_orbits);
 
