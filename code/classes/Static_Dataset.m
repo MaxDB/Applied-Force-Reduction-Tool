@@ -133,14 +133,26 @@ classdef Static_Dataset
         function obj = verify_dataset(obj)
             %add loadcases until convergence
             verification_algorithm = obj.Verification_Options.verification_algorithm;
+            if any(obj.Model.reduced_modes > 2000)
+                if isscalar(obj.Model.reduced_modes)
+                    verification_algorithm = "grid";
+                else
+                    warning("verification not implemented for multimode follower manifolds")
+                    obj.Verification_Options.maximum_iterations = -1;
+                end
+            end
             verification_time_start = tic;
             switch verification_algorithm
                 case "sep_to_edge"
                     obj = sep_verification(obj);
                 case "sep_from_origin"
+                    warning("depricated")
                     obj = sep_from_origin_verification(obj);
                 case "sep_grow"
+                    warning("depricated")
                     obj = sep_grow_verification(obj);
+                case "grid"
+                    obj = grid_verification(obj);
             end
             % switch additional_data_type
             %     case "stiffness"

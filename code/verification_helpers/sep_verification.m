@@ -139,16 +139,31 @@ for iIteration = 1:(max_iterations+1)
         Disp_Error_Inputs.beta_bar_one = Rom_One.get_beta_bar(Rom_One.Physical_Displacement_Polynomial);
         Disp_Error_Inputs.beta_bar_two = Rom_Two.get_beta_bar(Rom_Two.Physical_Displacement_Polynomial);
 
-        Disp_Error_Inputs.disp_mode_beta_one = Rom_One.Physical_Displacement_Polynomial.coefficients'*force_transform;
-        Disp_Error_Inputs.disp_mode_beta_two = Rom_Two.Physical_Displacement_Polynomial.coefficients'*force_transform;
+        disp_coeffs_one = Rom_One.Physical_Displacement_Polynomial.coefficients;
+        disp_coeffs_two = Rom_Two.Physical_Displacement_Polynomial.coefficients;
+
+        force_coeffs_one = Rom_One.Force_Polynomial.coefficients;
+        force_coeffs_two = Rom_Two.Force_Polynomial.coefficients;
+
+        Disp_Error_Inputs.disp_mode_beta_one = disp_coeffs_one'*force_transform*force_coeffs_one;
+        Disp_Error_Inputs.disp_mode_beta_two = disp_coeffs_two'*force_transform*force_coeffs_two;
 
         Disp_Error_Inputs.input_order = Rom_Two.get_max_input_order;
-        
+
 
         Disp_Error_Inputs.Disp_Diff_Data_One = Rom_One.Physical_Displacement_Polynomial.get_diff_data(1);
         Disp_Error_Inputs.Disp_Diff_Data_Two = Rom_Two.Physical_Displacement_Polynomial.get_diff_data(1);
 
         
+
+        % disp_coeffs_one = Rom_One.Physical_Displacement_Polynomial.coefficients;
+        % disp_coeffs_two = Rom_Two.Physical_Displacement_Polynomial.coefficients;
+        % 
+        % force_coeffs_one = Rom_One.Force_Polynomial.coefficients;
+        % force_coeffs_two = Rom_Two.Force_Polynomial.coefficients;
+
+        % Disp_Error_Inputs.disp_mode_beta_one = disp_coeffs_one'*Model.mass*force_coeffs_one;
+        % Disp_Error_Inputs.disp_mode_beta_two = disp_coeffs_two'*Model.mass*force_coeffs_two;
 
         % max_sep_force_error = zeros(1,num_verified_seps);
         % max_sep_disp_error = zeros(1,num_verified_seps);

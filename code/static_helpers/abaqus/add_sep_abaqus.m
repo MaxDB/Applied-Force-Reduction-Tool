@@ -830,6 +830,8 @@ if restart_sep
             case "perturbation"
                 additional_data_restart = additional_data_restart(:,:,unique_restart_index);
                 additional_data = cat(3,additional_data,additional_data_restart);
+            case "lambda"
+                additional_data = f_modal;
         end
     end
     

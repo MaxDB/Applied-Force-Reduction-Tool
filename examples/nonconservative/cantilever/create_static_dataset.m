@@ -7,7 +7,7 @@ set_visualisation_level(3)
 
 %--------- System Settings ---------%
 system_name = "cantilever_f";
-energy_limit = 0.5;
+energy_limit = 0.76;
 initial_modes = [2001];
 %-----------------------------------%
 
@@ -17,11 +17,11 @@ Static_Opts.num_loadcases = 20;
 %--------- Static Solver Settings ---------%
 Static_Opts.additional_data = "none";
 Static_Opts.max_parallel_jobs = 1; %be careful!
-% Static_Opts.follower_validation_modes = 0;
+% Static_Opts.follower_validation_modes = 1;
 %------------------------------------------%
 
-Verification_Opts.maximum_iterations = -1;
-% Verification_Opts.maximum_iterations = 3;
+% Verification_Opts.maximum_iterations = -1;
+Verification_Opts.maximum_iterations = 3;
 
 Model = Dynamic_System(system_name,energy_limit,initial_modes,"static_opts",Static_Opts);
 

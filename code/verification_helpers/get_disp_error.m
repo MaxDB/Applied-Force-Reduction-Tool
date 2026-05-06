@@ -36,12 +36,9 @@ function error = get_disp_error(disp,Rom_One,Rom_Two,force_ratio,Disp_Error_Inpu
         r_products_force_one = r_power_products(1:num_force_coeffs(1),:);
         r_products_force_two = r_power_products(1:num_force_coeffs(2),:);
     
-        %----------
-        modal_force_one = Rom_One.Force_Polynomial.coefficients*r_products_force_one;
-        modal_force_two = Rom_Two.Force_Polynomial.coefficients*r_products_force_two;
-
-        projected_force_one = r_dr_products_disp_one'*Disp_Error_Inputs.disp_mode_beta_one*modal_force_one;
-        projected_force_two = r_dr_products_disp_two'*Disp_Error_Inputs.disp_mode_beta_two*modal_force_two;
+        %----------        
+        projected_force_one = r_dr_products_disp_one'*Disp_Error_Inputs.disp_mode_beta_one*r_products_force_one;
+        projected_force_two = r_dr_products_disp_two'*Disp_Error_Inputs.disp_mode_beta_two*r_products_force_two;
 
         %---------
         inertia_one = r_dr_products_disp_one'*beta_bar_one*r_dr_products_disp_one;
