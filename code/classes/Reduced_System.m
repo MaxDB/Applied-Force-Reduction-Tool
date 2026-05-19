@@ -28,8 +28,8 @@ classdef Reduced_System
             SCALE_ON = 1;
             obj.minimum_displacement = Static_Data.Model.Static_Options.minimum_displacement;
             
-            Experimental_Opts = read_default_options("experimental"); 
-            param_style = Experimental_Opts.param_style;
+            % Experimental_Opts = read_default_options("experimental"); 
+            param_style = "disp";
 
             %Optional argumanents
             num_args = length(varargin);
