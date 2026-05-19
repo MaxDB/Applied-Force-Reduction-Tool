@@ -32,23 +32,23 @@ Continuation_Opts.energy_limit_multiplier = 30;
 Dyn_Data = Dyn_Data.add_backbone(1,"type","fom","opts",Continuation_Opts);
 
 
-Continuation_Opts.initial_inc = 1e0;
-Continuation_Opts.max_inc = 1e0;
-Continuation_Opts.min_inc = 1e0;
-Continuation_Opts.forward_steps = 0;
-Continuation_Opts.backward_steps = 5;
-Dyn_Data = Dyn_Data.restart_point(3,33,"po","opts",Continuation_Opts);
-
-%-----
-Continuation_Opts.initial_inc = 1e-1;
-Continuation_Opts.max_inc = 2e-1;
-Continuation_Opts.min_inc = 1e-2;
-Continuation_Opts.forward_steps = 500;
-Continuation_Opts.backward_steps = 500;
-Dyn_Data = Dyn_Data.restart_point(4,5,"po","opts",Continuation_Opts);
-
-%---
-Dyn_Data = Dyn_Data.remove_solution(4);
+% Continuation_Opts.initial_inc = 1e0;
+% Continuation_Opts.max_inc = 1e0;
+% Continuation_Opts.min_inc = 1e0;
+% Continuation_Opts.forward_steps = 0;
+% Continuation_Opts.backward_steps = 5;
+% Dyn_Data = Dyn_Data.restart_point(3,33,"po","opts",Continuation_Opts);
+% 
+% %-----
+% Continuation_Opts.initial_inc = 1e-1;
+% Continuation_Opts.max_inc = 2e-1;
+% Continuation_Opts.min_inc = 1e-2;
+% Continuation_Opts.forward_steps = 500;
+% Continuation_Opts.backward_steps = 500;
+% Dyn_Data = Dyn_Data.restart_point(4,5,"po","opts",Continuation_Opts);
+% 
+% %---
+% Dyn_Data = Dyn_Data.remove_solution(4);
 
 %--
 

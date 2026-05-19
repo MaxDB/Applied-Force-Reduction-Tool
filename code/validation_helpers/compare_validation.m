@@ -34,6 +34,9 @@ end
 
 if isstring(h_modes) && h_modes == "all"
     h_modes = 1:Dyn_Data.Dynamic_Model.Model.Static_Options.num_validation_modes; 
+    if max(h_modes) > Dyn_Data.Dynamic_Model.Model.num_dof
+        h_modes = 1:Dyn_Data.Dynamic_Model.Model.num_dof;
+    end
 end
 
 if isstring(solution_num) && solution_num == "last"

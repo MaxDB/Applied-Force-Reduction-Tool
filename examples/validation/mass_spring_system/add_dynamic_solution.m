@@ -1,9 +1,10 @@
 clear
-% close all
+close all
 set_visualisation_level(1)
 
-system_name = "mass_spring_roller_1";
+system_name = "mass_spring_roller_12";
 Dyn_Data = initalise_dynamic_data(system_name);
+%Dyn_Data = Dyn_Data.remove_solution("all");
 
 Additional_Output.output = "physical displacement";
 Additional_Output.type = "max";
@@ -25,14 +26,14 @@ Continuation_Opts.frequency_points = [1.86,3];
 %-----------------------------------------%
 
 Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
-Dyn_Data = Dyn_Data.validate_solution(1,2);
+compare_validation(Dyn_Data,"validation error",1,"all")
 
 
 %-----------------------------------------%
-Continuation_Opts.energy_limit_multiplier = 1.1;
-Continuation_Opts.initial_inc = 1e-2;
-Continuation_Opts.max_inc = 1e-2;
+% Continuation_Opts.energy_limit_multiplier = 1.1;
+% Continuation_Opts.initial_inc = 1e-2;
+% Continuation_Opts.max_inc = 1e-2;
 
 % Dyn_Data = Dyn_Data.restart_point(1,62,"po","opts",Continuation_Opts);
-Dyn_Data = Dyn_Data.validate_solution(2,2);
- Dyn_Data = Dyn_Data.restart_point(1,141,"po","opts",Continuation_Opts);
+% Dyn_Data = Dyn_Data.validate_solution(2,2);
+%  Dyn_Data = Dyn_Data.restart_point(1,141,"po","opts",Continuation_Opts);
