@@ -118,7 +118,7 @@ classdef Dynamic_System
                 rmdir(obj.get_data_path,"s")
             end
 
-            obj.num_nc_modes = sum(modes > 1000 && modes < 2000);
+            obj.num_nc_modes = sum(modes > 1000 & modes < 2000);
             obj.project_path = get_project_path;
      
 
