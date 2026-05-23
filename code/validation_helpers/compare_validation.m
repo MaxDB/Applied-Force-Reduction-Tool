@@ -22,8 +22,13 @@ end
 
 
 if isempty(ax)
-    fig = figure;
-    T = tiledlayout("vertical");
+    if check_stack_origin
+        fig = figure('Internal',true);   % suppresses inline figure in live script
+        set(fig,'Visible','on');   % off by default in live scripts
+    else
+        fig = figure;
+    end
+    T = tiledlayout(fig,"vertical");
     T.TileSpacing = "none";
     T.Padding = "tight";
 end
@@ -67,8 +72,7 @@ num_outputs = numel(type);
 
 backbone_plot = zeros(1,num_outputs);
 for iOutput = 1:num_outputs
-    nexttile
-    ax = gca();
+    ax = nexttile(T);
     box(ax,"on")
     switch type(iOutput)
         case "energy"
@@ -81,7 +85,7 @@ for iOutput = 1:num_outputs
         case "validation error"
             ax.YScale = "log";
             ylim(ax,[1e-5,1])
-            ylabel("\epsilon","Interpreter","tex")
+            ylabel(ax,"\epsilon","Interpreter","tex")
             validation_error_labels = ax.YTickLabel;
        
         case "physical amplitude"
@@ -161,5 +165,10 @@ for iMode = 1:num_L_modes
     logger(log_message,1)
 
 end
+if check_stack_origin
+    % set(fig,'Visible','off');
+    set(fig,"internal",false);
+end
+
 % plot_backbone(Dyn_Data,type,solution_num,"axes",ax,"colour",0);
 end

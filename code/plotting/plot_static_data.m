@@ -3,7 +3,7 @@ MAX_OUTPUTS = 4;
 R_ORIGIN = 0;
 
 LINE_WIDTH = 1;
-MARKER_SIZE = 6;
+MARKER_SIZE = 12;
 
 %-------------------------------------------------------------------------%
 num_args = length(varargin);

@@ -32,7 +32,10 @@ switch command
             coco_print(prob, LogLevel, '% 9.1f',energy_percent)
 
             period = bd_data(3,:);
-            coco_plot(period(last_points),E(last_points),energy_limit)
+            if ~isfield(data,"ax")
+                data.ax = [];
+            end
+            data.ax = coco_plot(period(last_points),E(last_points),energy_limit,data.ax);
         end
         
 end

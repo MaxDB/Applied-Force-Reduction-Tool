@@ -21,12 +21,6 @@ eom.K = [k1 + k2, 0,      0;
 %%nonlinear restoring force
 eom.fnx = @(x) nonlinear_restoring_force(x,Parameters,eom.K);
 
-%%linear damping
-% EoM.C
-
-%%applied force
-% EoM.F
-
 %%potential energy
 eom.V = @(x) potential_energy(x,Parameters);
 

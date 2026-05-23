@@ -2,7 +2,7 @@ clear
 close all
 set_visualisation_level(1)
 
-system_name = "mass_spring_roller_12";
+system_name = "mass_spring_roller_1";
 Dyn_Data = initalise_dynamic_data(system_name);
 %Dyn_Data = Dyn_Data.remove_solution("all");
 

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Info File="code/project_helpers/coco_check.m" GroupUUID="default" Icon="" Name="coco_check" Type="StartUp" Visible="0">
+    <Extension Name="StartUpPrev" Value="9f393663-8c6a-4922-a603-3411c56830d8"/>
+</Info>

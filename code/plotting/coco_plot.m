@@ -1,4 +1,4 @@
-function coco_plot(period,energy,energy_limit)
+function ax = coco_plot(period,energy,energy_limit,ax)
 PLOT_LEVEL = 1;
 COLOUR = get_plot_colours(1);
 MARKER_COLOUR = get_plot_colours(3);
@@ -15,8 +15,14 @@ marker_settings = {"Color",COLOUR,"LineWidth",LINE_WIDTH,"Marker","o","MarkerSiz
 
 frequency = 2*pi./period;
 
-if isscalar(energy)
-    fig = figure;
+% if isscalar(energy)
+if isempty(ax)
+    if check_stack_origin
+        fig = figure('Internal',true);   % suppresses inline figure in live script
+        set(fig,'Visible','on');   % off by default in live scripts
+    else
+        fig = figure;
+    end
     fig.Name = "coco_plot";
     ax = axes(fig);
     hold(ax,"on")
@@ -28,15 +34,15 @@ if isscalar(energy)
     return
 end
 
-figures = get(groot, 'Children');
-num_figures = size(figures,1);
-for iFig = 1:num_figures
-    fig = figures(iFig);
-    if fig.Name == "coco_plot"
-        ax = fig.Children;
-        break
-    end
-end
+% figures = get(groot, 'Children');
+% num_figures = size(figures,1);
+% for iFig = 1:num_figures
+%     fig = figures(iFig);
+%     if fig.Name == "coco_plot"
+%         ax = fig.Children;
+%         break
+%     end
+% end
 delete(ax.Children(1))
 
 x_plot = frequency(1,(end-1):end);

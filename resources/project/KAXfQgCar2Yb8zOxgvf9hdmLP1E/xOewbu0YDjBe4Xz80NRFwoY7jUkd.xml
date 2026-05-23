@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Info File="code/project_helpers/abaqus_check.m" GroupUUID="default" Icon="" Name="abaqus_check" Type="StartUp" Visible="0">
+    <Extension Name="StartUpPrev" Value="5750dcdc-2074-4941-863e-9bca4c95a660"/>
+</Info>
