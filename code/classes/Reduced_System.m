@@ -90,8 +90,7 @@ classdef Reduced_System
             evec_r = load_data(evec_r);
 
             obj.reduced_displacement_limits = [min(r,[],2),max(r,[],2)];
-            num_r_modes = Static_Data.Model.reduced_modes;
-            num_applied_forces = size(r,1) - num_r_modes;
+            num_r_modes = length(Static_Data.Model.reduced_modes);
 
             if isempty(Static_Data.Model.linear_disp)
                 disp_constraint = evec_r;
@@ -105,16 +104,32 @@ classdef Reduced_System
                 Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",disp_constraint},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
                 Potential_Poly = Polynomial(r,Static_Data.potential_energy,force_degree+1,"constraint",{"constant",0},"shift",SHIFT_ON,"scale",SCALE_ON);
             else
-                Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
                 Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",disp_constraint},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
-                Potential_Poly = integrate_polynomial(Force_Poly);
 
-                %
-
+                if obj.Model.num_nc_modes > 0
+                    % 
+                    % potential_constraint = zeros(1,1+num_r_modes+num_r_modes*(1+num_r_modes)/2);
+                    % coeff_position = 1+num_r_modes + 1;
+                    % for iMode = 1:num_r_modes
+                    %     potential_constraint(coeff_position) = eval_r(iMode);
+                    %     coeff_position = coeff_position + num_r_modes - (iMode - 1);
+                    % end
+                    % Potential_Poly = Polynomial(r,Static_Data.potential_energy,force_degree+1,"constraint",{"quadratic",potential_constraint},"shift",SHIFT_ON,"scale",SCALE_ON);
+                    Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
+                    Potential_Poly = integrate_polynomial(Force_Poly);
+                
+                    % Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"shift",SHIFT_ON,"scale",SCALE_ON);
+                    % Potential_Poly = integrate_polynomial(Force_Poly);
+                    
+                else
+                    Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
+                    Potential_Poly = integrate_polynomial(Force_Poly);
+                end
+                
             end
             Reduced_Stiffness_Poly = differentiate_polynomial(Force_Poly);
 
-            % ax = plot_static_data("potential",Static_Data);
+            % ax = plot_static_data("potential",Static_Data);```
             % ax = Potential_Poly.plot_polynomial("axes",ax);
             % Reduced_Stiffness_Poly.plot_polynomial("outputs",[1,1]);
             

@@ -1,6 +1,10 @@
 function Analytic_Eom = load_analytic_system(system_path)
+    if ~isfile(system_path) && isfile(system_path + ".m")
+        system_path = system_path + ".m";
+    end
+
     if ~isfile(system_path)
-        system_path = "geometry/" + system_path + "/" + system_path + ".m";
+        system_path = "geometry\" + system_path + "\" + system_path + ".m";
     end
 
     run(system_path)

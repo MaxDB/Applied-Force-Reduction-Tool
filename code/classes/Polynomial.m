@@ -542,6 +542,9 @@ classdef Polynomial
                     if isscalar(Constraint.values)
                         Constraint.values = ones(obj.output_dimension,num_inputs+1)*Constraint.values;
                     end
+                case "quadratic"
+                    Constraint.terms = 1:(num_inputs+1+num_inputs*(num_inputs+1)/2);
+                    Constraint.values = constraint_type{1,2};
                 case "linear_disp"
                     Constraint.terms = 1:(num_inputs+1);
                     Constraint.values = zeros(num_outputs,num_inputs+1);

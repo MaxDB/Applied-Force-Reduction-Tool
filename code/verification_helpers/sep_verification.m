@@ -189,6 +189,7 @@ for iIteration = 1:(max_iterations+1)
         Rom_One_Const =  parallel.pool.Constant(Rom_One);
         Rom_Two_Const = parallel.pool.Constant(Rom_Two);
         parfor (iSep = 1:num_verified_seps,num_jobs)
+        % disp("re-enable parallelisation")
         % for iSep = 1:num_verified_seps
 
 
@@ -305,7 +306,10 @@ for iIteration = 1:(max_iterations+1)
         end
 
 
-        if ~all(force_converged) || ~all(disp_converged)
+        % if ~all(force_converged) || ~all(disp_converged)
+        %     force_degree = force_degree_two;
+        % end
+        if ~all(force_converged)
             force_degree = force_degree_two;
         end
 
