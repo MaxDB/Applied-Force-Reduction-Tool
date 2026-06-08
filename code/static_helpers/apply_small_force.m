@@ -40,7 +40,7 @@ perturbation_disp = zeros([size(h_disp_transform'),num_loadcases]);
 applied_force = h_disp_transform'*F_h;
 
 
-if all(h_modes < 1000)
+if all(h_modes < 2000)
     Const_Applied_Force = parallel.pool.Constant(applied_force);
     Const_Stiffness = parallel.pool.Constant(stiffness_pointer);
 

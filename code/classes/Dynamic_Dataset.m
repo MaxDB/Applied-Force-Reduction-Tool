@@ -445,7 +445,42 @@ classdef Dynamic_Dataset
             obj.solution_types{obj.num_solutions}.validated = false;
             obj.save_solution(FRF_To_BB_Sol,obj.num_solutions)
         end
-        
+        %-----------------------------------------------------------------%
+        function obj = add_full_order_forced_response(obj,Force_Data,Damping_Data,varargin)
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            initial_condition = [];
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "ic"
+                        initial_condition = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %-------------------------------------------------------------%
+            FRF_Settings.Force_Data = Force_Data;
+            FRF_Settings.Damping_Data = Damping_Data;
+            FRF_Settings.solution_num = obj.num_solutions + 1;
+            FRF_Settings.Additional_Output = obj.Additional_Output;
+            FRF_Settings.initial_condition = initial_condition;
+
+            Rom = obj.Dynamic_Model;
+            FRF_Sol = Full_Order_Forced_Solution(Rom,FRF_Settings);
+
+
+            obj.num_solutions = obj.num_solutions + 1;
+            obj.solution_types{obj.num_solutions} = FRF_Sol.Solution_Type;
+            obj.solution_types{obj.num_solutions}.validated = false;
+            obj.save_solution(FRF_Sol,obj.num_solutions)
+        end
+        %-----------------------------------------------------------------%
 
         %-----------------------------------------------------------------%
         % Validation
@@ -602,6 +637,8 @@ classdef Dynamic_Dataset
                     file_name = "Sol_Data_Validated";
                 case "FE_Orbit_Output"
                     file_name = "Sol_Data_" + Solution.fe_output_type;
+                case "Full_Order_Forced_Solution"
+                    file_name = "Sol_Data";
             end 
 
             save(solution_path + file_name,"Solution")

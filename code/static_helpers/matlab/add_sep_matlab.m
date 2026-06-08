@@ -21,12 +21,13 @@ linear_stiffness = Model.stiffness;
 %define force
 applied_force = force_ratio/num_loadcases;
 force_transform = Model.mass*Model.reduced_eigenvectors;
+num_r_modes = size(Model.reduced_modes,1);
 
 if ~conservative
     % nc_force_transform = Nc_Data.max_amplitude*Nc_Data.force_shape;
     nc_force_transform = Model.mass*Nc_Data.orth_force_shape; 
     force_transform = [force_transform,nc_force_transform];
-    num_r_modes = size(Model.reduced_modes,1);
+
     num_applied_force = Nc_Data.num_applied_forces;
 end
 
@@ -44,6 +45,8 @@ switch add_data_type
         additional_data = zeros(Model.num_dof,Model.num_dof,total_static_steps);
     case "perturbation"
         error("Not implemented yet for direct systems")
+    case "lambda"
+        additional_data = zeros(num_r_modes,total_static_steps);
     otherwise
         error("additional data type not recognised")
 end
@@ -111,6 +114,8 @@ switch add_data_type
 
     case "stiffness"
         additional_data(:,:,remove_index) = [];
+    case "lambda"
+        additional_data = f;
 end
 
 
@@ -131,6 +136,7 @@ reduced_displacement = p_transform*displacement;
 
 % reduced_force_transform = evec_p'*force_transform;
 reduced_force = f;
+
 % sin_fraction = f((num_r_modes+1):end,:);
 
 % p = asin(sin_fraction);

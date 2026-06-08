@@ -2,15 +2,15 @@ clear
 close all
 set_visualisation_level(1)
 
-system_name = "clamped_beam_11001";
+system_name = "clamped_beam_1";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
 %-------------------------------------------------------------------------%
-% Additional_Output.output = "physical displacement";
-% Additional_Output.type = "max";
-% Additional_Output.dof = 182;
-% Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
+Additional_Output.output = "physical displacement";
+Additional_Output.type = "max";
+Additional_Output.dof = 182;
+Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
 
 %--------- Continuation Settings ---------%
 %%% one mode
@@ -197,3 +197,9 @@ Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuat
 % Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"type","rom","method","fc");
 % 
 % 
+
+
+%--------
+% %Validation
+% Dyn_Data = initalise_dynamic_data("clamped_beam_11001");
+% Dyn_Data = Dyn_Data.validate_solution(2,3);

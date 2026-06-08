@@ -154,6 +154,9 @@ for iSol = 1:num_solutions
                 reduced_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
             case "fom"
                 reduced_modes = 1:Dyn_Data.Dynamic_Model.Model.num_dof;
+                if length(reduced_modes) > 10
+                    reduced_modes = "FOM";
+                end
         end
         legend_modes{1,iSol} = reduced_modes;
     end

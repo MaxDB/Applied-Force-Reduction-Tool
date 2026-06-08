@@ -45,14 +45,14 @@ num_loadcases = size(perturbation_disp,3);
 
 
 h_coupling_gradient = zeros(num_dofs,num_h_modes,num_loadcases);
-if all(h_modes < 1000)
+if all(h_modes < 2000)
     h_stiffness = zeros(num_h_modes,num_h_modes,num_loadcases);
 else
     h_stiffness = zeros(num_dofs,num_h_modes,num_loadcases);
 end
 
 
-if all(h_modes < 1000)
+if all(h_modes < 2000)
     h_Disp_Transform_Const = parallel.pool.Constant(h_disp_transform);
     Perturbation_Disp_Const = parallel.pool.Constant(perturbation_disp);
     parfor (iLoad = 1:num_loadcases,get_current_parallel_jobs)
@@ -149,7 +149,7 @@ h_0 = h_disp_transform*disp_hat_0;
 
 h_coupling_gradient_0 = disp_hat_0/h_0;
 
-if all(h_modes < 1000)
+if all(h_modes < 2000)
     h_stiffness_0 =  F_h/h_0;
 else
     h_stiffness_0 = applied_force/h_0;

@@ -137,9 +137,13 @@ classdef Dynamic_System
             place_holder_rom = obj.reduced_modes == 0;
             if place_holder_rom
                 geometry_path = "geometry\" + obj.system_name + "\" + obj.system_name;
-                Analytic_Eom = load_analytic_system(geometry_path);
-                M = Analytic_Eom.linear_mass;
-                obj.reduced_modes = 1:length(M);
+                if obj.system_type == "indirect"
+                    obj.reduced_modes = 1:20;
+                else
+                    Analytic_Eom = load_analytic_system(geometry_path);
+                    M = Analytic_Eom.linear_mass;
+                    obj.reduced_modes = 1:length(M);
+                end
             end
 
             %Find mass and stiffness matricies and find eigenvectors

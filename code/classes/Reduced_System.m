@@ -106,26 +106,22 @@ classdef Reduced_System
             else
                 Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",disp_constraint},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
 
-                if obj.Model.num_nc_modes > 0
-                    % 
-                    % potential_constraint = zeros(1,1+num_r_modes+num_r_modes*(1+num_r_modes)/2);
-                    % coeff_position = 1+num_r_modes + 1;
-                    % for iMode = 1:num_r_modes
-                    %     potential_constraint(coeff_position) = eval_r(iMode);
-                    %     coeff_position = coeff_position + num_r_modes - (iMode - 1);
-                    % end
-                    % Potential_Poly = Polynomial(r,Static_Data.potential_energy,force_degree+1,"constraint",{"quadratic",potential_constraint},"shift",SHIFT_ON,"scale",SCALE_ON);
-                    Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
-                    Potential_Poly = integrate_polynomial(Force_Poly);
-                
-                    % Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"shift",SHIFT_ON,"scale",SCALE_ON);
-                    % Potential_Poly = integrate_polynomial(Force_Poly);
-                    
-                else
-                    Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
-                    Potential_Poly = integrate_polynomial(Force_Poly);
-                end
-                
+
+                %
+                % potential_constraint = zeros(1,1+num_r_modes+num_r_modes*(1+num_r_modes)/2);
+                % coeff_position = 1+num_r_modes + 1;
+                % for iMode = 1:num_r_modes
+                %     potential_constraint(coeff_position) = eval_r(iMode);
+                %     coeff_position = coeff_position + num_r_modes - (iMode - 1);
+                % end
+                % Potential_Poly = Polynomial(r,Static_Data.potential_energy,force_degree+1,"constraint",{"quadratic",potential_constraint},"shift",SHIFT_ON,"scale",SCALE_ON);
+                Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"coupling","force","shift",SHIFT_ON,"scale",SCALE_ON);
+                Potential_Poly = integrate_polynomial(Force_Poly);
+
+                % Force_Poly = Polynomial(r,f,force_degree,"constraint",{"linear_force",eval_r},"shift",SHIFT_ON,"scale",SCALE_ON);
+                % Potential_Poly = integrate_polynomial(Force_Poly);
+
+
             end
             Reduced_Stiffness_Poly = differentiate_polynomial(Force_Poly);
 
@@ -363,11 +359,11 @@ classdef Reduced_System
             end
             
             modal_stiffness =  size(obj.Low_Frequency_Stiffness_Polynomial,1) == num_validation_modes;
-            if modal_stiffness
-                h_disp_h_force = tensorprod(obj.get_beta_mode(h_disp_coeff',evec_h),obj.Low_Frequency_Stiffness_Polynomial.coefficients,2,1);
-            else
-                h_disp_h_force = tensorprod(h_disp_coeff',obj.Low_Frequency_Stiffness_Polynomial.coefficients,2,1);
-            end
+            % if modal_stiffness
+            %     h_disp_h_force = tensorprod(obj.get_beta_mode(h_disp_coeff',evec_h),obj.Low_Frequency_Stiffness_Polynomial.coefficients,2,1);
+            % else
+            %     h_disp_h_force = tensorprod(h_disp_coeff',obj.Low_Frequency_Stiffness_Polynomial.coefficients,2,1);
+            % end
             num_stiff_coeffs = size(obj.Low_Frequency_Stiffness_Polynomial.coefficients,3);
 
             num_physical_disp_coeffs = size(physical_disp_coeffs,2);
@@ -378,10 +374,13 @@ classdef Reduced_System
                 h_disp_damp_h_disp = h_disp_coeff'*damping*h_disp_coeff;
                 h_disp_damp_r_disp = h_disp_coeff'*damping*physical_disp_coeffs;
                 h_disp_applied_force = h_disp_coeff'*force_amp;
+                h_disp_force_grad = h_disp_coeff'*obj.Model.mass*evec_h;
+
 
                 h_disp_damp_h_disp_diff = zeros(num_coeffs,num_validation_modes,num_validation_modes,num_coeffs);
                 h_disp_damp_r_disp_diff = zeros(num_coeffs,num_validation_modes,num_physical_disp_coeffs);
                 h_disp_applied_force_diff = zeros(num_coeffs,num_validation_modes,size(force_amp,2));
+                h_disp_force_grad_diff = zeros(num_coeffs,num_validation_modes,size(evec_h,2));
             end
             
             
@@ -399,11 +398,12 @@ classdef Reduced_System
                 if type == "frf"
                     h_disp_damp_r_disp_diff(:,iMode,:) = h_disp_damp_r_disp(mode_index_one,:);
                     h_disp_applied_force_diff(:,iMode,:) = h_disp_applied_force(mode_index_one,:);
+                    h_disp_force_grad_diff(:,iMode,:) = h_disp_force_grad(mode_index_one,:);
                 end
                 for jMode = 1:num_validation_modes
                     mode_index_two = jMode:num_validation_modes:num_combined_coeffs;
                     h_disp_h_disp_diff(:,iMode,jMode,:) = h_disp_h_disp(mode_index_one,mode_index_two);
-                    h_disp_h_force_diff(:,iMode,jMode,:) = h_disp_h_force(mode_index_one,mode_index_two);
+                    % h_disp_h_force_diff(:,iMode,jMode,:) = h_disp_h_force(mode_index_one,mode_index_two);
                     if type == "frf"
                         h_disp_damp_h_disp_diff(:,iMode,jMode,:) = h_disp_damp_h_disp(mode_index_one,mode_index_two);
                     end
@@ -415,11 +415,12 @@ classdef Reduced_System
                     Validation_Beta_Bar_Data.h_disp = h_disp_h_disp_diff;
                     Validation_Beta_Bar_Data.h_disp_r_disp = h_disp_r_disp_diff;
                     Validation_Beta_Bar_Data.h_disp_r_force = h_disp_r_force_diff;
-                    Validation_Beta_Bar_Data.h_disp_h_force = h_disp_h_force_diff;
+                    % Validation_Beta_Bar_Data.h_disp_h_force = h_disp_h_force_diff;
                 case "frf"
                     Validation_Beta_Bar_Data.h_disp_damp = h_disp_damp_h_disp_diff;
                     Validation_Beta_Bar_Data.h_disp_damp_r_disp = h_disp_damp_r_disp_diff;
                     Validation_Beta_Bar_Data.h_disp_applied_force = h_disp_applied_force_diff;
+                    Validation_Beta_Bar_Data.h_disp_force_grad = h_disp_force_grad_diff;
             end
         end
         %-----------------------------------------------------------------%

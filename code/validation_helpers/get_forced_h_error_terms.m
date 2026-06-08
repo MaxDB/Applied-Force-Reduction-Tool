@@ -20,7 +20,7 @@ r_transformed = scale_factor.*(r + shift_factor);
 beta_h_disp = Eom_Input.Beta_Bar_Data.h_disp;
 beta_h_disp_r_disp = Eom_Input.Beta_Bar_Data.h_disp_r_disp;
 
-beta_h_disp_h_mode = Eom_Input.Beta_Bar_Data.h_disp_h_force;
+beta_h_disp_h_mode = Eom_Input.Frf_Beta_Bar_Data.h_disp_force_grad;
 beta_h_disp_r_mode = Eom_Input.Beta_Bar_Data.h_disp_r_force;
 
 beta_h_disp_damping = Eom_Input.Frf_Beta_Bar_Data.h_disp_damp;

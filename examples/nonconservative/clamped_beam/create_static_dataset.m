@@ -8,13 +8,13 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "clamped_beam";
 energy_limit = 0.01;
-initial_modes = [1];
+initial_modes = [0];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.additional_data = "none";
+Static_Opts.additional_data = "stiffness";
 Static_Opts.num_validation_modes = 10;
-Static_Opts.max_parallel_jobs =  4; %be careful!
+Static_Opts.max_parallel_jobs =  1; %be careful!
 % Static_Opts.num_loadcases = 100;
 %------------------------------------------%
 Verification_Opts.maximum_iterations = 3;
@@ -44,7 +44,9 @@ External_Force.max_amplitude = 1;
 
 set_visualisation_level(3)
 
-Nc_Data = Nonconservative_Data(Model,External_Force);
+Static_Data = load_static_data("clamped_beam_13");
+Static_Data.Model.Static_Options.max_parallel_jobs = 1;
+Nc_Data = Nonconservative_Data(Static_Data.Model,External_Force);
 Nc_Static_Data = Static_Data.extend_stress_manifold(Nc_Data);
 
 Nc_Static_Data.save_data;

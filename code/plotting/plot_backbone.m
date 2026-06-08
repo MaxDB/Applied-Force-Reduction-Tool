@@ -89,6 +89,9 @@ end
 r_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
 reduction_basis = "\{" + join(string(r_modes),",") + "\}";
 
+if ~isprop(Solution,"bifurcations")
+    PLOT_BIFURCATIONS = 0;
+end
 
 if PLOT_BIFURCATIONS
     switch Solution.Solution_Type.orbit_type
@@ -99,6 +102,7 @@ if PLOT_BIFURCATIONS
         otherwise
             bifurcation_size = BB_BIFURCATION_SIZE;
     end
+    
 
     bifurcations = Solution.bifurcations;
     bifurcation_types = fields(bifurcations);
@@ -137,6 +141,10 @@ if plot_special_points == 1
     plot_special_points = ~isempty(Dyn_Data.Additional_Output);
 else
     plot_special_points = plot_special_points;
+end
+
+if class(Solution) == "Full_Order_Forced_Solution"
+    plot_special_points = 0;
 end
 
 if plot_special_points
