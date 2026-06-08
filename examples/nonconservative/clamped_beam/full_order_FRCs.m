@@ -7,7 +7,7 @@ Dyn_Data = initalise_dynamic_data(system_name);
 %------------------
 Additional_Output.output = "physical displacement";
 Additional_Output.type = "max";
-Additional_Output.dof = 182;
+Additional_Output.dof = 236;
 Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
 
 
