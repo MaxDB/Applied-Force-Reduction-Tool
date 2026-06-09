@@ -9,11 +9,11 @@ set_visualisation_level(3)
 system_name = "clamped_beam";
 %energy_limit = 0.01;
 energy_limit = 0.001;
-initial_modes = [1,3];
+initial_modes = [1];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.additional_data = "none";
+Static_Opts.additional_data = "stiffness";
 Static_Opts.num_validation_modes = 10;
 Static_Opts.max_parallel_jobs =  1; %be careful!
 % Static_Opts.num_loadcases = 100;
@@ -32,7 +32,7 @@ Static_Data.save_data;
 
 % 
 External_Force.type = "point";
-External_Force.dof = 236;
+External_Force.dof = 248;
 External_Force.max_amplitude = 1;
 
 % External_Force.type = "uniform";

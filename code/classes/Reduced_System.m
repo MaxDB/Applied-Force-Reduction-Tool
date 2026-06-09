@@ -371,8 +371,10 @@ classdef Reduced_System
             num_h_modes = size(evec_h,2);
 
             if type == "frf"
-                h_disp_damp_h_disp = h_disp_coeff'*damping*h_disp_coeff;
-                h_disp_damp_r_disp = h_disp_coeff'*damping*physical_disp_coeffs;
+                if ~isempty(damping)
+                    h_disp_damp_h_disp = h_disp_coeff'*damping*h_disp_coeff;
+                    h_disp_damp_r_disp = h_disp_coeff'*damping*physical_disp_coeffs;
+                end
                 h_disp_applied_force = h_disp_coeff'*force_amp;
                 h_disp_force_grad = h_disp_coeff'*obj.Model.mass*evec_h;
 
@@ -396,7 +398,9 @@ classdef Reduced_System
                 h_disp_r_force_diff(:,iMode,:) = h_disp_r_force(mode_index_one,:);
 
                 if type == "frf"
-                    h_disp_damp_r_disp_diff(:,iMode,:) = h_disp_damp_r_disp(mode_index_one,:);
+                    if ~isempty(damping)
+                        h_disp_damp_r_disp_diff(:,iMode,:) = h_disp_damp_r_disp(mode_index_one,:);
+                    end
                     h_disp_applied_force_diff(:,iMode,:) = h_disp_applied_force(mode_index_one,:);
                     h_disp_force_grad_diff(:,iMode,:) = h_disp_force_grad(mode_index_one,:);
                 end
@@ -405,7 +409,9 @@ classdef Reduced_System
                     h_disp_h_disp_diff(:,iMode,jMode,:) = h_disp_h_disp(mode_index_one,mode_index_two);
                     % h_disp_h_force_diff(:,iMode,jMode,:) = h_disp_h_force(mode_index_one,mode_index_two);
                     if type == "frf"
-                        h_disp_damp_h_disp_diff(:,iMode,jMode,:) = h_disp_damp_h_disp(mode_index_one,mode_index_two);
+                        if ~isempty(damping)
+                            h_disp_damp_h_disp_diff(:,iMode,jMode,:) = h_disp_damp_h_disp(mode_index_one,mode_index_two);
+                        end
                     end
                 end
             end
@@ -417,8 +423,13 @@ classdef Reduced_System
                     Validation_Beta_Bar_Data.h_disp_r_force = h_disp_r_force_diff;
                     % Validation_Beta_Bar_Data.h_disp_h_force = h_disp_h_force_diff;
                 case "frf"
-                    Validation_Beta_Bar_Data.h_disp_damp = h_disp_damp_h_disp_diff;
-                    Validation_Beta_Bar_Data.h_disp_damp_r_disp = h_disp_damp_r_disp_diff;
+                    if ~isempty(damping)
+                        Validation_Beta_Bar_Data.h_disp_damp = h_disp_damp_h_disp_diff;
+                        Validation_Beta_Bar_Data.h_disp_damp_r_disp = h_disp_damp_r_disp_diff;
+                    else
+                        Validation_Beta_Bar_Data.h_disp_damp = [];
+                        Validation_Beta_Bar_Data.h_disp_damp_r_disp = [];
+                    end
                     Validation_Beta_Bar_Data.h_disp_applied_force = h_disp_applied_force_diff;
                     Validation_Beta_Bar_Data.h_disp_force_grad = h_disp_force_grad_diff;
             end
@@ -497,7 +508,7 @@ classdef Reduced_System
                     Force_Data.coeffs = obj.Force_Polynomial.coefficients;
                     Force_Data.scale_factor = obj.Force_Polynomial.scaling_factor;
                     Force_Data.shift_factor = obj.Force_Polynomial.shifting_factor;
-                    Force_Diff_Data = obj.Force_Polynomial.get_diff_data(1);
+                    Force_Diff_Data = obj.Force_Polynomial.get_diff_data(2);
                     Force_Data.diff_scale_factor = Force_Diff_Data.diff_scale_factor;
                     Force_Data.diff_mapping = Force_Diff_Data.diff_mapping;
 
@@ -702,9 +713,13 @@ classdef Reduced_System
                 case "forced_h_prediction"
                     Eom_Input = obj.get_solver_inputs("h_prediction");
                     Nc_Inputs = Additional_Input;
-
-                    damping = Nc_Inputs.damping;
-
+                    
+                    switch Nc_Inputs.damping_type
+                        case "matrix"
+                            damping = Nc_Inputs.damping;
+                        case "nonlinear_rayleigh"
+                            damping = [];
+                    end
                     physical_disp_coeffs = obj.Physical_Displacement_Polynomial.coefficients;
 
                     h_disp_coeff = obj.Low_Frequency_Coupling_Gradient_Polynomial.coefficients;

@@ -360,6 +360,7 @@ classdef Dynamic_System
                             Model.low_frequency_eigenvectors = Model.low_frequency_eigenvectors.load;
                         end
                         Const_Model = parallel.pool.Constant(Model);
+                        % for iJob = 1:num_parallel_jobs
                         parfor (iJob = 1:num_parallel_jobs,get_current_parallel_jobs)
                             job_force = force_ratio_groups{1,iJob};
                             [job_r,job_theta,job_f,job_E,job_additional_data,job_sep_id] = ...

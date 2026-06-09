@@ -574,7 +574,10 @@ classdef Static_Dataset
             obj.Model = Dynamic_System(system_name,energy_limit,initial_modes,"nc_modes",nc_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
             data_path = get_data_path(obj);
            
-
+            static_data_path = get_data_path(obj);
+            if isfolder(static_data_path)
+                rmdir(static_data_path,"s")
+            end
             %-------------------------------------------------%
             num_modes = size(initial_modes,2);
             
@@ -645,6 +648,7 @@ classdef Static_Dataset
             added_mode = Nc_Data.orth_force_shape;
 
             Nc_Static_Data = obj.update_model(added_mode);
+    
             Nc_Static_Data = Nc_Static_Data.create_dataset;
     
             

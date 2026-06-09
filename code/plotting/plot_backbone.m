@@ -288,7 +288,7 @@ switch type
             p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
             if plot_periodicity
-                data_tip_row = dataTipTextRow("Periodicity",periodicity_error(index_range));
+                data_tip_row = dataTipTextRow("Periodicity",periodicity_error);
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
             end
 

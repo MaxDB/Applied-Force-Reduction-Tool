@@ -663,6 +663,20 @@ classdef Dynamic_Dataset
 
             if isfile(solution_path + type + ".mat")
                 load(solution_path + type ,"Solution")
+            elseif type == "Sol_Data_periodicity" && isequal(obj.Dynamic_Model.Model.reduced_modes,0)
+                Sol = load(solution_path + "Sol_Data.mat","Solution");
+                Sol = Sol.Solution;
+                if Sol.Solution_Type.model_type == "fom"
+                    Solution = FE_Orbit_Output([]);
+                    Solution.fe_output_type = "periodicity";
+                    Solution.fe_output = Sol.periodicity;
+                    Solution.orbit_labels = 1:Sol.num_orbits;
+                    Solution.num_orbits = Sol.num_orbits;
+                else
+                    Solution = -1;
+                    return
+                end
+
             else
                 Solution = -1;
                 return

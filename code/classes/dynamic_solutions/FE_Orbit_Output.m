@@ -11,6 +11,9 @@ classdef FE_Orbit_Output
 
     methods
         function obj = FE_Orbit_Output(Dyn_Data,fe_output_type,solution_num,orbit_ids)
+            if isempty(Dyn_Data)
+                return
+            end
             obj.orbit_labels = orbit_ids;
             obj.num_orbits = size(orbit_ids,2);
             obj.solution_num = solution_num;

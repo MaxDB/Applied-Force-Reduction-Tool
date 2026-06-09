@@ -68,7 +68,6 @@ for iX = 1:num_x
 
             mass_damping_term = inertia_term;
 
-
             damping_term = (Damping_Data.coeffs(1)*mass_damping_term + Damping_Data.coeffs(2)*stiffness_damping_term)*r_dot_i;
     end
     %--

@@ -2,14 +2,14 @@ clear
 close all
 set_visualisation_level(1)
 
-system_name = "clamped_beam_11001";
+system_name = "clamped_beam_1";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
 %-------------------------------------------------------------------------%
 Additional_Output.output = "physical displacement";
 Additional_Output.type = "max";
-Additional_Output.dof = 236;
+Additional_Output.dof = 248;
 Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
 
 %--------- Continuation Settings ---------%
@@ -41,7 +41,7 @@ Continuation_Opts.min_discretisation_num = 20;
 % Damping_Data.stiffness_factor = 2*target_damping/natural_freq(1);
 % 
 % Force_Data.type = "point";
-% Force_Data.dof = 236;
+% Force_Data.dof = 248;
 % Force_Data.continuation_variable = "frequency";
 % Force_Data.frequency = 350;
 % Force_Data.amplitude = 0.05;
@@ -85,21 +85,16 @@ Continuation_Opts.min_discretisation_num = 20;
 %-------------------
 %high damping
 target_damping = 0.2;
-natural_freq = sqrt(Dyn_Data.Dynamic_Model.Model.reduced_eigenvalues);
+damping_coeffs = get_rayleigh_coeffs(Dyn_Data.Dynamic_Model.Model,target_damping,[1,2]);
 
 Damping_Data.damping_type = "nonlinear_rayleigh";
-% Damping_Data.damping_type = "rayleigh";
-% 
-Damping_Data.mass_factor = 2*target_damping*natural_freq(1);
-Damping_Data.stiffness_factor = 0;
-Force_Data.amplitude = 0.9;
 
-% Damping_Data.mass_factor = 0;
-% Damping_Data.stiffness_factor = 2*target_damping/natural_freq(1);
-% Force_Data.amplitude = 1;
+Damping_Data.mass_factor = damping_coeffs(1);
+Damping_Data.stiffness_factor = damping_coeffs(2);
+Force_Data.amplitude = 1;
 
 Force_Data.type = "point";
-Force_Data.dof = 236;
+Force_Data.dof = 248;
 Force_Data.continuation_variable = "frequency";
 Force_Data.frequency = 350;
 

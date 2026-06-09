@@ -56,7 +56,7 @@ if ~isempty(FE_Force_Data)
     if isfield(FE_Force_Data,"harmonic_coefficients")
         harmonic_coefficients = shift_harmonics(FE_Force_Data.harmonic_coefficients,initial_time,frequency);
     else
-        harmonic_coefficients = [0,1,0];
+        harmonic_coefficients = [0,0,1];
     end
     initial_time = 0;
     % harmonic_coefficients = FE_Force_Data.harmonic_coefficients;
