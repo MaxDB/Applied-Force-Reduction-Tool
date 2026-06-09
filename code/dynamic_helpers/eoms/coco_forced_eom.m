@@ -3,7 +3,7 @@ function x_dot = coco_forced_eom(t,x,force_amp,period,input_order,Force_Data,Dis
 num_x = size(x,2);
 num_modes = size(x,1)/2;
 num_force_coeffs = size(Force_Data.coeffs,2);
-num_coupling_coeffs = size(Disp_Data.beta_bar,1);
+num_disp_coeffs = size(Disp_Data.beta_bar,1);
 num_coeffs = size(input_order,1);
 
 disp_span = 1:num_modes;
@@ -38,29 +38,44 @@ for iX = 1:num_x
         r_power_products = r_power_products.*r_i(iMode).^input_order(:,iMode);
     end
 
-    r_products_coupling = r_power_products(1:num_coupling_coeffs,:);
+    r_products_disp = r_power_products(1:num_disp_coeffs,:);
 
-    r_dr_products_coupling = r_products_coupling(Disp_Data.diff_mapping{1,1}).*Disp_Data.diff_scale_factor{1,1};
-    r_dr2_products_coupling = r_products_coupling(Disp_Data.diff_mapping{1,2}).*Disp_Data.diff_scale_factor{1,2};
+    r_dr_products_disp = r_products_disp(Disp_Data.diff_mapping{1,1}).*Disp_Data.diff_scale_factor{1,1};
+    r_dr2_products_disp = r_products_disp(Disp_Data.diff_mapping{1,2}).*Disp_Data.diff_scale_factor{1,2};
     
-    disp_prod = r_dr_products_coupling'*Disp_Data.beta_bar;
+    disp_prod = r_dr_products_disp'*Disp_Data.beta_bar;
 
     %--
-    reduced_restoring_force = Force_Data.coeffs*r_power_products(1:num_force_coeffs,:);
+    r_products_force = r_power_products(1:num_force_coeffs,:);
+    reduced_restoring_force = Force_Data.coeffs*r_products_force;
 
-    disp_r_prod = r_dr_products_coupling'*Force_Data.disp_r_force_beta;
+    disp_r_prod = r_dr_products_disp'*Force_Data.disp_r_force_beta;
     restoring_force = disp_r_prod*reduced_restoring_force;
     %--
-    inertia_term = disp_prod*r_dr_products_coupling;
+    inertia_term = disp_prod*r_dr_products_disp;
     %--
-    convection_term = disp_prod*(tensorprod(r_dr2_products_coupling,r_dot_i,3,1)*r_dot_i);
+    convection_term = disp_prod*(tensorprod(r_dr2_products_disp,r_dot_i,3,1)*r_dot_i);
     %--
-    damping_prod = r_dr_products_coupling'*Damping_Data.damping_beta;
-    damping_term = damping_prod*(r_dr_products_coupling)*r_dot_i;
+    switch Damping_Data.type
+        case "matrix"
+            damping_prod = r_dr_products_disp'*Damping_Data.damping_beta;
+            damping_term = damping_prod*(r_dr_products_disp)*r_dot_i;
+        case "nonlinear_rayleigh"
+            r_dr_products_force = r_products_force(Force_Data.diff_mapping{1,1}).*Force_Data.diff_scale_factor{1,1};
+            stiffness = Force_Data.coeffs*r_dr_products_force;
+            stiffness_damping_prod = r_dr_products_disp'*Damping_Data.disp_r_mode_beta;
+            stiffness_damping_term = stiffness_damping_prod*stiffness*stiffness_damping_prod';
+
+            mass_damping_term = inertia_term;
+
+
+            damping_term = (Damping_Data.coeffs(1)*mass_damping_term + Damping_Data.coeffs(2)*stiffness_damping_term)*r_dot_i;
+    end
     %--
-    disp_amp_prod = r_dr_products_coupling'*Applied_Force_Data.disp_force_beta;
+    disp_amp_prod = r_dr_products_disp'*Applied_Force_Data.disp_force_beta;
     applied_force = force_amp*disp_amp_prod*sin(frequency_i*t_i);
     %--
     x_dot(vel_span,iX) = -inertia_term\(convection_term+restoring_force + damping_term - applied_force);
 end
+
 end

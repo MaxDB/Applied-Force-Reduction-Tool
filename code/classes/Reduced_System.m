@@ -622,13 +622,23 @@ classdef Reduced_System
                     Nc_Inputs = Additional_Input;
 
                     physical_displacement_coeffs = obj.Physical_Displacement_Polynomial.coefficients;
-                    damping_beta = physical_displacement_coeffs'*Nc_Inputs.damping*physical_displacement_coeffs;
-                    Eom_Input.Damping_Data.damping_beta = damping_beta;
+
+                 
 
                     r_evec = obj.Model.reduced_eigenvectors;
                    
                     disp_r_mode_beta = obj.get_beta_mode(physical_displacement_coeffs',r_evec);
                     Eom_Input.Force_Data.disp_r_force_beta = disp_r_mode_beta;
+
+                    switch Nc_Inputs.damping_type
+                        case "matrix"
+                            damping_beta = physical_displacement_coeffs'*Nc_Inputs.damping*physical_displacement_coeffs;
+                            Eom_Input.Damping_Data.damping_beta = damping_beta;
+                        case "nonlinear_rayleigh"
+                            Eom_Input.Damping_Data.disp_r_mode_beta = disp_r_mode_beta;
+                            Eom_Input.Damping_Data.coeffs = Nc_Inputs.damping_factors;
+                    end
+                    Eom_Input.Damping_Data.type = Nc_Inputs.damping_type;
 
                     switch Nc_Inputs.force_type
                         case "modal"

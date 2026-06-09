@@ -81,15 +81,22 @@ classdef Forced_Solution < Dynamic_Solution
                 case "rayleigh"
                     damping = get_rayleigh_damping_matrix(Damp_Data,Model);
                     Nonconservative_Input.damping = damping;
+                    Nonconservative_Input.damping_type = "matrix";
                 case "modal"
                     damping_factors = Damp_Data.modal_damping_factors;
                     damping = diag(damping_factors);
                     Nonconservative_Input.damping = damping;
+                    Nonconservative_Input.damping_type = "matrix";
                 case "physical"
                     Nonconservative_Input.damping = Damp_Data.damping_matrix;
+                    Nonconservative_Input.damping_type = "matrix";
+                case "nonlinear_rayleigh"
+                    Nonconservative_Input.damping_factors = [Damp_Data.mass_factor,Damp_Data.stiffness_factor];
+                    Nonconservative_Input.damping_type = "nonlinear_rayleigh";
                 otherwise
                     error("Damping model unsupported / not recognised ")
             end
+            
             continuation_variable = F_Data.continuation_variable;
 
             switch F_Data.type
