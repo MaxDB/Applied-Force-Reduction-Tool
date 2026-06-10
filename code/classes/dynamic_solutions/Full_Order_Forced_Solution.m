@@ -24,7 +24,16 @@ classdef Full_Order_Forced_Solution
             Add_Ouput = FRF_Settings.Additional_Output;
             solution_num = FRF_Settings.solution_num;
             initial_conditions = FRF_Settings.initial_condition;
+            ref_sol = FRF_Settings.reference_data;
             
+            
+
+            if ~isempty(ref_sol)
+                Dyn_Data = initalise_dynamic_data(ref_sol.name);
+                Sol = Dyn_Data.load_solution(ref_sol.sol_num);
+                Force_Data.frequency = Sol.frequency;
+            end
+
             obj.Force_Data = Force_Data;
             obj.Damping_Data = Damping_Data;
 
@@ -33,7 +42,7 @@ classdef Full_Order_Forced_Solution
 
 
             
-            get_full_order_forced_response(Rom.Model,Nonconservative_Input,solution_num);
+            get_full_order_forced_response(Rom.Model,Nonconservative_Input,solution_num,ref_sol);
             obj.frequency = Nonconservative_Input.frequency;
             obj.num_orbits = length(obj.frequency);
 

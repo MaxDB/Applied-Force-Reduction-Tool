@@ -455,11 +455,13 @@ classdef Dynamic_Dataset
             keyword_values = varargin(2:2:num_args);
 
             initial_condition = [];
-
+            ref_solution = [];
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
                     case "ic"
                         initial_condition = keyword_values{arg_counter};
+                    case "solution"
+                        ref_solution = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -470,6 +472,7 @@ classdef Dynamic_Dataset
             FRF_Settings.solution_num = obj.num_solutions + 1;
             FRF_Settings.Additional_Output = obj.Additional_Output;
             FRF_Settings.initial_condition = initial_condition;
+            FRF_Settings.reference_data = ref_solution;
 
             Rom = obj.Dynamic_Model;
             FRF_Sol = Full_Order_Forced_Solution(Rom,FRF_Settings);
@@ -645,7 +648,7 @@ classdef Dynamic_Dataset
             Dyn_Data.update_dyn_data;
         end
         %-----------------------------------------------------------------%
-        function Solution = load_solution(obj,solution_num,type)
+        function [Solution,sol_path] = load_solution(obj,solution_num,type)
             if nargin == 2
                 type = "Sol_Data";
             end
@@ -662,7 +665,9 @@ classdef Dynamic_Dataset
             solution_path = data_path + solution_name;
 
             if isfile(solution_path + type + ".mat")
-                load(solution_path + type ,"Solution")
+                sol_path = solution_path + type;
+                load(sol_path ,"Solution")
+                Solution.solution_path = sol_path;
             elseif type == "Sol_Data_periodicity" && isequal(obj.Dynamic_Model.Model.reduced_modes,0)
                 Sol = load(solution_path + "Sol_Data.mat","Solution");
                 Sol = Sol.Solution;

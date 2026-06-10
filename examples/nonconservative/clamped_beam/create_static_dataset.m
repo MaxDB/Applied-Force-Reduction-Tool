@@ -9,7 +9,7 @@ set_visualisation_level(3)
 system_name = "clamped_beam";
 %energy_limit = 0.01;
 energy_limit = 0.001;
-initial_modes = [1];
+initial_modes = [0];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
@@ -29,7 +29,9 @@ Static_Data.save_data;
 
 
 %---------------------------------------
-
+if isequal(initial_modes,0)
+    return
+end
 % 
 External_Force.type = "point";
 External_Force.dof = 248;

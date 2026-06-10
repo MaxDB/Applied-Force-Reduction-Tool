@@ -1,4 +1,4 @@
-function get_full_order_forced_response(Model,Nonconservative_Input,solution_num)
+function get_full_order_forced_response(Model,Nonconservative_Input,solution_num,reference_sol)
 
 %----
 num_dof = size(Nonconservative_Input.force_shape,1);
@@ -9,7 +9,7 @@ initial_time = 0;
 job_id = 1;
 
 min_incs = 100;
-num_periods = 100;
+num_periods = 300;
 %----
 frequency = Nonconservative_Input.frequency;
 periods = 2*pi./frequency;
@@ -22,12 +22,30 @@ if ~isfolder(data_path)
     mkdir(data_path)
 end
 %---
-
+if ~isempty(reference_sol)
+    Dyn_Data = initalise_dynamic_data(reference_sol.name);
+    Model = Dyn_Data.Dynamic_Model.Model;
+end
 
 num_orbits = length(periods);
 for iOrbit = 1:num_orbits
     period = periods(iOrbit);
+
+    if ~isempty(reference_sol)
+        ref_orbit = Dyn_Data.get_orbit(reference_sol.sol_num,iOrbit);
+        num_modes = size(ref_orbit.xbp,2)/2;
+        r_orbit = ref_orbit.xbp(:,1:num_modes)';
+        r_dot_orbit = ref_orbit.xbp(:,(1:num_modes) + num_modes)';
+        x_0 = Dyn_Data.Dynamic_Model.expand(r_orbit(:,1));
+        x_dot_0 = Dyn_Data.Dynamic_Model.expand_velocity(r_orbit(:,1),r_dot_orbit(:,1));
+        fr_0 = Dyn_Data.Dynamic_Model.Force_Polynomial.evaluate_polynomial(r_orbit(:,1));
+        f_0 = Model.mass*Model.reduced_eigenvectors*fr_0;
+    end
+
     [t,x,x_dot,energy]  = Model.dynamic_simulation(x_0,x_dot_0,f_0,period,num_periods,min_incs,initial_time,Nonconservative_Input,job_id);
+    
+    %
+
 
     % check for convergence
     final_time = t(end);

@@ -154,7 +154,21 @@ classdef Dynamic_System
             logger(log_message,2)
 
             if place_holder_rom
+                if obj.system_type == "indirect"
+                    temp_dir = obj.get_data_path;
+                end
                 obj.reduced_modes = 0;
+                if obj.system_type == "indirect"
+                    new_dir = obj.get_data_path;
+                    movefile(temp_dir,new_dir)
+                    temp_parent_dir_parts = split(temp_dir,"\");
+                    temp_parent_dir = join(temp_parent_dir_parts(1:(end-2)),"\");
+                    rmdir(temp_parent_dir)
+
+                    if class(obj.reduced_eigenvectors) == "Large_Matrix_Pointer"
+                        obj.reduced_eigenvectors.variable_path = new_dir;
+                    end
+                end
                 return
             end
 

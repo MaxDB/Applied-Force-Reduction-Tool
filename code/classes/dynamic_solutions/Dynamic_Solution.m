@@ -5,6 +5,8 @@ classdef Dynamic_Solution
 
         orbit_labels
         num_orbits
+
+        solution_path
     end
     
     methods
@@ -17,7 +19,8 @@ classdef Dynamic_Solution
             obj.Continuation_Options = update_options(Default_Continuation_Opts,obj.Continuation_Options,Continuation_Opts);
         end 
         %-----------------------------------------------------------------%
-        function orbit = load_orbit(obj,orbit_ids)
+        function orbit = load_orbit(obj,orbit_id)
+
 
         end
         %-----------------------------------------------------------------%
