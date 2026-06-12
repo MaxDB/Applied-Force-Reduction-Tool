@@ -474,7 +474,11 @@ for iIteration = 1:(max_iterations+1)
             new_sep_id(:,removal_index) = [];
             switch Static_Data.additional_data_type
                 case {"stiffness","perturbation"}
-                    additional_data(:,:,removal_index) = [];
+                    if class(additional_data) == "Sparse_Stiffness_Pointer"
+                        additional_data = additional_data.remove_data(removal_index);
+                    else
+                        additional_data(:,:,removal_index) = [];
+                    end
                 case "none"
             end
         end

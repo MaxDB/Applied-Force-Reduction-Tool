@@ -64,7 +64,7 @@ for iX = 1:num_x
             r_dr_products_force = r_products_force(Force_Data.diff_mapping{1,1}).*Force_Data.diff_scale_factor{1,1};
             stiffness = Force_Data.coeffs*r_dr_products_force;
             stiffness_damping_prod = r_dr_products_disp'*Damping_Data.disp_r_mode_beta;
-            stiffness_damping_term = stiffness_damping_prod*stiffness*stiffness_damping_prod';
+            stiffness_damping_term = stiffness_damping_prod*stiffness;
 
             mass_damping_term = inertia_term;
 

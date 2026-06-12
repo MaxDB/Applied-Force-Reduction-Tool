@@ -103,22 +103,21 @@ for iX = 1:num_x
             stiffness_dr = tensorprod(Force_Data.coeffs,r_dr2_products_force,2,1);
 
             stiffness_damping_prod = r_dr_products_disp'*Damping_Data.disp_r_mode_beta;
-            stiffness_damping_term = stiffness_damping_prod*stiffness*stiffness_damping_prod';
+            stiffness_damping_term = stiffness_damping_prod*stiffness;
 
             mass_damping_term = inertia;
             mass_damping_term_dr = inertia_dr;
 
             damping_term_dr_prod = tensorprod(pagetranspose(r_dr2_products_disp),Damping_Data.disp_r_mode_beta,2,1);
-            damping_term_dr_prod_transpose = tensorprod(Damping_Data.disp_r_mode_beta',r_dr2_products_disp,2,1);
+            
 
-            damping_term_dr_1 = tensorprod(damping_term_dr_prod,stiffness*stiffness_damping_prod',3,1);
-            damping_term_dr_2 = tensorprod(tensorprod(stiffness_damping_prod,stiffness_dr,2,1),stiffness_damping_prod',3,1);
-            damping_term_dr_3 = tensorprod(stiffness_damping_prod*stiffness,damping_term_dr_prod_transpose,2,1);
+            damping_term_dr_1 = tensorprod(damping_term_dr_prod,stiffness,3,1);
+            damping_term_dr_2 = tensorprod(stiffness_damping_prod,stiffness_dr,2,1);
 
 
             damping_term_dr_dot = Damping_Data.coeffs(1)*mass_damping_term + Damping_Data.coeffs(2)*stiffness_damping_term;
             damping_term = damping_term_dr_dot*r_dot_i;
-            damping_term_dr_pre = Damping_Data.coeffs(1)*mass_damping_term_dr + Damping_Data.coeffs(2)*(damping_term_dr_1 + damping_term_dr_2 + damping_term_dr_3);
+            damping_term_dr_pre = Damping_Data.coeffs(1)*mass_damping_term_dr + Damping_Data.coeffs(2)*(damping_term_dr_1 + damping_term_dr_2);
             damping_term_dr = tensorprod(damping_term_dr_pre,r_dot_i,d2_dims,1);
     end
     %-------------

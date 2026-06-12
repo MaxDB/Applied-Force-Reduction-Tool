@@ -667,7 +667,7 @@ classdef Dynamic_Dataset
             if isfile(solution_path + type + ".mat")
                 sol_path = solution_path + type;
                 load(sol_path ,"Solution")
-                Solution.solution_path = sol_path;
+                % Solution.solution_path = sol_path;
             elseif type == "Sol_Data_periodicity" && isequal(obj.Dynamic_Model.Model.reduced_modes,0)
                 Sol = load(solution_path + "Sol_Data.mat","Solution");
                 Sol = Sol.Solution;

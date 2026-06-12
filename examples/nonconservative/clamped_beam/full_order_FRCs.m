@@ -25,7 +25,7 @@ Damping_Data.mass_factor = damping_coeffs(1);
 Damping_Data.stiffness_factor = damping_coeffs(2);
 
 
-ref_solution.sol_num = 2;
+ref_solution.sol_num = 2; %43
 Dyn_Data = Dyn_Data.add_full_order_forced_response(Force_Data,Damping_Data,"solution",ref_solution);
 %--------------
 Force_Data.amplitude = 1;

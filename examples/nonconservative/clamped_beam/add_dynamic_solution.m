@@ -2,7 +2,7 @@ clear
 close all
 set_visualisation_level(1)
 
-system_name = "clamped_beam_11001";
+system_name = "clamped_beam_12";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
@@ -104,7 +104,7 @@ Force_Data.continuation_variable = "frequency";
 Force_Data.frequency = 350;
 Damping_Data.damping_type = "nonlinear_rayleigh";
 
-
+%2,43
 %--
 Force_Data.amplitude = 0.05;
 target_damping = 0.01;

@@ -359,11 +359,11 @@ classdef Reduced_System
             end
             
             modal_stiffness =  size(obj.Low_Frequency_Stiffness_Polynomial,1) == num_validation_modes;
-            % if modal_stiffness
-            %     h_disp_h_force = tensorprod(obj.get_beta_mode(h_disp_coeff',evec_h),obj.Low_Frequency_Stiffness_Polynomial.coefficients,2,1);
-            % else
-            %     h_disp_h_force = tensorprod(h_disp_coeff',obj.Low_Frequency_Stiffness_Polynomial.coefficients,2,1);
-            % end
+            if modal_stiffness
+                h_disp_h_force = tensorprod(obj.get_beta_mode(h_disp_coeff',evec_h),obj.Low_Frequency_Stiffness_Polynomial.coefficients,2,1);
+            else
+                h_disp_h_force = tensorprod(h_disp_coeff',obj.Low_Frequency_Stiffness_Polynomial.coefficients,2,1);
+            end
             num_stiff_coeffs = size(obj.Low_Frequency_Stiffness_Polynomial.coefficients,3);
 
             num_physical_disp_coeffs = size(physical_disp_coeffs,2);
@@ -407,7 +407,7 @@ classdef Reduced_System
                 for jMode = 1:num_validation_modes
                     mode_index_two = jMode:num_validation_modes:num_combined_coeffs;
                     h_disp_h_disp_diff(:,iMode,jMode,:) = h_disp_h_disp(mode_index_one,mode_index_two);
-                    % h_disp_h_force_diff(:,iMode,jMode,:) = h_disp_h_force(mode_index_one,mode_index_two);
+                    h_disp_h_force_diff(:,iMode,jMode,:) = h_disp_h_force(mode_index_one,mode_index_two);
                     if type == "frf"
                         if ~isempty(damping)
                             h_disp_damp_h_disp_diff(:,iMode,jMode,:) = h_disp_damp_h_disp(mode_index_one,mode_index_two);
@@ -421,7 +421,7 @@ classdef Reduced_System
                     Validation_Beta_Bar_Data.h_disp = h_disp_h_disp_diff;
                     Validation_Beta_Bar_Data.h_disp_r_disp = h_disp_r_disp_diff;
                     Validation_Beta_Bar_Data.h_disp_r_force = h_disp_r_force_diff;
-                    % Validation_Beta_Bar_Data.h_disp_h_force = h_disp_h_force_diff;
+                    Validation_Beta_Bar_Data.h_disp_h_force = h_disp_h_force_diff;
                 case "frf"
                     if ~isempty(damping)
                         Validation_Beta_Bar_Data.h_disp_damp = h_disp_damp_h_disp_diff;
@@ -540,6 +540,9 @@ classdef Reduced_System
                     shift_factor = obj.Force_Polynomial.shifting_factor;
 
                     Reduced_Force_Data.coeffs = obj.Force_Polynomial.coefficients;
+                    Reduced_Force_Diff_Data = obj.Force_Polynomial.get_diff_data(1);
+                    Reduced_Force_Data.diff_scale_factor = Reduced_Force_Diff_Data.diff_scale_factor;
+                    Reduced_Force_Data.diff_mapping = Reduced_Force_Diff_Data.diff_mapping;
 
                     Physical_Disp_Diff_Data = obj.Physical_Displacement_Polynomial.get_diff_data(2);
                     Physical_Disp_Data.diff_scale_factor = Physical_Disp_Diff_Data.diff_scale_factor;
@@ -648,6 +651,7 @@ classdef Reduced_System
                         case "nonlinear_rayleigh"
                             Eom_Input.Damping_Data.disp_r_mode_beta = disp_r_mode_beta;
                             Eom_Input.Damping_Data.coeffs = Nc_Inputs.damping_factors;
+
                     end
                     Eom_Input.Damping_Data.type = Nc_Inputs.damping_type;
 
@@ -713,23 +717,31 @@ classdef Reduced_System
                 case "forced_h_prediction"
                     Eom_Input = obj.get_solver_inputs("h_prediction");
                     Nc_Inputs = Additional_Input;
-                    
+
+                    physical_disp_coeffs = obj.Physical_Displacement_Polynomial.coefficients;
+                    h_disp_coeff = obj.Low_Frequency_Coupling_Gradient_Polynomial.coefficients;
+
                     switch Nc_Inputs.damping_type
                         case "matrix"
                             damping = Nc_Inputs.damping;
                         case "nonlinear_rayleigh"
                             damping = [];
+                            evec_r = obj.Model.reduced_eigenvectors;
+                            evec_l = obj.get_current_L_eigenvectors;
+                            evec_h = [evec_r,evec_l];
+                            Eom_Input.Damping_Beta_Bar.r_disp_mass_evec_h = physical_disp_coeffs'*obj.Model.mass*evec_h;
+                            Eom_Input.Damping_Data.coeffs = Nc_Inputs.damping_factors;
                     end
-                    physical_disp_coeffs = obj.Physical_Displacement_Polynomial.coefficients;
 
-                    h_disp_coeff = obj.Low_Frequency_Coupling_Gradient_Polynomial.coefficients;
+                    Eom_Input.Damping_Data.type = Nc_Inputs.damping_type;
+
                     % h_disp_coeff_T = permute(h_disp_coeff,[3,2,1]);
                     % damping_h_disp = tensorprod(full(damping),h_disp_coeff,2,1);
                     % Beta_Damping.h_disp = obj.get_beta_mode(h_disp_coeff_T,damping_h_disp);
                     % Beta_Damping.h_disp_r_disp = obj.get_beta_mode(h_disp_coeff_T,damping*displacement_coeffs);
                     
-     
-
+          
+                
                     switch Nc_Inputs.force_type
                         case "modal"
                             Eom_Input.Applied_Force_Data.shape = @(t,amp,T) modal_force(t,amp,T,Nc_Inputs.mode_map);
