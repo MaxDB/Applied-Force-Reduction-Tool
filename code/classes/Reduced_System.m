@@ -852,6 +852,10 @@ classdef Reduced_System
                 end
             end
             %-------------------------------------------------------------------------%
+            if isequal(obj.Model.reduced_modes,0)
+                eom = obj.Model.get_equation_of_motion(varargin{:});
+                return
+            end
             conservative = (isempty(Damping_Data) && isempty(Force_Data));
 
             if conservative

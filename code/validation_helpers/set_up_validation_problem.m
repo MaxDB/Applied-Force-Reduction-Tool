@@ -18,7 +18,7 @@ switch orbit_type
         Validation_Analysis_Inputs = Validation_Rom.get_solver_inputs("h_analysis","additional_output",Validated_BB_Settings.Additional_Output);
     case "forced"
         
-        Nonconservative_Input = Solution.get_nonconservative_input(Validation_Rom);
+        Nonconservative_Input = Forced_Solution.get_nonconservative_input(Solution.Force_Data,Solution.Damping_Data,Validation_Rom);
         amp = Nonconservative_Input.amplitude;
         Eom_Input = Validation_Rom.get_solver_inputs("coco_frf","additional_input",Nonconservative_Input);
         reduced_eom = @(t,z,T) coco_forced_eom(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data);

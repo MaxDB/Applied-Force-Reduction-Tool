@@ -38,11 +38,12 @@ switch type
             
                 T0 = 2*pi/p0;
                 coll_args = [funcs, {t0',z0', {'T'}, T0}];
-                if ~isempty(Continuation_Settings.frequency_range)
-                    parameter_range = flip(2*pi./Continuation_Settings.frequency_range)';
-                else
-                    parameter_range = Continuation_Settings.parameter_range;
-                end
+                % if ~isempty(Continuation_Settings.frequency_range)
+                %     parameter_range = flip(2*pi./Continuation_Settings.frequency_range)';
+                % else
+                %     parameter_range = Continuation_Settings.parameter_range;
+                % end
+                parameter_range = Continuation_Settings.parameter_range;
                 cont_args = { 1, {'po.period', 'T'}, {parameter_range,parameter_range}};
         end
     case "fom"
@@ -132,7 +133,7 @@ end
 % Monitor frequency
 freq_func = @(prob,data,u) coco_frequency(prob,data,u);
 prob = coco_add_func(prob, 'frequency_monitor', freq_func, data, 'regular', 'FREQ', 'uidx', uidx,'remesh',@coco_energy_remesh);
-prob = coco_add_event(prob, 'EP','boundary','FREQ',Continuation_Settings.parameter_range);
+prob = coco_add_event(prob, 'EP','boundary','FREQ',Continuation_Settings.frequency_range);
 
 if ~isempty(Continuation_Settings.frequency_points)
     prob = coco_add_event(prob, 'X','special point','FREQ',Continuation_Settings.frequency_points);

@@ -25,9 +25,12 @@ classdef Forced_Solution < Dynamic_Solution
             
             obj.Force_Data = Force_Data;
             obj.Damping_Data = Damping_Data;
-
+            
+            if ~isfield(Force_Data,"continuation_variable")
+                Force_Data.continuation_variable = "frequency";
+            end
             continuation_variable = Force_Data.continuation_variable;
-            Nonconservative_Input = obj.get_nonconservative_input(Rom);
+            Nonconservative_Input = Forced_Solution.get_nonconservative_input(Force_Data,Damping_Data,Rom);
             if isfield(FRF_Settings,"z0")
                 Nonconservative_Input.z0 = FRF_Settings.z0;
             end
@@ -64,10 +67,15 @@ classdef Forced_Solution < Dynamic_Solution
      
             obj.Solution_Type = Sol_Type;
         end
+        function obj = analyse_solution(obj,solution_num,Add_Output)
+            Analysis_Output = analyse_solution@Dynamic_Solution(obj,solution_num,Add_Output);
+            obj = Dynamic_Solution.update_dynamic_solution(obj,Analysis_Output);
+        end
+    end
+
+    methods(Static)
         %-----------------------------------------------------------------%
-        function Nonconservative_Input = get_nonconservative_input(obj,Rom)
-            F_Data = obj.Force_Data;
-            Damp_Data = obj.Damping_Data;
+        function Nonconservative_Input = get_nonconservative_input(F_Data,Damp_Data,Rom)
             Model = Rom.Model;
 
             Applied_Force_Data = Rom.Applied_Force_Data;
@@ -141,10 +149,6 @@ classdef Forced_Solution < Dynamic_Solution
 
         end
         %-----------------------------------------------------------------%
-        function obj = analyse_solution(obj,solution_num,Add_Output)
-            Analysis_Output = analyse_solution@Dynamic_Solution(obj,solution_num,Add_Output);
-            obj = Dynamic_Solution.update_dynamic_solution(obj,Analysis_Output);
-        end
     end
 
 end

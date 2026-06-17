@@ -2,7 +2,7 @@ function [t_sol,z_sol] = get_forced_response(Rom,Nonconservative_Input,period,ty
 MAX_INCREMENTS = 100000;
 MAX_ERROR = 1e-4;
 CONVERGENCE_SPAN = 10;
-NUM_PERIODS = 1;
+NUM_PERIODS = 10;
 
 %-------------------------------------------------------------------------%
 
@@ -92,11 +92,13 @@ for iInc = 1:MAX_INCREMENTS
 end
 
 if iInc == MAX_INCREMENTS
-    error("Could not converge to forced solution")
+    error("Could not converge to forced solution");
 end
 
-t_sol = t - t(1);
-z_sol = z';
+
+[t_sol,z_sol] = ode45(eom,[0,period],z(end,:),opts);
+t_sol = t_sol';
+z_sol = z_sol';
 
 function error = check_periodicity(z)
     z_0 = z(1,:);

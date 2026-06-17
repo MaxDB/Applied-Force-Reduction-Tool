@@ -1,15 +1,13 @@
 function Analytic_Eom = load_analytic_system(system_path)
     if ~isfile(system_path) && isfile(system_path + ".m")
         system_path = system_path + ".m";
-    end
-
-    if ~isfile(system_path) && isfile(system_path + ".inp")
+    elseif ~isfile(system_path) && isfile(system_path + ".inp")
         system_path = system_path + ".inp";
-    end
-
-    if ~isfile(system_path + ".inp")
+    elseif ~isfile(system_path + ".inp")
         system_path = "geometry\" + system_path + "\" + system_path + ".m";
     end
+
+
 
     run(system_path)
     if ~exist("Analytic_Eom","var")

@@ -11,9 +11,9 @@ max_inc, 0.5,			#maximum continuation increment
 min_inc, 0.01,			#minimum continuation increment
 forward_steps, 100,		#number of forward incrementations
 backward_steps, 0, 		#number of backward incrementations
-initial_discretisation_num, 10, #intial number of discretisation points
+initial_discretisation_num, 20, #intial number of discretisation points
 max_discretisation_num, 100, 	#maximum number of discretisation points
-min_discretisation_num, 5, 	#minimum number of discretisation points
+min_discretisation_num, 10, 	#minimum number of discretisation points
 collocation_degree, 4, 		#degree of interpolating polynomial
 parameter_range, [0;1e16],	#allowable range of continuation variable
 frequency_range, [],  #allowable range of frequency

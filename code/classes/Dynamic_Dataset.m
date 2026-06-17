@@ -109,6 +109,9 @@ classdef Dynamic_Dataset
 
             Continuation_Opts = struct([]);
             type = "rom";
+            if isequal(obj.Dynamic_Model.Model.reduced_modes,0)
+                type = "fom";
+            end
             initial_condition = [];
             Restart_Data.initial_solution_type = "initial_solution";
 
@@ -347,10 +350,11 @@ classdef Dynamic_Dataset
 
             Continuation_Opts = struct([]);
             type = "rom";
+            if isequal(obj.Dynamic_Model.Model.reduced_modes,0)
+                type = "fom";
+            end
             initial_condition = [];
             backbone_orbit = [];
-            frf_method = "afr";
-
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
@@ -398,6 +402,8 @@ classdef Dynamic_Dataset
            
             obj.num_solutions = obj.num_solutions + 1;
             obj.solution_types{obj.num_solutions} = FRF_Sol.Solution_Type;
+            obj.solution_types{obj.num_solutions}.Force_Data = Force_Data;
+            obj.solution_types{obj.num_solutions}.Damping_Data = Damping_Data;
             obj.solution_types{obj.num_solutions}.validated = false;
             obj.save_solution(FRF_Sol,obj.num_solutions)
         end
@@ -671,7 +677,7 @@ classdef Dynamic_Dataset
             elseif type == "Sol_Data_periodicity" && isequal(obj.Dynamic_Model.Model.reduced_modes,0)
                 Sol = load(solution_path + "Sol_Data.mat","Solution");
                 Sol = Sol.Solution;
-                if Sol.Solution_Type.model_type == "fom"
+                if Sol.Solution_Type.model_type == "fom" && isfield(Sol,"periodicity")
                     Solution = FE_Orbit_Output([]);
                     Solution.fe_output_type = "periodicity";
                     Solution.fe_output = Sol.periodicity;
