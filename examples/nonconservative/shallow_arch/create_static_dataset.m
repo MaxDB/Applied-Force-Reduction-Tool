@@ -7,8 +7,7 @@ set_visualisation_level(3)
 
 %--------- System Settings ---------%
 system_name = "shallow_arch";
-%energy_limit = 0.01;
-energy_limit = 0.5;
+energy_limit = 500; %pJ
 initial_modes = [1,4];
 %-----------------------------------%
 

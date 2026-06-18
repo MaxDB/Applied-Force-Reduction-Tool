@@ -1,6 +1,6 @@
 function [t_sol,z_sol] = get_forced_response(Rom,Nonconservative_Input,period,type)
 MAX_INCREMENTS = 100000;
-MAX_ERROR = 1e-4;
+MAX_ERROR = 1e-3;
 CONVERGENCE_SPAN = 10;
 NUM_PERIODS = 10;
 

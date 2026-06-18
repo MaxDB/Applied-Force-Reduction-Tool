@@ -1,6 +1,6 @@
 import math
-unit_factor = 1000
-num_points = 101
+unit_factor = 1e6
+num_points = 201
 
 rise = 3.84e-6*unit_factor
 length = 640e-6*unit_factor
@@ -47,7 +47,7 @@ openMdb('shallow_arch.cae')
 session.viewports['Viewport: 1'].setValues(displayedObject=None)
 session.viewports['Viewport: 1'].partDisplay.geometryOptions.setValues(
     referenceRepresentation=ON)
-s = mdb.models['Model-1'].ConstrainedSketch(name='__profile__', sheetSize=1.0)
+s = mdb.models['Model-1'].ConstrainedSketch(name='__profile__', sheetSize=length)
 g, v, d, c = s.geometry, s.vertices, s.dimensions, s.constraints
 s.setPrimaryObject(option=STANDALONE)
 #splines
@@ -57,10 +57,10 @@ s.Spline(points=xy)
 s.copyMove(vector=(0.0, thickness), objectList=(g[2], ))
 
 #add connecting lines
-s.Line(point1=(0.0, -0.00192), point2=(0.0, 0.00448))
+s.Line(point1=(0.0, y(x[0])), point2=(0.0, y(x[0])+thickness))
 s.VerticalConstraint(entity=g[4], addUndoState=False)
 
-s.Line(point1=(0.64, -0.00192), point2=(0.64, 0.00448))
+s.Line(point1=(length, y(x[-1])), point2=(length, y(x[-1])+thickness))
 s.VerticalConstraint(entity=g[5], addUndoState=False)
 
 #extrude
