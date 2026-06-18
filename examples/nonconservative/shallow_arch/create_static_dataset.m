@@ -8,7 +8,7 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "shallow_arch";
 energy_limit = 500; %pJ
-initial_modes = [1,4];
+initial_modes = [0];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%

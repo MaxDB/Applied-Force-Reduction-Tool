@@ -47,7 +47,7 @@ kappa_1 = 0.03; %(µm/µs^2)
 force_shape = @(kappa_2) get_shallow_arch_force(Model,kappa_1,kappa_2);
 
 %---
-Damping_Data.damping_type = "nonlinear_rayleigh";
+Damping_Data.damping_type = "rayleigh";
 damping_coeffs = get_shallow_arch_damping(Model);
 Damping_Data.mass_factor = damping_coeffs(1);
 Damping_Data.stiffness_factor = damping_coeffs(2);
