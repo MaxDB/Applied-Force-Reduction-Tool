@@ -32,7 +32,12 @@ for iOrbit = 1:num_orbits
     period = periods(iOrbit);
     
     if ~isempty(reference_sol)
-        ref_orbit = Dyn_Data.get_orbit(reference_sol.sol_num,iOrbit);
+        if isfield(reference_sol,"orbit_subset")
+            orbit_id = reference_sol.orbit_subset(iOrbit);
+        else
+            orbit_id = iOrbit;
+        end
+        ref_orbit = Dyn_Data.get_orbit(reference_sol.sol_num,orbit_id);
         num_modes = size(ref_orbit.xbp,2)/2;
         r_orbit = ref_orbit.xbp(:,1:num_modes)';
         r_dot_orbit = ref_orbit.xbp(:,(1:num_modes) + num_modes)';

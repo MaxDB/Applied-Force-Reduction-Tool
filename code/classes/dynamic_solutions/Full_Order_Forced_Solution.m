@@ -32,12 +32,16 @@ classdef Full_Order_Forced_Solution
                 Dyn_Data = initalise_dynamic_data(ref_sol.name);
                 Sol = Dyn_Data.load_solution(ref_sol.sol_num);
                 Force_Data.frequency = Sol.frequency;
+                if isfield(ref_sol,"orbit_subset")
+                    Force_Data.frequency = Force_Data.frequency(ref_sol.orbit_subset);
+                end
             end
 
             obj.Force_Data = Force_Data;
             obj.Damping_Data = Damping_Data;
 
             Nonconservative_Input = obj.get_nonconservative_input(Rom);
+
             
 
 

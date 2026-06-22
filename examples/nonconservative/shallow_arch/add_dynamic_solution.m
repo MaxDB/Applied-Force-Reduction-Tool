@@ -2,7 +2,7 @@ clear
 close all
 set_visualisation_level(1)
 
-system_name = "shallow_arch_14";
+system_name = "shallow_arch_1";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
@@ -24,7 +24,7 @@ Continuation_Opts.backward_steps = 0;
 Continuation_Opts.collocation_degree = 6;
 %-----------------------------------------%
 
-Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+% Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 
 %-------------------
 %Forced response
@@ -53,16 +53,42 @@ Damping_Data.mass_factor = damping_coeffs(1);
 Damping_Data.stiffness_factor = damping_coeffs(2);
 %---
 
-kappa_2 = 10;
-Force_Data.shape = force_shape(kappa_2);
+% kappa_2 = 20;
+% Force_Data.shape = force_shape(kappa_2);
+% Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
+% 
+% 
+% kappa_2 = 40;
+% Force_Data.shape = force_shape(kappa_2);
+% Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
+% 
+
+
+%-------------------
+%Superharmonic resonance
+%-------------------
+Continuation_Opts.collocation_degree = 10;
+Continuation_Opts.min_discretisation_num = 40;
+Continuation_Opts.initial_discretisation_num = 40;
+Continuation_Opts.forward_steps = 0;
+Continuation_Opts.backward_steps = 200;
+Continuation_Opts.frequency_range = [0.505,0.523];
+
+%-----------------------------------------%
+Damping_Data.damping_type = "rayleigh";
+damping_coeffs = get_shallow_arch_damping(Model);
+Damping_Data.mass_factor = damping_coeffs(1);
+Damping_Data.stiffness_factor = damping_coeffs(2);
+
+Model = Dyn_Data.Dynamic_Model.Model;
+Force_Data.type = "shape";
+Force_Data.frequency = 0.51;
+Force_Data.amplitude = 1;
+Force_Data.continuation_variable = "frequency";
+Force_Data.shape = get_shallow_arch_force(Model,1.5,0);
+
 Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
-
-
-kappa_2 = -10;
-Force_Data.shape = force_shape(kappa_2);
-Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
-
-
+%-----------------------------------------%
 
 function force_shape = get_shallow_arch_force(Model,kappa_1,kappa_2)
 mass = Model.mass;
@@ -85,10 +111,13 @@ damping_coeffs(1) = freq_1/500;
 damping_coeffs(2) = 0;
 end
 
-ax = gca;
-freq_1 = Model.reduced_eigenvalues(1)^(0.5);
-lines = findobj(ax,"Type","line");
-arrayfun(@(line) set(line,"YData",line.YData/6.4),lines);
-arrayfun(@(line) set(line,"XData",line.XData/freq_1),lines);
-xlim(ax,[0.985,1]);
-ylim(ax,[0,0.42])
+% ax = gca;
+% freq_1 = Model.reduced_eigenvalues(1)^(0.5);
+% lines = findobj(ax,"Type","line");
+% arrayfun(@(line) set(line,"XData",line.XData/freq_1),lines);
+% 
+% 
+% arrayfun(@(line) set(line,"YData",line.YData/6.4),lines);
+% 
+% xlim(ax,[0.985,1]);
+% ylim(ax,[0,0.42])
