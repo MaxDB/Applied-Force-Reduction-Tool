@@ -638,7 +638,7 @@ classdef Dynamic_System
                         log_message = sprintf("Total FE time: %.1f seconds" ,abaqus_time);
                         logger(log_message,3)
                     else
-                        [t,x,x_dot,energy] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,num_periods,min_incs,initial_time,FE_Force_Data,obj,1);
+                        [t,x,x_dot,energy] = dynamic_simulation_abaqus(x_0,x_dot_0,f_r_0,period,num_periods,min_incs,initial_time,FE_Force_Data,obj,job_id);
                     end
                 case "matlab"
 

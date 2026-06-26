@@ -2,7 +2,7 @@ clear
 close all
 set_visualisation_level(1)
 
-system_name = "shallow_arch_1";
+system_name = "shallow_arch_14";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
@@ -24,7 +24,7 @@ Continuation_Opts.backward_steps = 0;
 Continuation_Opts.collocation_degree = 6;
 %-----------------------------------------%
 
-% Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 
 %-------------------
 %Forced response
@@ -53,15 +53,15 @@ Damping_Data.mass_factor = damping_coeffs(1);
 Damping_Data.stiffness_factor = damping_coeffs(2);
 %---
 
-% kappa_2 = 20;
-% Force_Data.shape = force_shape(kappa_2);
-% Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
-% 
-% 
-% kappa_2 = 40;
-% Force_Data.shape = force_shape(kappa_2);
-% Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
-% 
+kappa_2 = 20;
+Force_Data.shape = force_shape(kappa_2);
+Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
+
+
+kappa_2 = 40;
+Force_Data.shape = force_shape(kappa_2);
+Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
+
 
 
 %-------------------

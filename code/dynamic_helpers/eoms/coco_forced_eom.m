@@ -27,6 +27,9 @@ x_dot(disp_span,:) = r_dot;
 
 % r_power_products = ones(num_coeffs,1);
 frequency = 2*pi./period;
+if isscalar(frequency)
+    frequency = repmat(frequency,1,num_x);
+end
 for iX = 1:num_x
     r_i = r_transformed(:,iX);
     t_i = t(iX);

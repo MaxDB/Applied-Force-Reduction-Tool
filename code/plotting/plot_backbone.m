@@ -3,6 +3,7 @@ PLOT_BIFURCATIONS = 1;
 
 
 STABILITY_LIMIT = 1.01;
+% STABILITY_LIMIT = 1;
 
 LINE_STYLE = [":","-"]; %[unstable,stable]
 LINE_WIDTH = 1.5;

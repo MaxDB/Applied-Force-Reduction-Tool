@@ -871,7 +871,9 @@ classdef Reduced_System
                 switch Damping_Data.damping_type
                     case "rayleigh"
                         damping = get_rayleigh_damping_matrix(Damping_Data,obj.Model);
+
                         Nonconservative_Input.damping = damping;
+                        Nonconservative_Input.damping_type = "matrix";
                 end
 
                 switch Force_Data.type
@@ -890,13 +892,15 @@ classdef Reduced_System
                 Nonconservative_Input.amplitude = Force_Data.amplitude;
                 Nonconservative_Input.frequency = Force_Data.frequency;
                 Nonconservative_Input.force_type = Force_Data.type;
+                Nonconservative_Input.amplitude_shape = Force_Data.shape;
+                Nonconservative_Input.continuation_variable = "frequency";
 
    
 
-                Eom_Input = obj.get_solver_inputs("coco_frf",Nonconservative_Input);
+                Eom_Input = obj.get_solver_inputs("coco_frf","additional_input",Nonconservative_Input);
 
 
-                T = Eom_Input.Applied_Force_Data.period;
+                T = 2*pi/Nonconservative_Input.frequency;
                 amp = Eom_Input.Applied_Force_Data.amplitude;
                 eom = @(t,z) coco_forced_eom(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data);
                 eom_dz = @(t,z) coco_forced_eom_dx(t,z,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data);

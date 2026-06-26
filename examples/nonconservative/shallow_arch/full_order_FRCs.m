@@ -54,6 +54,6 @@ end_index = find(include_orbit,1,"last");
 orbit_subset = start_index:interval:end_index;
 
 % test
-amp = Sol.energy;
-plot(freq(orbit_subset),amp(orbit_subset),"x");
+% amp = Sol.energy;
+% plot(freq(orbit_subset),amp(orbit_subset),"x");
 end
