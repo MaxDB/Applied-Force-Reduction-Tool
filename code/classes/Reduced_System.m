@@ -341,13 +341,26 @@ classdef Reduced_System
             num_dof = h_coeff_size(1);
             num_validation_modes = h_coeff_size(2);
             num_r_modes = length(obj.Model.reduced_modes);
+
+            h_stiff_coeff = obj.Low_Frequency_Stiffness_Polynomial.coefficients;
+            h_stiff_coeff_size = size(h_stiff_coeff);
             
-            num_combined_coeffs = num_coeffs*num_validation_modes;
-            h_disp_coeff = zeros(num_dof,num_combined_coeffs);
+            num_combined_h_coeffs = num_coeffs*num_validation_modes;
+            h_disp_coeff = zeros(num_dof,num_combined_h_coeffs);
+
+            num_combined_stiff_coeffs = h_stiff_coeff_size(end)*num_validation_modes;
+            h_stiff_coeff = zeros(num_validation_modes,num_combined_stiff_coeffs);
             for iMode = 1:num_validation_modes
-                mode_index = iMode:num_validation_modes:num_combined_coeffs;
+                mode_index = iMode:num_validation_modes:num_combined_h_coeffs;
                 h_disp_coeff(:,mode_index) = h_disp_coeff_diff(:,iMode,:);
+
+                mode_index = iMode:num_validation_modes:num_combined_stiff_coeffs;
+                h_stiff_coeff(:,mode_index) = obj.Low_Frequency_Stiffness_Polynomial.coefficients(:,iMode,:);
             end
+            
+        
+
+           
 
             h_disp_h_disp = obj.get_beta_mode(h_disp_coeff',h_disp_coeff);
             h_disp_r_disp = obj.get_beta_mode(h_disp_coeff',physical_disp_coeffs);
@@ -360,7 +373,7 @@ classdef Reduced_System
             
             modal_stiffness =  size(obj.Low_Frequency_Stiffness_Polynomial,1) == num_validation_modes;
             if modal_stiffness
-                h_disp_h_force = tensorprod(obj.get_beta_mode(h_disp_coeff',evec_h),obj.Low_Frequency_Stiffness_Polynomial.coefficients,2,1);
+                h_disp_h_force = tensorprod(obj.get_beta_mode(h_disp_coeff',evec_h),h_stiff_coeff,2,1);
             else
                 h_disp_h_force = tensorprod(h_disp_coeff',obj.Low_Frequency_Stiffness_Polynomial.coefficients,2,1);
             end
@@ -393,7 +406,7 @@ classdef Reduced_System
             h_disp_h_force_diff = zeros(num_coeffs,num_validation_modes,num_validation_modes,num_stiff_coeffs);
 
             for iMode = 1:num_validation_modes
-                mode_index_one = iMode:num_validation_modes:num_combined_coeffs;
+                mode_index_one = iMode:num_validation_modes:num_combined_h_coeffs;
                 h_disp_r_disp_diff(:,iMode,:) = h_disp_r_disp(mode_index_one,:);
                 h_disp_r_force_diff(:,iMode,:) = h_disp_r_force(mode_index_one,:);
 
@@ -405,9 +418,11 @@ classdef Reduced_System
                     h_disp_force_grad_diff(:,iMode,:) = h_disp_force_grad(mode_index_one,:);
                 end
                 for jMode = 1:num_validation_modes
-                    mode_index_two = jMode:num_validation_modes:num_combined_coeffs;
+                    mode_index_two = jMode:num_validation_modes:num_combined_h_coeffs;
                     h_disp_h_disp_diff(:,iMode,jMode,:) = h_disp_h_disp(mode_index_one,mode_index_two);
-                    h_disp_h_force_diff(:,iMode,jMode,:) = h_disp_h_force(mode_index_one,mode_index_two);
+
+                    mode_index_stiff_two = jMode:num_validation_modes:num_combined_stiff_coeffs;
+                    h_disp_h_force_diff(:,iMode,jMode,:) = h_disp_h_force(mode_index_one,mode_index_stiff_two);
                     if type == "frf"
                         if ~isempty(damping)
                             h_disp_damp_h_disp_diff(:,iMode,jMode,:) = h_disp_damp_h_disp(mode_index_one,mode_index_two);

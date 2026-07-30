@@ -27,7 +27,8 @@ if ~isempty(reference_sol)
 end
 
 num_orbits = length(periods);
-for iOrbit = 1:num_orbits
+% for iOrbit = 1:num_orbits
+for iOrbit = 7
     period = periods(iOrbit);
     
     if ~isempty(reference_sol)
@@ -56,7 +57,7 @@ for iOrbit = 1:num_orbits
     
     job_id = [1,2];
     Nonconservative_Input.fe_output = "all";
-    num_periods = 1;
+    num_periods = 1.5;
     [t_per,x_per,x_dot_per,energy_per]  = Model.dynamic_simulation([],[],[],period,num_periods,min_incs,t(end),Nonconservative_Input,job_id);
     
     %-- test

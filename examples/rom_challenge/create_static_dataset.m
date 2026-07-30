@@ -1,14 +1,14 @@
 clear
 close all
 %--------- Software Settings ---------%
-set_logging_level(4)
+set_logging_level(3)
 set_visualisation_level(3)
 %-------------------------------------%
 
 %--------- System Settings ---------%
 system_name = "exhaust";
 energy_limit = 1.8;
-initial_modes = [1];
+initial_modes = [1,5,7];
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
@@ -16,13 +16,13 @@ Calibration_Opts.calibration_scale_factor = 1.5;
 %----------------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.additional_data = "none";
+Static_Opts.additional_data = "stiffness";
 Static_Opts.num_validation_modes = 18;
 Static_Opts.max_parallel_jobs = 1; %be careful!
 %------------------------------------------%
 
 %--------- Static Verification Settings ---------%
-Verification_Opts.maximum_iterations = 0 ;
+Verification_Opts.maximum_iterations = 5;
 %----------------------------------------------%
 
 Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
@@ -30,24 +30,3 @@ Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts"
 Static_Data = Static_Dataset(Model,"verification_opts",Verification_Opts);
 Static_Data.save_data;
 %----------------------------------------------%
-External_Force.type = "point";
-External_Force.dof = 1563;
-External_Force.max_amplitude = 100;
-
-Nc_Data = Nonconservative_Data(Model,External_Force);
-Nc_Static_Data = Static_Data.extend_stress_manifold(Nc_Data);
-
-Nc_Static_Data.verified_degree = [7,7];
-Nc_Static_Data.save_data;
-
-
-Rom = Reduced_System(Nc_Static_Data);
-
-ax = plot_static_data("force",Nc_Static_Data);
-Rom.Force_Polynomial.plot_polynomial("axes",ax);
-%
-% ax = plot_static_data("displacement",Nc_Static_Data);
-% Rom.Physical_Displacement_Polynomial.plot_polynomial("axes",ax);
-%
-ax = plot_static_data("energy",Nc_Static_Data);
-Rom.Potential_Polynomial.plot_polynomial("axes",ax);

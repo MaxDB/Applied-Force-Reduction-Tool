@@ -2,7 +2,7 @@ clear
 % close all
 set_visualisation_level(1)
 
-system_name = "mass_spring_roller_1";
+system_name = "mass_spring_roller_0";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 Additional_Output.output = "physical displacement";

@@ -280,7 +280,14 @@ switch type
             end
 
         else
-            p = plot(ax,frequency,energy,'LineStyle',LINE_STYLE(2),line_plot_settings{:});
+            if class(Solution) == "Full_Order_Forced_Solution"
+                plot_line_style = "none";
+                marker_style = "x";
+            else
+                plot_line_style = LINE_STYLE(2);
+                marker_style = "none";
+            end
+            p = plot(ax,frequency,energy,'LineStyle',plot_line_style,"Marker",marker_style,line_plot_settings{:});
 
             data_tip_row = dataTipTextRow("Basis", reduction_basis + strings(size(orbit_ids)));
             p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;

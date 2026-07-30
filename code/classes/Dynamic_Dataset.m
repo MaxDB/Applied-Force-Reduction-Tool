@@ -677,7 +677,7 @@ classdef Dynamic_Dataset
             elseif type == "Sol_Data_periodicity" && isequal(obj.Dynamic_Model.Model.reduced_modes,0)
                 Sol = load(solution_path + "Sol_Data.mat","Solution");
                 Sol = Sol.Solution;
-                if Sol.Solution_Type.model_type == "fom" && isfield(Sol,"periodicity")
+                if Sol.Solution_Type.model_type == "fom" && isprop(Sol,"periodicity")
                     Solution = FE_Orbit_Output([]);
                     Solution.fe_output_type = "periodicity";
                     Solution.fe_output = Sol.periodicity;
