@@ -14,9 +14,9 @@ dof.direction = 2;
 Additional_Output.dof = dof;
 Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
 % --------- Continuation Settings ---------%
-Continuation_Opts.initial_inc = 5e-3;
-Continuation_Opts.max_inc = 5e-3;
-Continuation_Opts.min_inc = 1e-3;
+Continuation_Opts.initial_inc = 5e-1;
+Continuation_Opts.max_inc = 5e-1;
+Continuation_Opts.min_inc = 1e-2;
 Continuation_Opts.forward_steps = 0;
 Continuation_Opts.backward_steps = 200;
 Continuation_Opts.collocation_degree = 8;
@@ -67,14 +67,16 @@ Continuation_Opts.min_discretisation_num = 20;
 Continuation_Opts.initial_discretisation_num = 40;
 Continuation_Opts.forward_steps = 400;
 Continuation_Opts.backward_steps = 400;
-Continuation_Opts.frequency_range = [2.60,2.76]*1e6;
+Continuation_Opts.frequency_range = [2.45,2.8]*1e6;
 
 %-----------------------------------------%
 Continuation_Opts.energy_limit_multiplier = 1.5;
 
 Force_Data.type = "modal";
 Force_Data.mode_number = 1;
-Force_Data.frequency = 2.72e6;
+% Force_Data.frequency = 2.72e6;
+ % Force_Data.frequency = 2.55e6;
+  Force_Data.frequency = 2.75e6;
 Force_Data.amplitude = 20e3;
 Force_Data.continuation_variable = "frequency";
 

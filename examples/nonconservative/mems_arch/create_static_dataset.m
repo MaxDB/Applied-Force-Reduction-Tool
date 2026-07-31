@@ -8,8 +8,8 @@ set_visualisation_level(3)
 
 %--------- System Settings ---------%
 system_name = "mems_arch";
-energy_limit = 0.8;
-initial_modes = [1,6];
+energy_limit = 1.6;
+initial_modes = [1];
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
@@ -18,7 +18,7 @@ Calibration_Opts.calibration_scale_factor = 1;
 
 %--------- Static Solver Settings ---------%
 Static_Opts.max_parallel_jobs = 1; %be careful!
-Static_Opts.additional_data = "none";
+Static_Opts.additional_data = "stiffness";
 Static_Opts.num_validation_modes = 20;
 %------------------------------------------%
 
