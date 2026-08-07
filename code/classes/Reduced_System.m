@@ -183,7 +183,31 @@ classdef Reduced_System
 
         %-----------------------------------------------------------------%
         function x = expand(obj,r,varargin)
+            %Optional argumanents
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            poly_index = [];
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "index"
+                        poly_index = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %--------------------------------
+
+
             x_Poly = obj.Physical_Displacement_Polynomial;
+            if ~isempty(poly_index)
+                x_Poly = x_Poly.subpoly(poly_index);
+            end
+
             if size(x_Poly,1) == 0 && obj.Model.system_type == "direct"
                 x = obj.Model.reduced_eigenvectors*r;
                 return
@@ -193,6 +217,7 @@ classdef Reduced_System
             if nargin == 2
                 return
             end
+            return
             
             %needs to be cleaned up
             if isstring(varargin{1,1}) && varargin{1,1} == "full"
@@ -893,8 +918,10 @@ classdef Reduced_System
 
                 switch Force_Data.type
                     case "modal"
-                        mode_map = F_Data.mode_number == obj.Model.reduced_modes;
-                        Nonconservative_Input.mode_map = mode_map;
+                        mode_map = Force_Data.mode_number == obj.Model.reduced_modes;
+                        evec_r = obj.Model.reduced_eigenvectors.load();
+                        Force_Data.shape = obj.Model.mass*evec_r(:,mode_map);
+                        Force_Data.type = "shape";
                     case "point force"
                         num_dofs = obj.Model.num_dof;
                         dof_map = zeros(num_dofs,1);

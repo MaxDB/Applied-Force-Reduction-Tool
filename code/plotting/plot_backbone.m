@@ -80,6 +80,7 @@ line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour,"Tag",tag};
 
 extra_data = [];
 if Solution.Solution_Type.orbit_type == "forced"
+    STABILITY_LIMIT = 1;
     if isfield(Solution.Solution_Type,"amplitude")
         extra_data = Solution.Solution_Type.amplitude;
         extra_data_name = "Amplitude";
