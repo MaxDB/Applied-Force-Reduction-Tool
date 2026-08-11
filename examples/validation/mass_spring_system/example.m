@@ -1,8 +1,8 @@
 %[text] # 3 DoF mass-spring oscillator example
-%[text] Worked example of the mass-spring system found in [Evaluating applied force reduced-order models: validation | Research Square](https://www.researchsquare.com/article/rs-8723275/v1)
+%[text] Worked example of the mass-spring system found in [Evaluating applied force reduced-order models: validation](https://doi.org/10.1007/s11071-026-12844-7)
 %[text] Make sure '`AFR_tool.prj`' is open
 %%
-%[text] The logging and visualisation levels determine how much is outputted to the console and as graphical representations respectively. The higher the number ( ∈ {0,1,2,3,4}) the more verbose the output.
+%[text] The logging and visualisation levels determine how much is outputted to the console and as graphical representations respectively. The higher the number, the more verbose the output.
 clear
 set_script_wd(); %sets working directory to "...\mass_spring_system"
 set_logging_level(3)
