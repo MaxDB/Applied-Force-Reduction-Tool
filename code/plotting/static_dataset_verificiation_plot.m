@@ -3,7 +3,7 @@ PLOT_LEVEL = 1;
 NUM_DISP_PLOTS = 4;
 view_angles = length(Static_Data.Model.reduced_modes) + 1;
 
-load("data\plot_level.mat","plotting_level")
+plotting_level = load_log_level("plot");
 if plotting_level < PLOT_LEVEL
     return
 end

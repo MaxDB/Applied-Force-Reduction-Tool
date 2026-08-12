@@ -37,8 +37,7 @@ else
 end
 
 
-
-load(log_level,"logging_level")
+logging_level = load_log_level("log");
 
 switch message_level
     case 1

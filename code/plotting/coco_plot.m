@@ -5,7 +5,7 @@ MARKER_COLOUR = get_plot_colours(3);
 LINE_WIDTH = 1.5;
 MARKER_SIZE = 6;
 
-load("data\plot_level.mat","plotting_level")
+plotting_level = load_log_level("plot");
 if plotting_level < PLOT_LEVEL
     return
 end

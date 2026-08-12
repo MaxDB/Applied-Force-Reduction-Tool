@@ -31,8 +31,7 @@ if isstring(interactive)
     end
 end
 %-------------------------------------------------------------------------%
-log_level = "data\log_level.mat";
-load(log_level,"logging_level")
+logging_level = load_log_level("log");
 
 command = "abaqus job=" + job + " cpus=" + num_cpus + " interactive";
 

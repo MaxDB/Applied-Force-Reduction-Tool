@@ -1,7 +1,7 @@
 function validation_plot(plot_part,varargin)
 %plot results of one iteration of validation alogirithm
 PLOT_LEVEL = 3;
-load("data\plot_level.mat","plotting_level")
+plotting_level = load_log_level("plot");
 if plotting_level < PLOT_LEVEL
     return
 end

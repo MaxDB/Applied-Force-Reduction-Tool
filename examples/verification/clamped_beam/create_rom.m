@@ -9,7 +9,7 @@ set_visualisation_level(0)
 %-------------------------------------%
 
 %--------- System Settings ---------%
-system_name = "JH_beam_2d";
+system_name = "clamped_beam_2d";
 energy_limit = 0.015; 
 initial_modes = 1;
 added_modes = [3,5];

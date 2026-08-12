@@ -1,7 +1,8 @@
 function model_calibration_plot(mode,sep_id,iMode,r,f,f_limit,E,f_poly,v_poly,obj)
 PLOT_LEVEL = 1;
 
-load("data\plot_level.mat","plotting_level")
+plotting_level = load_log_level("plot");
+
 if plotting_level < PLOT_LEVEL
     return
 end

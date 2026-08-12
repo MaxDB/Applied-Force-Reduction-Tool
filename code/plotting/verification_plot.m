@@ -2,7 +2,7 @@ function verification_plot(Static_Data,Model,stage)
 %plot results of one iteration of verification alogirithm
 PLOT_LEVEL = 3;
 FIG_NAME = "verification plot";
-load("data\plot_level.mat","plotting_level")
+plotting_level = load_log_level("plot");
 if plotting_level < PLOT_LEVEL
     return
 end

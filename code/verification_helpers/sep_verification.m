@@ -162,7 +162,7 @@ for iIteration = 1:(max_iterations+1)
         logger(log_message,4)
         
         error_calculation_failed = zeros(1,num_verified_seps);
-        load("data\plot_level.mat","plotting_level")
+        plotting_level = load_log_level("plot");
         if plotting_level >= 4
             num_jobs = 0;
             warning("parallelisation disabled for verification plotting")
