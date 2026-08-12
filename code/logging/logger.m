@@ -74,8 +74,12 @@ while ~isempty(lock_files)
     end
     lock_files = dir(lock_files_path);
 end
+if ~isfolder(log_path)
+    mkdir(log_path)
+end
 lock_id = fopen(lock_file,'w');
 fclose(lock_id);
+
 
 while ~isfile(lock_file)
     pause(0.01);
