@@ -1,4 +1,8 @@
 function reset_temp_directory
+if ~isfolder('temp')
+    mkdir('temp')
+    return
+end
 try
     rmdir('temp','s')
     mkdir('temp')
@@ -6,7 +10,7 @@ catch
     try
         pause(0.5)
         rmdir('temp','s')
-        mkdir('temp')
+        
     catch
         warning("Cannot delete all files in temp directory")
     end
