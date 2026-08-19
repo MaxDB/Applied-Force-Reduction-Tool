@@ -1,5 +1,5 @@
 function [r,theta,f,E,additional_data] = add_point_matlab(applied_force,add_data_type,Model)
-num_r_modes = length(Model.reduced_modes);
+num_r_modes = Model.get_reduced_dimension;
 %load system
 Analytic_Eom = load_analytic_system("geometry\" + Model.system_name+ "\" + Model.system_name);
 static_equation = Analytic_Eom.get_static_equation;

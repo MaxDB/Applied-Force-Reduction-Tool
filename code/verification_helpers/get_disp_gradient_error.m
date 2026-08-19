@@ -17,7 +17,7 @@ num_coeffs = size(input_order,1);
 
 
 num_x = size(r_transformed,2);
-num_r_modes = size(r_transformed,1);
+num_r_modes = Rom_One.get_reduced_dimension;
 num_h_modes = size(Rom_One.Low_Frequency_Stiffness_Polynomial,1);
 
 num_test_points = size(validation_points,2);

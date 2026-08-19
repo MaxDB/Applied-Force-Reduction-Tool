@@ -90,7 +90,7 @@ classdef Reduced_System
             evec_r = load_data(evec_r);
 
             obj.reduced_displacement_limits = [min(r,[],2),max(r,[],2)];
-            num_r_modes = length(Static_Data.Model.reduced_modes);
+            num_r_modes = Static_Data.get_reduced_dimension;
 
             if isempty(Static_Data.Model.linear_disp)
                 disp_constraint = evec_r;
@@ -365,7 +365,7 @@ classdef Reduced_System
             num_coeffs = h_coeff_size(3);
             num_dof = h_coeff_size(1);
             num_validation_modes = h_coeff_size(2);
-            num_r_modes = length(obj.Model.reduced_modes);
+            num_r_modes = obj.get_reduced_dimension;
 
             h_stiff_coeff = obj.Low_Frequency_Stiffness_Polynomial.coefficients;
             h_stiff_coeff_size = size(h_stiff_coeff);
@@ -405,7 +405,7 @@ classdef Reduced_System
             num_stiff_coeffs = size(obj.Low_Frequency_Stiffness_Polynomial.coefficients,3);
 
             num_physical_disp_coeffs = size(physical_disp_coeffs,2);
-            num_r_modes = size(evec_r,2);
+            num_r_modes = obj.get_reduced_dimension;
             num_h_modes = size(evec_h,2);
 
             if type == "frf"
@@ -711,7 +711,7 @@ classdef Reduced_System
                                     Eom_Input.Applied_Force_Data.amplitude = Nc_Inputs.amplitude;
                             end
                         case "point force"
-                            num_r_modes = size(obj.Model.reduced_modes,2);
+                            num_r_modes = obj.get_reduced_dimension;
 
                             Eom_Input.Applied_Force_Data.shape = @(t,amp,T) sine_force(t,amp,T);
                             Eom_Input.Applied_Force_Data.shape_dx = @(t,amp,T) sine_force_dx(t,amp,T,num_r_modes);
@@ -798,7 +798,7 @@ classdef Reduced_System
                                     Eom_Input.Applied_Force_Data.amplitude = Nc_Inputs.amplitude;
                             end
                         case "point force"
-                            num_r_modes = size(obj.Model.reduced_modes,2);
+                            num_r_modes = obj.get_reduced_dimension;
 
                             Eom_Input.Applied_Force_Data.shape = @(t,amp,T) sine_force(t,amp,T);
                             Eom_Input.Applied_Force_Data.shape_dx = @(t,amp,T) sine_force_dx(t,amp,T,num_r_modes);
@@ -817,7 +817,7 @@ classdef Reduced_System
                             disp_force_beta = obj.get_beta_mode(h_disp_coeff,Nc_Inputs.amplitude_shape);
                             Eom_Input.Applied_Force_Data.h_disp_force_beta = disp_force_beta;
                         case "shape"
-                            num_r_modes = size(obj.Model.reduced_modes,2);
+                            num_r_modes = obj.get_reduced_dimension;
 
                             Eom_Input.Applied_Force_Data.shape = @(t,amp,T) sine_force(t,amp,T);
                             Eom_Input.Applied_Force_Data.shape_dx = @(t,amp,T) sine_force_dx(t,amp,T,num_r_modes);
@@ -965,6 +965,9 @@ classdef Reduced_System
             low_frequency_displacement = @(r,h) L_Modes_Poly.evaluate_polynomial(r) + h;
         end
         %-----------------------------------------------------------------%
+        function reduced_dim = get_reduced_dimension(obj)
+            reduced_dim = obj.Model.get_reduced_dimension;
+        end
     end
 
 end

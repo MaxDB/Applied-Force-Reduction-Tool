@@ -8,8 +8,8 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "mass_spring_roller";
 
-energy_limit = 0.05;
-% energy_limit = 3e-3;
+% energy_limit = 0.05;
+energy_limit = 3e-3;
 initial_modes = [1];
 %-----------------------------------%
 
@@ -26,29 +26,10 @@ Static_Data.save_data;
 %----------------------------------------
 
 
-%----------------------------------------
-% Damping_Data.damping_type = "rayleigh";
-% Damping_Data.mass_factor = 0.67;
-% Damping_Data.stiffness_factor = 2.55e-7;
-
-
-% Force_Data.type = "point force";
-% Force_Data.dof = 1563;
-% Force_Data.continuation_variable = "frequency";
-% Force_Data.amplitude = 0.17;
-% Force_Data.frequency = 942;
-
-% Force_Data.type = "modal";
-% Force_Data.mode_number = 1;
-% Force_Data.continuation_variable = "amplitude";
-% Force_Data.force_points = [1,10,50];
-
-
-
 
 External_Force.type = "shape";
-External_Force.shape = [0;0;1];
-External_Force.max_amplitude = 3; %"limit" -> calibrate
+External_Force.shape = get_angled_force_shape(1.8,"deg");
+External_Force.max_amplitude = 3;
 
 Nc_Data = Nonconservative_Data(Model,External_Force);
 Nc_Static_Data = Static_Data.extend_stress_manifold(Nc_Data);
@@ -65,3 +46,12 @@ Rom.Physical_Displacement_Polynomial.plot_polynomial("axes",ax);
 %
 ax = plot_static_data("energy",Nc_Static_Data);
 Rom.Potential_Polynomial.plot_polynomial("axes",ax);
+
+
+function force_shape = get_angled_force_shape(angle,type)
+if type == "deg"
+    angle = angle*pi/180;
+end
+force_shape = [cos(angle);sin(angle);0];
+force_shape = force_shape/norm(force_shape);
+end

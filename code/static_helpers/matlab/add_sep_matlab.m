@@ -2,13 +2,9 @@ function [reduced_displacement,physical_displacement,reduced_force,E,additional_
     add_sep_matlab(force_ratio,num_loadcases,add_data_type,Model)
 
 
-conservative = true;
-if iscell(Model)
-    [Model,Nc_Data] = Model{:};
-   
-
-    conservative = isempty(Nc_Data);
-end
+modes = Model.reduced_modes;
+nc_modes = modes > 1000;
+amp_limited = any(nc_modes) && ~isempty(Model.nc_amplitude_limit);
 
 [num_modes,num_seps] = size(force_ratio);
 
@@ -21,15 +17,8 @@ linear_stiffness = Model.stiffness;
 %define force
 applied_force = force_ratio/num_loadcases;
 force_transform = Model.mass*Model.reduced_eigenvectors;
-num_r_modes = size(Model.reduced_modes,1);
+num_r_modes = Model.get_reduced_dimension;
 
-if ~conservative
-    % nc_force_transform = Nc_Data.max_amplitude*Nc_Data.force_shape;
-    nc_force_transform = Model.mass*Nc_Data.orth_force_shape; 
-    force_transform = [force_transform,nc_force_transform];
-
-    num_applied_force = Nc_Data.num_applied_forces;
-end
 
 %preallocation
 total_static_steps = 2*num_seps*num_loadcases;
@@ -77,15 +66,12 @@ for iSep = 1:num_seps
             potential = potential_equation(physical_disp);
             
             reached_limit = potential > Model.fitting_energy_limit;
-
-            if ~conservative
-                force_amplitudes = modal_step_force((num_r_modes+1):end);
-                if  any(abs(force_amplitudes)>1)
-                    reached_limit = 1;
-                    nc_removal_indicies = [nc_removal_indicies,load_step_counter]; %#ok<AGROW>
-                end
-                
+    
+            if amp_limited
+                reached_amp_limit = abs(modal_step_force(nc_modes,:)) > abs(Model.fitting_nc_amp_limit);
+                reached_limit = reached_limit | reached_amp_limit;
             end
+           
 
             sep_id(1,load_step_counter) = iSep;
             f(:,load_step_counter) = modal_step_force;
@@ -122,40 +108,9 @@ end
 
 physical_displacement = displacement;
 
-
-if conservative
-    r_transform = force_transform';
-    r = r_transform*displacement;
-    reduced_displacement = r;
-    reduced_force = f;
-    return
-end
-evec_p = [Model.reduced_eigenvectors,Nc_Data.orth_force_shape];
-p_transform = evec_p'*Model.mass;
-reduced_displacement = p_transform*displacement;
-
-% reduced_force_transform = evec_p'*force_transform;
+r_transform = force_transform';
+r = r_transform*displacement;
+reduced_displacement = r;
 reduced_force = f;
 
-% sin_fraction = f((num_r_modes+1):end,:);
-
-% p = asin(sin_fraction);
-% p = Nc_Data.force_shape'*physical_displacement;
-% x_p = nc_force_transform*p;
-% x_r = physical_displacement - x_p;
-% r = r_transform*x_r;
-% 
-% r((num_r_modes+1):end,:) = p;
-% reduced_displacement = r;
-
-% reduced_displacement = [r;p];
-
-% reduced_displacement = r;
-
-% r = r(1:num_r_modes,:);
-% x_r = Model.reduced_eigenvectors*r;
-% x_p = displacement-x_r;
-% p = nc_force_transform'*x_p;
-% 
-% reduced_displacement = [r;p];
 end

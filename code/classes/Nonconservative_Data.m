@@ -10,6 +10,9 @@ classdef Nonconservative_Data
         force_shape
         orth_force_shape
 
+        max_amplitude
+        max_norm_amplitude
+
         amplitude
         frequency
         phase
@@ -81,12 +84,20 @@ classdef Nonconservative_Data
                 otherwise
                     Error("Unsupported force type: '" + obj.force_type + "'")
             end
-
-            obj.orth_force_shape = obj.orthogonalise_force(shape);
+            
+            if isfield(Forcing_Data,"max_amplitude")
+                [orth_shape,norm_amplitude]  = obj.orthogonalise_force(shape,Forcing_Data.max_amplitude);
+                obj.max_amplitude = Forcing_Data.max_amplitude;
+                obj.max_norm_amplitude = norm_amplitude;
+            else
+                orth_shape  = obj.orthogonalise_force(shape);
+            end
             obj.force_shape = shape;
+            obj.orth_force_shape = orth_shape;
+
         end
         %--------------------------------------------
-        function orth_force_shape = orthogonalise_force(obj,force_shape)
+        function [orth_force_shape,norm_amp] = orthogonalise_force(obj,force_shape,max_amp)
 
             evec_r = obj.Model.reduced_eigenvectors;
             % small_disp = obj.Model.stiffness\force_shape;
@@ -99,6 +110,12 @@ classdef Nonconservative_Data
             end
             norm_test = phi_a'*obj.Model.mass*phi_a;
             orth_force_shape = phi_a/sqrt(norm_test);
+
+            if nargin ~= 3
+                return
+            end
+            norm_amp = max_amp*sqrt(norm_test);
+
         end
     end
 

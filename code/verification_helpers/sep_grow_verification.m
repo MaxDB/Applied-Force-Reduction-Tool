@@ -8,7 +8,7 @@ sep_density = 5;
 Model = Static_Data.Model;
 min_degree_data = Model.calibrated_degree_limits;
 
-num_r_modes = size(Model.reduced_modes,2);
+num_r_modes = Static_Data.get_reduced_dimension;
 max_degree = 3;
 
 for iMode = 1:num_r_modes

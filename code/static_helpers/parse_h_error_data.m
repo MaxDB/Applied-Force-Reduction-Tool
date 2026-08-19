@@ -2,7 +2,7 @@ function [h_stiffness,h_stiffness_0,h_coupling_gradient,h_coupling_gradient_0] =
 
 Model = Static_Data.Model;
 r_modes = Model.reduced_modes;
-num_r_modes = size(r_modes,2);
+num_r_modes = Static_Data.get_reduced_dimension;
 r_evec = Model.reduced_eigenvectors;
 
 all_L_modes = Model.low_frequency_modes;

@@ -4,11 +4,10 @@ function [r,physical_displacement,f,E,additional_data,sep_id] = ...
 JOB_NAME = "static_analysis";
 RESET_TO_ZERO = 1;
 
-conservative = true;
-if iscell(Model)
-    [Model,Nc_Data] = Model{:};
-    conservative = isempty(Nc_Data);
-end
+
+modes = Model.reduced_modes;
+nc_mode_index = modes > 1000;
+amp_limited = any(nc_mode_index) && ~isempty(Model.nc_amplitude_limit);
 
 
 data_method = "steps";
@@ -266,16 +265,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 force_transform = Model.mass*Model.reduced_eigenvectors;
-num_r_modes = size(Model.reduced_modes,2);
+num_r_modes = Model.get_reduced_dimension;
 force_size = num_r_modes;
-if ~conservative
-    % nc_force_transform = Nc_Data.max_amplitude*Nc_Data.force_shape;
-    nc_force_transform = Model.mass*Nc_Data.orth_force_shape; 
-    force_transform = [force_transform,nc_force_transform];
-    
-    num_applied_force = Nc_Data.num_applied_forces;
-    force_size = force_size+ num_applied_force;
-end
 
 
 coordinate_index = ((1:num_nodes)-1)*num_dimensions;
@@ -562,18 +553,11 @@ if data_method == "incs"
     end
 end
 
-if conservative
-    r_transform = force_transform';
-    r = r_transform*displacement_bc;
-else
-    evec_p = [Model.reduced_eigenvectors,Nc_Data.orth_force_shape];
-    p_transform = evec_p'*Model.mass;
-    r = p_transform*displacement_bc;
 
-    % reduced_force_transform = evec_p'*force_transform;
-    % f = reduced_force_transform*f;
-end
-% theta = displacement_bc - Model.reduced_eigenvectors*r;
+r_transform = force_transform';
+r = r_transform*displacement_bc;
+
+
 physical_displacement = displacement_bc;
 
 
@@ -583,10 +567,17 @@ physical_displacement = displacement_bc;
 step_list = 1:length(E);
 final_sep_energy = E(sep_ends);
 
+final_nc_force = f_modal(nc_mode_index,sep_ends);
+
 
 
 if clean_data
     remove_index = E > Model.fitting_energy_limit;
+    if amp_limited
+        remove_amp_index = abs(f_modal(nc_mode_index,:)) > abs(Model.fitting_nc_amp_limit);
+        remove_index = remove_index | remove_amp_index;
+    end
+
     sep_starts = sep_ends - num_loadcases' + 1;
     for iSep = 1:num_seps
         %leave one point ove energy limit in each sep
@@ -651,7 +642,10 @@ if Static_Opts.follower_force
 end
 %---------------
 stiff_restarted_seps_index  = (final_sep_energy(restart_type ~= 2) < Model.fitting_energy_limit);
-
+if amp_limited
+    amp_restart_sep_index = (abs(final_nc_force(restart_type ~= 2)) < Model.fitting_nc_amp_limit);
+    stiff_restarted_seps_index = stiff_restarted_seps_index & amp_restart_sep_index;
+end
 %---
 num_points = size(r,2);
 point_distance = zeros(1,num_points);
@@ -810,7 +804,7 @@ if restart_sep
     end
 
     [r_restart,theta_restart,f_restart,E_restart,additional_data_restart,sep_id_restart] = add_sep_abaqus(restarted_loadcases, ...
-        num_restart_loadcases,Static_Opts,max_inc,add_data_type,clean_data,{Model,Nc_Data},job_id,Initial_Data,next_restart_type);
+        num_restart_loadcases,Static_Opts,max_inc,add_data_type,clean_data,Model,job_id,Initial_Data,next_restart_type);
     
     num_r = size(r,2);
     r_all = [r,r_restart];
@@ -834,7 +828,7 @@ if restart_sep
                 additional_data = f_modal;
         end
     end
-    
+    f = f_modal;
     sep_id = [sep_id,restarted_seps(sep_id_restart(:,unique_restart_index))];
 
 

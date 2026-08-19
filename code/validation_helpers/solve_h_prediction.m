@@ -3,7 +3,7 @@ Validation_Opts = Validation_Sol.Validation_Options;
 solution_num = Validated_BB_Settings.solution_num;
 
 
-num_r_modes = length(Validation_Rom.Model.reduced_modes);
+num_r_modes = Validation_Rom.get_reduced_dimension;
 disp_span = 1:num_r_modes;
 vel_span = disp_span + num_r_modes;
 

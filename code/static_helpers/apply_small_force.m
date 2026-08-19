@@ -2,7 +2,7 @@ function Static_Data = apply_small_force(Static_Data,validation_modes)
 
 Model = Static_Data.Model;
 r_modes = Model.reduced_modes;
-num_r_modes = size(r_modes,2);
+num_r_modes = Static_Data.get_reduced_dimension;
 
 r_evec = Model.reduced_eigenvectors;
 L_evec = Model.low_frequency_eigenvectors;

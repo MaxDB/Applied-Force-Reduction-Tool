@@ -218,7 +218,7 @@ end
 else
     BB_Sol = Dyn_Data.load_solution(solution_num);
     num_orbits = BB_Sol.num_orbits;
-    num_r_modes = size(Static_Data,1);
+    num_r_modes = Static_Data.get_reduced_dimension;
 
 
     for iOrbit = 1:num_orbits

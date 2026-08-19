@@ -7,7 +7,7 @@ r_disp = Static_Data.reduced_displacement(:,energy_span);
 f_r = Static_Data.restoring_force(:,energy_span);
 sep_id = Static_Data.static_equilibrium_path_id(:,energy_span);
 
-num_r_modes = size(r_disp,1);
+num_r_modes = Static_Data.get_reduced_dimension
 num_seps = length(seps);
 new_sep_id = [];
 new_loads = zeros(num_r_modes,0);

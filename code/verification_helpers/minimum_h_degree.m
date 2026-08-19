@@ -1,7 +1,7 @@
 function Static_Data = minimum_h_degree(Static_Data)
 MIN_VALIDATION_RATIO = 1e-1;
 
-num_r_modes = length(Static_Data.Model.reduced_modes);
+num_r_modes = Static_Data.get_reduced_dimension;
 switch num_r_modes
     case 1
         max_degree = Static_Data.validated_degree(1:2);

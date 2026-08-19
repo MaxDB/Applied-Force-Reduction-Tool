@@ -17,7 +17,7 @@ max_sep_points = Model.Static_Options.maximum_loadcases;
 fitting_energy_limit = Model.fitting_energy_limit;
 energy_limit = Model.energy_limit;
 
-num_r_modes = length(Model.reduced_modes);
+num_r_modes = Static_Data.get_reduced_dimension;
 force_transform = Model.mass*Model.reduced_eigenvectors;
 %---------
 if isnumeric(num_added_points_setting)
@@ -35,8 +35,7 @@ elseif isstring(num_added_points_setting) && num_added_points_setting == "auto"
     end
 end
 %-------------------------
-found_force_ratios = Static_Data.unit_sep_ratios;
-num_original_seps = size(found_force_ratios,2);
+nc_mode_index = Model.reduced_modes > 1000;
 
 
 
@@ -189,12 +188,14 @@ for iIteration = 1:(max_iterations+1)
         Rom_One_Const =  parallel.pool.Constant(Rom_One);
         Rom_Two_Const = parallel.pool.Constant(Rom_Two);
         parfor (iSep = 1:num_verified_seps,num_jobs)
-        % disp("re-enable parallelisation")
+        % warning("re-enable parallelisation")
         % for iSep = 1:num_verified_seps
-
+            
 
             force_ratio = scaled_force_ratios(:,iSep);
             [disp_sep,lambda_sep] = find_sep_rom(Rom_One_Const.Value,force_ratio,3*max_sep_points);
+
+            amp_limited = any(force_ratio(nc_mode_index)) && ~isempty(Model.nc_amplitude_limit);
             if isempty(lambda_sep)
                 error_calculation_failed(iSep) = 1;
             else
@@ -220,6 +221,11 @@ for iIteration = 1:(max_iterations+1)
                 %---------------
                 potential_one = Rom_One_Const.Value.Potential_Polynomial.evaluate_polynomial(tested_disp);
                 in_energy_limit = potential_one <= energy_limit;
+
+                if amp_limited
+                    in_force_limit = abs(tested_force(nc_mode_index,:)) <= Model.nc_amplitude_limit;
+                    in_energy_limit = in_energy_limit & in_force_limit;
+                end
 
                 norm_force_error = force_error/max_interpolation_error(1);
                 norm_disp_error = disp_error/max_interpolation_error(2);
@@ -466,6 +472,10 @@ for iIteration = 1:(max_iterations+1)
         end
 
         removal_index = E > fitting_energy_limit;
+        if any(nc_mode_index) && ~isempty(Model.nc_amplitude_limit)
+            amp_removal_index = f(nc_mode_index,:) > Model.fitting_nc_amp_limit;
+            removal_index = removal_index | amp_removal_index;
+        end
         if any(removal_index)
             r(:,removal_index) = [];
             theta(:,removal_index) = [];

@@ -49,10 +49,14 @@ end
 switch limit_type
     case "fitting"
         energy_limit = Rom.Model.fitting_energy_limit;
+        amp_limit = Rom.Model.fitting_nc_amp_limit;
     case "base"
         energy_limit = Rom.Model.energy_limit;
+        amp_limit = Rom.Model.nc_amplitude_limit;
 end
 
+nc_mode_index = Rom.Model.reduced_modes > 1000;
+amp_limited = any(force_ratio(nc_mode_index)) && ~isempty(amp_limit);
 %---
 
 K = Rom.Reduced_Stiffness_Polynomial;
@@ -148,6 +152,12 @@ for iLoad = 1:MAX_LOADCASES
         break
     end
 
+    if amp_limited
+        sep_force = force_ratio(nc_mode_index).*lambda;
+        if abs(sep_force) >amp_limit
+            break
+        end
+    end
     
 
     lambda_sep(1,iLoad) = lambda_0;

@@ -169,7 +169,7 @@ Rom = Dyn_Data.Dynamic_Model;
 
 manifold_name = "m-" + join(string(Rom.Model.reduced_modes),",");
 
-num_r_modes = length(Rom.Model.reduced_modes);
+num_r_modes = Dyn_Data.get_reduced_dimension;
 plot_order = Plot_Settings.coords;
 
 hold(ax,"on")
@@ -275,7 +275,7 @@ orbit_id = orbit_data(2);
 
 orbit_name = "o-" + join(string(Rom.Model.reduced_modes),",") + "-" + solution_num + "," + orbit_id;
 
-num_r_modes = length(Rom.Model.reduced_modes);
+num_r_modes = Rom.get_reduced_dimension;
 if num_r_modes == 1
     orbit_style = ".-";
 end
@@ -386,7 +386,7 @@ end
 function ax = plot_validation_manifold_orbits(ax,Rom,Dyn_Data,solution_num,Plot_Settings)
 Sol = Dyn_Data.load_solution(solution_num);
 num_orbits = Sol.num_orbits;
-num_r_modes = length(Rom.Model.reduced_modes);
+num_r_modes = Rom.get_reduced_dimension;
 plot_order = Plot_Settings.coords;
 
 hold(ax,"on")

@@ -12,6 +12,15 @@ if isfile(GEOMETRY_PATH + "force_calibration.mat") && isequal(Force_Calibration.
     if ismember(Model.energy_limit,calibrated_energy)
         calibration_id = find(calibrated_energy == Model.energy_limit);
         calibrated_modes = Force_Calibration.calibrated_modes{1,calibration_id};
+        if any(calibrated_modes > 1000)
+            nc_mode_id = calibrated_modes>1000;
+            calibrated_modes(nc_mode_id) = [];
+            Force_Calibration.calibrated_modes{1,calibration_id} = calibrated_modes;
+            f_lim = Force_Calibration.force_limit{1,calibration_id};
+            f_lim(nc_mode_id,:) = [];
+            Force_Calibration.force_limit{1,calibration_id} = f_lim;
+            
+        end
         uncalibrated_modes = setdiff(modes,calibrated_modes);
     else
         calibration_id = length(calibrated_energy) + 1;
@@ -29,6 +38,8 @@ else
 end
 
 %calibrate force scale factors
+
+
 num_calibrated_modes = length(calibrated_modes);
 num_uncalibrated_modes = length(uncalibrated_modes);
 
@@ -43,6 +54,7 @@ log_message = sprintf("%u/%u modes precalibrated",[num_matching_calibrated_modes
 logger(log_message,3)
 
 initial_force_ratio = zeros(num_modes,num_uncalibrated_modes*2);
+limit_type = repmat("energy",num_uncalibrated_modes,1);
 for iMode = 1:num_uncalibrated_modes
     mode = uncalibrated_modes(iMode);
     mode_index = mode == modes;
@@ -51,16 +63,31 @@ for iMode = 1:num_uncalibrated_modes
     force_ratio(mode_index,:) = [1,-1];
 
     %start with linear approximation
+
     force_scale_factor = Calibration_Opts.calibration_scale_factor*sqrt(2*eigenvalues(mode_index)*Model.fitting_energy_limit);
+    if mode > 1000 && ~isempty(Model.nc_amplitude_limit)
+        force_amp_scale_factor = Model.fitting_nc_amp_limit;
+        if force_amp_scale_factor < force_scale_factor
+            force_scale_factor = force_amp_scale_factor;
+            limit_type(iMode) = "amp";
+        end
+    end
+
     initial_force_ratio(:,[2*iMode-1,2*iMode]) = force_ratio*force_scale_factor;
 
 end
+
+nc_mode_index = modes>1000;
 
 if num_uncalibrated_modes > 0
     [r,~,~,E,sep_id,f] = Model.add_sep(initial_force_ratio,"lambda");
     
     removal_indicies = [];
     beyond_limit_index = E > Model.fitting_energy_limit;
+    if ~isempty(Model.fitting_nc_amp_limit)
+        beyond_amp_index = abs(f(nc_mode_index,:)) > Model.fitting_nc_amp_limit;
+        beyond_limit_index = beyond_limit_index | beyond_amp_index;
+    end
     num_seps = max(sep_id);
     for iSep = 1:num_seps
         sep_index = sep_id == iSep;
@@ -90,10 +117,7 @@ for iMode = 1:num_uncalibrated_modes
     mode_index = mode == modes;
 
     sep_span = (sep_id == 2*iMode-1 | sep_id == 2*iMode);
-    r_mode = r(iMode,sep_span);
-    f_mode = f(iMode,sep_span);
 
- 
 
     eval_mode = Model.reduced_eigenvalues(mode_index);
   
@@ -109,19 +133,31 @@ for iMode = 1:num_uncalibrated_modes
         r_sep = r(mode_index,sep_span);
         f_sep = f(mode_index,sep_span);
 
+        switch limit_type(iMode)
+            case "amp"
+                f_diff = abs(f_sep) - abs(Model.nc_amplitude_limit);
+                f_upper = f_diff;
+                f_lower = f_diff;
 
-        E_diff = E_sep - Model.energy_limit;
-        E_upper = E_diff;
-        E_lower = E_diff;
+                f_upper(f_upper < 0) = inf;
+                f_lower(f_lower > 0) = -inf;
 
-        E_upper(E_upper < 0) = inf;
-        E_lower(E_lower > 0) = -inf;
+                [~,min_index] = max(f_lower);
+                [~,max_index] = min(f_upper);
+                bound_index = [min_index,max_index];
+            case "energy"
+                E_diff = E_sep - Model.energy_limit;
+                E_upper = E_diff;
+                E_lower = E_diff;
 
-        [~,min_index] = max(E_lower);
-        [~,max_index] = min(E_upper);
-        bound_index = [min_index,max_index];
+                E_upper(E_upper < 0) = inf;
+                E_lower(E_lower > 0) = -inf;
 
-        
+                [~,min_index] = max(E_lower);
+                [~,max_index] = min(E_upper);
+                bound_index = [min_index,max_index];
+        end
+
         num_loadcases = size(f_sep,2);
         max_force_degree = num_loadcases+1;
         force_degree = min(max_force_degree,11);
@@ -137,9 +173,16 @@ for iMode = 1:num_uncalibrated_modes
         r_bound = r_sep(bound_index);
         r_interp = linspace(r_bound(1),r_bound(2));
         v_interp = Potential_Poly_i.evaluate_polynomial(r_interp);
-        [~,min_index] = min(abs(v_interp - Model.energy_limit));
+        
 
         f_interp = Force_Poly_i.evaluate_polynomial(r_interp);
+
+        switch limit_type(iMode)
+            case "amp"
+                [~,min_index] = min(abs(abs(f_interp)-abs(Model.nc_amplitude_limit)));
+            case "energy"
+                [~,min_index] = min(abs(v_interp - Model.energy_limit));
+        end
 
 
         r_limit(1,iSep) = r_interp(min_index);
@@ -157,6 +200,7 @@ for iMode = 1:num_uncalibrated_modes
     %---------------------------------------------------------%
 end
 Force_Calibration.Parameters = Model.Parameters;
+
 save(GEOMETRY_PATH + "force_calibration","Force_Calibration")
 
 calibrated_modes = Force_Calibration.calibrated_modes{1,calibration_id};

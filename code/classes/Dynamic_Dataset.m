@@ -829,6 +829,10 @@ classdef Dynamic_Dataset
             end
 
         end
+        %-----------------------------------------------------------------%
+        function reduced_dim = get_reduced_dimension(obj)
+            reduced_dim = obj.Dynamic_Model.get_reduced_dimension;
+        end
     end
 
 end

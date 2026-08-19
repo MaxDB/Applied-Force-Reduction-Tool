@@ -152,6 +152,7 @@ classdef Static_Dataset
                     warning("depricated")
                     obj = sep_grow_verification(obj);
                 case "grid"
+                    warning("depricated")
                     obj = grid_verification(obj);
             end
             % switch additional_data_type
@@ -517,8 +518,8 @@ classdef Static_Dataset
         %-----------------------------------------------------------------%
         function obj = update_model(obj,added_modes,Static_Opts,Calibration_Opts)
             TEMP_PROPERTY_VALUE = "unloaded";
-
-            conservative_basis = size(added_modes,1) ~= obj.Model.num_dof;
+            
+            conservative_basis = class(added_modes) == "double";
 
             system_name = obj.Model.system_name;
             energy_limit = obj.Model.energy_limit;
@@ -529,6 +530,7 @@ classdef Static_Dataset
                 removed_system_name = split(removed_data_path,"\");
                 delete_static_data(removed_system_name(2));
                 nc_modes = [];
+                max_nc_amp = [];
 
                 old_mode_map = ismember(initial_modes,obj.Model.reduced_modes);
                 old_L_modes = obj.Model.low_frequency_modes;
@@ -536,6 +538,8 @@ classdef Static_Dataset
 
             else
                 %delete Nc_Data
+                max_nc_amp = added_modes.max_amp;
+                added_modes = added_modes.mode_shape;
                 num_nc_modes = obj.Model.num_nc_modes;
                 next_nc_mode = 1000+num_nc_modes+1;
                 initial_modes = [obj.Model.reduced_modes,next_nc_mode];
@@ -571,7 +575,7 @@ classdef Static_Dataset
             end
             %-------------------------------------------------%
 
-            obj.Model = Dynamic_System(system_name,energy_limit,initial_modes,"nc_modes",nc_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
+            obj.Model = Dynamic_System(system_name,energy_limit,initial_modes,"nc_modes",nc_modes,"max_nc_amp",max_nc_amp,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);
             data_path = get_data_path(obj);
            
             static_data_path = get_data_path(obj);
@@ -608,8 +612,13 @@ classdef Static_Dataset
                 case "stiffness"
                     data_path = obj.get_data_path;
                     Old_Stiffness = obj.get_dataset_values("tangent_stiffness");
-                    Stiffness = Sparse_Stiffness_Pointer(obj.Model,"path",data_path + "stiffness");
-                    obj.tangent_stiffness = cat(3,Stiffness,Old_Stiffness,"copy");
+                    if class(Old_Stiffness) == "Sparse_Stiffness_Pointer"
+                        Stiffness = Sparse_Stiffness_Pointer(obj.Model,"path",data_path + "stiffness");
+                        obj.tangent_stiffness = cat(3,Stiffness,Old_Stiffness,"copy");
+                    else
+                        obj.tangent_stiffness = Old_Stiffness;
+                    end
+                    
 
                     Old_Perturbation = obj.get_dataset_values("perturbation_displacement");
                     Perturbation = Perturbation_Pointer(obj.Model,[],"path",data_path + "perturbation");
@@ -641,60 +650,11 @@ classdef Static_Dataset
         function Nc_Static_Data = extend_stress_manifold(obj,Nc_Data)
             obj.Nonconservative_Data = Nc_Data;
 
-            r_modes = obj.Model.reduced_modes;
-            num_r_modes = length(r_modes);
-            num_applied_forces = Nc_Data.num_applied_forces;
+            Nc_Mode_Data.mode_shape = Nc_Data.orth_force_shape;
+            Nc_Mode_Data.max_amp = Nc_Data.max_norm_amplitude;
 
-            added_mode = Nc_Data.orth_force_shape;
-
-            Nc_Static_Data = obj.update_model(added_mode);
-    
+            Nc_Static_Data = obj.update_model(Nc_Mode_Data);
             Nc_Static_Data = Nc_Static_Data.create_dataset;
-    
-            
-            % found_sep_ratios =  add_sep_ratios(num_r_modes,1);
-            % found_sep_ratios = [found_sep_ratios;zeros(num_applied_forces,length(found_sep_ratios))];
-            % found_sep_ratios = [];
-            
-            % unit_force_ratios = add_sep_ratios(num_r_modes + num_applied_forces,3,found_sep_ratios);
-            %5->2 for verification
-
-            % calibration_factors = obj.Model.calibrated_forces;
-            % for iForce = 1:num_applied_forces
-            %     % amplitude_limit = [1,-1];
-            %     amplitude_limit = Nc_Data.orth_max_amplitude*[1,-1];
-            %     calibration_factors = [calibration_factors;amplitude_limit]; %#ok<AGROW>
-            % end
-
-      
-
-            % scaled_force_ratios = scale_sep_ratios(unit_force_ratios,calibration_factors);
-            % scaled_force_ratios = scaled_force_ratios*limit_scale_factor;
-
-            % [r,x_disp,f,E,sep_id,additional_data] = obj.Model.add_sep(scaled_force_ratios,obj.additional_data_type,1,"Nc_Data",Nc_Data);
-
-            % if num_modes > 2 && size(obj,2) > 0
-            %     obj.static_equilibrium_path_id(:) = 0;
-            %     obj.unit_sep_ratios = [];
-            % end
-            % obj = obj.update_data(r,x_disp,f,E,sep_id,additional_data,"found_force_ratios",unit_force_ratios);
-
-
-            % scaf_points = obj.scaffold_points == 1;
-            % obj.static_equilibrium_path_id(scaf_points) = sep_map(obj.static_equilibrium_path_id(scaf_points));
-            % obj.unit_sep_ratios(:,sep_map) = obj.unit_sep_ratios;
-
-            % Nc_Static_Data = obj;
-            % Nc_Static_Data.reduced_displacement = r;
-            % Nc_Static_Data.physical_displacement = x_disp;
-            % Nc_Static_Data.restoring_force = f;
-            % Nc_Static_Data.potential_energy = E;
-            % Nc_Static_Data.scaffold_points = [];
-            % Nc_Static_Data.static_equilibrium_path_id = sep_id;
-            % Nc_Static_Data.unit_sep_ratios = unit_force_ratios;
-            % Nc_Static_Data.verified_degree = [];
-
-
         end
 
         %-----------------------------------------------------------------%
@@ -861,7 +821,12 @@ classdef Static_Dataset
             switch Static_Data_Removed.additional_data_type
                 case "stiffness"
                     Tangent_Stiffness = Static_Data.tangent_stiffness;
-                    [Tangent_Stiffness,Tangent_Stiffness_Removed] = Tangent_Stiffness.remove_data(removal_index);
+                    if class(Tangent_Stiffness) == "double"
+                        Tangent_Stiffness_Removed = Tangent_Stiffness(:,:,removal_index);
+                        Tangent_Stiffness(:,:,removal_index) = [];
+                    else
+                        [Tangent_Stiffness,Tangent_Stiffness_Removed] = Tangent_Stiffness.remove_data(removal_index);
+                    end
                     Static_Data.tangent_stiffness = Tangent_Stiffness;
                     Static_Data_Removed.tangent_stiffness = Tangent_Stiffness_Removed;
                 case "perturbation"
@@ -888,7 +853,7 @@ classdef Static_Dataset
             MAX_DIFF = 0.05;
             
             found_force = obj.get_dataset_values("restoring_force");
-            num_r_modes = size(found_force,1);
+            num_r_modes = obj.get_reduced_dimension;
             num_dofs = obj.Model.num_dof;
             num_checked_loadcases = size(loadcases,2);
             loadcases_found = false(1,num_checked_loadcases);
@@ -976,7 +941,7 @@ classdef Static_Dataset
             h_evec = [r_evec,L_evec];
 
             mapped_h_modes = h_modes(h_modes>2000) - 2000*floor(h_modes(h_modes>2000)/2000);
-            remove_modes = h_modes == mapped_h_modes;
+            remove_modes = ismember(h_modes,mapped_h_modes);
 
             h_modes(remove_modes) = [];
             h_evec(:,remove_modes) = [];
@@ -994,6 +959,10 @@ classdef Static_Dataset
                     obj.(prop) = obj.get_dataset_values(prop);
                 end
             end
+        end
+        %-----------------------------------------------------------------%
+        function reduced_dim = get_reduced_dimension(obj)
+            reduced_dim = obj.Model.get_reduced_dimension;
         end
     end
 end

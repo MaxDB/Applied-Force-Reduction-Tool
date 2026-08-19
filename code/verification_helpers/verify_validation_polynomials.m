@@ -14,7 +14,7 @@ initial_degree = Static_Data.verified_degree;
 
 
 
-num_r_modes = length(Model.reduced_modes);
+num_r_modes = Static_Data.get_reduced_dimension;
 
 adjacent_sep_ratios = get_adjacent_sep_ratios(Static_Data.unit_sep_ratios);
 

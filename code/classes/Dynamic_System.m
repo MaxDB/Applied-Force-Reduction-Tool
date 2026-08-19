@@ -24,6 +24,8 @@ classdef Dynamic_System
 
         num_nc_modes
         linear_disp
+        nc_amplitude_limit
+        fitting_nc_amp_limit
 
         low_frequency_modes
         low_frequency_eigenvalues
@@ -48,6 +50,7 @@ classdef Dynamic_System
             Static_Opts = struct([]);
             load_cache = true; %load prestored mass and stiffness matrices if they exist
             nc_modes = [];
+            max_nc_amp = [];
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
@@ -59,6 +62,8 @@ classdef Dynamic_System
                         Calibration_Opts = keyword_values{arg_counter};
                     case "nc_modes"
                         nc_modes = keyword_values{arg_counter};
+                    case "max_nc_amp"
+                        max_nc_amp = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -67,7 +72,7 @@ classdef Dynamic_System
 
             obj.system_name = name;
             obj.energy_limit = e_lim;
-
+            obj.nc_amplitude_limit = max_nc_amp;
 
 
             %----------------------- Environment Setup -------------------%
@@ -227,6 +232,9 @@ classdef Dynamic_System
             end
             obj.Calibration_Options = New_Calibration_Opts;
             obj.fitting_energy_limit = obj.energy_limit*New_Calibration_Opts.energy_overfit;
+            if ~isempty(obj.nc_amplitude_limit)
+                obj.fitting_nc_amp_limit = obj.nc_amplitude_limit*New_Calibration_Opts.energy_overfit;
+            end
         end
         %-----------------------------------------------------------------%
 
@@ -255,7 +263,7 @@ classdef Dynamic_System
             %eigenvalue problem
             modes = obj.reduced_modes;
             if obj.num_nc_modes > 0
-                num_modes = length(modes);
+                num_modes = obj.get_reduced_dimension;
                 num_r_modes = num_modes - obj.num_nc_modes;
                 obj.reduced_modes = modes(1:num_r_modes);
             end
@@ -420,7 +428,7 @@ classdef Dynamic_System
 
                     elseif max_parallel_jobs == 1
                         [reduced_disp,physical_disp,restoring_force,energy,additional_data,sep_id] = ...
-                            add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,{obj,Nc_Data},1);
+                            add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,obj,1);
                     elseif  max_parallel_jobs < 1
                         % go sep by SEP. For larger systems may have to
                         % restart SEPs mid way
@@ -435,7 +443,7 @@ classdef Dynamic_System
 
                         for iSep = 1:num_seps
                             [job_r,job_x,job_f,job_E,job_additional_data,job_sep_id] = ...
-                                add_sep_abaqus(force_ratio(:,iSep),num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,{obj,Nc_Data},iSep);
+                                add_sep_abaqus(force_ratio(:,iSep),num_loadcases,Static_Opts,max_inc,additional_data_type,clean_data,obj,iSep);
 
                             reduced_disp_cell{1,iSep} = job_r;
                             condensed_disp_cell{1,iSep} = job_x;
@@ -481,10 +489,12 @@ classdef Dynamic_System
                     switch Static_Opts.solver_algorithm
                         case "standard"
                             [reduced_disp,physical_disp,restoring_force,energy,additional_data,sep_id] = ...
-                                add_sep_matlab(force_ratio,num_loadcases,additional_data_type,{obj,Nc_Data});
+                            add_sep_matlab(force_ratio,num_loadcases,additional_data_type,obj);
+                            % [reduced_disp,physical_disp,restoring_force,energy,additional_data,sep_id] = ...
+                            %     add_sep_matlab(force_ratio,num_loadcases,additional_data_type,obj);
                         case "riks"
                             [reduced_disp,physical_disp,restoring_force,energy,additional_data,sep_id] = ...
-                                add_sep_matlab_riks(force_ratio,num_loadcases,additional_data_type,{obj,Nc_Data});
+                                add_sep_matlab_riks(force_ratio,num_loadcases,additional_data_type,obj);
                     end
             end
         end
@@ -782,6 +792,9 @@ classdef Dynamic_System
             obj.reduced_eigenvalues = obj.reduced_eigenvalues(mode_map,1);
             obj.reduced_eigenvectors = obj.reduced_eigenvectors(:,mode_map);
         end
-
+        %-----------------------------------------------------------------%
+        function reduced_dim = get_reduced_dimension(obj)
+            reduced_dim = length(obj.reduced_modes);
+        end
     end
 end

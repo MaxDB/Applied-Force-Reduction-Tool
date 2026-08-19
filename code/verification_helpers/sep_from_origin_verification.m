@@ -17,7 +17,7 @@ max_sep_points = Model.Static_Options.maximum_loadcases;
 fitting_energy_limit = Model.fitting_energy_limit;
 energy_limit = Model.energy_limit;
 
-num_r_modes = length(Model.reduced_modes);
+num_r_modes = Static_Data.get_reduced_dimension;
 
 %-------------------------
 found_force_ratios = Static_Data.unit_sep_ratios;

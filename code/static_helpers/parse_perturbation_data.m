@@ -4,7 +4,7 @@ MIN_DISP = 1e-15;
 
 Model = Static_Data.Model;
 r_modes = Model.reduced_modes;
-num_r_modes = size(r_modes,2);
+num_r_modes = Static_Data.get_reduced_dimension;
 r_evec = Model.reduced_eigenvectors;
 L_evec = Model.low_frequency_eigenvectors;
 r_evec = load_data(r_evec);
@@ -55,8 +55,12 @@ end
 if all(h_modes < 2000)
     h_Disp_Transform_Const = parallel.pool.Constant(h_disp_transform);
     Perturbation_Disp_Const = parallel.pool.Constant(perturbation_disp);
+
+    
+    
     parfor (iLoad = 1:num_loadcases,get_current_parallel_jobs)
-        % for iLoad = 1:num_loadcases
+    % warning("parallelisation disabled")
+    % for iLoad = 1:num_loadcases
 
         disp_hat = Perturbation_Disp_Const.Value(:,:,iLoad);
         if CLEAN_DATA
