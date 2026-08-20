@@ -36,16 +36,9 @@ switch type
 
     case "forced"
         potential_energy = Potential_Polynomial.evaluate_polynomial(r);
-        [~,max_index] = max(potential_energy);
-        [~,min_index] = min(potential_energy);
 
-        %r_indices = [min_index,max_index];
-        % if max_index > min_index
-        %     r_indices = min_index:max_index;
-        % else
-        %     r_indices = max_index:min_index;
-        % end
-        r_indices = 1:ceil(size(potential_energy,2)/2);
+        % r_indices = 1:ceil(size(potential_energy,2)/2);
+        r_indices = 1:size(potential_energy,2);
         num_index = length(r_indices);
 
         kinetic_energy = zeros(1,num_index);

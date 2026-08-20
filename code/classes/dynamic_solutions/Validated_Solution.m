@@ -216,7 +216,6 @@ classdef Validated_Solution
 
             potential_tilde = Validation_Analysis_Inputs.Potential_Poly.evaluate_polynomial(r_energy);
             potential_hat = h_potential + potential_tilde;
-            [max_potential,energy_index] = max(potential_hat); 
             %--
             
             r_force_amp = get_amplitude(r_force);
@@ -224,11 +223,11 @@ classdef Validated_Solution
             % validation_force(1:num_r_modes,:) = validation_force(1:num_r_modes,:) + r_force;
             % h_force_amp = get_amplitude(validation_force);
             %--
-            [~,max_ke_hat] = h_kinetic_energy(r_energy(:,energy_index),r_dot_energy(:,energy_index),h_disp_energy(:,energy_index),h_dot_energy(:,energy_index),Validation_Analysis_Inputs);
+            [~,ke_hat] = h_kinetic_energy(r_energy,r_dot_energy,h_disp_energy,h_dot_energy,Validation_Analysis_Inputs);
             % %--
             % energy_hat = ke_hat + potential_hat;
             %energy_hat = mean(energy_hat)
-            energy_hat = max_potential + max_ke_hat;
+            energy_hat = max(ke_hat + potential_hat);
                 
             %--
             % TEST

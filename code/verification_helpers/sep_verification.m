@@ -41,7 +41,8 @@ nc_mode_index = Model.reduced_modes > 1000;
 
 
 scaffold_points = Static_Data.scaffold_points;
-data_available = any(scaffold_points == 0);
+% data_available = any(scaffold_points == 0);
+data_available = false;
 if data_available
     added_data = ~scaffold_points;
     [Static_Data,Static_Data_Added] = Static_Data.remove_loadcases(added_data);

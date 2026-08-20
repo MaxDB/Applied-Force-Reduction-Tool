@@ -91,8 +91,9 @@ for iX = 1:num_x
     %---
     r_products_force = r_power_products(1:num_reduced_force_coeffs,:);
     r_force = Eom_Input.Reduced_Force_Data.coeffs*r_products_force;
-
-    h_force_grad = tensorprod(Eom_Input.H_Force_Data.coeffs,r_power_products(1:num_h_force_grad_coeffs,:),3,1);
+    
+    r_products_grad = r_power_products(1:num_h_force_grad_coeffs,:);
+    h_force_grad = tensorprod(Eom_Input.H_Force_Data.coeffs,r_products_grad,3,1);
     %--
 
     r_products_disp = r_power_products(1:num_disp_coeffs,:);
