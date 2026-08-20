@@ -252,6 +252,7 @@ classdef Polynomial
             Potential_Poly = [];
             energy_limit = [];
             colour_num = 1;
+            amp_limit = [];
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
@@ -268,6 +269,7 @@ classdef Polynomial
                         potential_data = keyword_values{arg_counter};
                         Potential_Poly = potential_data{1};
                         energy_limit = potential_data{2};
+                        amp_limit = potential_data{3};
                     case {"color","colour"}
                         colour_num = keyword_values{arg_counter};
                     otherwise
@@ -275,7 +277,10 @@ classdef Polynomial
                 end
             end
             %------------
-
+            if ~isempty(amp_limit)
+                Potential_Poly = [];
+                energy_limit = [];
+            end
 
             PLOT_RESOLUTION = 101;
 

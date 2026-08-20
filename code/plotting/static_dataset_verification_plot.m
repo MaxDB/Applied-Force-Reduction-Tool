@@ -11,7 +11,7 @@ Rom = Reduced_System(Static_Data);
 if length(Rom.Model.reduced_modes) > 2
     return
 end
-limit_data = {Rom.Potential_Polynomial,Rom.Model.energy_limit};
+limit_data = {Rom.Potential_Polynomial,Rom.Model.energy_limit,Rom.Model.nc_amplitude_limit};
 num_dofs = Static_Data.Model.num_dof;
 
 ax = plot_static_data("energy",Static_Data);
