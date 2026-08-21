@@ -620,10 +620,10 @@ classdef Dynamic_System
             switch Static_Opts.static_solver
                 case "abaqus"
 
-
-                    if Static_Opts.max_parallel_jobs > 1
+                    num_parallel_jobs = max(1,size(f_r_0,2));
+                    if num_parallel_jobs > 1 && Static_Opts.max_parallel_jobs > 1
                         abaqus_start = tic;
-                        num_parallel_jobs = size(f_r_0,2);
+                        
 
                         log_message = sprintf("%i dynamic simulations over %i jobs" ,[size(f_r_0,2),num_parallel_jobs]);
                         logger(log_message,3)

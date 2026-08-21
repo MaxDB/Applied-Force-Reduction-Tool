@@ -338,10 +338,11 @@ if ~restart_read
     disp_table_data = step_data(disp_table_span,1);
     disp_0 = read_abaqus_table(disp_table_data,num_nodes,num_dimensions);
     disp_0_bc = disp_0(node_map,:);
+    inc_start_lines(1) = [];
 end
 
 %Dynamic increments
-num_increments = size(inc_start_lines,1) - 2;
+num_increments = size(inc_start_lines,1) - 1;
 time = zeros(1,num_increments+1);
 time(1) = initial_time;
 if output_disp
@@ -360,7 +361,8 @@ external_work = zeros(1,num_increments);
 dissipated_energy = zeros(1,num_increments);
 
 for iInc = 1:num_increments
-    inc_span = inc_start_lines(iInc+1):(inc_start_lines(iInc+2)-1);
+    % inc_span = inc_start_lines(iInc+1):(inc_start_lines(iInc+2)-1);
+    inc_span = inc_start_lines(iInc):(inc_start_lines(iInc+1)-1);
     inc_data = abaqus_data(inc_span,1);
     increment_time_line = find(startsWith(inc_data,increment_time_pattern,'IgnoreCase',true),1);
     if output_disp
@@ -389,14 +391,14 @@ for iInc = 1:num_increments
     dissipated_energy(:,iInc) = dissipated_energy_line{1,end};
 
     if output_disp
-        disp_table_span = disp_table_start:size(inc_span,2);
+        disp_table_span = disp_table_start:(disp_table_start + num_nodes );
         disp_table_data = inc_data(disp_table_span,1);
         disp_pre_bc = read_abaqus_table(disp_table_data,num_nodes,num_dimensions);
         displacement(:,iInc) = disp_pre_bc(node_map,:);
     end
 
     if output_vel
-        vel_table_span = vel_table_start:size(inc_span,2);
+        vel_table_span = vel_table_start:(vel_table_start + num_nodes);
         vel_table_data = inc_data(vel_table_span,1);
         vel_pre_bc = read_abaqus_table(vel_table_data,num_nodes,num_dimensions);
         velocity(:,iInc) = vel_pre_bc(node_map,:);
