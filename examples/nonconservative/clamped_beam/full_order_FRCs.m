@@ -19,7 +19,7 @@ Damping_Data.damping_type = "rayleigh";
 %-----------------------------------------%
 
 
-ref_solution.name = "clamped_beam_11001";
+ref_solution.name = "clamped_beam_121001";
 %--------------
 Force_Data.amplitude = 5;
 target_damping = 0.3;
@@ -32,7 +32,7 @@ Damping_Data.stiffness_factor = 0;
 ref_solution.sol_num = 1;
 Dyn_Data_Ref = initalise_dynamic_data(ref_solution.name);
 Ref_Sol = Dyn_Data_Ref.load_solution(ref_solution.sol_num);
-ref_solution.orbit_subset = get_orbit_subset(Ref_Sol,[300,600],3);
+ref_solution.orbit_subset = get_orbit_subset(Ref_Sol,[300,600],1);
 
 Dyn_Data = Dyn_Data.add_full_order_forced_response(Force_Data,Damping_Data,"solution",ref_solution);
 

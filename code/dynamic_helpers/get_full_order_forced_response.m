@@ -1,5 +1,5 @@
 function get_full_order_forced_response(Model,Nonconservative_Input,solution_num,reference_sol)
-NUM_SIM_PERIODS = 100;
+NUM_SIM_PERIODS = 200;
 %----
 num_dof = size(Nonconservative_Input.force_shape,1);
 x_0 = zeros(num_dof,1);
@@ -62,9 +62,9 @@ for iOrbit = 1:num_orbits
     [t_per,x_per,x_dot_per,energy_per]  = Model.dynamic_simulation([],[],[],period,num_periods,min_incs,t(end),Nonconservative_Input,job_id);
     
     %-- test
-    figure; plot(t(2:end),energy.potential+energy.kinetic)
-    hold on
-    plot([t(end),t_per],[energy.potential(end)+energy.kinetic(end),energy_per.potential+energy_per.kinetic])
+    % figure; plot(t(2:end),energy.potential+energy.kinetic)
+    % hold on
+    % plot([t(end),t_per],[energy.potential(end)+energy.kinetic(end),energy_per.potential+energy_per.kinetic])
     %--
 
     % check for convergence
