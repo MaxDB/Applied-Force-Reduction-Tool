@@ -2,7 +2,7 @@ clear
 close all
 set_visualisation_level(1)
 
-system_name = "clamped_beam_12";
+system_name = "clamped_beam_1";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
@@ -66,4 +66,13 @@ Damping_Data.stiffness_factor = 0;
 
 Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
 
+%--
+Force_Data.amplitude = 0.085;
+target_damping = 0.005;
+%-
+damping_coeffs = get_rayleigh_coeffs(Dyn_Data.Dynamic_Model.Model,target_damping,[1,0]);
+Damping_Data.mass_factor = damping_coeffs(1);
+Damping_Data.stiffness_factor = 0;
+
+Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
 

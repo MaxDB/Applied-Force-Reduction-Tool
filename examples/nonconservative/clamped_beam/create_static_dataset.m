@@ -9,7 +9,7 @@ set_visualisation_level(3)
 system_name = "clamped_beam";
 %energy_limit = 0.01;
 energy_limit = 0.007;
-initial_modes = [1,2];
+initial_modes = [1];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
@@ -25,7 +25,7 @@ Model = Dynamic_System(system_name,energy_limit,initial_modes,"static_opts",Stat
 Static_Data = Static_Dataset(Model,"verification_opts",Verification_Opts);
 Static_Data.save_data;
 %---------------------------------------
-if isequal(initial_modes,0)
+ if isequal(initial_modes,0)
     return
 end
 % 
