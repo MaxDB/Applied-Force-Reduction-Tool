@@ -10,7 +10,7 @@ system_name = "mass_spring_roller";
 
 % energy_limit = 0.05;
 energy_limit = 3e-3;
-initial_modes = [1];
+initial_modes = [1,2];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
@@ -25,11 +25,11 @@ Static_Data = Static_Dataset(Model);
 Static_Data.save_data;
 %----------------------------------------
 
-
+return
 
 External_Force.type = "shape";
 External_Force.shape = get_angled_force_shape(1.8,"deg");
-External_Force.max_amplitude = 3;
+External_Force.max_amplitude = [];
 
 Nc_Data = Nonconservative_Data(Model,External_Force);
 Nc_Static_Data = Static_Data.extend_stress_manifold(Nc_Data);

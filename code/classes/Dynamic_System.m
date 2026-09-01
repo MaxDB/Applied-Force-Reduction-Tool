@@ -24,6 +24,7 @@ classdef Dynamic_System
 
         num_nc_modes
         linear_disp
+        low_frequency_linear_disp
         nc_amplitude_limit
         fitting_nc_amp_limit
 

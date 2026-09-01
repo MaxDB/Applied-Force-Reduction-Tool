@@ -32,6 +32,9 @@ classdef Validated_Solution
             if isstring(Validation_Opts.get_stability) && Validation_Opts.get_stability == "auto"
                 num_L_modes = size(Validated_BB_Settings.L_modes,2);
                 Validation_Opts.get_stability = num_L_modes <= 3;   
+                if ~Validation_Opts.get_stability
+                    warning("Validation stability not computed")
+                end
             end
             obj = obj.update_validation_opts(Validation_Opts);
             

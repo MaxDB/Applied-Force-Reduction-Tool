@@ -751,7 +751,7 @@ classdef Dynamic_Dataset
             obj.update_dyn_data;
         end
         %-----------------------------------------------------------------%
-        function Dyn_Data = remove_orbits(obj,solution_num,orbit_num)
+        function obj = remove_orbits(obj,solution_num,orbit_num)
 
         end
         %-----------------------------------------------------------------%
@@ -811,6 +811,17 @@ classdef Dynamic_Dataset
             point_index = find(orbit_type == point_type)';
         end
         %-----------------------------------------------------------------%
+        function obj = add_nc_validation_shape(obj,Force_Data)
+            Model = obj.Dynamic_Model.Model;
+
+            Nc_Data = Nonconservative_Data(Model,Force_Data);
+            Static_Data = load_static_data(obj);
+
+            Static_Data = Static_Data.add_perturbation_data(Static_Data.Model.low_frequency_modes,"nc_mode",Nc_Data.orth_force_shape);
+            Static_Data.save_data;
+
+            obj.Dynamic_Model.Model = Static_Data.Model;
+        end
 
         %-----------------------------------------------------------------%
         % Overloading 

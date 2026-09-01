@@ -2,7 +2,7 @@ clear
 % close all
 set_visualisation_level(1)
 
-system_name = "mass_spring_roller_0";
+system_name = "mass_spring_roller_12";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 Additional_Output.output = "physical displacement";
@@ -39,7 +39,7 @@ Continuation_Opts.frequency_range = [1.3,2];
 Force_Data.type = "shape";
 Force_Data.shape = get_force_shape(1.8,"deg");
 Force_Data.continuation_variable = "frequency";
-Force_Data.frequency = 1.59;
+Force_Data.frequency = 1.9;
 
 
 Damping_Data.damping_type = "rayleigh";
@@ -58,13 +58,13 @@ target_damping = 0.1;
 damping_coeffs = get_rayleigh_coeffs(Dyn_Data.Dynamic_Model.Model,target_damping,[1,0]);
 Damping_Data.mass_factor = damping_coeffs(1);
 
-Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
+% Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
 %---
 Force_Data.amplitude = 3;
 target_damping = 1;
 damping_coeffs = get_rayleigh_coeffs(Dyn_Data.Dynamic_Model.Model,target_damping,[1,0]);
 Damping_Data.mass_factor = damping_coeffs(1);
-
+% 
 Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
 %---
 
@@ -80,29 +80,16 @@ force_shape = force_shape/norm(force_shape);
 end
 
 
+%------
+%validation
+Model = Dyn_Data.Dynamic_Model.Model;
 
-%---
-Continuation_Opts.forward_steps = 300;
-Continuation_Opts.backward_steps = 300;
-Continuation_Opts.frequency_range = [1,3];
-
-Force_Data.type = "shape";
-Force_Data.shape = [0;1;0];
-Force_Data.continuation_variable = "frequency";
-Force_Data.frequency =  1.4;
+External_Force.type = "shape";
+External_Force.shape = get_force_shape(1.8,"deg");
+External_Force.max_amplitude = [];
 
 
-target_damping = 0.01;
-Damping_Data.damping_type = "rayleigh";
-damping_coeffs = get_rayleigh_coeffs(Dyn_Data.Dynamic_Model.Model,target_damping,[1,0]);
-Damping_Data.mass_factor = damping_coeffs(1);
-Damping_Data.stiffness_factor = 0;
-
-%------------------
-Force_Data.amplitude = 0.005;
-Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.add_nc_validation_shape(Force_Data);
 
 
-
-%-----------------
-Dyn_Data = Dyn_Data.remove_solution(2);
+Dyn_Data = Dyn_Data.validate_solution(1,1001);

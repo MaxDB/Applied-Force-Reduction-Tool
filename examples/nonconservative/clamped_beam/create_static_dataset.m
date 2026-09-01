@@ -9,7 +9,7 @@ set_visualisation_level(3)
 system_name = "clamped_beam";
 %energy_limit = 0.01;
 energy_limit = 0.007;
-initial_modes = [1];
+initial_modes = [1,2];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
@@ -33,17 +33,9 @@ External_Force.type = "point";
 External_Force.dof = 248;
 External_Force.max_amplitude =  5;
 
-% External_Force.type = "uniform";
-% External_Force.direction = 2;
-% External_Force.max_amplitude = 10;
-
-% External_Force.type = "point";
-% External_Force.dof = 182;
-% External_Force.max_amplitude = 10;
 
 
 
-% Static_Data = load_static_data("clamped_beam_13");
 Nc_Data = Nonconservative_Data(Static_Data.Model,External_Force);
 Nc_Static_Data = Static_Data.extend_stress_manifold(Nc_Data);
 

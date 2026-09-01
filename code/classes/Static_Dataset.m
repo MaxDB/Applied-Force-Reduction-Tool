@@ -194,22 +194,44 @@ classdef Static_Dataset
             obj = obj.update_additional_data(additional_data);
         end
         %-----------------------------------------------------------------%
-        function obj = add_perturbation_data(obj,low_freq_modes)
+        function obj = add_perturbation_data(obj,low_freq_modes,varargin)
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            nc_mode = [];
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "nc_mode"
+                        nc_mode = keyword_values{arg_counter};
+                end
+            end
+
+            %-----
+
+
+
             if obj.additional_data_type ~= "stiffness"
                 return
             end
             perturbation_time_start = tic;
             Static_Opts = obj.Model.Static_Options;
 
-            if nargin == 2
-                if isempty(low_freq_modes) || low_freq_modes == 0
-                    return
-                end
-            elseif nargin == 1
+     
+                
+            if nargin == 1
                 low_freq_modes = 1:Static_Opts.num_validation_modes;
                 low_freq_modes(low_freq_modes > obj.Model.num_dof) = [];
                 if obj.Model.Static_Options.follower_validation_modes
                     low_freq_modes = low_freq_modes + 2000;
+                end
+            else
+                if isempty(low_freq_modes) || any(low_freq_modes == 0)
+                    return
                 end
             end
 
@@ -261,11 +283,17 @@ classdef Static_Dataset
                 obj.Model.low_frequency_eigenvectors = evec_L;
             end
 
+            if ~isempty(nc_mode)
+                warning("all perturbation data is being re-calculated -> fix eventually")
+                obj = add_nc_validation_data(obj,nc_mode);
+                low_freq_modes = obj.Model.low_frequency_modes;
+            end
+
           
             if obj.Model.Static_Options.follower_validation_modes
                 obj = apply_small_force(obj,low_freq_modes(low_freq_modes>2000));
             else
-                obj = apply_small_force(obj,low_freq_modes(low_freq_modes<1000));
+                obj = apply_small_force(obj,low_freq_modes(low_freq_modes<2000));
             end
             perturbation_time = toc(perturbation_time_start);
             log_message = sprintf("Perturbation data created: %.1f seconds" ,perturbation_time);
@@ -656,7 +684,34 @@ classdef Static_Dataset
             Nc_Static_Data = obj.update_model(Nc_Mode_Data);
             Nc_Static_Data = Nc_Static_Data.create_dataset;
         end
+        %-----------------------------------------------------------------%
+        function obj = add_nc_validation_data(obj,nc_modes)
+            
 
+            nc_mode_index = obj.Model.low_frequency_modes > 1000;
+            if any(nc_mode_index)
+                obj.Model.low_frequency_modes(nc_mode_index) = [];
+                obj.Model.low_frequency_eigenvectors(:,nc_mode_index) = [];
+                obj.Model.low_frequency_eigenvalues(nc_mode_index) = [];
+                obj.Model.low_frequency_linear_disp(:,nc_mode_index) = [];
+            end
+
+
+            nc_reduced_eigenvectors = nc_modes;
+            force_transform = obj.Model.mass*nc_modes;
+            stiff_force_prod = obj.Model.stiffness\force_transform;
+            nc_reduced_eigenvalues = (force_transform'*stiff_force_prod)^-1;
+            nc_linear_disp = stiff_force_prod*nc_reduced_eigenvalues;
+
+            if isempty(obj.Model.low_frequency_linear_disp)
+                obj.Model.low_frequency_linear_disp = obj.Model.low_frequency_eigenvectors;
+            end
+
+            obj.Model.low_frequency_modes = [obj.Model.low_frequency_modes,1001];
+            obj.Model.low_frequency_eigenvalues = [obj.Model.low_frequency_eigenvalues;nc_reduced_eigenvalues];
+            obj.Model.low_frequency_eigenvectors = [obj.Model.low_frequency_eigenvectors,nc_reduced_eigenvectors];
+            obj.Model.low_frequency_linear_disp = [obj.Model.low_frequency_linear_disp,nc_linear_disp];
+        end
         %-----------------------------------------------------------------%
 
 
