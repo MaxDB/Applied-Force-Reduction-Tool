@@ -46,7 +46,7 @@ classdef Full_Order_Forced_Solution
 
 
             
-            % get_full_order_forced_response(Rom.Model,Nonconservative_Input,solution_num,ref_sol);
+            get_full_order_forced_response(Rom.Model,Nonconservative_Input,solution_num,ref_sol);
             obj.frequency = Nonconservative_Input.frequency;
             obj.num_orbits = length(obj.frequency);
 
