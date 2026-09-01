@@ -19,20 +19,55 @@ Damping_Data.damping_type = "rayleigh";
 %-----------------------------------------%
 
 
-ref_solution.name = "clamped_beam_121001";
+% ref_solution.name = "clamped_beam_121001";
+% %--------------
+% Force_Data.amplitude = 5;
+% target_damping = 0.3;
+% %-
+% damping_coeffs = get_rayleigh_coeffs(Dyn_Data.Dynamic_Model.Model,target_damping,[1,0]);
+% Damping_Data.mass_factor = damping_coeffs(1);
+% Damping_Data.stiffness_factor = 0;
+% 
+% 
+% ref_solution.sol_num = 1;
+% Dyn_Data_Ref = initalise_dynamic_data(ref_solution.name);
+% Ref_Sol = Dyn_Data_Ref.load_solution(ref_solution.sol_num);
+% ref_solution.orbit_subset = get_orbit_subset(Ref_Sol,[300,600],1);
+% 
+% Dyn_Data = Dyn_Data.add_full_order_forced_response(Force_Data,Damping_Data,"solution",ref_solution);
+
+
+% ref_solution.name = "clamped_beam_1";
+% %--------------
+% Force_Data.amplitude = 0.085;
+% target_damping = 0.005;
+% %-
+% damping_coeffs = get_rayleigh_coeffs(Dyn_Data.Dynamic_Model.Model,target_damping,[1,0]);
+% Damping_Data.mass_factor = damping_coeffs(1);
+% Damping_Data.stiffness_factor = 0;
+% 
+% 
+% ref_solution.sol_num = 3;
+% Dyn_Data_Ref = initalise_dynamic_data(ref_solution.name);
+% Ref_Sol = Dyn_Data_Ref.load_solution(ref_solution.sol_num);
+% ref_solution.orbit_subset = get_orbit_subset(Ref_Sol,[350,600],3);
+% 
+% Dyn_Data = Dyn_Data.add_full_order_forced_response(Force_Data,Damping_Data,"solution",ref_solution);
+
+ref_solution.name = "clamped_beam_13";
 %--------------
-Force_Data.amplitude = 5;
-target_damping = 0.3;
+Force_Data.amplitude = 0.085;
+target_damping = 0.005;
 %-
 damping_coeffs = get_rayleigh_coeffs(Dyn_Data.Dynamic_Model.Model,target_damping,[1,0]);
 Damping_Data.mass_factor = damping_coeffs(1);
 Damping_Data.stiffness_factor = 0;
 
 
-ref_solution.sol_num = 1;
+ref_solution.sol_num = 3;
 Dyn_Data_Ref = initalise_dynamic_data(ref_solution.name);
 Ref_Sol = Dyn_Data_Ref.load_solution(ref_solution.sol_num);
-ref_solution.orbit_subset = get_orbit_subset(Ref_Sol,[300,600],1);
+ref_solution.orbit_subset = 219:3:304;
 
 Dyn_Data = Dyn_Data.add_full_order_forced_response(Force_Data,Damping_Data,"solution",ref_solution);
 

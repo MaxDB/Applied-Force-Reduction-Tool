@@ -46,7 +46,7 @@ classdef Full_Order_Forced_Solution
 
 
             
-            get_full_order_forced_response(Rom.Model,Nonconservative_Input,solution_num,ref_sol);
+            % get_full_order_forced_response(Rom.Model,Nonconservative_Input,solution_num,ref_sol);
             obj.frequency = Nonconservative_Input.frequency;
             obj.num_orbits = length(obj.frequency);
 
@@ -132,7 +132,15 @@ classdef Full_Order_Forced_Solution
             orbit_stability = ones(1,obj.num_orbits);
             orbit_add_output = nan(1,obj.num_orbits);
             for iOrbit = 1:obj.num_orbits
-                load(data_path+"\sol" + iOrbit,"Orbit_Data");
+                file_name = data_path+"\sol" + iOrbit + ".mat";
+                if ~isfile(file_name)
+                    orbit_energy(iOrbit) = nan;
+                    orbit_periodicity(iOrbit) = nan;
+                    orbit_add_output(iOrbit) = nan;
+                    orbit_stability = nan;
+                    continue
+                end
+                load(file_name,"Orbit_Data");
 
                 %------------------------%
             

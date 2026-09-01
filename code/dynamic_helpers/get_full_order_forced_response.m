@@ -1,5 +1,5 @@
 function get_full_order_forced_response(Model,Nonconservative_Input,solution_num,reference_sol)
-NUM_SIM_PERIODS = 200;
+NUM_SIM_PERIODS = 2000;
 %----
 num_dof = size(Nonconservative_Input.force_shape,1);
 x_0 = zeros(num_dof,1);
@@ -68,6 +68,11 @@ for iOrbit = 1:num_orbits
     %--
 
     % check for convergence
+    if isempty(t_per)
+        log_message = sprintf("Abaqus error: orbit id %u",orbit_id);
+        logger(log_message,2)
+        continue
+    end
     final_time = t_per(end);
     period_start = final_time-period;
 
