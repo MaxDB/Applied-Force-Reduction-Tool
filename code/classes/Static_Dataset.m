@@ -707,7 +707,7 @@ classdef Static_Dataset
                 obj.Model.low_frequency_linear_disp = obj.Model.low_frequency_eigenvectors;
             end
 
-            obj.Model.low_frequency_modes = [obj.Model.low_frequency_modes,1001];
+            obj.Model.low_frequency_modes = [obj.Model.low_frequency_modes,1000 + obj.Model.num_nc_modes + 1];
             obj.Model.low_frequency_eigenvalues = [obj.Model.low_frequency_eigenvalues;nc_reduced_eigenvalues];
             obj.Model.low_frequency_eigenvectors = [obj.Model.low_frequency_eigenvectors,nc_reduced_eigenvectors];
             obj.Model.low_frequency_linear_disp = [obj.Model.low_frequency_linear_disp,nc_linear_disp];

@@ -1,8 +1,8 @@
 clear
 % close all
-set_visualisation_level(1)
+set_visualisation_level(12)
 
-system_name = "mass_spring_roller_12";
+system_name = "mass_spring_roller_1";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 Additional_Output.output = "physical displacement";
@@ -22,7 +22,7 @@ Continuation_Opts.collocation_degree = 8;
 
 
 %-----------------------------------------%
-% Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 
 %-----------------------------------
 %--- angled force

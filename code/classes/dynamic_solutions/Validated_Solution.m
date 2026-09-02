@@ -39,11 +39,9 @@ classdef Validated_Solution
             obj = obj.update_validation_opts(Validation_Opts);
             
 
-            L_modes = Validated_BB_Settings.L_modes;
+            
 
             validation_start = tic;
-            validation_rom_start = tic;
-            
 
             load_static_data_start = tic;
             Static_Data = load_static_data(Rom);
@@ -51,55 +49,33 @@ classdef Validated_Solution
             load_static_data_time = toc(load_static_data_start);
             log_message = sprintf("Static dataset loaded: %.1f seconds" ,load_static_data_time);
             logger(log_message,3)
-            
+
+
+
             if Validated_BB_Settings.load_validation_data
                 Static_Data = Static_Data.load_validation_data();
             else
+                L_modes = Validated_BB_Settings.L_modes;
                 Static_Data = Static_Data.add_validation_data(L_modes,"degree",Validated_BB_Settings.validation_degree);
                 obj.validation_degree = Static_Data.Dynamic_Validation_Data.degree;
                 Static_Data.save_validation_data();
             end
-            
-            
-            % save(data_path + "Static_Data.mat","Static_Data","-v7.3")
 
+            [Validation_Rom, Verification_Rom] = prep_validation_roms(Static_Data);
+            
             L_modes = Static_Data.Dynamic_Validation_Data.current_L_modes;
-
             obj.validation_modes = L_modes;
             obj = obj.preallocate_analysis_outputs(BB_Sol);
-
-            degree_shift = 0;
-            Static_Data.Dynamic_Validation_Data.degree = Static_Data.Dynamic_Validation_Data.degree + degree_shift;
-            Static_Data.verified_degree(2) = Static_Data.verified_degree(2) + 2;
-            Validation_Rom = Reduced_System(Static_Data,"id",2);
-            Static_Data.Dynamic_Validation_Data.degree = Static_Data.Dynamic_Validation_Data.degree - degree_shift;
-            
             obj.low_frequency_eigenvalues = Validation_Rom.Model.low_frequency_eigenvalues;
-
-            verification_rom_start = tic;
-            degree_shift = 2;
-            Static_Data.Dynamic_Validation_Data.degree = Static_Data.Dynamic_Validation_Data.degree + degree_shift;
-            Verification_Rom = Reduced_System(Static_Data,"id",3);
-            Static_Data.Dynamic_Validation_Data.degree = Static_Data.Dynamic_Validation_Data.degree - degree_shift;
-            verification_rom_time = toc(verification_rom_start);
-
-            log_message = sprintf("Verification ROM created: %.1f seconds" ,verification_rom_time);
-            logger(log_message,3)
-            
-
-            validation_rom_time = toc(validation_rom_start);
-            log_message = sprintf("Validation ROM created: %.1f seconds" ,validation_rom_time);
-            logger(log_message,2)
-
             
 
 
             validation_solution_start = tic;
-            preload_data = "coco_backbone";
-            Eom_Input = Validation_Rom.get_solver_inputs(preload_data);
+            % preload_data = "coco_backbone";
+            % Eom_Input = Validation_Rom.get_solver_inputs(preload_data);
             
             get_rom_dir = @(Rom) Rom.data_path + "rom_data_" + Rom.id;
-            get_file_name = @(Rom) get_rom_dir(Rom) + "\" + preload_data + ".mat";
+            % get_file_name = @(Rom) get_rom_dir(Rom) + "\" + preload_data + ".mat";
             % save(get_file_name(Verification_Rom),"Eom_Input")
 
 

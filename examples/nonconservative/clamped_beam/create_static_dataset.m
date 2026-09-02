@@ -7,8 +7,8 @@ set_visualisation_level(3)
 
 %--------- System Settings ---------%
 system_name = "clamped_beam";
-%energy_limit = 0.01;
-energy_limit = 0.007;
+energy_limit = 0.01;
+% energy_limit = 0.007;
 initial_modes = [1,2];
 %-----------------------------------%
 

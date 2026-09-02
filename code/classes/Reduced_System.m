@@ -968,6 +968,104 @@ classdef Reduced_System
         function reduced_dim = get_reduced_dimension(obj)
             reduced_dim = obj.Model.get_reduced_dimension;
         end
+        %-----------------------------------------------------------------%
+
+        %-----------------------------------------------------------------%
+        function Trajectory = generate_trajectory(obj,time_span,varargin)
+            %-------------------------------------------------------------------------%
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            Damping_Data = [];
+            Force_Data = [];
+            initial_condition = [];
+            ode_opts = odeset;
+
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "damping"
+                        Damping_Data = keyword_values{arg_counter};
+                    case "forcing"
+                        Force_Data = keyword_values{arg_counter};
+                    case "ode_opts"
+                        ode_opts = keyword_values{arg_counter};
+                    case {"ic","initial_condition"}
+                        initial_condition = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %-------------------------------------------------------------------------%
+            num_r_modes = obj.get_reduced_dimension;
+            if isempty(initial_condition)
+                initial_condition = zeros(2*num_r_modes,1);
+            end
+
+
+            eom = obj.get_equation_of_motion("forcing",Force_Data,"damping",Damping_Data);
+            Sol = ode45(eom,time_span,initial_condition,ode_opts);
+            
+            
+            disp_span = 1:num_r_modes;
+            vel_span = disp_span + num_r_modes;
+
+            Trajectory.t = Sol.x;
+            Trajectory.r = Sol.y(disp_span,:);
+            Trajectory.r_dot = Sol.y(vel_span,:);
+
+            Trajectory.Force_Data = Force_Data;
+            Trajectory.Damping_Data = Damping_Data;
+
+            Trajectory.ode_options = ode_opts;
+
+            if ~isempty(Damping_Data)
+                Trajectory.Solution_Type.orbit_type = "forced";
+            else
+                Trajectory.Solution_Type.orbit_type = "free";
+            end
+
+        
+            
+           
+
+        end
+        %-----------------------------------------------------------------%
+        function Validated_Trajectory = validate_trajectory(obj,Trajectory,L_modes)
+            
+
+            L_modes = process_validation_modes(L_modes,obj.Model);
+
+            Validated_Sol_Settings.L_modes = L_modes;
+            Validated_Sol_Settings.validation_degree = [];
+            Validated_Sol_Settings.Additional_Output.output = "none";
+
+
+            validation_start = tic;
+
+            load_static_data_start = tic;
+            Static_Data = load_static_data(obj);
+
+            load_static_data_time = toc(load_static_data_start);
+            log_message = sprintf("Static dataset loaded: %.1f seconds" ,load_static_data_time);
+            logger(log_message,3)
+
+
+
+            L_modes = Validated_Sol_Settings.L_modes;
+            Static_Data = Static_Data.add_validation_data(L_modes,"degree",Validated_Sol_Settings.validation_degree);
+            Static_Data.save_validation_data();
+
+
+            [Validation_Rom, Verification_Rom] = prep_validation_roms(Static_Data);
+
+
+            Validated_Trajectory = solve_trajectory_validation(Trajectory,Validation_Rom,Verification_Rom, Validated_Sol_Settings);
+            
+        end
     end
 
 end

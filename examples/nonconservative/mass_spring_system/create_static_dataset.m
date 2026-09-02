@@ -8,9 +8,9 @@ set_visualisation_level(3)
 %--------- System Settings ---------%
 system_name = "mass_spring_roller";
 
-% energy_limit = 0.05;
-energy_limit = 3e-3;
-initial_modes = [1,2];
+energy_limit = 0.05;
+% energy_limit = 3e-3;
+initial_modes = [1];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%

@@ -57,4 +57,6 @@ switch Validation_Opts.validation_algorithm
         h_solver = @(h_terms,t0,omega,num_harmonics) h_harmonic_balance(h_terms,t0,omega,num_harmonics);
     case "h_infinite_determinant"
         h_solver = @(h_terms,t0,omega,num_harmonics) h_infinite_determinant(h_terms,t0,omega,num_harmonics);
+    case "h_ivp"
+        h_solver = [];
 end

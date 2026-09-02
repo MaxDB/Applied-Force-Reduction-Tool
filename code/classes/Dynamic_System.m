@@ -729,10 +729,10 @@ classdef Dynamic_System
                 eom = @(t,z) direct_eom(0,z,0,Eom_Input.modal_restoring_force);
                 eom_dz = @(t,z) direct_eom_dx(0,z,0,Eom_Input.modal_stiffness);
             else
+                [evec,~] = eig(obj.stiffness,obj.mass);
                 switch Damping_Data.damping_type
                     case "rayleigh"
                         damping = get_rayleigh_damping_matrix(Damping_Data,obj);
-                        evec = obj.reduced_eigenvectors;
                         modal_damping = evec'*damping*evec;
                         %need to transform to modal coordinates
                 end
@@ -779,7 +779,7 @@ classdef Dynamic_System
                     fclose(G_ID);
                     geometry = geometry{1,1};
                 case "direct"
-
+                    geometry = load_analytic_system("geometry\" + obj.system_name+ "\" + obj.system_name);
             end
         end
         %-----------------------------------------------------------------%
