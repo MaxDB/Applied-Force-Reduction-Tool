@@ -2,7 +2,7 @@ clear
 % close all
 set_visualisation_level(12)
 
-system_name = "mass_spring_roller_1";
+system_name = "mass_spring_roller_12";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 Additional_Output.output = "physical displacement";
@@ -51,14 +51,14 @@ target_damping = 0.01;
 damping_coeffs = get_rayleigh_coeffs(Dyn_Data.Dynamic_Model.Model,target_damping,[1,0]);
 Damping_Data.mass_factor = damping_coeffs(1);
 
-% Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
 %---
 Force_Data.amplitude = 0.7;
 target_damping = 0.1;
 damping_coeffs = get_rayleigh_coeffs(Dyn_Data.Dynamic_Model.Model,target_damping,[1,0]);
 Damping_Data.mass_factor = damping_coeffs(1);
 
-% Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
+Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
 %---
 Force_Data.amplitude = 3;
 target_damping = 1;

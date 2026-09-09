@@ -10,7 +10,7 @@ system_name = "mass_spring_roller";
 
 energy_limit = 0.05;
 % energy_limit = 3e-3;
-initial_modes = [1];
+initial_modes = [0];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%

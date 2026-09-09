@@ -383,12 +383,40 @@ switch type
 
         amplitude = Solution.amplitude;
         Solution_Type = Solution.Solution_Type;
-        num_modes = size(amplitude,1);
 
-        if Solution_Type.model_type == "fom"
-            r_modes = 1:num_modes;
+        if Solution_Type.model_type == "fom" && isempty(amplitude)
+            r_modes = cell2mat(ax(:,2))';
+            Model = Dyn_Data.Dynamic_Model.Model;
+            mass = Model.mass;
+            stiffness = Model.stiffness;
+            [evecs,~] = eigs(stiffness,mass,max(r_modes),"smallestabs");
+            mode_index = ismember(1:max(r_modes),r_modes);
+            modal_transform = evecs(:,mode_index)'*mass;
+            
+            num_r_modes = size(r_modes,2);
+            num_orbits = Solution.num_orbits;
+            amplitude = zeros(num_r_modes,num_orbits);
+            for iOrbit = 1:num_orbits
+                Orbit = Dyn_Data.get_orbit(solution_num,iOrbit);
+                if isempty(Orbit)
+                    amplitude(:,iOrbit) = nan;
+                    continue
+                end
+                q_disp = modal_transform*Orbit.disp;
+                min_disp = min(q_disp,[],2);
+                max_disp = max(q_disp,[],2);
+                amplitude(:,iOrbit) = abs(max_disp - min_disp)/2;
+
+            end
+            num_modes = num_r_modes;
         else
-            r_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
+            num_modes = size(amplitude,1);
+
+            if Solution_Type.model_type == "fom"
+                r_modes = 1:num_modes;
+            else
+                r_modes = Dyn_Data.Dynamic_Model.Model.reduced_modes;
+            end
         end
 
         if num_modes > size(r_modes,2)
@@ -509,7 +537,7 @@ switch type
                 p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
 
                 if plot_periodicity
-                    data_tip_row = dataTipTextRow("Periodicity",periodicity_error(index_range));
+                    data_tip_row = dataTipTextRow("Periodicity",periodicity_error);
                     p.DataTipTemplate.DataTipRows(end+1) = data_tip_row;
                 end
             end

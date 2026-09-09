@@ -65,12 +65,12 @@ freq_1 = sqrt(Model.reduced_eigenvalues(1));
 Continuation_Opts.collocation_degree = 6;
 Continuation_Opts.min_discretisation_num = 20;
 Continuation_Opts.initial_discretisation_num = 40;
-Continuation_Opts.forward_steps = 0;
+Continuation_Opts.forward_steps = 500;
 Continuation_Opts.backward_steps = 500;
-Continuation_Opts.frequency_range = [2,2.8]*1e6;
+Continuation_Opts.frequency_range = [2.5,2.8]*1e6;
 
 %-----------------------------------------%
-Continuation_Opts.energy_limit_multiplier = 10;
+Continuation_Opts.energy_limit_multiplier = 1;
 
 Force_Data.type = "modal";
 Force_Data.mode_number = 1;

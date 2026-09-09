@@ -7,13 +7,14 @@ set_visualisation_level(3)
 
 %--------- System Settings ---------%
 system_name = "clamped_beam";
-energy_limit = 0.01;
+% energy_limit = 0.01;
 % energy_limit = 0.007;
-initial_modes = [1,2];
+energy_limit = 0.0012;
+initial_modes = [1,3,5];
 %-----------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.additional_data = "stiffness";
+Static_Opts.additional_data = "none";
 Static_Opts.num_validation_modes = 10;
 Static_Opts.max_parallel_jobs =  4; %be careful!
 %------------------------------------------%

@@ -410,7 +410,8 @@ classdef Dynamic_System
                                 %     additional_data = cat(3,additional_data,additional_data_cell{1,iJob});
                                 % end
                             otherwise
-                                additional_data = cat(3,additional_data_cell{1,:});
+                                add_dim = ndims(additional_data_cell{1});
+                                additional_data = cat(add_dim,additional_data_cell{1,:});
                         end
 
 

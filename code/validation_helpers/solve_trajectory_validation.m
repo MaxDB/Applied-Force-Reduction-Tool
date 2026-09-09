@@ -11,7 +11,7 @@ Validation_Opts.save_orbit = 0;
 Validation_Opts.validation_algorithm = "h_ivp";
 
 %%% Set up h-problem
-[h_terms,reduced_eom,h_solver,Validation_Analysis_Inputs] = set_up_validation_problem(Validation_Rom,Validation_Opts,Solution,Validation_Settings);
+[h_terms,reduced_eom,~,Validation_Analysis_Inputs] = set_up_validation_problem(Validation_Rom,Validation_Opts,Solution,Validation_Settings);
 h_terms_verification = set_up_validation_problem(Verification_Rom,Validation_Opts,Solution,Validation_Settings);
 
 %-
@@ -23,7 +23,19 @@ r_dot = Solution.r_dot;
 z_r = reduced_eom(t0,[r;r_dot],forcing_period);
 r_ddot = z_r(vel_span,:);
 
-validation_equation = @(t,z) get_validation_equation(t,z,t0,h_terms,r,r_dot,r_ddot,forcing_period);
+%-
+validation_equation_time_start = tic;
+%-
+Validation_Eq_Data = time_parametrise_h_terms(h_terms,t0,r,r_dot,r_ddot,forcing_period);
+Validation_Eq_Data_Verification = time_parametrise_h_terms(h_terms_verification,t0,r,r_dot,r_ddot,forcing_period);
+%-
+verification_time_start = tic;
+error = verify_time_parametrised_validation(t0,Validation_Eq_Data,Validation_Eq_Data_Verification,Validation_Settings.Verification_Options);
+verification_time = toc(verification_time_start);
+log_message = sprintf("Validation polynomials verification error: %.1f in %.1f seconds" ,error,verification_time);
+logger(log_message,3)
+%-
+validation_equation = @(t,z) get_validation_equation(t,z,Validation_Eq_Data);
 
 %--
 x0 = Validation_Rom.expand(r(:,1));
@@ -38,15 +50,20 @@ if class(l_evecs) == "Large_Matrix_Pointer"
     l_evecs = l_evecs.load();
 end
 
-l_mode_map = Validation_Rom.Model.low_frequency_modes == Validation_Settings.L_modes;
+l_mode_map = ismember(Validation_Rom.Model.low_frequency_modes,Validation_Settings.L_modes);
 h_evecs = [r_evecs,l_evecs(:,l_mode_map)];
 h_transform = h_evecs'*Validation_Rom.Model.mass;
 
 h0 = h_transform*x0;
 h_dot0 = h_transform*x_dot0;
 z0 = [h0;h_dot0];
-
+%-
+validation_equation_time = toc(validation_equation_time_start);
+log_message = sprintf("Validation equations generated in %.1f seconds" ,validation_equation_time);
+logger(log_message,2)
 %---
+validation_sim_time_start = tic;
+
 Validation_Sol = ode45(validation_equation,t0,z0,Solution.ode_options);
 
 
@@ -58,22 +75,20 @@ Validated_Trajectory.t = Validation_Sol.x;
 Validated_Trajectory.h = Validation_Sol.y(disp_span,:);
 Validated_Trajectory.h_dot = Validation_Sol.y(vel_span,:);
 
+r_spline = spline(t0,r);
+r_dot_spline = spline(t0,r_dot);
 
-num_r_modes = size(r,1);
-t = Validated_Trajectory.t;
-num_points = size(t,2);
-r_interp = zeros(num_r_modes,num_points);
-r_dot_interp = zeros(num_r_modes,num_points);
-for iMode = 1:num_r_modes
-    r_interp(iMode,:) = interp1(t0,r(iMode,:),t);
-    r_dot_interp(iMode,:) = interp1(t0,r_dot(iMode,:),t);
-end
 
-Validated_Trajectory.r = r_interp;
-Validated_Trajectory.r_dot = r_dot_interp;
+Validated_Trajectory.r = ppval(r_spline,Validation_Sol.x);
+Validated_Trajectory.r_dot = ppval(r_dot_spline,Validation_Sol.x);
 
+
+validation_sim_time = toc(validation_sim_time_start);
+log_message = sprintf("Validation trajectory simulated in %.1f seconds" ,validation_sim_time);
+logger(log_message,2)
 %------
 % Analysis
+validation_analysis_time_start = tic;
 r = Validated_Trajectory.r;
 r_dot = Validated_Trajectory.r_dot;
 h = Validated_Trajectory.h;
@@ -105,34 +120,50 @@ r_energy = potential_tilde + ke_tilde;
 
 Validated_Trajectory.r_energy = r_energy;
 Validated_Trajectory.h_energy = h_energy;
+
+validation_analysis_time = toc(validation_analysis_time_start);
+log_message = sprintf("Validation trajectory analysed in %.1f seconds" ,validation_analysis_time);
+logger(log_message,2)
 end
 
-function z_dot = get_validation_equation(t,z,t0,h_terms,r,r_dot,r_ddot,period)
-num_r_modes = size(r,1);
-r_interp = zeros(num_r_modes,1);
-r_dot_interp = zeros(num_r_modes,1);
-r_ddot_interp = zeros(num_r_modes,1);
-for iMode = 1:num_r_modes
-    r_interp(iMode) = interp1(t0,r(iMode,:),t);
-    r_dot_interp(iMode) = interp1(t0,r_dot(iMode,:),t);
-    r_ddot_interp(iMode) = interp1(t0,r_ddot(iMode,:),t);
-end
+function z_dot = get_validation_equation(t,z,Validation_Eq_Data)
+% h_mass = ppval(Validation_Eq_Data.h_mass_spline,t);
+% h_conv = ppval(Validation_Eq_Data.h_conv_spline,t);
+% h_stiff = ppval(Validation_Eq_Data.h_stiff_spline,t);
+% h_force = ppval(Validation_Eq_Data.h_force_spline,t);
+% 
+% 
+% prob_dim = size(h_force,1);
+% disp_span = 1:prob_dim;
+% vel_span = disp_span + prob_dim;
+% 
+% prob_mat = zeros(2*prob_dim);
+% prob_mat(disp_span,vel_span) = eye(prob_dim);
+% prob_mat(vel_span,disp_span) = -h_mass\h_stiff;
+% prob_mat(vel_span,vel_span) = - h_mass\h_conv;
+% 
+% prob_vec = zeros(2*prob_dim,1);
+% prob_vec(vel_span) = h_mass\h_force;
+% z_dot = prob_mat*z + prob_vec;
 
-[h_mass,h_conv,h_stiff,h_force] = h_terms(t,r_interp,r_dot_interp,r_ddot_interp,period);
+%--
+h_stiff_prod = ppval(Validation_Eq_Data.h_stiff_prod_spline,t);
+h_conv_prod = ppval(Validation_Eq_Data.h_conv_prod_spline,t);
+h_force_prod = ppval(Validation_Eq_Data.h_force_prod_spline,t);
 
-prob_dim = size(h_force,1);
+prob_dim = size(h_force_prod,1);
 disp_span = 1:prob_dim;
 vel_span = disp_span + prob_dim;
 
 prob_mat = zeros(2*prob_dim);
 prob_mat(disp_span,vel_span) = eye(prob_dim);
-prob_mat(vel_span,disp_span) = -h_mass\h_stiff;
-prob_mat(vel_span,vel_span) = - h_mass\h_conv;
+prob_mat(vel_span,disp_span) = h_stiff_prod;
+prob_mat(vel_span,vel_span) = h_conv_prod;
 
 prob_vec = zeros(2*prob_dim,1);
-prob_vec(vel_span) = h_mass\h_force;
-
+prob_vec(vel_span) = h_force_prod;
 z_dot = prob_mat*z + prob_vec;
+
 end
 
 

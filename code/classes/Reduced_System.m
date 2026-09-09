@@ -1005,22 +1005,31 @@ classdef Reduced_System
                 initial_condition = zeros(2*num_r_modes,1);
             end
 
+            trajectory_start = tic;
 
             eom = obj.get_equation_of_motion("forcing",Force_Data,"damping",Damping_Data);
             Sol = ode45(eom,time_span,initial_condition,ode_opts);
+            if length(time_span) > 2
+                t = time_span;
+                y = deval(Sol,time_span);
+            else
+                t = Sol.x;
+                y = Sol.y;
+            end
             
             
             disp_span = 1:num_r_modes;
             vel_span = disp_span + num_r_modes;
 
-            Trajectory.t = Sol.x;
-            Trajectory.r = Sol.y(disp_span,:);
-            Trajectory.r_dot = Sol.y(vel_span,:);
+            Trajectory.t = t;
+            Trajectory.r = y(disp_span,:);
+            Trajectory.r_dot = y(vel_span,:);
 
             Trajectory.Force_Data = Force_Data;
             Trajectory.Damping_Data = Damping_Data;
 
             Trajectory.ode_options = ode_opts;
+            Trajectory.Sol = Sol;
 
             if ~isempty(Damping_Data)
                 Trajectory.Solution_Type.orbit_type = "forced";
@@ -1029,7 +1038,9 @@ classdef Reduced_System
             end
 
         
-            
+            trajectory_time = toc(trajectory_start);
+            log_message = sprintf("Trajectory simulated in %.1f seconds" ,trajectory_time);
+            logger(log_message,1)
            
 
         end
@@ -1048,11 +1059,14 @@ classdef Reduced_System
 
             load_static_data_start = tic;
             Static_Data = load_static_data(obj);
-
             load_static_data_time = toc(load_static_data_start);
             log_message = sprintf("Static dataset loaded: %.1f seconds" ,load_static_data_time);
             logger(log_message,3)
 
+            %--
+            Validated_Sol_Settings.validation_degree = Static_Data.verified_degree;
+            Validated_Sol_Settings.Verification_Options = Static_Data.Verification_Options;
+            %---
 
 
             L_modes = Validated_Sol_Settings.L_modes;
@@ -1065,6 +1079,9 @@ classdef Reduced_System
 
             Validated_Trajectory = solve_trajectory_validation(Trajectory,Validation_Rom,Verification_Rom, Validated_Sol_Settings);
             
+            validation_time = toc(validation_start);
+            log_message = sprintf("Trajectory validated in %.1f seconds" ,validation_time);
+            logger(log_message,1)
         end
     end
 

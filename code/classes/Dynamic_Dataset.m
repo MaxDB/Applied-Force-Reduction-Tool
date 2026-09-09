@@ -762,15 +762,29 @@ classdef Dynamic_Dataset
             Solution = obj.load_solution(solution_num);
             
             data_path = obj.Dynamic_Model.data_path;
-            orbit_labels = Solution.orbit_labels;
+            if isprop(Solution,"orbit_labels")
+                orbit_labels = Solution.orbit_labels;
+            else
+                orbit_labels(orbit_num) = orbit_num;
+            end
 
-            solution_name = data_path + "dynamic_sol_" + solution_num; 
+            solution_name = data_path + "dynamic_sol_" + solution_num;
 
             if isstring(orbit_num) && orbit_num == "last"
                 Sol = obj.load_solution(solution_num);
                 orbit_num = Sol.num_orbits;
             end
             
+            if obj.solution_types{solution_num}.model_type == "fom"
+                orbit_path = solution_name+"\sol"+orbit_num + ".mat";
+                if isfile(orbit_path)
+                    load(orbit_path,"Orbit_Data");
+                    Orbit = Orbit_Data;
+                else
+                    Orbit = [];
+                end
+                return
+            end
             
             if isscalar(orbit_num)
                 Orbit = po_read_solution('',convertStringsToChars(solution_name),orbit_labels(orbit_num));
