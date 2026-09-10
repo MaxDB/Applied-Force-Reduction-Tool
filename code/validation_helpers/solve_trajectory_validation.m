@@ -38,25 +38,28 @@ logger(log_message,3)
 validation_equation = @(t,z) get_validation_equation(t,z,Validation_Eq_Data);
 
 %--
-x0 = Validation_Rom.expand(r(:,1));
-x_dot0 = Validation_Rom.expand_velocity(r(:,1),r_dot(:,1));
+% x0 = Validation_Rom.expand(r(:,1));
+% x_dot0 = Validation_Rom.expand_velocity(r(:,1),r_dot(:,1));
+% 
+% r_evecs = Validation_Rom.Model.reduced_eigenvectors;
+% l_evecs = Validation_Rom.Model.low_frequency_eigenvectors;
+% if class(r_evecs) == "Large_Matrix_Pointer"
+%     r_evecs = r_evecs.load();
+% end
+% if class(l_evecs) == "Large_Matrix_Pointer"
+%     l_evecs = l_evecs.load();
+% end
+% 
+% l_mode_map = ismember(Validation_Rom.Model.low_frequency_modes,Validation_Settings.L_modes);
+% h_evecs = [r_evecs,l_evecs(:,l_mode_map)];
+% h_transform = h_evecs'*Validation_Rom.Model.mass;
+% 
+% h0 = h_transform*x0;
+% h_dot0 = h_transform*x_dot0;
+% z0 = [h0;h_dot0];
 
-r_evecs = Validation_Rom.Model.reduced_eigenvectors;
-l_evecs = Validation_Rom.Model.low_frequency_eigenvectors;
-if class(r_evecs) == "Large_Matrix_Pointer"
-    r_evecs = r_evecs.load();
-end
-if class(l_evecs) == "Large_Matrix_Pointer"
-    l_evecs = l_evecs.load();
-end
-
-l_mode_map = ismember(Validation_Rom.Model.low_frequency_modes,Validation_Settings.L_modes);
-h_evecs = [r_evecs,l_evecs(:,l_mode_map)];
-h_transform = h_evecs'*Validation_Rom.Model.mass;
-
-h0 = h_transform*x0;
-h_dot0 = h_transform*x_dot0;
-z0 = [h0;h_dot0];
+num_h_modes = Validation_Rom.Low_Frequency_Coupling_Gradient_Polynomial.output_dimension(2);
+z0 = zeros(2*num_h_modes,1);
 %-
 validation_equation_time = toc(validation_equation_time_start);
 log_message = sprintf("Validation equations generated in %.1f seconds" ,validation_equation_time);
@@ -67,7 +70,6 @@ validation_sim_time_start = tic;
 Validation_Sol = ode45(validation_equation,t0,z0,Solution.ode_options);
 
 
-num_h_modes = size(h0,1);
 disp_span = 1:num_h_modes;
 vel_span = disp_span + num_h_modes;
 

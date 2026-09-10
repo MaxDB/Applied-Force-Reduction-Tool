@@ -192,10 +192,13 @@ classdef Reduced_System
             keyword_values = varargin(2:2:num_args);
 
             poly_index = [];
+            h = [];
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
                     case "index"
                         poly_index = keyword_values{arg_counter};
+                    case "validation_disp"
+                        h = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -214,23 +217,15 @@ classdef Reduced_System
             end
             x = x_Poly.evaluate_polynomial(r);
             
-            if nargin == 2
+          
+            if isempty(h)
                 return
             end
-            return
-            
-            %needs to be cleaned up
-            if isstring(varargin{1,1}) && varargin{1,1} == "full"
-                node_map = obj.Model.node_mapping;
-                dof_bc = max(node_map(:,1));
-                x_bc = zeros(dof_bc,size(x,2));
-                x_bc(node_map(:,1),:) = x(node_map(:,2),:);
-                x = x_bc;
-                return
-            end
-            h = varargin{1,1};
 
             H_Grad_Poly = obj.Low_Frequency_Coupling_Gradient_Polynomial;
+            if ~isempty(poly_index)
+                H_Grad_Poly = H_Grad_Poly.subpoly(poly_index);
+            end
 
             num_x = size(r,2);
             num_dof = size(x,1);
@@ -1009,14 +1004,18 @@ classdef Reduced_System
 
             eom = obj.get_equation_of_motion("forcing",Force_Data,"damping",Damping_Data);
             Sol = ode45(eom,time_span,initial_condition,ode_opts);
-            if length(time_span) > 2
-                t = time_span;
-                y = deval(Sol,time_span);
-            else
-                t = Sol.x;
-                y = Sol.y;
-            end
+            % if length(time_span) > 2
+            %     t = time_span;
+            %     y = deval(Sol,time_span);
+            % else
+            %     t = Sol.x;
+            %     y = Sol.y;
+            % end
             
+            %---
+            analysis_time_start = tic;
+            t = Sol.x;
+            y = Sol.y;
             
             disp_span = 1:num_r_modes;
             vel_span = disp_span + num_r_modes;
@@ -1029,15 +1028,24 @@ classdef Reduced_System
             Trajectory.Damping_Data = Damping_Data;
 
             Trajectory.ode_options = ode_opts;
-            Trajectory.Sol = Sol;
+            % Trajectory.Sol = Sol;
 
             if ~isempty(Damping_Data)
                 Trajectory.Solution_Type.orbit_type = "forced";
             else
                 Trajectory.Solution_Type.orbit_type = "free";
             end
+            %---
+            
+            Eom_Inputs = obj.get_solver_inputs("coco_backbone");
+            kinetic = r_kinetic_energy(Trajectory.r,Trajectory.r_dot,Eom_Inputs);
+            potential = obj.Potential_Polynomial.evaluate_polynomial(Trajectory.r);
+            Trajectory.energy = kinetic + potential;
 
-        
+            analysis_time = toc(analysis_time_start);
+            log_message = sprintf("Trajectory analysed in %.1f seconds" ,analysis_time);
+            logger(log_message,2)
+            %---
             trajectory_time = toc(trajectory_start);
             log_message = sprintf("Trajectory simulated in %.1f seconds" ,trajectory_time);
             logger(log_message,1)
@@ -1045,7 +1053,7 @@ classdef Reduced_System
 
         end
         %-----------------------------------------------------------------%
-        function Validated_Trajectory = validate_trajectory(obj,Trajectory,L_modes)
+        function [Validated_Trajectory,Validation_Rom] = validate_trajectory(obj,Trajectory,L_modes)
             
 
             L_modes = process_validation_modes(L_modes,obj.Model);
@@ -1064,7 +1072,7 @@ classdef Reduced_System
             logger(log_message,3)
 
             %--
-            Validated_Sol_Settings.validation_degree = Static_Data.verified_degree;
+            Validated_Sol_Settings.validation_degree = Static_Data.verified_degree + [0,2];
             Validated_Sol_Settings.Verification_Options = Static_Data.Verification_Options;
             %---
 
