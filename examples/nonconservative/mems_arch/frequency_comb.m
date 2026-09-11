@@ -49,6 +49,7 @@ norm_freq = fourier_freq/forcing_freq;
 
 
 %--
+%Validation
 [Validated_Trajectory_16,Validation_Rom] = Rom_16.validate_trajectory(Trajectory_16,1:20);
 tv_16 = Validated_Trajectory_16.t;
 xv_16 = Validation_Rom.expand(Validated_Trajectory_16.r,"validation_disp",Validated_Trajectory_16.h,"index",Dyn_Data_16.Additional_Output.control_dof);
@@ -57,8 +58,21 @@ xv_16 = Validation_Rom.expand(Validated_Trajectory_16.r,"validation_disp",Valida
 norm_freq = fourier_freq/forcing_freq;
 [xv_freq_plot_16,XV_plot_16] = get_freq_index(norm_freq,P1,freq_lim);
 
-
 %---
+% FOM trajectory 
+Sim_Opts.max_time_step = dt;
+duration = period_range(2)*period;
+FOM_Output.type = "disp_dof";
+FOM_Output.dof = Dyn_Data_16.Additional_Output.control_dof;
+FOM_Output.dof_pre_bc = Dyn_Data_16.Additional_Output.dof;
+
+Force_Data_Fom.type = "shape";
+Force_Data_Fom.shape = Rom_1.Model.mass*Rom_1.Model.reduced_eigenvectors;
+Force_Data_Fom.amplitude = Force_Data.amplitude;
+Force_Data_Fom.frequency = Force_Data.frequency;
+
+FOM_Trajectory = Model.add_full_order_trajectory(duration,"forcing",Force_Data_Fom,"damping",Damping_Data,"sim_opts",Sim_Opts,"output",FOM_Output);
+save("FOM_sim","FOM_Trajectory")
 %---
 figure
 tiledlayout(2,2)

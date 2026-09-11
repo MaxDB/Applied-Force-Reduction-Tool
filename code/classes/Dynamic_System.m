@@ -761,7 +761,47 @@ classdef Dynamic_System
             copyfile(log_path + "log.txt",log_path + saved_log_name)
 
         end
+        %-----------------------------------------------------------------%
+        function FOM_Trajectory = add_full_order_trajectory(obj,duration,varargin)
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
 
+            Force_Data = [];
+            Damping_Data = [];
+            Sim_Opts = [];
+            FOM_Output.type = "all";
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "forcing"
+                        Force_Data = keyword_values{arg_counter};
+                    case "damping"
+                        Damping_Data = keyword_values{arg_counter};
+                    case "sim_opts"
+                        Sim_Opts = keyword_values{arg_counter};
+                    case "output"
+                        FOM_Output = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %--------------------------------------------%
+            Nonconservative_Input.force_shape = Force_Data.shape;
+            Nonconservative_Input.amplitude = Force_Data.amplitude;
+            Nonconservative_Input.frequency = Force_Data.frequency;
+
+            Nonconservative_Input.fe_output = FOM_Output.type;
+            FOM_Output = rmfield(FOM_Output,"type");
+            Nonconservative_Input.output_info = FOM_Output;
+
+            Nonconservative_Input.alpha = Damping_Data.mass_factor;
+            Nonconservative_Input.beta = Damping_Data.stiffness_factor;
+
+            FOM_Trajectory = get_full_order_trajectory(obj,duration,Nonconservative_Input,Sim_Opts);
+        end
 
         %-----------------------------------------------------------------%
         %%% Helpers %%%
