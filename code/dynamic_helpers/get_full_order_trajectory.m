@@ -12,9 +12,6 @@ f0 = zeros(Model.num_dof,1);
 
 job_id = 1;
 
-%-- TEST
-num_periods = 1;
-%--
 
 [t,x,x_dot,energy]  = Model.dynamic_simulation(x0,x_dot0,f0,period,num_periods,min_incs,t0,Nonconservative_Input,job_id);
 Trajectory.t = t;

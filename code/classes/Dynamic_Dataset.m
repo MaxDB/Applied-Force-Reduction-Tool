@@ -201,7 +201,13 @@ classdef Dynamic_Dataset
                         t0 = orbit.tbp';
                         z0 = orbit.xbp';
 
-                        obj = obj.add_backbone(0,"opts",Continuation_Opts,"ic",{t0,z0},"type",Solution_Type.model_type);
+                        switch Solution_Type.orbit_type
+                            case "free"
+                                obj = obj.add_backbone(0,"opts",Continuation_Opts,"ic",{t0,z0},"type",Solution_Type.model_type);
+                            case "forced"
+                                p0 = 2*pi/orbit.T;
+                                obj = obj.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"ic",{t0,z0,p0},"type",Solution_Type.model_type);
+                        end
                     case "BP"
                         bp_index = obj.get_special_point(solution_num,"BP");
                         orbit_id = bp_index(orbit_num(iOrbit));
@@ -342,8 +348,17 @@ classdef Dynamic_Dataset
             freq_range = Sol.frequency(orbit_span);
             freq_diff = 0.01*abs(diff(freq_range));
             freq_range = [min(freq_range)-freq_diff,max(freq_range)+freq_diff];
-            Continuation_Opts.parameter_range = freq_range;
-            obj = obj.restart_point(solution_num,orbit_span(1),"po","opts",Continuation_Opts);
+            Continuation_Opts.frequency_range = freq_range;
+
+            switch Sol.Solution_Type.orbit_type
+                case "free"
+                    Force_Data = [];
+                    Damping_Data = [];
+                case "forced"
+                    Force_Data = Sol.Solution_Type.Force_Data;
+                    Damping_Data = Sol.Solution_Type.Damping_Data;    
+            end
+            obj = obj.restart_point(solution_num,orbit_span(1),"po","opts",Continuation_Opts,"forcing",Force_Data,"damping",Damping_Data);
         end
         %-----------------------------------------------------------------%
         function obj = add_forced_response(obj,Force_Data,Damping_Data,varargin)

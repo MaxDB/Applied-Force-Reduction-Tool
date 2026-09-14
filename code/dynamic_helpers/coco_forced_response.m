@@ -44,7 +44,8 @@ switch type
                 %     parameter_range = Continuation_Settings.parameter_range;
                 % end
                 parameter_range = Continuation_Settings.parameter_range;
-                cont_args = { 1, {'po.period', 'T'}, {parameter_range,parameter_range}};
+                % cont_args = { 1, {'po.period', 'T'}, {parameter_range,parameter_range}};
+                cont_args = { 1, {'po.period', 'T'}, []};
         end
     case "fom"
         Model = Rom.Model;

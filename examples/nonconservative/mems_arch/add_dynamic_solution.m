@@ -89,3 +89,19 @@ Damping_Data.stiffness_factor = 0;
 Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts);
 
 
+
+
+%-----------------------------------------%
+% resonance detection
+Model = Dyn_Data.Dynamic_Model.Model;
+Continuation_Opts.collocation_degree = 6;
+Continuation_Opts.min_discretisation_num = 20;
+Continuation_Opts.initial_discretisation_num = 40;
+Continuation_Opts.forward_steps = 500;
+Continuation_Opts.backward_steps = 500;
+
+Continuation_Opts.initial_inc = 5e-3;
+Continuation_Opts.max_inc = 5e-3;
+Continuation_Opts.min_inc = 1e-3;
+
+Dyn_Data = Dyn_Data.add_orbits(3,[117,122],"opts",Continuation_Opts);
