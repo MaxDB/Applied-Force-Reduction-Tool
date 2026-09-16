@@ -42,11 +42,11 @@ classdef Full_Order_Forced_Solution
 
             Nonconservative_Input = obj.get_nonconservative_input(Rom);
 
-            
+            num_periods = FRF_Settings.num_periods;
+            num_parallel_workers = FRF_Settings.num_parallel_workers;
 
-
             
-            get_full_order_forced_response(Rom.Model,Nonconservative_Input,solution_num,ref_sol);
+            get_full_order_forced_response(Rom.Model,Nonconservative_Input,solution_num,ref_sol,"num_periods",num_periods,"num_workers",num_parallel_workers);
             obj.frequency = Nonconservative_Input.frequency;
             obj.num_orbits = length(obj.frequency);
 

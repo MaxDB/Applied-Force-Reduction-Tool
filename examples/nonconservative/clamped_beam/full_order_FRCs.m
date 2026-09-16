@@ -7,12 +7,12 @@ Dyn_Data = initalise_dynamic_data(system_name);
 %------------------
 Additional_Output.output = "physical displacement";
 Additional_Output.type = "max";
-Additional_Output.dof = 248;
+Additional_Output.dof = 122;
 Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
 
 %-----------------------------------------%
 Force_Data.type = "point";
-Force_Data.dof = 248;
+Force_Data.dof = 122;
 Force_Data.continuation_variable = "frequency";
 
 Damping_Data.damping_type = "rayleigh";
@@ -54,22 +54,23 @@ Damping_Data.damping_type = "rayleigh";
 % 
 % Dyn_Data = Dyn_Data.add_full_order_forced_response(Force_Data,Damping_Data,"solution",ref_solution);
 
-ref_solution.name = "clamped_beam_13";
+ref_solution.name = "clamped_beam_131001";
 %--------------
-Force_Data.amplitude = 0.085;
-target_damping = 0.005;
+Force_Data.amplitude = 0.02;
+target_damping = 0.001;
 %-
 damping_coeffs = get_rayleigh_coeffs(Dyn_Data.Dynamic_Model.Model,target_damping,[1,0]);
 Damping_Data.mass_factor = damping_coeffs(1);
 Damping_Data.stiffness_factor = 0;
 
 
-ref_solution.sol_num = 3;
+ref_solution.sol_num = 2;
 Dyn_Data_Ref = initalise_dynamic_data(ref_solution.name);
 Ref_Sol = Dyn_Data_Ref.load_solution(ref_solution.sol_num);
-ref_solution.orbit_subset = 219:3:304;
+ref_solution.orbit_subset = get_orbit_subset(Ref_Sol,[350,450],45);
 
-Dyn_Data = Dyn_Data.add_full_order_forced_response(Force_Data,Damping_Data,"solution",ref_solution);
+
+Dyn_Data = Dyn_Data.add_full_order_forced_response(Force_Data,Damping_Data,"solution",ref_solution,"num_periods",1,"num_workers",2);
 
 
 function orbit_subset = get_orbit_subset(Sol,span,interval)

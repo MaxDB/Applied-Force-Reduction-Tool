@@ -50,8 +50,8 @@ else
     epsilon_array = [];
 end
 
-for iJob = 1:num_jobs
-% parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
+% for iJob = 1:num_jobs
+parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
     time_range = [inf,0];
     num_harmonics = initial_harmonic;
     orbit_group = orbit_groups(iJob,:);

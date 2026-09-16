@@ -140,7 +140,14 @@ for iType = 1:plot_dimension
             x_vel = Rom.expand_velocity(state(disp_index,:),state(vel_index,:));
             
             mode_map = known_modes == data_index;
-            q_transform = modal_transform(mode_map,:);
+            if all(mode_map == 0)
+                mass = Model.mass;
+                stiffness = Model.stiffness;
+                [evec,~] = eigs(stiffness,mass,data_index,"smallestabs");
+                q_transform = evec(:,data_index)'*mass;
+            else
+                q_transform = modal_transform(mode_map,:);
+            end
             q = q_transform*x;
             q_vel = q_transform*x_vel;
 
