@@ -17,7 +17,7 @@ shift_factor = Force_Data.shift_factor;
 %assumes force and coupling from same dataset
 
 r_transformed = scale_factor.*(r + shift_factor);
-
+use_harmonic = isfield(Applied_Force_Data,"harmonics");
 
 vel_span = disp_span + num_modes;
 
@@ -43,8 +43,14 @@ for iX = 1:num_x
     %--
     %--
     disp_amp_prod = r_dr_products_coupling'*Applied_Force_Data.disp_force_beta;
-    applied_force_dTper = force_amp*disp_amp_prod*(-2*pi*t_i/period_i^2)*cos(2*pi*t_i/period_i);
+    if use_harmonic
+        force_time_dTper = Applied_Force_Data.harmonics_dT(t_i,2*pi/period_i);
+    else
+        force_time_dTper = (-2*pi*t_i/period_i^2)*cos(2*pi*t_i/period_i);
+    end
+    applied_force_dTper = force_amp*disp_amp_prod*force_time_dTper;
     %--
     x_dot_dTper(vel_span,1,iX) = inertia_term\applied_force_dTper;
 end
 end
+

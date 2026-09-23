@@ -1,4 +1,4 @@
-function x_dot_dx = direct_forced_eom_dx(~,x,~,~,modal_stiffness,modal_damping,~)
+function x_dot_dx = direct_forced_eom_dx(~,x,~,~,modal_stiffness,modal_damping,~,~)
 num_x = size(x,2);
 num_modes = size(x,1)/2;
 

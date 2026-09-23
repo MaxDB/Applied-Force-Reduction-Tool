@@ -199,6 +199,14 @@ classdef Analytic_System
                     Eom_Input.modal_applied_force = obj.eigenvectors'*physical_force;
 
                     Eom_Input.Applied_Force_Data = Nc_Data;
+
+                    if ~isfield(Nc_Data,"harmonics")
+                        return
+                    end
+
+                    Eom_Input.Applied_Force_Data.harmonics = generate_harmonics(Nc_Data.harmonics);
+                    Eom_Input.Applied_Force_Data.harmonics_dt = generate_harmonics(Nc_Data.harmonics,"diff_time");
+                    Eom_Input.Applied_Force_Data.harmonics_dT = generate_harmonics(Nc_Data.harmonics,"diff_period");
             end
             
         end

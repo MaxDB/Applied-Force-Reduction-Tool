@@ -192,9 +192,12 @@ classdef Reduced_System
             keyword_values = varargin(2:2:num_args);
 
             poly_index = [];
+            pre_bc_dof = [];
             h = [];
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
+                    case "fom_dof"
+                        pre_bc_dof = keyword_values{arg_counter};
                     case "index"
                         poly_index = keyword_values{arg_counter};
                     case "validation_disp"
@@ -204,7 +207,15 @@ classdef Reduced_System
                 end
             end
             %--------------------------------
-
+            if ~isempty(pre_bc_dof)
+                bcs = obj.Model.dof_boundary_conditions;
+                if ismember(pre_bc_dof,bcs)
+                    warning("requested displacement at fixed boundary")
+                    pre_bc_dof = [];
+                else
+                poly_index = pre_bc_dof - nnz(bcs<pre_bc_dof);
+                end
+            end
 
             x_Poly = obj.Physical_Displacement_Polynomial;
             if ~isempty(poly_index)
@@ -237,12 +248,49 @@ classdef Reduced_System
         end
         %-----------------------------------------------------------------%
         function x_dot = expand_velocity(obj,r,r_dot,varargin)
+            %Optional argumanents
+            num_args = length(varargin);
+            if mod(num_args,2) == 1
+                error("Invalid keyword/argument pairs")
+            end
+            keyword_args = varargin(1:2:num_args);
+            keyword_values = varargin(2:2:num_args);
+
+            poly_index = [];
+            pre_bc_dof = [];
+            h = [];
+            for arg_counter = 1:num_args/2
+                switch keyword_args{arg_counter}
+                    case "fom_dof"
+                        pre_bc_dof = keyword_values{arg_counter};
+                    case "index"
+                        poly_index = keyword_values{arg_counter};
+                    case "validation_disp"
+                        h = keyword_values{arg_counter};
+                    otherwise
+                        error("Invalid keyword: " + keyword_args{arg_counter})
+                end
+            end
+            %--------------------------------
+            if ~isempty(pre_bc_dof)
+                bcs = obj.Model.dof_boundary_conditions;
+                if ismember(pre_bc_dof,bcs)
+                    warning("requested displacement at fixed boundary")
+                    pre_bc_dof = [];
+                else
+                    poly_index = pre_bc_dof - nnz(bcs<pre_bc_dof);
+                end
+            end
+
             x_Poly = obj.Physical_Displacement_Polynomial;
+            if ~isempty(poly_index)
+                x_Poly = x_Poly.subpoly(poly_index);
+            end
+
             x_dr_Poly = differentiate_polynomial(x_Poly);
             
             num_time_points = size(r,2);
-            num_dof = obj.Model.num_dof;
-            x_dot = zeros(num_dof,num_time_points);
+            x_dot = zeros(size(x_Poly,1),num_time_points);
             for iT = 1:num_time_points
                 x_dot(:,iT) = x_dr_Poly.evaluate_polynomial(r(:,iT))*r_dot(:,iT);
             end
@@ -705,7 +753,10 @@ classdef Reduced_System
                                 case "frequency"
                                     Eom_Input.Applied_Force_Data.amplitude = Nc_Inputs.amplitude;
                             end
-                        case "point force"
+                            mode_shape = obj.Model.mass*obj.Model.reduced_eigenvectors;
+                            disp_force_beta = physical_displacement_coeffs'*mode_shape(:,Nc_Inputs.mode_map);
+                            Eom_Input.Applied_Force_Data.disp_force_beta = disp_force_beta;
+                        case {"point force","point"}
                             num_r_modes = obj.get_reduced_dimension;
 
                             Eom_Input.Applied_Force_Data.shape = @(t,amp,T) sine_force(t,amp,T);
@@ -749,6 +800,18 @@ classdef Reduced_System
 
                             error("Unknown force type: '" + Nc_Inputs.force_type + "'")
                     end
+
+                    if ~isfield(Nc_Inputs,"harmonics")
+                        return
+                    end
+
+                    Eom_Input.Applied_Force_Data.harmonics = generate_harmonics(Nc_Inputs.harmonics);
+                    Eom_Input.Applied_Force_Data.harmonics_dt = generate_harmonics(Nc_Inputs.harmonics,"diff_time");
+                    Eom_Input.Applied_Force_Data.harmonics_dT = generate_harmonics(Nc_Inputs.harmonics,"diff_period");
+
+
+
+
                 case "forced_h_prediction"
                     Eom_Input = obj.get_solver_inputs("h_prediction");
                     Nc_Inputs = Additional_Input;
@@ -837,6 +900,12 @@ classdef Reduced_System
                     Beta_Bar_Data = obj.get_h_beta_bar("frf",h_disp_coeff,physical_disp_coeffs,force_shape,damping);
 
                     Eom_Input.Frf_Beta_Bar_Data = Beta_Bar_Data;
+
+                    if ~isfield(Nc_Inputs,"harmonics")
+                        return
+                    end
+
+                    Eom_Input.Applied_Force_Data.harmonics = generate_harmonics(Nc_Inputs.harmonics);
                 case "forced_h_analysis"
                     Eom_Input = obj.get_solver_inputs("h_analysis","additional_output",Additional_Output);
                     Nc_Inputs = varargin{1,1};

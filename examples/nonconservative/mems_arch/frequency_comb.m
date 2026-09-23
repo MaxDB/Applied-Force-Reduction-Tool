@@ -71,8 +71,8 @@ Force_Data_Fom.shape = Rom_1.Model.mass*Rom_1.Model.reduced_eigenvectors;
 Force_Data_Fom.amplitude = Force_Data.amplitude;
 Force_Data_Fom.frequency = Force_Data.frequency;
 
-FOM_Trajectory = Model.add_full_order_trajectory(duration,"forcing",Force_Data_Fom,"damping",Damping_Data,"sim_opts",Sim_Opts,"output",FOM_Output);
-save("FOM_sim","FOM_Trajectory")
+% FOM_Trajectory = Model.add_full_order_trajectory(duration,"forcing",Force_Data_Fom,"damping",Damping_Data,"sim_opts",Sim_Opts,"output",FOM_Output);
+% save("FOM_sim","FOM_Trajectory")
 %---
 figure
 tiledlayout(2,2)

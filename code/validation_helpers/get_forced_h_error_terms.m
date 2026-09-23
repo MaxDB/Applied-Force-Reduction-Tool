@@ -55,7 +55,11 @@ Applied_Force_Data = Eom_Input.Applied_Force_Data;
 force_type = Applied_Force_Data.type;
 switch force_type
     case {"modal","point force","shape"}
-        force_shape = Applied_Force_Data.shape(t,amp,period);
+        if isfield(Eom_Input.Applied_Force_Data,"harmonics")
+            force_shape = amp.*Applied_Force_Data.harmonics(t,2*pi./period);
+        else
+            force_shape = Applied_Force_Data.shape(t,amp,period);
+        end
 end
 
 input_order = Eom_Input.input_order;

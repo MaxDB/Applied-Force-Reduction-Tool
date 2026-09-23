@@ -1,4 +1,4 @@
-function x_dot = direct_forced_eom(t,x,amp,period,modal_restoring_force,modal_damping,modal_applied_force)
+function x_dot = direct_forced_eom(t,x,amp,period,modal_restoring_force,modal_damping,modal_applied_force,Harmonic_Data)
 num_x = size(x,2);
 num_modes = size(x,1)/2;
 
@@ -12,16 +12,20 @@ x_dot = zeros(2*num_modes,num_x);
 x_dot(disp_span,:) = q_dot;
 
 frequency = 2*pi./period;
-sin_arg = frequency.*t;
+if isempty(Harmonic_Data)
+    force_time = sin(frequency.*t);
+else
+    force_time = Harmonic_Data.harmonics(t,frequency);
+end
 for iX = 1:num_x
     q_i = q(:,iX);
     q_dot_i = q_dot(:,iX);
-    sin_arg_i = sin_arg(iX);
+    force_time_i = force_time(iX);
 
     %--
     restoring_force = modal_restoring_force(q_i);
     damping_force = modal_damping*q_dot_i;
-    applied_force = amp*modal_applied_force*sin(sin_arg_i);
+    applied_force = amp*modal_applied_force*force_time_i;
 
     %--
     x_dot(vel_span,iX) = applied_force - damping_force - restoring_force;

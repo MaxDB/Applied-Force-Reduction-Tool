@@ -169,7 +169,24 @@ for iType = 1:plot_dimension
 
             orbit_stability = Sol_v.h_stability(orbit_num);
         case "x"
-            %plotted_state = expands...
+            x = Rom.expand(state(disp_index,:),"fom_dof",data_index);
+            x_dot = Rom.expand_velocity(state(disp_index,:),state(vel_index,:),"fom_dof",data_index);
+            plotted_state = [x;x_dot];
+            plotted_output_size = 1;
+
+            label = label + plot_type;
+        case "xv"
+            Static_Data = load_static_data(Rom);
+            Static_Data = Static_Data.load_validation_data();
+            if ~isequal(Static_Data.Dynamic_Validation_Data.current_L_modes,Sol_v.validation_modes)
+                error("Incorrect validation data")
+            end
+            Validation_Rom = Reduced_System(Static_Data);
+            xv = Validation_Rom.expand(state(disp_index,:),"validation_disp",Validated_Orbit.h,"fom_dof",data_index);
+            plotted_state = xv;
+            plotted_output_size = 1;
+
+            label = label + plot_type;
         case "t"
             data_id(2:3) = ["0";"1"];
             plotted_value_type = time;
@@ -187,12 +204,12 @@ for iType = 1:plot_dimension
 
     
     switch plot_type
-        case {"r","x","h","v","q"}
+        case {"r","x","h","v","q","xv"}
             label = label + "_{" + data_index + "}";
     end
 
     switch plot_type
-        case {"q"}
+        case {"q","x","xv"}
             plotted_value = plotted_value_type(1,:);
         case {"t"}
             plotted_value = plotted_value_type;

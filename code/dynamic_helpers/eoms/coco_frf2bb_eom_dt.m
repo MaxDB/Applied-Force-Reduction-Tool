@@ -7,6 +7,9 @@ num_coeffs = size(input_order,1);
 
 disp_span = 1:num_modes;
 r = x(disp_span,:);
+
+
+
 scale_factor = Force_Data.scale_factor;
 shift_factor = Force_Data.shift_factor;
 %assumes force and coupling from same dataset
@@ -16,18 +19,12 @@ r_transformed = scale_factor.*(r + shift_factor);
 
 vel_span = disp_span + num_modes;
 
-
-% r_power_products = ones(num_coeffs,1);
-force_type = Applied_Force_Data.type;
-switch force_type
-    case {"modal","point force"}
-        force_shape_dt = Applied_Force_Data.shape_dt(t,force_amp,period);
-end
-
 x_dot_dt = zeros(2*num_modes,num_x);
 for iX = 1:num_x
     r_i = r_transformed(:,iX);
+    t_i = t(iX);
     epsilon_i = epsilon(iX);
+    
 
     r_power_products = ones(num_coeffs,1);
     for iMode = 1:num_modes
@@ -43,16 +40,10 @@ for iX = 1:num_x
     inertia_term = disp_prod*r_dr_products_coupling;
     %--
     %--
-    switch force_type
-        case "modal"
-            applied_force_dt = force_shape_dt(:,iX);
-        case "point force"
-            amplitude_shape = r_dr_products_coupling'*Applied_Force_Data.disp_force_beta;
-            applied_force_dt = amplitude_shape*force_shape_dt(:,iX);
-    end
+    disp_amp_prod = r_dr_products_coupling'*Applied_Force_Data.disp_force_beta;
+    applied_force_dt = epsilon_i*force_amp*disp_amp_prod*(2*pi/period)*cos(2*pi*t_i/period);
     %--
-    nonconservative_term = epsilon_i*applied_force_dt;
-    %--
-    x_dot_dt(vel_span,iX) = inertia_term\nonconservative_term;
+    x_dot_dt(vel_span,iX) = inertia_term\applied_force_dt;
 end
 end
+

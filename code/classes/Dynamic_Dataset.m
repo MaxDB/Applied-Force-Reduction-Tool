@@ -314,6 +314,24 @@ classdef Dynamic_Dataset
                         Force_Data.frequency = Sol.frequency(orbit_num(iOrbit));
                         Force_Data.continuation_variable = "epsilon";
                         obj = obj.frf_to_bb(Force_Data,Damping_Data,"opts",Continuation_Opts,"ic",{t0,z0,p0});
+                    case "epsilon_to_frf"
+                        Sol = obj.load_solution(solution_num);
+                        Force_Data = Sol.Solution_Type.Force_Data;
+                        Damping_Data = Sol.Solution_Type.Damping_Data;
+
+                        epsilon = Sol.epsilon(orbit_num(iOrbit));
+                        frequency = Sol.frequency(orbit_num(iOrbit));
+
+                        Force_Data.amplitude = epsilon*Force_Data.amplitude;
+                        Force_Data.frequency = frequency;
+                        Damping_Data.mass_factor = epsilon*Damping_Data.mass_factor;
+                        Damping_Data.stiffness_factor = epsilon*Damping_Data.stiffness_factor;
+
+                        Orbit = obj.get_orbit(solution_num,orbit_num(iOrbit));
+                        initial_orbit = {Orbit.tbp',Orbit.xbp',frequency};
+                        
+                        obj = obj.add_forced_response(Force_Data,Damping_Data,"ic",initial_orbit,"opts",Continuation_Opts);
+                        
                 end
 
 
@@ -429,7 +447,7 @@ classdef Dynamic_Dataset
             obj.save_solution(FRF_Sol,obj.num_solutions)
         end
         %-----------------------------------------------------------------%
-        function obj = frf_to_bb(obj,Force_Data,Damping_Data,varargin)
+        function obj = frf_to_bb(obj,varargin)
             num_args = length(varargin);
             if mod(num_args,2) == 1
                 error("Invalid keyword/argument pairs")
@@ -440,6 +458,9 @@ classdef Dynamic_Dataset
             Continuation_Opts = struct([]);
             type = "rom";
             initial_condition = [];
+            starting_orbit = [];
+            Force_Data = [];
+            Damping_Data = [];
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
@@ -449,12 +470,27 @@ classdef Dynamic_Dataset
                         Continuation_Opts = keyword_values{arg_counter};
                     case "ic"
                         initial_condition = keyword_values{arg_counter};
+                    case "orbit"
+                        starting_orbit = keyword_values{arg_counter};
+                    case "forcing"
+                        Force_Data = keyword_values{arg_counter};
+                    case "damping"
+                        Damping_Data = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
             end
             %-------------------------------------------------------------%
+            if ~isempty(starting_orbit)
+                Sol = obj.load_solution(starting_orbit(1));
+                Force_Data = Sol.Solution_Type.Force_Data;
+                Damping_Data = Sol.Solution_Type.Damping_Data;
+                
+                Orbit = obj.get_orbit(starting_orbit(1),starting_orbit(2));
+                initial_condition = {Orbit.tbp',Orbit.xbp',1};
+            end
 
+            %--
             FRF_Settings.Force_Data = Force_Data;
             FRF_Settings.Damping_Data = Damping_Data;
             FRF_Settings.Continuation_Opts = Continuation_Opts;
@@ -469,8 +505,11 @@ classdef Dynamic_Dataset
            
             obj.num_solutions = obj.num_solutions + 1;
             obj.solution_types{obj.num_solutions} = FRF_To_BB_Sol.Solution_Type;
+            obj.solution_types{obj.num_solutions}.Force_Data = Force_Data;
+            obj.solution_types{obj.num_solutions}.Damping_Data = Damping_Data;
             obj.solution_types{obj.num_solutions}.validated = false;
             obj.save_solution(FRF_To_BB_Sol,obj.num_solutions)
+
         end
         %-----------------------------------------------------------------%
         function obj = add_full_order_forced_response(obj,Force_Data,Damping_Data,varargin)
@@ -628,7 +667,12 @@ classdef Dynamic_Dataset
             lf_eval = Model.low_frequency_eigenvalues;
             known_eval = [known_eval;lf_eval];
 
-            lf_evec = Model.low_frequency_eigenvectors.load();
+            if class(Model.low_frequency_eigenvectors) == "Large_Matrix_Pointer"
+
+                lf_evec = Model.low_frequency_eigenvectors.load();
+            else
+                lf_evec = Model.low_frequency_eigenvectors;
+            end
             known_evec = [known_evec,lf_evec];
 
             %-----------

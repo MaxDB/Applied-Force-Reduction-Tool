@@ -71,6 +71,12 @@ classdef Nonconservative_Data
                     if size(shape,1) ~= obj.Model.num_dof
                         error("Force shape doesn't match system size")
                     end
+                case "modal"
+                    Forcing_Data.mode_number
+                    if ismember(Forcing_Data.mode_number,obj.Model.reduced_modes)
+                        modal_force =obj.Model.mass*obj.Model.reduced_eigenvectors;
+                        shape = modal_force(:,ismember(obj.Model.reduced_modes,Forcing_Data.mode_number));
+                    end
                 case "uniform"
                     num_dof = obj.Model.num_dof + + length(obj.Model.dof_boundary_conditions);
                     num_dimensions = get_num_node_dimensions(obj.Model);

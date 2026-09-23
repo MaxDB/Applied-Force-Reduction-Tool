@@ -33,8 +33,13 @@ switch type
         modal_restoring_force = Eom_Input.modal_restoring_force;
         modal_damping = Eom_Input.modal_damping;
         modal_applied_force = Eom_Input.modal_applied_force;
+        if isfield(Eom_Input.Applied_Force_Data,"harmonics")
+            Harmonic_Data.harmonics = Eom_Input.Applied_Force_Data.harmonics;
+        else
+            Harmonic_Data = [];
+        end
 
-        eom = @(t,z) direct_forced_eom(t,z,amp,period,modal_restoring_force,modal_damping,modal_applied_force);
+        eom = @(t,z) direct_forced_eom(t,z,amp,period,modal_restoring_force,modal_damping,modal_applied_force,Harmonic_Data);
 
 end
 %-------------------------------------------------------------------------%

@@ -146,7 +146,10 @@ classdef Forced_Solution < Dynamic_Solution
                 case "frequency"
                     Nonconservative_Input.amplitude = F_Data.amplitude;
             end
-
+            
+            if isfield(F_Data,"harmonics")
+                Nonconservative_Input.harmonics = F_Data.harmonics;
+            end
         end
         %-----------------------------------------------------------------%
     end

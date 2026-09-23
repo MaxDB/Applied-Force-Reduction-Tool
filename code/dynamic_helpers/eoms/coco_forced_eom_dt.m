@@ -1,10 +1,7 @@
 function x_dot_dt = coco_forced_eom_dt(t,x,force_amp,period,input_order,Force_Data,Disp_Data,Damping_Data,Applied_Force_Data)
 num_x = size(x,2);
 num_modes = size(x,1)/2;
-num_applied_forces = size(Applied_Force_Data.shape,2);
-num_r_modes = num_modes - num_applied_forces;
 
-num_force_coeffs = size(Force_Data.coeffs,2);
 num_coupling_coeffs = size(Disp_Data.beta_bar,1);
 num_coeffs = size(input_order,1);
 
@@ -18,7 +15,7 @@ shift_factor = Force_Data.shift_factor;
 %assumes force and coupling from same dataset
 
 r_transformed = scale_factor.*(r + shift_factor);
-
+use_harmonic = isfield(Applied_Force_Data,"harmonics");
 
 vel_span = disp_span + num_modes;
 
@@ -43,8 +40,15 @@ for iX = 1:num_x
     %--
     %--
     disp_amp_prod = r_dr_products_coupling'*Applied_Force_Data.disp_force_beta;
-    applied_force_dt = force_amp*disp_amp_prod*(2*pi/period_i)*cos(2*pi*t_i/period_i);
+    if use_harmonic
+        force_time_dt = Applied_Force_Data.harmonics_dt(t_i,2*pi/period_i);
+    else
+        force_time_dt = (2*pi/period_i)*cos(2*pi*t_i/period_i);
+    end
+    applied_force_dt = force_amp*disp_amp_prod*force_time_dt;
     %--
     x_dot_dt(vel_span,iX) = inertia_term\applied_force_dt;
 end
 end
+
+

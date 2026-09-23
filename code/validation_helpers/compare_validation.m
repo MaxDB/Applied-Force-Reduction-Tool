@@ -79,7 +79,10 @@ for iOutput = 1:num_outputs
             ax.YScale = "log";
             ylim(ax,[1e-5,1])
             ylabel("\epsilon","Interpreter","tex")
-            validation_error_labels = ax.YTickLabel;
+        case "physical validation error"
+            ax.YScale = "log";
+            ylim(ax,[1e-5,1])
+            ylabel("\epsilon_x","Interpreter","tex")
        
         case "physical amplitude"
             backbone_plot(iOutput) = 1;
@@ -114,18 +117,20 @@ for iMode = 1:num_L_modes
     % Dyn_Data.Additional_Output.output = "none";
     mode_time_start = tic;
     L_mode = L_modes(iMode);
+    plot_L_mode = L_mode;
     if Model.num_nc_modes > 0 && L_mode < 1000
         norm_mode_time_start = tic;
         if class(Model.low_frequency_eigenvectors) == "double"
-            mode_shapes = Model.low_frequency_eigenvectors;
+            modal_force_shapes = Model.mass*Model.low_frequency_eigenvectors;
         else
-            mode_shapes = Model.low_frequency_eigenvectors.load();
+            modal_force_shapes = Model.mass*Model.low_frequency_eigenvectors.load();
         end
         Force_Data.type = "shape";
 
-        Force_Data.shape = mode_shapes(:,Model.low_frequency_modes == L_mode);
+        Force_Data.shape = modal_force_shapes(:,Model.low_frequency_modes == L_mode);
         Dyn_Data = Dyn_Data.add_nc_validation_shape(Force_Data);
         norm_mode_time = toc(norm_mode_time_start);
+        L_mode = 1002;
         log_message = sprintf("Mode orthonormalised: %.1f seconds" ,norm_mode_time);
         logger(log_message,2)
     end
@@ -147,15 +152,16 @@ for iMode = 1:num_L_modes
         else
             [Dyn_Data,Validated_BB_Sol] = Dyn_Data.validate_solution(solution_num(iSol),L_mode,"validation_degree",Validated_BB_Sol.validation_degree,"load_data",1);
         end
-        colour_num = L_mode;
+        colour_num = plot_L_mode;
 
 
-        L_mode_index = L_modes == L_mode;
+        L_mode_index = L_modes == plot_L_mode;
         mode_frequency = sqrt(Validated_BB_Sol.low_frequency_eigenvalues(L_mode_index));
-        mode_details = sprintf("Last mode: %u - %.2g rad/s - [%.1fx - %.1fx]",[L_mode,mode_frequency,mode_frequency/max_freq,mode_frequency/min_freq]);
+        
+        mode_details = sprintf("Last mode: %u - %.2g rad/s - [%.1fx - %.1fx]",[plot_L_mode,mode_frequency,mode_frequency/max_freq,mode_frequency/min_freq]);
         
         for iOutput = 1:num_outputs
-            plot_h_predicition(Dyn_Data,type(iOutput),solution_num(iSol),"axes",ax(iOutput),"colour",colour_num,"backbone",0,"tag",string(L_mode));
+            plot_h_predicition(Dyn_Data,type(iOutput),solution_num(iSol),"axes",ax(iOutput),"colour",colour_num,"backbone",0,"tag",string(plot_L_mode));
             if iOutput < num_outputs
                 ax(iOutput).XTickLabel = repmat("",size(ax(iOutput).XTickLabel));
             end
@@ -181,7 +187,7 @@ for iMode = 1:num_L_modes
         drawnow
     end
     mode_time = toc(mode_time_start);
-    h_mode_text = r_modes_text + "," + L_mode;
+    h_mode_text = r_modes_text + "," + plot_L_mode;
     log_message = sprintf("{" + r_modes_text + "}:{" + h_mode_text+ "} validation: %.1f seconds" ,mode_time);
     logger(log_message,1)
 

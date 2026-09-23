@@ -30,6 +30,8 @@ frequency = 2*pi./period;
 if isscalar(frequency)
     frequency = repmat(frequency,1,num_x);
 end
+
+use_harmonic = isfield(Applied_Force_Data,"harmonics");
 for iX = 1:num_x
     r_i = r_transformed(:,iX);
     t_i = t(iX);
@@ -75,7 +77,12 @@ for iX = 1:num_x
     end
     %--
     disp_amp_prod = r_dr_products_disp'*Applied_Force_Data.disp_force_beta;
-    applied_force = force_amp*disp_amp_prod*sin(frequency_i*t_i);
+    if use_harmonic
+        force_time = Applied_Force_Data.harmonics(t_i,frequency_i);
+    else
+        force_time = sin(frequency_i*t_i);
+    end
+    applied_force = force_amp*disp_amp_prod*force_time;
     %--
     x_dot(vel_span,iX) = -inertia_term\(convection_term+restoring_force + damping_term - applied_force);
 end

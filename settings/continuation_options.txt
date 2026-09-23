@@ -3,7 +3,8 @@
 
 ## General
 energy_limit_multiplier, 1, 	#energy_limit = energy_limit * energy_limit_multiplier
-frequency_points, [], 	#points to report
+frequency_points, [], 	#frequency points to report
+parameter_points, [],   #points to report
 
 ## COCO
 initial_inc, 0.1,		#initial continuation increment

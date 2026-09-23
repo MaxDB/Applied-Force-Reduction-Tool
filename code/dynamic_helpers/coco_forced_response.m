@@ -52,12 +52,20 @@ switch type
         Analytic_Eom = load_analytic_system("geometry\" + Model.system_name+ "\" + Model.system_name);
         Eom_Input = Analytic_Eom.get_solver_inputs("forced","additional_input",Nonconservative_Input);
         amp = Eom_Input.Applied_Force_Data.amplitude;
+
+        if isfield(Eom_Input.Applied_Force_Data,"harmonics")
+            Harmonic_Data.harmonics = Eom_Input.Applied_Force_Data.harmonics;
+            Harmonic_Data.harmonics_dt = Eom_Input.Applied_Force_Data.harmonics_dt;
+            Harmonic_Data.harmonics_dT = Eom_Input.Applied_Force_Data.harmonics_dT;
+        else
+            Harmonic_Data = [];
+        end
         
 
-        funcs = {@(t,z,T) direct_forced_eom(t,z,amp,T,Eom_Input.modal_restoring_force,Eom_Input.modal_damping,Eom_Input.modal_applied_force),...
-                    @(t,z,T) direct_forced_eom_dx(t,z,amp,T,Eom_Input.modal_stiffness,Eom_Input.modal_damping,Eom_Input.modal_applied_force),...
-                    @(t,z,T) direct_forced_eom_dTper(t,z,amp,T,Eom_Input.modal_restoring_force,Eom_Input.modal_damping,Eom_Input.modal_applied_force),...
-                    @(t,z,T) direct_forced_eom_dt(t,z,amp,T,Eom_Input.modal_restoring_force,Eom_Input.modal_damping,Eom_Input.modal_applied_force)};
+        funcs = {@(t,z,T) direct_forced_eom(t,z,amp,T,Eom_Input.modal_restoring_force,Eom_Input.modal_damping,Eom_Input.modal_applied_force,Harmonic_Data),...
+                    @(t,z,T) direct_forced_eom_dx(t,z,amp,T,Eom_Input.modal_stiffness,Eom_Input.modal_damping,Eom_Input.modal_applied_force,Harmonic_Data),...
+                    @(t,z,T) direct_forced_eom_dTper(t,z,amp,T,Eom_Input.modal_restoring_force,Eom_Input.modal_damping,Eom_Input.modal_applied_force,Harmonic_Data),...
+                    @(t,z,T) direct_forced_eom_dt(t,z,amp,T,Eom_Input.modal_restoring_force,Eom_Input.modal_damping,Eom_Input.modal_applied_force,Harmonic_Data)};
 
         T0 = 2*pi/p0;
         coll_args = [funcs, {t0',z0', {'T'}, T0}];

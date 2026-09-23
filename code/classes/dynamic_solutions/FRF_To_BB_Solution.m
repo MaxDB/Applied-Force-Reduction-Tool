@@ -63,6 +63,7 @@ classdef FRF_To_BB_Solution < Dynamic_Solution
             switch Damp_Data.damping_type
                 case "rayleigh"
                     damping = get_rayleigh_damping_matrix(Damp_Data,Model);
+                    Nonconservative_Input.damping_type = "matrix";
                     Nonconservative_Input.damping = damping;
             end
             continuation_variable = F_Data.continuation_variable;
@@ -71,11 +72,16 @@ classdef FRF_To_BB_Solution < Dynamic_Solution
                 case "modal"
                     mode_map = F_Data.mode_number == Model.reduced_modes;
                     Nonconservative_Input.mode_map = mode_map;
-                case "point force"
+                case {"point force","point"}
                     num_dofs = Model.num_dof;
-                    dof_map = zeros(num_dofs,1);
-                    dof_map(Model.node_mapping(:,1) == F_Data.dof) = 1;
+                    bcs = Model.dof_boundary_conditions;
+                    num_fom_dof = length(bcs) + num_dofs;
+
+                    dof_map = zeros(num_fom_dof,1);
+                    dof_map(F_Data.dof) = 1;
+                    dof_map(bcs) = [];
                     Nonconservative_Input.amplitude_shape = dof_map;
+                    F_Data.type = "shape";
                 case "shape"
                     Nonconservative_Input.amplitude_shape = F_Data.shape;
                     

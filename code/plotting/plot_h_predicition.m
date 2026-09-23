@@ -17,7 +17,7 @@ keyword_values = varargin(2:2:num_args);
 ax = [];
 colour_num = 1;
 add_backbone = 1;
-tag = "";
+tag = '';
 plot_special_points = 1;
 alt_x_axis = 0;
 
@@ -68,7 +68,11 @@ orbit_labels = 1:num_orbits;
 orbit_ids = "(" + solution_num + "," + orbit_labels + ")";
 
 validation_modes = Validated_Solution.validation_modes;
+if isempty(tag)
 mode_string = "[" + join(string(validation_modes),", ") + "]";
+else
+mode_string = "[" + join(string(tag),", ") + "]";
+end
 
 line_colour = get_plot_colours(colour_num);
 line_plot_settings = {"LineWidth",LINE_WIDTH,"Color",line_colour,"Tag",tag};
@@ -85,11 +89,17 @@ if PLOT_STABILITY
 end
 
 switch type
-    case {"energy","validation error","physical amplitude","stability"}
+    case {"energy","validation error","physical amplitude","stability","physical validation error"}
         switch type
             case "energy"
                 energy_tilde = Solution.energy;
                 energy_hat = Validated_Solution.h_energy;
+
+            case "physical validation error"
+                disp_hat = Validated_Solution.additional_dynamic_output;
+                disp_tilde = Solution.additional_dynamic_output;
+                energy_hat = abs(disp_tilde-disp_hat)./abs(disp_tilde);
+                energy_tilde = zeros(size(energy_hat));
 
             case "validation error"
                 energy_hat = Validated_Solution.validation_error;
@@ -164,6 +174,8 @@ switch type
                 y_label = "Energy";
             case "validation error"
                 y_label = "\epsilon";
+            case "physical validation error"
+                y_label = "\epsilon_x";
             case "physical amplitude"
                 y_label = "X";
             case "stability"

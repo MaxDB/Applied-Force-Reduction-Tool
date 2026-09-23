@@ -50,6 +50,7 @@ else
     epsilon_array = [];
 end
 
+% warning("Parallelisation disabled")
 % for iJob = 1:num_jobs
 parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
     time_range = [inf,0];

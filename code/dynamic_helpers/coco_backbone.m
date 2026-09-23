@@ -131,7 +131,7 @@ end
 % prob = coco_add_func(prob, 'frequency_monitor', coco_frequency_func, data, 'regular', 'FREQ', 'uidx', uidx,'remesh',@coco_energy_remesh);
 freq_func = @(prob,data,u) coco_frequency(prob,data,u);
 prob = coco_add_func(prob, 'frequency_monitor', freq_func, data, 'regular', 'FREQ', 'uidx', uidx,'remesh',@coco_energy_remesh);
-prob = coco_add_event(prob, 'EP','boundary','FREQ',Continuation_Settings.parameter_range);
+prob = coco_add_event(prob, 'EP','boundary','FREQ',Continuation_Settings.frequency_range);
 
 if ~isempty(Continuation_Settings.frequency_points)
     prob = coco_add_event(prob, 'X','special point','FREQ',Continuation_Settings.frequency_points);

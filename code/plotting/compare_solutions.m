@@ -72,7 +72,7 @@ for iSol = 1:num_solutions
             continue
         end
         Sol_Type = Solution.Solution_Type;
-
+        sol_validation = validation(iSol)*ones(1,num_system_sols);
 
         switch Sol_Type.orbit_type
             case "forced"
@@ -108,10 +108,10 @@ for iSol = 1:num_solutions
         end
         
         if Sol_Type.validated == 0
-            validation(iSol) = 0;
+            sol_validation(jSol) = 0;
         end
 
-        if validation(iSol)
+        if sol_validation(jSol)
             if colour_sol == 0
                 h_colour_number = 1;
             else

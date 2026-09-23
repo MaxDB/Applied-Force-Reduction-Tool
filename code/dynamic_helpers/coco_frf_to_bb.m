@@ -15,7 +15,6 @@ switch type
     case "rom"
         Eom_Input = Rom.get_solver_inputs("coco_frf","additional_input",Nonconservative_Input);
 
-        warning("May not work with full jacobian")
         % funcs = {@(t,z,epsilon) coco_frf2bb_eom(t,z,epsilon,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data)};
         funcs = {@(t,z,epsilon) coco_frf2bb_eom(t,z,epsilon,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data),...
                     @(t,z,epsilon) coco_frf2bb_eom_dx(t,z,epsilon,amp,T,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data,Eom_Input.Damping_Data,Eom_Input.Applied_Force_Data),...
@@ -89,6 +88,12 @@ switch Additional_Output.output
         disp_points = Additional_Output.special_points;
         prob = coco_add_event(prob, 'X', 'special point','DISP',disp_points);
 end
+
+if ~isempty(Continuation_Settings.parameter_points)
+    prob = coco_add_event(prob, 'X', 'special point','epsilon',Continuation_Settings.parameter_points);
+end
+
+
 
 %Corrector Settings
 prob = coco_set(prob,'corr','SubItMX', 10); % [4] number of damping steps

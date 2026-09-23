@@ -2,8 +2,6 @@ function x_dot_dx = coco_forced_eom_dx(t,x,force_amp,period,input_order,Force_Da
 %eom for new force approach
 num_x = size(x,2);
 num_modes = size(x,1)/2;
-num_applied_forces = size(Applied_Force_Data.shape,2);
-num_r_modes = num_modes - num_applied_forces;
 
 num_force_coeffs = size(Force_Data.coeffs,2);
 num_disp_coeffs = size(Disp_Data.beta_bar,1);
@@ -18,7 +16,7 @@ shift_factor = Force_Data.shift_factor;
 %assumes force and coupling from same dataset
 
 r_transformed = scale_factor.*(r + shift_factor);
-
+use_harmonic = isfield(Applied_Force_Data,"harmonics");
 
 vel_span = disp_span + num_modes;
 r_dot = x(vel_span,:);
@@ -121,11 +119,17 @@ for iX = 1:num_x
             damping_term_dr = tensorprod(damping_term_dr_pre,r_dot_i,d2_dims,1);
     end
     %-------------
+    if use_harmonic
+        force_time = Applied_Force_Data.harmonics(t_i,frequency_i);
+    else
+        force_time = sin(frequency_i*t_i);
+    end
+    
     disp_dr_amp_prod = r_dr_products_disp'*Applied_Force_Data.disp_force_beta;
-    applied_force = force_amp*disp_dr_amp_prod*sin(frequency_i*t_i);
+    applied_force = force_amp*disp_dr_amp_prod*force_time;
 
     disp_dr2_amp_prod = tensorprod(pagetranspose(r_dr2_products_disp),Applied_Force_Data.disp_force_beta,2,1);
-    applied_force_dz = force_amp*disp_dr2_amp_prod*sin(frequency_i*t_i);
+    applied_force_dz = force_amp*disp_dr2_amp_prod*force_time;
     %-------------
     r_ddot = -inertia\(convection+restoring_force+damping_term-applied_force);
     pre_r_ddot_dr = tensorprod(inertia_dr,r_ddot,3,1);
@@ -137,3 +141,4 @@ for iX = 1:num_x
 end
 
 end
+

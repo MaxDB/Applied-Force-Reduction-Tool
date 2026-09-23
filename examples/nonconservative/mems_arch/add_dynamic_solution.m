@@ -4,7 +4,7 @@ close all
 set_visualisation_level(1)
 set_logging_level(3)
 
-system_name = "mems_arch_16";
+system_name = "mems_arch_1";
 Dyn_Data = initalise_dynamic_data(system_name);
 %-------------------------------------------------------------------------%
 Additional_Output.output = "physical displacement";
@@ -100,8 +100,8 @@ Continuation_Opts.initial_discretisation_num = 40;
 Continuation_Opts.forward_steps = 500;
 Continuation_Opts.backward_steps = 500;
 
-Continuation_Opts.initial_inc = 5e-3;
-Continuation_Opts.max_inc = 5e-3;
+Continuation_Opts.initial_inc = 1e-2;
+Continuation_Opts.max_inc = 1e-2;
 Continuation_Opts.min_inc = 1e-3;
 
 Dyn_Data = Dyn_Data.add_orbits(3,[117,122],"opts",Continuation_Opts);
