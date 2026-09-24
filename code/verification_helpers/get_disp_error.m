@@ -17,6 +17,9 @@ function error = get_disp_error(disp,Rom_One,Rom_Two,force_ratio,Disp_Error_Inpu
     num_modes = size(r_transformed,1);
 
     error_map = ~ismember(force_ratio,0);
+    if size(error_map,2) == 1
+        error_map = repmat(error_map,[1,num_x]);
+    end
     r_ddot_one = zeros(num_modes,num_x);
     point_error = zeros(num_modes,num_x);
     for iX = 1:num_x
@@ -51,7 +54,7 @@ function error = get_disp_error(disp,Rom_One,Rom_Two,force_ratio,Disp_Error_Inpu
         % point_error(:,iX) = 2*abs((r_ddot_one(:,iX) - r_ddot_two)./(abs(r_ddot_one(:,iX)) + abs(r_ddot_two)));
 
         point_error(:,iX) = abs(r_ddot_one(:,iX) - r_ddot_two)./abs(r_ddot_one(:,iX));
-        point_error(~error_map,iX) = 0;
+        point_error(~error_map(:,iX),iX) = 0;
   
     end
 

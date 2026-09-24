@@ -2,7 +2,7 @@ clear
 close all
 set_visualisation_level(1)
 
-system_name = "clamped_beam_13";
+system_name = "clamped_beam_14";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 %-------------------------------------------------------------------------%
@@ -26,7 +26,7 @@ Continuation_Opts.initial_discretisation_num = 20;
 Continuation_Opts.min_discretisation_num = 20;
 %-----------------------------------------%
 if size(Dyn_Data,1) == 0 && all(Dyn_Data.Dynamic_Model.Model.reduced_modes < 1000)
-Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
+% Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 end
 %-------------------
 %-------------------
@@ -66,7 +66,7 @@ Damping_Data.stiffness_factor = 0;
 
 %--
 Force_Data.frequency = 370;
-Force_Data.amplitude = 0.017;
+Force_Data.amplitude = 0.02;
 target_damping = 0.001;
 
 %-

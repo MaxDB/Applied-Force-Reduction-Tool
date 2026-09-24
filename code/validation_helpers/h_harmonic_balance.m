@@ -15,41 +15,114 @@ h_stiff_frequency = time_to_frequency(h_stiff,t0,num_harmonics);
 % num_points = ceil(max_points*1);
 % t_lin = linspace(t0(1),t0(end),num_points);
 % 
-% 
-% if num_harmonics > 1
-%     test_name = "h_stiff";
-%     test = eval(test_name);
-%     test_frequency = eval(test_name + "_frequency");
-%     test_time = evaluate_fourier_series(test_frequency,omega,t0);
-%     num_h_modes = size(test_time,1);
-%     if num_h_modes > 3
-%         num_plot_modes = 3;
-%         i_plot = randi(num_h_modes,3);
-%         j_plot = randi(num_h_modes,3);
-%     else
-%         num_plot_modes = num_h_modes;
-%         i_plot = 1:num_plot_modes;
-%         j_plot = 1:num_plot_modes;
-%     end
-%     figure;
-%     tiledlayout("flow")
-%     for iPlot = 1:num_plot_modes
-%         i_index = i_plot(iPlot);
-%         for jPlot = 1:num_plot_modes
-%             j_index = j_plot(jPlot);
-%             nexttile
-%             hold on
-%             plot(t0,squeeze(test(i_index,j_index,:)))
-%             plot(t0,squeeze(test_time(i_index,j_index,:)),"--")
-% 
-%             x_lin = interp1(t0,squeeze(test(i_index,j_index,:)),t_lin);
-%             plot(t_lin,x_lin,"x")
-%             hold off
+% test_names = ["h_stiff","h_force"];
+% for iTest = 1:length(test_names)
+%     if num_harmonics > 1
+%         test_name = test_names(iTest);
+%         test = eval(test_name);
+%         test_frequency = eval(test_name + "_frequency");
+%         test_time = evaluate_fourier_series(test_frequency,omega,t0);
+%         num_h_modes = size(test_time,1);
+%         if num_h_modes > 3
+%             num_plot_modes = 3;
+%             i_plot = randi(num_h_modes,3);
+%             j_plot = randi(num_h_modes,3);
+%         else
+%             num_plot_modes = num_h_modes;
+%             i_plot = 1:num_plot_modes;
+%             j_plot = 1:num_plot_modes;
 %         end
+%         figure;
+%         tiledlayout("flow")
+% 
+%         for iPlot = 1:num_plot_modes
+%             i_index = i_plot(iPlot);
+%             if test_name == "h_force"
+%                 nexttile
+%                 title(test_name)
+%                 hold on
+%                 plot(t0,test(i_index,:))
+%                 plot(t0,test_time(i_index,:),"--")
+% 
+%                 x_lin = interp1(t0,test(i_index,:),t_lin);
+%                 plot(t_lin,x_lin,"x")
+%                 hold off
+%             else
+%                 for jPlot = 1:num_plot_modes
+%                     j_index = j_plot(jPlot);
+%                     nexttile
+%                     title(test_name)
+%                     hold on
+%                     plot(t0,squeeze(test(i_index,j_index,:)))
+%                     plot(t0,squeeze(test_time(i_index,j_index,:)),"--")
+% 
+%                     x_lin = interp1(t0,squeeze(test(i_index,j_index,:)),t_lin);
+%                     plot(t_lin,x_lin,"x")
+%                     hold off
+%                 end
+%             end
+%         end
+%         done = 1;
 %     end
-%     done = 1;
 % end
 %------------------------- TEST ----------------------%
+
+%------------------------- TEST ----------------------%
+% max_points = length(t0);
+% num_points = ceil(max_points*1);
+% t_lin = linspace(t0(1),t0(end),num_points);
+% t_plot = t0*omega/(2*pi);
+% 
+% force_fig = findobj("type","figure","tag","force");
+% force_ax = findobj(force_fig,"type","axes");
+% stiff_fig = findobj("type","figure","tag","stiff");
+% stiff_ax = findobj(stiff_fig,"type","axes");
+% 
+% test_names = ["h_stiff","h_force"];
+% for iTest = 1:length(test_names)
+%     if num_harmonics > 1
+%         test_name = test_names(iTest);
+%         test = eval(test_name);
+%         test_frequency = eval(test_name + "_frequency");
+%         test_time = evaluate_fourier_series(test_frequency,omega,t0);
+%         num_h_modes = size(test_time,1);
+%         if num_h_modes > 3
+%             num_plot_modes = 3;
+%             i_plot = randi(num_h_modes,3);
+%             j_plot = randi(num_h_modes,3);
+%         else
+%             num_plot_modes = num_h_modes;
+%             i_plot = 1:num_plot_modes;
+%             j_plot = 1:num_plot_modes;
+%         end
+% 
+%         if test_name == "h_force"
+%             ax = force_ax;
+%             hold(ax,"on")
+%             plot(ax,t_plot,test(i_index,:))
+%             % plot(ax,t0,test_time(i_index,:),"--")
+% 
+%             x_lin = interp1(t0,test(i_index,:),t_lin);
+%             % plot(ax,t_lin,x_lin,"x")
+%             hold(ax,"off")
+%         else
+%             i_index = 1;
+%             for jPlot = 1:num_plot_modes
+%                 j_index = j_plot(jPlot);
+%                 ax = stiff_ax(num_plot_modes+1-j_index);
+%                 hold(ax,"on")
+%                 plot(ax,t_plot,squeeze(test(i_index,j_index,:)))
+%                 % plot(ax,t0,squeeze(test_time(i_index,j_index,:)),"--")
+% 
+%                 x_lin = interp1(t0,squeeze(test(i_index,j_index,:)),t_lin);
+%                 % plot(ax,t_lin,x_lin,"x")
+%                 hold(ax,"off")
+%             end
+%         end
+%     end
+% end
+%------------------------- TEST ----------------------%
+
 num_coefficients = size(h_force_frequency,2);
 force_frequency_coeffs = h_force_frequency';
 
