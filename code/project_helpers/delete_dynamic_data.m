@@ -10,7 +10,7 @@ if isempty(Dyn_Data)
     return
 end
 
-Dyn_Data.remove_solution("all")
+Dyn_Data.remove_solution("all");
 delete(file_name)
 
 end

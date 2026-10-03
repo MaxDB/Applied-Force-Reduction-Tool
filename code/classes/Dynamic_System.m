@@ -514,6 +514,9 @@ classdef Dynamic_System
                 case "abaqus"
 
                     reset_temp_directory()
+                    if isstring(Static_Opts.num_loadcases) && Static_Opts.num_loadcases == "auto"
+                        Static_Opts.num_loadcases = 1;
+                    end
                     max_inc = Static_Opts.maximum_step_increments*Static_Opts.num_loadcases;
                     create_parallel_pool(Static_Opts.max_parallel_jobs);
                     if Static_Opts.max_parallel_jobs > 1
