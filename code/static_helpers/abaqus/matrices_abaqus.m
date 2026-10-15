@@ -39,9 +39,11 @@ logger(log_message,3)
 
 %Read mass and stiffness
 data_processing_time_start = tic;
+matrix_step = 1 + nnz(matches(geometry,"*End Step","IgnoreCase",true));
 
-M_file = "temp\" + file_name + "_MASS1.mtx";
-K_file = "temp\" + file_name + "_STIF1.mtx";
+
+M_file = "temp\" + file_name + "_MASS" + matrix_step + ".mtx";
+K_file = "temp\" + file_name + "_STIF" + matrix_step + ".mtx";
 
 
 pre_M = load_mtx(M_file);
@@ -67,7 +69,8 @@ ci_zero = zero_indicies(:,1);
 indicies = pre_K(pre_K(:,3) == 1e36,1:2);
 ci = indicies(:,1);
 
-matrix_bcs = [ci;ci_zero];
+% matrix_bcs = [ci;ci_zero];
+matrix_bcs = ci;
 
 K_bc = K;
 K_bc(matrix_bcs,:) = [];

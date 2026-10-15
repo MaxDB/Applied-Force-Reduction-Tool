@@ -1,5 +1,5 @@
-function [orbit_stability,orbit_evals] = get_h_stability(h_terms,t0,num_orbit_harmonics)
-% STABILITY_METHOD = "time";
+function [orbit_stability,orbit_evals,orbit_evecs] = get_h_stability(h_terms,t0,num_orbit_harmonics)
+%STABILITY_METHOD = "time";
 STABILITY_METHOD = "koopman-hill";
 [h_inertia,h_conv,h_stiff,~] = h_terms{:};
 num_h_modes = size(h_inertia,1);
@@ -11,6 +11,27 @@ h_vel_span = h_disp_span + num_h_modes;
 
 switch STABILITY_METHOD
     case "time"
+        stiff_prod_all = pagemldivide(h_inertia,h_stiff);
+        conv_prod_all = pagemldivide(h_inertia,h_conv);
+
+        num_time_points = size(stiff_prod_all,3);
+        
+        orbit_jacobian = zeros(2*num_h_modes,2*num_h_modes,num_time_points);
+        orbit_jacobian(h_disp_span,h_vel_span,:) = repmat(I_L,[1,1,num_time_points]);
+        orbit_jacobian(h_vel_span,h_disp_span,:) = -stiff_prod_all;
+        orbit_jacobian(h_vel_span,h_vel_span,:) = -conv_prod_all;
+
+        orbit_jacobian_spline = spline(t0,orbit_jacobian);
+
+        jacobian_func = @(t,z) ppval(orbit_jacobian_spline,t);
+        opts = odeset(Jacobian = @(t,z) jacobian_func,RelTol = 1e-5,AbsTol=1e-7);
+
+        fundamental_eq = @(t,z) evaluate_jacobian(t,z,num_h_modes,orbit_jacobian_spline);
+
+        period = t0(end);
+        [~,fundamental_mat] = ode45(fundamental_eq,[0,period],eye(2*num_h_modes),opts);
+        monodromy_mat = reshape(fundamental_mat(end,:)',2*num_h_modes,2*num_h_modes);
+    case "time_OLD"
         % num_time_points = size(t0,2);
         % orbit_jacobian = zeros(2*num_h_modes,2*num_h_modes,num_time_points);
         % for iTime = 1:(num_time_points)
@@ -72,29 +93,38 @@ switch STABILITY_METHOD
 
         num_harmonics = num_orbit_harmonics;
         num_time_points = 1+8*num_harmonics;
+
+        % num_time_points = length(t0);
         if num_time_points > length(t0)-1
             num_time_points = length(t0)-1;
             if mod(num_time_points,2) == 0
                 num_time_points = num_time_points - 1;
             end
         end
-
+        
 
         % num_time_points = size(t0,2) - 1;
         time_points = linspace(0,t0(end),num_time_points+1);
         time_points(end) = [];
 
 
-        interp_inertia = zeros(num_h_modes,num_h_modes,num_time_points);
-        interp_conv = zeros(num_h_modes,num_h_modes,num_time_points);
-        interp_stiff = zeros(num_h_modes,num_h_modes,num_time_points);
-        for iRow = 1:num_h_modes
-            for iCol = 1:num_h_modes
-                interp_inertia(iRow,iCol,:) = interp1(t0,squeeze(h_inertia(iRow,iCol,:)),time_points);
-                interp_conv(iRow,iCol,:) = interp1(t0,squeeze(h_conv(iRow,iCol,:)),time_points);
-                interp_stiff(iRow,iCol,:) = interp1(t0,squeeze(h_stiff(iRow,iCol,:)),time_points);
-            end
-        end  
+        % interp_inertia = zeros(num_h_modes,num_h_modes,num_time_points);
+        % interp_conv = zeros(num_h_modes,num_h_modes,num_time_points);
+        % interp_stiff = zeros(num_h_modes,num_h_modes,num_time_points);
+        % for iRow = 1:num_h_modes
+        %     for iCol = 1:num_h_modes
+        %         interp_inertia(iRow,iCol,:) = interp1(t0,squeeze(h_inertia(iRow,iCol,:)),time_points);
+        %         interp_conv(iRow,iCol,:) = interp1(t0,squeeze(h_conv(iRow,iCol,:)),time_points);
+        %         interp_stiff(iRow,iCol,:) = interp1(t0,squeeze(h_stiff(iRow,iCol,:)),time_points);
+        %     end
+        % end  
+        
+        stiff_prod_all = pagemldivide(h_inertia,h_stiff);
+        conv_prod_all = pagemldivide(h_inertia,h_conv);
+
+        stiff_prod = spline(t0,stiff_prod_all,time_points);
+        conv_prod = spline(t0,conv_prod_all,time_points);
+
 
         % singular_warning = warning('error', 'MATLAB:singularMatrix');
         orbit_jacobian = zeros(2*num_h_modes,2*num_h_modes,num_time_points);
@@ -104,8 +134,11 @@ switch STABILITY_METHOD
             orbit_jacobian(h_disp_span,h_vel_span,iTime) = I_L;
             % try
 
-            orbit_jacobian(h_vel_span,h_disp_span,iTime) = -interp_inertia(:,:,iTime)\interp_stiff(:,:,iTime);
-            orbit_jacobian(h_vel_span,h_vel_span,iTime) = -interp_inertia(:,:,iTime)\interp_conv(:,:,iTime);
+            % orbit_jacobian(h_vel_span,h_disp_span,iTime) = -interp_inertia(:,:,iTime)\interp_stiff(:,:,iTime);
+            % orbit_jacobian(h_vel_span,h_vel_span,iTime) = -interp_inertia(:,:,iTime)\interp_conv(:,:,iTime);
+
+            orbit_jacobian(h_vel_span,h_disp_span,iTime) = -stiff_prod(:,:,iTime);
+            orbit_jacobian(h_vel_span,h_vel_span,iTime) = -conv_prod(:,:,iTime);
             % warning(singular_warning)
             % catch
             %     warning(singular_warning)
@@ -138,11 +171,18 @@ switch STABILITY_METHOD
 end
 
 
-orbit_evals = eig(monodromy_mat);
+[orbit_evecs,orbit_evals] = eig(monodromy_mat,"vector");
 orbit_stability = max(abs(orbit_evals));
 
 end
 
+
+function dz = evaluate_jacobian(t,z,num_h_modes,orbit_jacobian_spline)
+approx_jacobian = ppval(orbit_jacobian_spline,t);
+dz = approx_jacobian*reshape(z,2*num_h_modes,2*num_h_modes);
+dz = reshape(dz,4*num_h_modes^2,1);
+end
+%------------------$
 function dz = orbit_jacobian_func(t,z,t0,orbit_jacobian)
 num_h_modes = size(orbit_jacobian,1)/2;
 h_span = 1:num_h_modes;
@@ -159,7 +199,7 @@ end
 dz = approx_jacobian*reshape(z,2*num_h_modes,2*num_h_modes);
 dz = reshape(dz,4*num_h_modes^2,1);
 end
-%------------------$
+
 function dz = orbit_jacobian_fourier_func(t,z,frequency,jacobian_coeffs)
 num_h_modes = size(jacobian_coeffs,1)/2;
 

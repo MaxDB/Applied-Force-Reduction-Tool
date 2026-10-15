@@ -140,8 +140,9 @@ parfor (iJob = 1:num_jobs,get_current_parallel_jobs)
         
 
         if Validation_Opts.get_stability
-            [orbit_stab,orbit_evals] = get_h_stability(validation_eq_terms,t0,num_harmonics);
+            [orbit_stab,orbit_evals,orbit_evecs] = get_h_stability(validation_eq_terms,t0,num_harmonics);
             Validation_Orbit.evals = orbit_evals;
+            Validation_Orbit.evecs = orbit_evecs;
             % orbit_stab = h_infinite_determinant(validation_eq_terms,t0,omega,num_harmonics);
             % orbit_stab = get_h_coco_stability(Validation_Orbit,validation_eq_terms,t0,omega,num_harmonics);
         else

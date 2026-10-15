@@ -15,7 +15,7 @@ Dyn_Data = Dyn_Data.add_additional_output(Additional_Output);
 
 %--------- Continuation Settings ---------%
 Continuation_Opts.initial_inc = 1e-1;
-Continuation_Opts.max_inc = 5e-1;
+Continuation_Opts.max_inc = 1e-1;
 Continuation_Opts.min_inc = 1e-2;
 
 Continuation_Opts.forward_steps = 200;
@@ -29,7 +29,7 @@ Continuation_Opts.collocation_degree = 8;
 Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 
 %---
-Continuation_Opts.initial_inc = 1e1;
+ Continuation_Opts.initial_inc = 1e1;
 Continuation_Opts.max_inc = 1e1;
 Continuation_Opts.min_inc = 1e1;
 
@@ -38,7 +38,7 @@ Dyn_Data = Dyn_Data.add_backbone(1,"opts",Continuation_Opts);
 %---
 
 Continuation_Opts.initial_inc = 1e-1;
-Continuation_Opts.max_inc = 2e-1;
+Continuation_Opts.max_inc = 1e-1;
 Continuation_Opts.min_inc = 1e-2;
 
 Continuation_Opts.forward_steps = 500;
@@ -53,7 +53,7 @@ Dyn_Data = Dyn_Data.remove_solution(2);
 %----
 % compare_validation(Dyn_Data,"validation error",1,"all")
 % Dyn_Data = Dyn_Data.validate_solution(1,"all");
-% Dyn_Data = Dyn_Data.get_fe_output("periodicity",1,"X");
+Dyn_Data = Dyn_Data.get_fe_output("periodicity",1,"X");
 % Dyn_Data = Dyn_Data.get_max_disp_stress(1,46);
 
 % 
@@ -79,3 +79,15 @@ Dyn_Data = Dyn_Data.remove_solution(2);
 % 
 % Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"type","rom");
 % Dyn_Data = Dyn_Data.add_forced_response(Force_Data,Damping_Data,"opts",Continuation_Opts,"type","rom","method","fc");
+
+
+
+
+%% Validation test
+Validation_Opts.legacy_h_prediction = 1;
+Validation_Opts.get_stability = 0;
+Dyn_Data = Dyn_Data.validate_solution(3,1:18,"opts",Validation_Opts);
+Dyn_Data = Dyn_Data.validate_solution(4,1:18,"opts",Validation_Opts);
+compare_solutions("amplitude",Dyn_Data,[1,2],"validation",1)
+
+compare_validation("exhaust_17","physical amplitude",1,1:18,"opts",Validation_Opts)

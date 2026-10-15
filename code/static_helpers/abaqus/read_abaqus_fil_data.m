@@ -6,9 +6,9 @@ num_steps = length(step_types);
 num_static_steps = sum(step_types(:,1) == "static");
 num_stiffness_steps = sum(step_types(:,1) == "stiffness");
 
-if num_stiffness_steps >0 && num_stiffness_steps   ~= num_static_steps
-    error("Abaqus error")
-end
+% if num_stiffness_steps >0 && num_stiffness_steps   ~= num_static_steps
+%     error("Abaqus error")
+% end
 
 num_output_steps = num_static_steps;
 %------------------------------------------------------------------------%
@@ -17,32 +17,30 @@ energy = zeros(1,num_static_steps);
 additional_data = [];
 additional_data_time = 0;
 %------------------------------------------------------------------------%
-
-fil_id = fopen("temp\" + file_name + ".fil");
-abaqus_data = textscan(fil_id,'%s','delimiter','*',"EndOfLine",""); %quicker to read all at once if there is enough memory
-fclose(fil_id);
-
-
-
-abaqus_data = regexprep(abaqus_data{1},'[\n\r]+',''); %update for nonwindows
-
-
-
-
 Model_Data.num_dimensions = num_dimensions;
-step_indicies = find(find_record_by_type(abaqus_data,["inc start","inc end"],Model_Data));
 
-if diff(step_indicies((end-1):end)) == 1
-    step_indicies(end) = [];
+file_path = "temp\" + file_name + ".fil";
+if isfile(file_path)
+    fil_id = fopen(file_path);
+    abaqus_data = textscan(fil_id,'%s','delimiter','*',"EndOfLine",""); %quicker to read all at once if there is enough memory
+    fclose(fil_id);
+
+    abaqus_data = regexprep(abaqus_data{1},'[\n\r]+',''); %update for nonwindows
+    step_indicies = find(find_record_by_type(abaqus_data,["inc start","inc end"],Model_Data));
+
+    if diff(step_indicies((end-1):end)) == 1
+        step_indicies(end) = [];
+    end
+    if diff(step_indicies(1:2)) == 1
+        step_indicies(1) = [];
+    end
+
+
+    step_spans = zeros(num_output_steps,2);
+    step_spans(:,1) = step_indicies(1:2:(2*num_output_steps));
+    step_spans(:,2) = step_indicies(2:2:(2*num_output_steps));
 end
-if diff(step_indicies(1:2)) == 1
-    step_indicies(1) = [];
-end
 
-
-step_spans = zeros(num_output_steps,2);
-step_spans(:,1) = step_indicies(1:2:(2*num_output_steps));
-step_spans(:,2) = step_indicies(2:2:(2*num_output_steps));
 
 output_counter = 0;
 step_counter = 0;
@@ -71,7 +69,7 @@ for iStep = 1:num_steps
             add_data_step_start = tic;
             base_name = "temp\" + file_name + "_STIF";
             if num_static_steps == 0
-                static_step_counter = static_step_counter + 1;
+                output_counter = output_counter + 1;
             end
             file_found = 0;
             while ~file_found

@@ -4,7 +4,7 @@ function [r,theta,f,E,additional_data] = ...
 JOB_NAME = "static_analysis";
 RESET_TO_ZERO = 1;
 
-additional_data_mode = all(isnan(applied_force));
+additional_data_mode = all(all(isnan(applied_force)));
 
 [num_dimensions,model_dimension] = get_num_node_dimensions(Model);
 project_path = Model.project_path;
@@ -15,6 +15,10 @@ all_dofs = Model.num_dof + numel(Model.dof_boundary_conditions);
 node_map = 1:all_dofs;
 node_map(Model.dof_boundary_conditions) = [];
 num_loadcases = size(applied_force,2);
+
+if additional_data_mode
+    num_loadcases = size(Closest_Point.initial_disp,2);
+end
 
 
 %----
@@ -155,9 +159,18 @@ for iLine = 1:length(geometry)
         instance_name = instance_def{1,1};
     end
 end
-if Static_Opts.output_format == "binary"
-    geometry{end+1} = '*FILE FORMAT, ASCII';
+num_geometry_steps = nnz(matches(geometry,"*End Step","IgnoreCase",true));
+if num_geometry_steps > 0
+    geometry_steps = find(contains(geometry,"*Step","IgnoreCase",true));
+    line_insert_id = geometry_steps(1);
+    RESET_TO_ZERO = false;
+else
+    line_insert_id = length(geometry) + 1;
 end
+if Static_Opts.output_format == "binary"
+    geometry = [geometry(1:(line_insert_id-1));{'*FILE FORMAT, ASCII'};geometry(line_insert_id:end)];
+end
+
 
 %-------------------------------------------------------------------------%
 if RESET_TO_ZERO || additional_data_mode
@@ -262,11 +275,12 @@ if additional_data_mode
     total_steps = total_steps - total_static_steps;
 end
 
+total_steps = total_steps + num_geometry_steps;
 step_type = strings(total_steps,1);
 
 
 load_step_counter = 0;
-total_step_counter = 0;
+total_step_counter = num_geometry_steps;
 
 
 try

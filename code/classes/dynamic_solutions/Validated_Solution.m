@@ -23,12 +23,12 @@ classdef Validated_Solution
 
     methods
         function obj = Validated_Solution(Rom,BB_Sol,Validated_BB_Settings)
-            
-            Validation_Opts = struct([]);
+
+            Validation_Opts =Validated_BB_Settings.Validation_Options;
             % Validation_Opts.validation_algorithm = "h_frequency";
             obj = obj.update_validation_opts(Validation_Opts);
             Validation_Opts = obj.Validation_Options;
-            
+
             if isstring(Validation_Opts.get_stability) && Validation_Opts.get_stability == "auto"
                 num_L_modes = size(Validated_BB_Settings.L_modes,2);
                 Validation_Opts.get_stability = num_L_modes <= 3;   
@@ -56,7 +56,12 @@ classdef Validated_Solution
                 Static_Data = Static_Data.load_validation_data();
             else
                 L_modes = Validated_BB_Settings.L_modes;
-                Static_Data = Static_Data.add_validation_data(L_modes,"degree",Validated_BB_Settings.validation_degree);
+                if Validation_Opts.verification == "local"
+                    validation_degree = "copy";
+                else
+                    validation_degree = Validated_BB_Settings.validation_degree;
+                end
+                Static_Data = Static_Data.add_validation_data(L_modes,"degree",validation_degree);
                 obj.validation_degree = Static_Data.Dynamic_Validation_Data.degree;
                 Static_Data.save_validation_data();
             end

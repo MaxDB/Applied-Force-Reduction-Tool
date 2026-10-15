@@ -1,4 +1,10 @@
 function element_members = read_abaqus_element_membership(geometry)
+if isstring(geometry) && endsWith(geometry,".inp")
+    G_ID =fopen(geometry);
+    geometry = textscan(G_ID,'%s','delimiter','\n');
+    fclose(G_ID);
+    geometry = geometry{1,1};
+end
 
 SECTION_START_PATTERN = "*";
 ELEMENT_START_PATTERN = "*Element";

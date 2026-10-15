@@ -166,7 +166,7 @@ switch type
 
         y_lim = min(max_e_tilde*3,max_e_hat);
         if y_lim ~= 0
-            ylim(ax,[0,y_lim])
+            ylim(ax,[0,abs(y_lim)])
         end
 
         switch type

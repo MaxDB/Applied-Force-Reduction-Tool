@@ -24,7 +24,7 @@ for arg_counter = 1:num_args/2
             ax = keyword_values{arg_counter};
         case "outputs"
             outputs = keyword_values{arg_counter};
-        case "plot seps"
+        case {"plot seps","plot_seps"}
             plot_seps = keyword_values{arg_counter};
         case {"colour","color"}
             colour = keyword_values{arg_counter};
@@ -116,6 +116,9 @@ switch type
         y_label = "G";
     case "perturbation"
         y_data = Static_Data.get_dataset_values("perturbation_displacement");
+        if class(y_data) == "Perturbation_Pointer"
+            y_data = y_data.get_displacement(1:size(y_data,2));
+        end
         is_matrix = 1;
         mat_size = size(y_data);
         vec_size = {mat_size(1)*mat_size(2),mat_size(3)};
@@ -208,6 +211,11 @@ for iOutput = 1:num_outputs
 
     for iSep = 1:num_seps
         sep_span = sep_id == iSep;
+        
+        if nnz(sep_span) == size(x_data,2)
+            plot_settings{1} = ".";
+        end
+
         x_sep = x_data(:,sep_span);
         y_sep = y_data(:,sep_span);
         force_sep = sep_ordering(:,sep_span);

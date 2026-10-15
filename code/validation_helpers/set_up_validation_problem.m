@@ -9,7 +9,12 @@ switch orbit_type
         reduced_eom = @(t,z,zeta) coco_eom(t,z,zeta,Eom_Input.input_order,Eom_Input.Force_Data,Eom_Input.Disp_Data);
         %
         Validation_Input = Validation_Rom.get_solver_inputs("h_prediction");
-        h_terms = @(r,r_dot,r_ddot) get_h_error_terms(r,r_dot,r_ddot,Validation_Input);
+        if ~Validation_Opts.legacy_h_prediction
+            h_terms = @(r,r_dot,r_ddot) get_h_error_terms(r,r_dot,r_ddot,Validation_Input);
+        else
+            h_terms = @(r,r_dot,r_ddot) get_legacy_h_error_terms(r,r_dot,r_ddot,Validation_Input);
+        end
+    
 
         if nargout == 1
             return

@@ -29,10 +29,11 @@ classdef Reduced_System
         function obj = Reduced_System(Static_Data,varargin)
             SHIFT_ON = 1;
             SCALE_ON = 1;
+            REMOVE_CONSTRAINTS = 0;
             obj.minimum_displacement = Static_Data.Model.Static_Options.minimum_displacement;
 
 
-            %Optional argumanents
+            %Optional arguments
             num_args = length(varargin);
             if mod(num_args,2) == 1
                 error("Invalid keyword/argument pairs")
@@ -105,6 +106,7 @@ classdef Reduced_System
                 Potential_Poly = Polynomial(r,Static_Data.potential_energy,force_degree+1,"constraint",{"constant",0},"shift",SHIFT_ON,"scale",SCALE_ON);
             else
                 Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"linear_disp",disp_constraint},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
+                %Displacement_Poly = Polynomial(r,displacement,disp_degree,"constraint",{"constant",0},"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
 
 
                 %
@@ -123,6 +125,13 @@ classdef Reduced_System
 
 
             end
+            
+            if REMOVE_CONSTRAINTS
+                Displacement_Poly = Polynomial(r,displacement,disp_degree,"shift",SHIFT_ON,"scale",SCALE_ON,"minimum_output",obj.minimum_displacement);
+                Force_Poly = Polynomial(r,f,force_degree,"shift",SHIFT_ON,"scale",SCALE_ON);
+                Potential_Poly = integrate_polynomial(Force_Poly);
+            end
+
             Reduced_Stiffness_Poly = differentiate_polynomial(Force_Poly);
 
             % ax = plot_static_data("potential",Static_Data);```
@@ -172,6 +181,13 @@ classdef Reduced_System
                 H_Stiffness_Poly = Polynomial(r,h_stiffness,h_stiffness_degree,"constraint",{"constant",h_stiffness_0},"coupling","stiffness","shift",SHIFT_ON,"scale",SCALE_ON);
             end
             H_Coupling_Gradient_Poly = Polynomial(r,h_coupling_gradient,h_coupling_gradient_degree,"constraint",{"constant",h_coupling_gradient_0},"shift",SHIFT_ON,"scale",SCALE_ON);
+
+            
+            if REMOVE_CONSTRAINTS
+                H_Stiffness_Poly = Polynomial(r,h_stiffness,h_stiffness_degree,"shift",SHIFT_ON,"scale",SCALE_ON);
+                H_Coupling_Gradient_Poly = Polynomial(r,h_coupling_gradient,h_coupling_gradient_degree,"shift",SHIFT_ON,"scale",SCALE_ON);
+            end
+
 
             obj.Low_Frequency_Stiffness_Polynomial = H_Stiffness_Poly;
             obj.Low_Frequency_Coupling_Gradient_Polynomial = H_Coupling_Gradient_Poly;

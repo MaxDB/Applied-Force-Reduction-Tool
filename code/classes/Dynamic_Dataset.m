@@ -572,6 +572,7 @@ classdef Dynamic_Dataset
 
             validation_degree = [];
             load_validation_data = 0;
+            Validation_Opts = struct([]);
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
@@ -579,6 +580,8 @@ classdef Dynamic_Dataset
                         validation_degree = keyword_values{arg_counter};
                     case "load_data"
                         load_validation_data = keyword_values{arg_counter};
+                    case "opts"
+                        Validation_Options = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -606,6 +609,7 @@ classdef Dynamic_Dataset
             Validated_Sol_Settings.Additional_Output = obj.Additional_Output;
             Validated_Sol_Settings.validation_degree = validation_degree;
             Validated_Sol_Settings.load_validation_data = load_validation_data;
+            Validated_Sol_Settings.Validation_Options = Validation_Options;
 
             switch class(Sol)
                 case "Backbone_Solution"

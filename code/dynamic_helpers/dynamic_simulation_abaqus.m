@@ -349,7 +349,7 @@ time = zeros(1,num_increments+1);
 time(1) = initial_time;
 if output_disp
     displacement = zeros(num_dofs,num_increments);
-    if FE_Force_Data.fe_output == "disp_dof"
+    if ~isempty(FE_Force_Data) && FE_Force_Data.fe_output == "disp_dof"
        displacement = zeros(1,num_increments); 
        disp_0_bc = disp_0_bc(FE_Force_Data.output_info.dof);
     end
@@ -401,7 +401,7 @@ for iInc = 1:num_increments
         disp_table_span(disp_table_span > length(inc_data)) = [];
         disp_table_data = inc_data(disp_table_span,1);
         disp_pre_bc = read_abaqus_table(disp_table_data,num_nodes,num_dimensions);
-        if FE_Force_Data.fe_output == "disp_dof"
+        if ~isempty(FE_Force_Data) && FE_Force_Data.fe_output == "disp_dof"
             displacement(:,iInc) = disp_pre_bc(FE_Force_Data.output_info.dof_pre_bc);
         else
             displacement(:,iInc) = disp_pre_bc(node_map,:);

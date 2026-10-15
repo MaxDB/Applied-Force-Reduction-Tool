@@ -524,6 +524,9 @@ classdef Dynamic_System
                         abaqus_start = tic;
                         max_parallel_jobs = Static_Opts.max_parallel_jobs;
                         mininum_job_loadcases = Static_Opts.minimum_job_loadcases;
+                        if isempty(applied_force)
+                            applied_force = nan(size(Closest_Point.initial_force));
+                        end
                         [force_groups,job_index] = split_abaqus_jobs(applied_force,1,max_parallel_jobs,mininum_job_loadcases);
                         num_parallel_jobs = size(force_groups,2);
                         closest_point_group = cell(size(force_groups));
@@ -563,6 +566,7 @@ classdef Dynamic_System
                         end
                         Const_Model = parallel.pool.Constant(Model);
                         parfor (iJob = 1:num_parallel_jobs,get_current_parallel_jobs)
+                        % for iJob = 1:num_parallel_jobs
                             job_force = force_groups{1,iJob};
                             Job_Closest_Point = closest_point_group{1,iJob};
                             [job_r,job_theta,job_f,job_E,job_additional_data] = ...
@@ -616,7 +620,7 @@ classdef Dynamic_System
 
             Static_Opts = obj.Static_Options;
             if ~exist("job_id","var")
-                job_id = [];
+                job_id = 1;
                 if Static_Opts.static_solver == "abaqus"
                     reset_temp_directory()
                 end
@@ -638,6 +642,12 @@ classdef Dynamic_System
                         x = cell(1,num_parallel_jobs);
                         x_dot = cell(1,num_parallel_jobs);
                         energy = cell(1,num_parallel_jobs);
+                        if isscalar(num_periods)
+                            num_periods = repmat(num_periods,1,num_parallel_jobs);
+                        end
+                        if isscalar(job_id)
+                            job_id = repmat(job_id,num_parallel_jobs,1);
+                        end
                         parfor (iJob = 1:num_parallel_jobs,get_current_parallel_jobs)
                         % for iJob = 1:num_parallel_jobs
                             [t_job,x_job,x_dot_job,energy_job] = dynamic_simulation_abaqus(x_0(:,iJob),x_dot_0(:,iJob),f_r_0(:,iJob),period(iJob),num_periods(iJob),min_incs(iJob),initial_time(iJob),FE_Force_Data,obj,job_id(iJob,:));
@@ -699,6 +709,7 @@ classdef Dynamic_System
             end
         end
         %-----------------------------------------------------------------%
+        
 
         %-----------------------------------------------------------------%
         function [eom,eom_dz] = get_equation_of_motion(obj,varargin)

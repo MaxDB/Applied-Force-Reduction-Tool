@@ -36,11 +36,15 @@ classdef Static_Dataset
             keyword_values = varargin(2:2:num_args);
 
             Verification_Opts = struct([]);
+            data_imported = false;
 
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
                     case "verification_opts"
                         Verification_Opts = keyword_values{arg_counter};
+                    case "data_import"
+                        data_imported = true;
+                        imported_data = keyword_values{arg_counter};
                 end
             end
             
@@ -76,19 +80,15 @@ classdef Static_Dataset
             if obj.Model.reduced_modes == 0
                 return
             end
-            % if nargin == 2
-            obj = obj.create_dataset;
-            static_dataset_verification_plot(obj)
-            % else
-            %     Properties_Data = varargin{1,1};
-            %     properties = fields(Properties_Data);
-            %     num_properties = size(properties,1);
-            %     for iProp = 1:num_properties
-            %         property = properties{iProp};
-            %         obj.(property) = Properties_Data.(property);
-            %     end
-            % 
-            % end
+            if ~data_imported
+                obj = obj.create_dataset;
+                static_dataset_verification_plot(obj)
+            else
+                switch class(imported_data)
+                    case "surfaceData"
+                        obj = convert_surfaceData(obj,imported_data);
+                end
+            end
         end
         %-----------------------------------------------------------------%
         function obj = create_dataset(obj)
@@ -363,8 +363,17 @@ classdef Static_Dataset
 
             %obj.verified_degree = repmat(obj.verified_degree,1,2);
             minimum_degree_start = tic;
+            if isstring(validation_degree) && validation_degree == "copy"
+                validation_degree = repmat(obj.verified_degree,1,2);
+                obj.Dynamic_Validation_Data.degree = validation_degree;
+            end
+
             if isempty(validation_degree)
-                obj = verify_validation_polynomials(obj);
+                if size(h_stiffness,1) > 10
+                    obj.Dynamic_Validation_Data.degree = repmat(obj.verified_degree,1,2);
+                else
+                    obj = verify_validation_polynomials(obj);
+                end
             else
                 obj.Dynamic_Validation_Data.degree = validation_degree;
             end
@@ -507,7 +516,9 @@ classdef Static_Dataset
             
             sep_id_shift = size(obj.unit_sep_ratios,2);
             % sep_id_shift = max(obj.static_equilibrium_path_id);
-            obj.static_equilibrium_path_id = [obj.static_equilibrium_path_id,sep_id+sep_id_shift];
+            if ~isempty(sep_id)
+                obj.static_equilibrium_path_id = [obj.static_equilibrium_path_id,sep_id+sep_id_shift];
+            end
 
             num_points = size(V,2);
             if ~isempty(found_force_ratios)

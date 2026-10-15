@@ -2,7 +2,7 @@ function [r,physical_displacement,f,E,additional_data,sep_id] = ...
     add_sep_abaqus(force_ratio,num_loadcases,Static_Opts,max_inc,add_data_type,clean_data,Model,job_id,Initial_Data,restart_type)
 
 JOB_NAME = "static_analysis";
-RESET_TO_ZERO = 1;
+RESET_TO_ZERO = true;
 
 
 modes = Model.reduced_modes;
@@ -204,9 +204,19 @@ for iLine = 1:length(geometry)
         instance_name = instance_def{1,1};
     end
 end
-if Static_Opts.output_format == "binary"
-    geometry{end+1} = '*FILE FORMAT, ASCII';
+
+num_geometry_steps = nnz(matches(geometry,"*End Step","IgnoreCase",true));
+if num_geometry_steps > 0
+    geometry_steps = find(contains(geometry,"*Step","IgnoreCase",true));
+    line_insert_id = geometry_steps(1);
+    RESET_TO_ZERO = false;
+else
+    line_insert_id = length(geometry) + 1;
 end
+if Static_Opts.output_format == "binary"
+    geometry = [geometry(1:(line_insert_id-1));{'*FILE FORMAT, ASCII'};geometry(line_insert_id:end)];
+end
+
 %-------------------------------------------------------------------------%
 if RESET_TO_ZERO
     % rest to zero displacement after each SEP
@@ -316,13 +326,15 @@ if RESET_TO_ZERO
         total_steps = total_steps - 2;
     end
 end
+total_steps = total_steps + num_geometry_steps;
+
 step_type = strings(total_steps,1);
 step_incs = zeros(total_steps,1);
 sep_ends = zeros(num_seps,1);
 
 
 load_step_counter = 0;
-total_step_counter = 0;
+total_step_counter = num_geometry_steps;
 
 if data_method == "incs"
     sep_force_shape = zeros(all_dofs,num_seps);

@@ -23,6 +23,7 @@ end
 DELTA = 0.01;
 MAXIMUM_DEGREE = 13;
 MAX_POINTS = 0.25;
+CHECK_LOWER_ORDER = 0;
 max_loadcases = 200;
 % figure;
 % ax = axes;
@@ -77,13 +78,15 @@ num_r_modes = Static_Data.get_reduced_dimension;
 num_dataset_points = size(Static_Data,2);
 max_force_degree = get_max_poly_degree("force",num_r_modes,num_dataset_points,MAXIMUM_DEGREE);
 max_disp_degree = get_max_poly_degree("displacement",num_r_modes,num_dataset_points,MAXIMUM_DEGREE);
-% 
-% force_degree = max(Static_Data.verified_degree(1)-2,3);
-% disp_degree = max(Static_Data.verified_degree(2)-2,3);
+%
 
-force_degree = Static_Data.verified_degree(1);
-disp_degree = Static_Data.verified_degree(2);
-
+if CHECK_LOWER_ORDER
+    force_degree = max(Static_Data.verified_degree(1)-2,3);
+    disp_degree = max(Static_Data.verified_degree(2)-2,3);
+else
+    force_degree = Static_Data.verified_degree(1);
+    disp_degree = Static_Data.verified_degree(2);
+end
 num_degree_pairs = min(max_force_degree+2 - force_degree,max_disp_degree+2 - disp_degree)/2;
 maximum_force_pair_errors = zeros(1,num_degree_pairs);
 maximum_disp_pair_errors = zeros(1,num_degree_pairs);
@@ -279,7 +282,8 @@ end
 %-----------------
 
 function added_points = select_points_to_add(orbit_points,interpolation_error,r_max,delta,max_points,existing_points)
-distance_reduction = 0.5;
+% distance_reduction = 0.5;
+distance_reduction = 1;
 min_distance = 10*delta;
 
 error_indicies = find(interpolation_error>1);
@@ -337,7 +341,7 @@ while ~max_points_added
     end
     scaled_error_points(:,removal_index) = [];
     inc_counter = inc_counter + 1;
-    if inc_counter == 3
+    if inc_counter == 2
         max_points_added = true;
     end
 end

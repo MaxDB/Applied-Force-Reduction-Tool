@@ -8,11 +8,14 @@ keyword_args = varargin(1:2:num_args);
 keyword_values = varargin(2:2:num_args);
 
 ax = [];
+Validation_Opts = struct([]);
 
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
         case "axes"
             ax = keyword_values{arg_counter};
+        case "opts"
+            Validation_Opts = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -113,6 +116,7 @@ end
 
 r_modes_text = join(string(r_modes),",");
 Model = Dyn_Data.Dynamic_Model.Model;
+unstable_validation_lines = [];
 for iMode = 1:num_L_modes
     % Dyn_Data.Additional_Output.output = "none";
     mode_time_start = tic;
@@ -148,9 +152,9 @@ for iMode = 1:num_L_modes
 
 
         if iSol == 1
-            [Dyn_Data,Validated_BB_Sol] = Dyn_Data.validate_solution(solution_num(iSol),L_mode);
+            [Dyn_Data,Validated_BB_Sol] = Dyn_Data.validate_solution(solution_num(iSol),L_mode,"opts",Validation_Opts);
         else
-            [Dyn_Data,Validated_BB_Sol] = Dyn_Data.validate_solution(solution_num(iSol),L_mode,"validation_degree",Validated_BB_Sol.validation_degree,"load_data",1);
+            [Dyn_Data,Validated_BB_Sol] = Dyn_Data.validate_solution(solution_num(iSol),L_mode,"validation_degree",Validated_BB_Sol.validation_degree,"load_data",1,"opts",Validation_Opts);
         end
         colour_num = plot_L_mode;
 
@@ -172,6 +176,10 @@ for iMode = 1:num_L_modes
             if backbone_plot(iOutput)
                 bb_lines = findobj(ax(iOutput),"Tag","backbone");
                 uistack(bb_lines,"top")
+                % validation_lines = findobj(ax(iOutput),"Tag",string(plot_L_mode));
+                % unstable_orbits = findobj(validation_lines,"LineStyle",":");
+                % unstable_validation_lines = [unstable_validation_lines;unstable_orbits]; %#ok<AGROW>
+                % uistack(unstable_validation_lines,"top")
             end
             ax(iOutput).YLim = ax(iOutput).YLim;
 

@@ -2,7 +2,7 @@ clear
 % close all
 set_visualisation_level(1)
 
-system_name = "mass_spring_roller_0";
+system_name = "mass_spring_roller_12";
 Dyn_Data = initalise_dynamic_data(system_name);
 
 Additional_Output.output = "physical displacement";
@@ -36,3 +36,5 @@ Continuation_Opts.max_inc = 1e-2;
 % Dyn_Data = Dyn_Data.restart_point(1,62,"po","opts",Continuation_Opts);
 Dyn_Data = Dyn_Data.validate_solution(2,2);
  Dyn_Data = Dyn_Data.restart_point(1,141,"po","opts",Continuation_Opts);
+
+

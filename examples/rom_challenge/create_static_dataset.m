@@ -8,7 +8,7 @@ set_visualisation_level(0)
 %--------- System Settings ---------%
 system_name = "exhaust";
 energy_limit = 1.5;
-initial_modes = [1,5,6,7];
+initial_modes = [1];
 %-----------------------------------%
 
 %--------- Calibration Settings ---------%
@@ -16,15 +16,15 @@ Calibration_Opts.calibration_scale_factor = 1.5;
 %----------------------------------------%
 
 %--------- Static Solver Settings ---------%
-Static_Opts.additional_data = "none";
+Static_Opts.additional_data = "stiffness";
 Static_Opts.num_validation_modes = 18;
 Static_Opts.max_parallel_jobs = 4; %be careful!
 %------------------------------------------%
 
 %--------- Static Verification Settings ---------%
-Verification_Opts.maximum_iterations = 1;
+Verification_Opts.maximum_iterations = 5;
 % Verification_Opts.num_added_points = 4;
-Verification_Opts.maximum_interpolation_error = [0.005,0.05,0,01,0.05];
+% Verification_Opts.maximum_interpolation_error = [0.005,0.05,0,01,0.05];
 %----------------------------------------------%
 
 Model = Dynamic_System(system_name,energy_limit,initial_modes,"calibration_opts",Calibration_Opts,"static_opts",Static_Opts);

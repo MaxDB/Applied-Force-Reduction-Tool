@@ -8,3 +8,5 @@ maximum_convergence_error, 1e-2, 	increase cut-off harmonic until change in answ
 minimum_validation_force, 1e-3, 	ignore small terms when calculating error
 save_orbit, 1, 				save validated orbit to disk (BOOL) 
 get_stability, 1,			calculate validated orbit stability (BOOL)
+legacy_h_prediction, 0,		original validation method (BOOL)
+verification, "both", 	    verification of validation polynomials (global vs local)
