@@ -7,12 +7,15 @@ keyword_args = varargin(1:2:num_args);
 keyword_values = varargin(2:2:num_args);
 
 num_sim_periods = [];
+min_incs = [];
 for arg_counter = 1:num_args/2
     switch keyword_args{arg_counter}
         case "num_periods"
             num_sim_periods = keyword_values{arg_counter};
         case "num_workers"
             num_parallel_workers = keyword_values{arg_counter};
+        case "min_incs"
+            min_incs = keyword_values{arg_counter};
         otherwise
             error("Invalid keyword: " + keyword_args{arg_counter})
     end
@@ -27,7 +30,7 @@ elseif isempty(current_pool)
 end
 
 %----
-min_incs = 100;
+
 
 %----
 frequency = Nonconservative_Input.frequency;
@@ -63,9 +66,10 @@ for iGroup = 1:num_parallel_groups
     f_0 = zeros(num_dof,num_group_orbits);
 
     group_ids = zeros(1,num_group_orbits);
+    group_periods = zeros(1,num_group_orbits);
     for iOrbit = 1:num_group_orbits
         orbit_id = orbit_group(iOrbit);
-        period = periods(orbit_id);
+        group_periods(iOrbit) = periods(orbit_id);
 
         if ~isempty(reference_sol)
             if isfield(reference_sol,"orbit_subset")
@@ -87,11 +91,10 @@ for iGroup = 1:num_parallel_groups
     num_periods = num_sim_periods;
 
     Nonconservative_Input.fe_output = "none";
-    sim_periods = period*ones(1,num_group_orbits);
     sim_num_periods = num_periods*ones(1,num_group_orbits);
     sim_min_incs = min_incs*ones(1,num_group_orbits);
     sim_initial_time = initial_time*ones(1,num_group_orbits);
-    [t,x,~,energy]  = Model.dynamic_simulation(x_0,x_dot_0,f_0,sim_periods,sim_num_periods,sim_min_incs,sim_initial_time,Nonconservative_Input,job_id);
+    [t,x,~,energy]  = Model.dynamic_simulation(x_0,x_dot_0,f_0,group_periods,sim_num_periods,sim_min_incs,sim_initial_time,Nonconservative_Input,job_id);
 
     job_id(:,2) = job_id(:,2) + 1;
     Nonconservative_Input.fe_output = "all";
@@ -102,7 +105,7 @@ for iGroup = 1:num_parallel_groups
     end
     num_periods = 1.5;
     sim_num_periods = num_periods*ones(1,num_group_orbits);
-    [t_per_sim,x_per_sim,x_dot_per_sim,energy_per_sim]  = Model.dynamic_simulation(zeros(0,num_group_orbits),zeros(0,num_group_orbits),zeros(0,num_group_orbits),sim_periods,sim_num_periods,sim_min_incs,sim_t_start,Nonconservative_Input,job_id);
+    [t_per_sim,x_per_sim,x_dot_per_sim,energy_per_sim]  = Model.dynamic_simulation(zeros(0,num_group_orbits),zeros(0,num_group_orbits),zeros(0,num_group_orbits),group_periods,sim_num_periods,sim_min_incs,sim_t_start,Nonconservative_Input,job_id);
 
     %-- test
     % figure; plot(t(2:end),energy.potential+energy.kinetic)
@@ -128,7 +131,7 @@ for iGroup = 1:num_parallel_groups
             continue
         end
         final_time = t_per(end);
-        period_start = final_time-period;
+        period_start = final_time-group_periods(iOrbit);
 
         t_index = find(t_per >= period_start);
         if t_index(1) > 1
@@ -177,7 +180,7 @@ for iGroup = 1:num_parallel_groups
         Orbit_Data.vel = x_dot_periodic;
         Orbit_Data.energy = potential_periodic + kinetic_periodic;
         Orbit_Data.periodicity_error = periodicity_error;
-        Orbit_Data.period = period;
+        Orbit_Data.period = group_periods(iOrbit);
 
         save(data_path+"\sol"+orbit_group(iOrbit),"Orbit_Data")
         orbit_time = toc(group_start_time);

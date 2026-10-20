@@ -60,7 +60,7 @@ norm_freq = fourier_freq/forcing_freq;
 
 %---
 % FOM trajectory 
-Sim_Opts.max_time_step = dt;
+Sim_Opts.max_time_step = dt/2.5;
 duration = period_range(2)*period;
 FOM_Output.type = "disp_dof";
 FOM_Output.dof = Dyn_Data_16.Additional_Output.control_dof;
@@ -71,8 +71,8 @@ Force_Data_Fom.shape = Rom_1.Model.mass*Rom_1.Model.reduced_eigenvectors;
 Force_Data_Fom.amplitude = Force_Data.amplitude;
 Force_Data_Fom.frequency = Force_Data.frequency;
 
-% FOM_Trajectory = Model.add_full_order_trajectory(duration,"forcing",Force_Data_Fom,"damping",Damping_Data,"sim_opts",Sim_Opts,"output",FOM_Output);
-% save("FOM_sim","FOM_Trajectory")
+FOM_Trajectory = Model.add_full_order_trajectory(duration,"forcing",Force_Data_Fom,"damping",Damping_Data,"sim_opts",Sim_Opts,"output",FOM_Output);
+save("FOM_sim","FOM_Trajectory")
 %---
 figure
 tiledlayout(2,2)

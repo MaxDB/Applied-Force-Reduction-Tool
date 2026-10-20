@@ -1,7 +1,7 @@
 ** ----------------------------------------------------------------
 **
 **Restart, read, step = STEP_HERE, inc = INC_HERE
-*Step, name=Dynamic, nlgeom=YES, inc= INC_HERE
+*Step, name=Dynamic_STEP_NUM, nlgeom=YES, inc= INC_HERE
 *Dynamic
 DYNAMIC_SETTINGS_HERE
 **0.1,1.1,1.2e-05

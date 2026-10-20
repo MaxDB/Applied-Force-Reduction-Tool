@@ -103,8 +103,9 @@ dynamic_template = dynamic_template{1,1};
 
 
 for iLine = 1:length(dynamic_template)
-    if strfind(dynamic_template{iLine,1},'*Step, name=Dynamic, nlgeom=YES, inc= INC_HERE')
-        dynamic_template{iLine,1} = "*Step, name=Dynamic, nlgeom=YES, inc= " + MAX_DYNAMIC_INC;
+    if strfind(dynamic_template{iLine,1},'*Step, name=Dynamic_STEP_NUM, nlgeom=YES, inc= INC_HERE')
+        step_name = join(string(job_id),"_");
+        dynamic_template{iLine,1} = "*Step, name=Dynamic_"+step_name+", nlgeom=YES, inc= " + MAX_DYNAMIC_INC;
     end
 
     if strfind(dynamic_template{iLine,1},'DYNAMIC_SETTINGS_HERE')

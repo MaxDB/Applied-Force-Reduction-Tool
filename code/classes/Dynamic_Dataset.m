@@ -523,6 +523,7 @@ classdef Dynamic_Dataset
             initial_condition = [];
             ref_solution = [];
             num_periods = [];
+            min_incs = 100;
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
                     case "ic"
@@ -533,6 +534,8 @@ classdef Dynamic_Dataset
                         num_periods = keyword_values{arg_counter};
                     case "num_workers"
                         num_parallel_workers = keyword_values{arg_counter};
+                    case "min_incs"
+                        min_incs = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -546,6 +549,7 @@ classdef Dynamic_Dataset
             FRF_Settings.reference_data = ref_solution;
             FRF_Settings.num_periods = num_periods;
             FRF_Settings.num_parallel_workers = num_parallel_workers;
+            FRF_Settings.min_period_incs = min_incs;
 
             Rom = obj.Dynamic_Model;
             FRF_Sol = Full_Order_Forced_Solution(Rom,FRF_Settings);
