@@ -5,6 +5,7 @@ num_dimensions = get_num_node_dimensions(Model);
 if isfield(FE_Force_Data,"fe_output")
     output_disp = 0;
     output_vel = 0;
+    partial_output = 0;
     switch FE_Force_Data.fe_output
         case "disp"
             output_disp = 1;
@@ -15,6 +16,7 @@ if isfield(FE_Force_Data,"fe_output")
             output_vel = 1;
         case "disp_dof"
             output_disp = 1;
+            partial_output = 1;
     end
 else
     output_vel = 0;
@@ -93,6 +95,40 @@ if ~isempty(FE_Force_Data)
 end
 %-------------------------------------------------------------------------%
 
+geometry = load_geometry(Model);
+
+for iLine = 1:length(geometry)
+    if strfind(geometry{iLine,1},"*Instance, name=")
+        instance_def = erase(geometry{iLine,1},"*Instance, name=");
+        instance_def = split(instance_def,",");
+        instance_name = instance_def{1,1};
+    end
+
+
+    if strfind(geometry{iLine,1},"*Density")
+        density_def_line = iLine;
+    end
+
+end
+if ~restart_read
+    if ~isempty(FE_Force_Data)
+        alpha = FE_Force_Data.alpha;
+        beta = FE_Force_Data.beta;
+        damping_def = "*Damping, alpha = " + alpha + ", beta = " + beta;
+        geometry = [geometry(1:(density_def_line-1));damping_def;geometry(density_def_line:end);amp_template];
+    end
+end
+
+if partial_output
+    output_dof = FE_Force_Data.output_info.dof_pre_bc;
+    output_node = ceil(output_dof/num_dimensions);
+
+    geometry = [geometry;
+        "*Nset, nset=Set-out, instance=" + instance_name;
+        "   " + output_node];
+end
+%-------------------------------------------------------------------------%
+
 
 %-------------------------------------------------------------------------%
 %Open Template
@@ -145,6 +181,13 @@ for iLine = 1:length(dynamic_template)
             dynamic_template{iLine,1} = "** " + dynamic_template{iLine,1};
         end
     end
+    
+    if partial_output
+        if strfind(dynamic_template{iLine,1},'*NODE PRINT')
+            dynamic_template{iLine,1} = dynamic_template{iLine,1} + ", NSET=Set-out";
+        end
+    end
+
 end
 
 
@@ -187,32 +230,7 @@ for iLine = 1:length(static_template)
 
 end
 
-%-------------------------------------------------------------------------%
-
-    geometry = load_geometry(Model);
-
-    for iLine = 1:length(geometry)
-        if strfind(geometry{iLine,1},"*Instance, name=")
-            instance_def = erase(geometry{iLine,1},"*Instance, name=");
-            instance_def = split(instance_def,",");
-            instance_name = instance_def{1,1};
-        end
-
-
-        if strfind(geometry{iLine,1},"*Density")
-            density_def_line = iLine;
-        end
-
-    end
-    if ~restart_read
-        if ~isempty(FE_Force_Data)
-            alpha = FE_Force_Data.alpha;
-            beta = FE_Force_Data.beta;
-            damping_def = "*Damping, alpha = " + alpha + ", beta = " + beta;
-            geometry = [geometry(1:(density_def_line-1));damping_def;geometry(density_def_line:end);amp_template];
-        end
-    end
-%-------------------------------------------------------------------------%
+%-----------------------------------------------------------------------%
 %%% Create forcing tempate
 force_label = strings(all_dofs,1);
 for iNode = 1:num_nodes

@@ -71,7 +71,15 @@ Force_Data_Fom.shape = Rom_1.Model.mass*Rom_1.Model.reduced_eigenvectors;
 Force_Data_Fom.amplitude = Force_Data.amplitude;
 Force_Data_Fom.frequency = Force_Data.frequency;
 
-FOM_Trajectory = Model.add_full_order_trajectory(duration,"forcing",Force_Data_Fom,"damping",Damping_Data,"sim_opts",Sim_Opts,"output",FOM_Output);
+Initial_Condition.time = t_16(1);
+Initial_Condition.disp = Rom_16.expand(Trajectory_16.r(:,1));
+Initial_Condition.vel = Rom_16.expand_velocity(Trajectory_16.r(:,1),Trajectory_16.r_dot(:,1));
+Initial_Condition.f0 = Rom_16.Force_Polynomial.evaluate_polynomial(Trajectory_16.r(:,1));
+duration  = duration - Initial_Condition.time;
+
+duration = period;
+
+FOM_Trajectory = Model.add_full_order_trajectory(duration,"forcing",Force_Data_Fom,"damping",Damping_Data,"sim_opts",Sim_Opts,"output",FOM_Output,"ic",Initial_Condition);
 save("FOM_sim","FOM_Trajectory")
 %---
 figure

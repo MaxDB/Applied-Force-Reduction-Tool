@@ -788,6 +788,7 @@ classdef Dynamic_System
             Damping_Data = [];
             Sim_Opts = [];
             FOM_Output.type = "all";
+            Initial_Conditions = [];
             for arg_counter = 1:num_args/2
                 switch keyword_args{arg_counter}
                     case "forcing"
@@ -798,6 +799,8 @@ classdef Dynamic_System
                         Sim_Opts = keyword_values{arg_counter};
                     case "output"
                         FOM_Output = keyword_values{arg_counter};
+                    case "ic"
+                        Initial_Conditions = keyword_values{arg_counter};
                     otherwise
                         error("Invalid keyword: " + keyword_args{arg_counter})
                 end
@@ -814,7 +817,7 @@ classdef Dynamic_System
             Nonconservative_Input.alpha = Damping_Data.mass_factor;
             Nonconservative_Input.beta = Damping_Data.stiffness_factor;
 
-            FOM_Trajectory = get_full_order_trajectory(obj,duration,Nonconservative_Input,Sim_Opts);
+            FOM_Trajectory = get_full_order_trajectory(obj,duration,Nonconservative_Input,Sim_Opts,Initial_Conditions);
         end
 
         %-----------------------------------------------------------------%
